@@ -1,0 +1,35 @@
+name:         Shpadoinkle
+license:      BSD3
+license-file: LICENSE
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+
+
+ghc-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+dependencies:
+    - base
+
+
+default-extensions: !include "./etc/default-extensions.yaml"
+
+
+_exe-ghc-options: &exe-ghc-options
+    - -threaded
+    - -O2
+    - -rtsopts "-with-rtsopts=-N -T"
+    - -static
+
+
+library:     !include "./etc/library.yaml"
