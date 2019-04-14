@@ -1,4 +1,0 @@
-source-dirs: lib
-other-modules: Prelude
-dependencies:
-    - jsaddle
