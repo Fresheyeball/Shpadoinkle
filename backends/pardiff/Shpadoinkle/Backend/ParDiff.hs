@@ -1,5 +1,20 @@
-{-# LANGUAGE ExtendedDefaultRules #-}
-{-# LANGUAGE QuasiQuotes          #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE ExtendedDefaultRules       #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
@@ -10,17 +25,29 @@ module Shpadoinkle.Backend.ParDiff
   ) where
 
 
+import           Control.Applicative
+import           Control.Category
+import           Control.Compactable
 import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Natural
 import           Data.Align
+import           Data.Foldable
+import           Data.Kind
+import           Data.Map                    (Map)
 import qualified Data.Map                    as M
+import           Data.Monoid
 import           Data.Once
+import           Data.Text
 import           Data.These
+import           Data.Traversable
 import           Data.UUID
+import           GHC.Generics
 import           Language.Javascript.JSaddle hiding (( # ))
 import           NeatInterpolation
+import           Prelude                     hiding ((.))
 import           System.Random
+import           UnliftIO
 
 import           Shpadoinkle
 
@@ -178,7 +205,7 @@ patchChildren
   => Show a
   => RawNode -> [ParVNode a] -> [ParVNode a] -> ParDiffT a m [ParVNode a]
 patchChildren parent@(RawNode p) old new'' =
-  compact <$> mapConcurrently (\case
+  traverseMaybe (\case
 
     This child -> do
       RawNode c <- lift . liftJSM . runOnce $ getRaw child
@@ -239,7 +266,7 @@ patch' parent old new' = do
       RawNode p <- return parent
       RawNode r <- lift . liftJSM . runOnce $ getRaw old'
       RawNode c <- lift . liftJSM . runOnce $ getRaw new'
-      liftJSM $ p ^. js2 "replaceChild" c r
+      _ <- liftJSM $ p ^. js2 "replaceChild" c r
       return $ setRaw (getRaw old') new'
 
 
@@ -248,7 +275,7 @@ patch' parent old new' = do
 
       RawNode p <- return parent
       RawNode c <- lift . liftJSM . runOnce $ getRaw new'
-      liftJSM $ p ^. js1 "appendChild" c
+      _ <- liftJSM $ p ^. js1 "appendChild" c
       return new'
 
 

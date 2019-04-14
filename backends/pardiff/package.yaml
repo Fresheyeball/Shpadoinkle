@@ -1,4 +1,4 @@
-name:         Shpadoinkle
+name:         Shpadoinkle-backend-pardiff
 license:      BSD3
 license-file: LICENSE
 author:       Isaac Shapira
@@ -23,12 +23,24 @@ dependencies:
 
 
 library:
+  other-modules: Data.Once
   exposed-modules:
-      Shpadoinkle
+      Shpadoinkle.Backend.ParDiff
   source-dirs: .
   dependencies:
     - jsaddle
     - natural-transformation
     - unliftio
+    - compactable
+    - uuid
+    - neat-interpolation
+    - containers
+    - these
+    - lens
+    - random
     - text
 
+    - mtl
+    - file-embed
+
+    - Shpadoinkle

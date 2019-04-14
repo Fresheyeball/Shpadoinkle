@@ -22,13 +22,6 @@ dependencies:
     - base
 
 
-_exe-ghc-options: &exe-ghc-options
-    - -threaded
-    - -O2
-    - -rtsopts "-with-rtsopts=-N -T"
-    - -static
-
-
 library:
   exposed-modules:
       Shpadoinkle.Backend.Snabbdom
@@ -36,7 +29,6 @@ library:
   dependencies:
     - jsaddle
     - natural-transformation
-    - unliftio
     - text
 
     - mtl

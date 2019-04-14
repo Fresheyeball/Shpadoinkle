@@ -21,6 +21,7 @@ let
   targets = {
     Shpadoinkle = ./core;
     Shpadoinkle-backend-snabbdom = ./backends/snabbdom;
+    Shpadoinkle-backend-pardiff  = ./backends/pardiff;
   };
 
   haskellPackages = ghc.extend (pkgs.lib.composeExtensions
