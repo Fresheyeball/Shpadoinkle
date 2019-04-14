@@ -1,18 +1,19 @@
-{-# LANGUAGE AllowAmbiguousTypes  #-}
-{-# LANGUAGE TypeOperators  #-}
-{-# LANGUAGE StandaloneDeriving  #-}
-{-# LANGUAGE TupleSections  #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE TupleSections          #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 
 
@@ -25,17 +26,17 @@ module Shpadoinkle
   ) where
 
 
-import Prelude hiding ((.))
+import           Control.Category
+import           Control.Monad.IO.Class
 import           Control.Natural
-import Control.Monad.IO.Class
-import UnliftIO.Concurrent
-import GHC.Conc hiding (forkIO)
-import Data.Text
-import Data.String
-import Data.Kind
-import Control.Category
+import           Data.Kind
+import           Data.String
+import           Data.Text
+import           GHC.Conc                    hiding (forkIO)
 import           GHC.Conc                    (retry)
 import           Language.Javascript.JSaddle hiding (( # ))
+import           Prelude                     hiding ((.))
+import           UnliftIO.Concurrent
 
 
 data Html :: (Type -> Type) -> Type -> Type where
@@ -114,8 +115,8 @@ shpadoinkle toJSM toM model view stage = do
         new' <- readTVar model
         old  <- readTVar p
         if new' == old then retry else new' <$ writeTVar p new'
-      m  <- liftJSM (j # interpret toJSM (view a))
-      n' <- liftJSM (j # patch c (Just n) m)
+      m  <- j # interpret toJSM (view a)
+      n' <- j # patch c (Just n) m
       go c n' p
 
   i' <- liftIO $ readTVarIO model
