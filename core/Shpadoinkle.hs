@@ -57,6 +57,16 @@ mapProp f = \case
   PFlag       -> PFlag
 
 
+h :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
+h = Node
+text :: Text -> Html m o
+text = TextNode
+flag :: Prop m o
+flag = PFlag
+listener :: m o -> Prop m o
+listener = PListener
+
+
 deriving instance Functor m => Functor (Html m)
 
 
