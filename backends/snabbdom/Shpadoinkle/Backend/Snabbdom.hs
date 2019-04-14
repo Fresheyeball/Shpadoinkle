@@ -1,5 +1,15 @@
-{-# LANGUAGE ExtendedDefaultRules #-}
-{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE ExtendedDefaultRules       #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
@@ -9,11 +19,15 @@ module Shpadoinkle.Backend.Snabbdom
   , stage
   ) where
 
-
+import           Control.Category
 import           Control.Monad.Reader
 import           Control.Natural
 import           Data.FileEmbed
+import           Data.Text
+import           Data.Traversable
+import           GHC.Conc
 import           Language.Javascript.JSaddle hiding (( # ))
+import           Prelude                     hiding ((.))
 
 import           Shpadoinkle
 
@@ -52,7 +66,7 @@ props toJSM i xs = do
       unsafeSetProp (JSString k) t' a
     PListener f -> do
       f' <- toJSVal . fun $ \_ _ _ ->
-        atomically . writeTVar i =<< unwrapNT (toJSM . NT (runSnabbdomT i)) f
+        liftIO . atomically . writeTVar i =<< unwrapNT (toJSM . NT (runSnabbdomT i)) f
       unsafeSetProp (JSString k) f' e
     PFlag -> do
       f <- toJSVal True
@@ -92,7 +106,7 @@ instance (MonadJSM m, Eq a) => Shpadoinkle (SnabbdomT a) m a where
 
   setup :: JSM () -> SnabbdomT a m ()
   setup cb = liftJSM $ do
-    void $ eval @Text $(embedStringFile "lib/Shpadoinkle/Backend/Snabbdom/Setup.js")
+    void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/Setup.js")
     void . jsg1 "startApp" . fun $ \_ _ _ -> cb
 
 

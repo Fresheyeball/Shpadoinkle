@@ -1,4 +1,4 @@
-name:         Shpadoinkle
+name:         Shpadoinkle-backend-snabbdom
 license:      BSD3
 license-file: LICENSE
 author:       Isaac Shapira
@@ -31,7 +31,7 @@ _exe-ghc-options: &exe-ghc-options
 
 library:
   exposed-modules:
-      Shpadoinkle
+      Shpadoinkle.Backend.Snabbdom
   source-dirs: .
   dependencies:
     - jsaddle
@@ -39,3 +39,7 @@ library:
     - unliftio
     - text
 
+    - mtl
+    - file-embed
+
+    - Shpadoinkle
