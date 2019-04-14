@@ -1,0 +1,40 @@
+name:         Shpadoinkle
+license:      BSD3
+license-file: LICENSE
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+
+
+ghc-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+dependencies:
+    - base
+
+
+_exe-ghc-options: &exe-ghc-options
+    - -threaded
+    - -O2
+    - -rtsopts "-with-rtsopts=-N -T"
+    - -static
+
+
+library:
+  exposed-modules:
+      Shpadoinkle
+  source-dirs: .
+  dependencies:
+    - jsaddle
+    - natural-transformation
+    - unliftio
+    - text
