@@ -21,7 +21,11 @@ let
       repo = "nix-gitignore";
       rev = "4f2d85f2f1aa4c6bff2d9fcfd3caad443f35476e";
       sha256 = "1vzfi3i3fpl8wqs1yq95jzdi6cpaby80n8xwnwa8h2jvcw3j7kdz";
-    }) {}).gitignoreSource [".git"];
+    }) {}).gitignoreSource
+      [ ".git"
+        ".ghc.environment.x86_64-linux-8.4.3"
+        "*.cabal"
+      ];
 
   targets = {
     Shpadoinkle = gitignore ./core;

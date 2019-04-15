@@ -1,6 +1,7 @@
 name:         Shpadoinkle-html
 license:      BSD3
 license-file: LICENSE
+version:      0.0.0.1
 author:       Isaac Shapira
 maintainer:   fresheyeball@protonmail.com
 category:     Web
