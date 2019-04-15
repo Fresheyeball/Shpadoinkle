@@ -49,7 +49,7 @@ import           Prelude                     hiding ((.))
 import           System.Random
 import           UnliftIO
 
-import           Shpadoinkle
+import           Shpadoinkle                 hiding (h, text)
 
 
 default (Text)

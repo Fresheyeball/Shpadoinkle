@@ -1,1 +1,1 @@
-packages: core, backends/snabbdom, backends/pardiff
+packages: core, backends/snabbdom, backends/pardiff, html

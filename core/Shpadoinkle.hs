@@ -23,6 +23,7 @@ module Shpadoinkle
   , Shpadoinkle (..)
   , shpadoinkle
   , RawNode (..)
+  , h, text, flag, listener
   ) where
 
 

@@ -1,21 +1,22 @@
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TemplateHaskell   #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
-module Shpadoinkle.Html.Property
-  ( TextProperty
-  , ToPropText(..)
-  , className
-  , id'
-  , type'
-  , rel
-  , href
-  , style
-  ) where
+module Shpadoinkle.Html.Property where
 
 
-import qualified Data.Set          as Set
+import           Control.Monad       (msum)
+import           Data.Set            (Set)
+import qualified Data.Set            as Set
+import           Data.String         hiding (unwords)
+import           Data.Text
+import           Prelude             hiding (unwords)
 
-import           Shpadoinkle.Class
+import           Shpadoinkle
+import           Shpadoinkle.Html.TH
 
 
 type TextProperty a = forall m o. ToPropText a => a -> (Text, Prop m o)
@@ -23,7 +24,8 @@ type TextProperty a = forall m o. ToPropText a => a -> (Text, Prop m o)
 
 class ToPropText a where toPropText :: a -> Text
 instance ToPropText Text where toPropText = id
-instance ToPropText Int where toPropText = present
+instance ToPropText Int where toPropText = pack . show
+instance ToPropText Float where toPropText = pack . show
 instance ToPropText Bool where toPropText = \case True -> "true"; False -> "false"
 
 
@@ -32,28 +34,15 @@ instance IsString a => IsString (Set a) where
 
 
 textProperty :: ToPropText a => Text -> a -> (Text, Prop m o)
-textProperty k = (k, ) . PText . toPropText
+textProperty k = (,) k . PText . toPropText
 
 
 className :: Set.Set Text -> (Text, Prop m o)
 className = textProperty "className" . unwords . Set.toList
 
 
-id' :: Text -> (Text, Prop m o)
-id' = textProperty "id"
+$(fmap msum $ mapM mkTextProp
+  [ "id'", "type'", "rel", "href"
+  ])
 
 
-type' :: Text -> (Text, Prop m o)
-type' = textProperty "type"
-
-
-rel :: Text -> (Text, Prop m o)
-rel = textProperty "rel"
-
-
-href :: Text -> (Text, Prop m o)
-href = textProperty "href"
-
-
-style :: Text -> (Text, Prop m o)
-style = textProperty "style"

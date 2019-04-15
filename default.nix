@@ -1,5 +1,3 @@
-{forShell ? false}:
-
 let
 
 
@@ -22,23 +20,16 @@ let
     Shpadoinkle = ./core;
     Shpadoinkle-backend-snabbdom = ./backends/snabbdom;
     Shpadoinkle-backend-pardiff  = ./backends/pardiff;
+    Shpadoinkle-html = ./html;
   };
 
   haskellPackages = ghc.extend (pkgs.lib.composeExtensions
-      (pkgs.haskell.lib.packageSourceOverrides (targets // {
-        # any version overrides or submodule package dependencies here
-        # some-package = "0.2.0.0";           # fetch specific hackage version
-        # some-package = ./dir/subproject;    # git submodule packages
-      }))
+      (pkgs.haskell.lib.packageSourceOverrides targets)
       (self: super: {
           ghcWithPackages = p: super.ghcWithPackages (
-              # I like to have ghci-pretty and ghcid available in my nix-shell
-              f: p f ++ (if forShell then [ f.cabal-install f.ghcid ] else [])
+              f: p f ++ (if pkgs.lib.inNixShell then [ f.cabal-install f.ghcid ] else [])
           );
           jsaddle = self.callCabal2nix "jsaddle" "${jsaddle-src}/jsaddle" {};
-          # any fetch/overrides go here
-          # some-package = pkgs.haskell.lib.dontCheck (self.callCabal2nix "some-package" (pkgs.fetchFromGitHub { ... }) {});
-          # some-package = pkgs.haskell.lib.overrideCabal super.some-package (drv: { patches = (drv.patches or [ ... ]); });
       })
   );
 
@@ -48,7 +39,7 @@ let
 
 in
 
-  if forShell
+  if pkgs.lib.inNixShell
 
   then haskellPackages.shellFor { packages = _: packages; buildInputs = tools; }
 

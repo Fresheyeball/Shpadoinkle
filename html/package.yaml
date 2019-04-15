@@ -1,0 +1,34 @@
+name:         Shpadoinkle-html
+license:      BSD3
+license-file: LICENSE
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+
+
+ghc-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+dependencies:
+    - base
+
+
+library:
+  exposed-modules:
+      Shpadoinkle.Html
+  source-dirs: .
+  dependencies:
+    - text
+    - template-haskell
+    - containers
+
+    - Shpadoinkle
