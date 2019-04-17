@@ -7,7 +7,7 @@ module Shpadoinkle.Html
   ) where
 
 
-import           Shpadoinkle
+import           Shpadoinkle               hiding (Shpadoinkle, shpadoinkle)
 import           Shpadoinkle.Html.Element
 import           Shpadoinkle.Html.Event
 import           Shpadoinkle.Html.Property
