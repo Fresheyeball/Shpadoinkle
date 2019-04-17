@@ -3,9 +3,11 @@ module Shpadoinkle.Html
   , module Shpadoinkle.Html.Property
   , module Shpadoinkle.Html.Event
   , module Shpadoinkle.Html.TH
+  , module Shpadoinkle
   ) where
 
 
+import           Shpadoinkle
 import           Shpadoinkle.Html.Element
 import           Shpadoinkle.Html.Event
 import           Shpadoinkle.Html.Property
