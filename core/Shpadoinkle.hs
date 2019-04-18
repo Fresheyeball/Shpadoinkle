@@ -19,11 +19,12 @@
 
 module Shpadoinkle
   ( Html (..), Prop (..)
-  , mapHtml,   mapProp
+  , mapHtml, mapProp, mapProps, mapChildren
   , Shpadoinkle (..)
   , shpadoinkle
   , RawNode (..)
   , h, text, flag, listener
+  , props, children, name, textContent
   ) where
 
 
@@ -47,8 +48,44 @@ data Html :: (Type -> Type) -> Type -> Type where
 
 mapHtml :: (m :~> n) -> Html m o -> Html n o
 mapHtml f = \case
-  Node t props children -> Node t (fmap (mapProp f) <$> props) (mapHtml f <$> children)
+  Node t ps cs -> Node t (fmap (mapProp f) <$> ps) (mapHtml f <$> cs)
   TextNode t -> TextNode t
+
+
+mapProps :: ([(Text, Prop m o)] -> [(Text, Prop m o)]) -> Html m o -> Html m o
+mapProps f = \case
+  Node t ps cs -> Node t (f ps) cs
+  t -> t
+
+
+mapChildren :: ([Html m a] -> [Html m a]) -> Html m a -> Html m a
+mapChildren f = \case
+  Node t ps cs -> Node t ps (f cs)
+  t -> t
+
+
+props :: Applicative f => ([(Text, Prop m a)] -> f [(Text, Prop m a)]) -> Html m a -> f (Html m a)
+props inj = \case
+  Node t ps cs -> (\ps' -> Node t ps' cs) <$> inj ps
+  t -> pure t
+
+
+children :: Applicative f => ([Html m a] -> f [Html m a]) -> Html m a -> f (Html m a)
+children inj = \case
+  Node t ps cs -> (\cs' -> Node t ps cs') <$> inj cs
+  t -> pure t
+
+
+name :: Applicative f => (Text -> f Text) -> Html m a -> f (Html m a)
+name inj = \case
+  Node t ps cs -> (\t' -> Node t' ps cs) <$> inj t
+  t -> pure t
+
+
+textContent :: Applicative f => (Text -> f Text) -> Html m a -> f (Html m a)
+textContent inj = \case
+  TextNode t -> TextNode <$> inj t
+  n -> pure n
 
 
 mapProp :: (m :~> n) -> Prop m o -> Prop n o

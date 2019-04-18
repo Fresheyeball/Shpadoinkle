@@ -29,7 +29,7 @@ import           GHC.Conc
 import           Language.Javascript.JSaddle hiding (( # ))
 import           Prelude                     hiding ((.))
 
-import           Shpadoinkle
+import           Shpadoinkle                 hiding (children, name, props)
 
 
 default (Text)

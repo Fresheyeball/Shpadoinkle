@@ -49,7 +49,7 @@ import           Prelude                     hiding ((.))
 import           System.Random
 import           UnliftIO
 
-import           Shpadoinkle                 hiding (h, text)
+import           Shpadoinkle                 hiding (h, name, props, text)
 
 
 default (Text)
@@ -267,7 +267,7 @@ patch' parent old new' = do
       RawNode r <- lift . liftJSM . runOnce $ getRaw old'
       RawNode c <- lift . liftJSM . runOnce $ getRaw new'
       _ <- liftJSM $ p ^. js2 "replaceChild" c r
-      return $ setRaw (getRaw old') new'
+      return new'
 
 
     -- first patch

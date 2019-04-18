@@ -10,7 +10,7 @@ import qualified Data.Text
 import qualified GHC.Base
 import           Language.Haskell.TH
 
-import           Shpadoinkle
+import           Shpadoinkle         hiding (name)
 
 
 capitalized :: String -> String
