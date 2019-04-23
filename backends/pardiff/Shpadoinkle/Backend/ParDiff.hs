@@ -244,7 +244,7 @@ patch' parent old new' = do
 
       RawNode r <- liftJSM $ runOnce raw
       obj' <- liftJSM $ makeObject r
-      liftJSM $ setProp' obj' "nodeValue" =<< toJSVal t
+      liftJSM $ setProp' obj' "nodeValue" =<< toJSVal (trace ("t " ++ show t) t)
       return $ setRaw raw new'
 
 

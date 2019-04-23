@@ -14,7 +14,7 @@ let
       sha256 = "0acj0x716ikfb08ndib36jmwxkwq399lvkip46sfkh1ynn0pvc1c";
     };
 
-  ghc = pkgs.haskell.packages.ghc843;
+  ghc = pkgs.haskell.packages.ghcjs84;
 
   gitignore = (pkgs.callPackage (pkgs.fetchFromGitHub
     { owner = "siers";
