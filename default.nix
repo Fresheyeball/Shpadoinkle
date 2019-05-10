@@ -1,4 +1,4 @@
-let
+{ compiler ? "ghcjs84" }: let
 
 
   rev = "24596d7a4a4b07bd9ce3ad748b8dabf5957003c5";
@@ -14,7 +14,6 @@ let
       sha256 = "0acj0x716ikfb08ndib36jmwxkwq399lvkip46sfkh1ynn0pvc1c";
     };
 
-  ghc = pkgs.haskell.packages.ghcjs84;
 
   gitignore = (pkgs.callPackage (pkgs.fetchFromGitHub
     { owner = "siers";
@@ -27,25 +26,35 @@ let
         "*.cabal"
       ];
 
+
   targets = {
-    Shpadoinkle = gitignore ./core;
+    Shpadoinkle                  = gitignore ./core;
     Shpadoinkle-backend-snabbdom = gitignore ./backends/snabbdom;
     Shpadoinkle-backend-pardiff  = gitignore ./backends/pardiff;
-    Shpadoinkle-html = gitignore ./html;
+    Shpadoinkle-html             = gitignore ./html;
+    Shpadoinkle-examples         = gitignore ./examples;
   };
 
-  haskellPackages = ghc.extend (pkgs.lib.composeExtensions
-      (pkgs.haskell.lib.packageSourceOverrides targets)
+
+  haskellPackages = with pkgs.haskell.lib; pkgs.haskell.packages.${compiler}.extend (pkgs.lib.composeExtensions
+      (packageSourceOverrides targets)
       (self: super: {
           ghcWithPackages = p: super.ghcWithPackages (
-              f: p f ++ (if pkgs.lib.inNixShell then [ f.cabal-install f.ghcid ] else [])
+            f: p f ++ (if false && pkgs.lib.inNixShell then [ f.cabal-install f.ghcid ] else [])
           );
-          jsaddle = self.callCabal2nix "jsaddle" "${jsaddle-src}/jsaddle" {};
+          jsaddle       = self.callCabal2nix "jsaddle" "${jsaddle-src}/jsaddle" {};
+          comonad       = dontCheck super.comonad;
+          extra         = dontCheck super.extra;
+          unliftio      = dontCheck super.unliftio;
+          semigroupoids = dontCheck super.semigroupoids;
+          lens          = dontCheck super.lens;
       })
   );
 
+
+  packages = map (t: haskellPackages.${t}) (builtins.attrNames targets)
+          ++ map (t: haskellPackages.${t}) (builtins.attrNames targets);
   buildSet = pkgs.lib.foldl (ps: p: ps // { ${p.pname} = p; }) {} packages;
-  packages = map (t: haskellPackages.${t} ) (builtins.attrNames targets);
   tools = [ pkgs.pkgconfig ];
 
 in

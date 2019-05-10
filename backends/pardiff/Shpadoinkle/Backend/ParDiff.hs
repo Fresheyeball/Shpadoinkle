@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -14,6 +15,7 @@
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -67,7 +69,11 @@ newtype ParDiffT model m a = ParDiffT { unParDiff :: ReaderT (TVar model) m a }
   )
 
 
+#ifdef GHCJS
 deriving instance MonadJSM m => MonadJSM (ParDiffT model m)
+#endif
+
+
 instance MonadUnliftIO m => MonadUnliftIO (ParDiffT r m) where
   {-# INLINE askUnliftIO #-}
   askUnliftIO = ParDiffT . ReaderT $ \r ->
@@ -125,7 +131,7 @@ prop toJSM i raw k = \case
 setProp' :: ToJSVal t => Object -> Text -> t -> JSM ()
 setProp' raw' k t = do
    t' <- toJSVal t
-   unsafeSetProp (JSString k) t' raw'
+   unsafeSetProp (toJSString k) t' raw'
 
 
 setListener :: TVar a -> JSM a -> Object -> Text -> JSM ()
@@ -182,7 +188,7 @@ managePropertyState :: MonadJSM m => TVar a -> Object -> Map Text (ParVProp a) -
 managePropertyState i obj' old new' = void $
   M.toList (align old new') `for` \(k, x) -> case x of
     -- only old had it, delete
-    This _                 -> voidJSM $ jsg2 "deleteProp" (JSString k) obj'
+    This _                 -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
     -- new text prop, set
     That  (ParVText t)     -> voidJSM $ setProp' obj' k =<< toJSVal t
     -- changed text prop, set
@@ -201,7 +207,9 @@ managePropertyState i obj' old new' = void $
 
 patchChildren
   :: MonadUnliftIO m
+#ifdef GHCJS
   => MonadJSM m
+#endif
   => Show a
   => RawNode -> [ParVNode a] -> [ParVNode a] -> ParDiffT a m [ParVNode a]
 patchChildren parent@(RawNode p) old new'' =
@@ -225,7 +233,9 @@ patchChildren parent@(RawNode p) old new'' =
 
 patch'
   :: MonadUnliftIO m
+#ifdef GHCJS
   => MonadJSM m
+#endif
   => Show a
   => RawNode -> Maybe (ParVNode a) -> ParVNode a -> ParDiffT a m (ParVNode a)
 patch' parent old new' = do
@@ -244,7 +254,7 @@ patch' parent old new' = do
 
       RawNode r <- liftJSM $ runOnce raw
       obj' <- liftJSM $ makeObject r
-      liftJSM $ setProp' obj' "nodeValue" =<< toJSVal (trace ("t " ++ show t) t)
+      liftJSM $ setProp' obj' "nodeValue" =<< toJSVal t
       return $ setRaw raw new'
 
 

@@ -1,0 +1,41 @@
+name:         Shpadoinkle-examples
+license:      BSD3
+license-file: LICENSE
+version:      0.0.0.1
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+
+
+ghc-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+dependencies:
+    - base
+
+
+executables:
+  todomvc:
+    main: TODOMVC.hs
+    source-dirs: .
+    dependencies:
+      - jsaddle
+      - natural-transformation
+      - text
+
+      - mtl
+      - lens
+      - stm
+
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-backend-pardiff
