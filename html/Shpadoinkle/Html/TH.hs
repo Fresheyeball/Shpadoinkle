@@ -10,6 +10,7 @@ import qualified Data.Text
 import qualified GHC.Base
 import           Language.Haskell.TH
 
+
 import           Shpadoinkle         hiding (name)
 
 
@@ -22,8 +23,8 @@ mkEventDSL :: String -> Q [Dec]
 mkEventDSL evt = let
 
     onevt = "on" ++ capitalized evt
-    name  = mkName onevt
-    name' = mkName $ onevt ++ "'"
+    name' = mkName onevt
+    name  = mkName $ onevt ++ "'"
     l  = mkName "listen"
     l' = mkName "listen'"
     m  = VarT $ mkName "m"

@@ -8,6 +8,7 @@
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE TupleSections          #-}
@@ -22,22 +23,20 @@ module Shpadoinkle
   , mapHtml, mapProp, mapProps, mapChildren
   , Shpadoinkle (..)
   , shpadoinkle
-  , RawNode (..)
+  , type (~>)
+  , RawNode (..), RawEvent (..)
   , h, text, flag, listener
   , props, children, name, textContent
   ) where
 
 
-import           Control.Category
 import           Control.Monad.IO.Class
-import           Control.Natural
 import           Data.Kind
 import           Data.String
 import           Data.Text
 import           GHC.Conc                    hiding (forkIO)
 import           GHC.Conc                    (retry)
-import           Language.Javascript.JSaddle hiding (( # ))
-import           Prelude                     hiding ((.))
+import           Language.Javascript.JSaddle
 import           UnliftIO.Concurrent
 
 
@@ -46,7 +45,10 @@ data Html :: (Type -> Type) -> Type -> Type where
   TextNode :: Text -> Html m o
 
 
-mapHtml :: (m :~> n) -> Html m o -> Html n o
+type m ~> n = forall a. m a -> n a
+
+
+mapHtml :: (m ~> n) -> Html m o -> Html n o
 mapHtml f = \case
   Node t ps cs -> Node t (fmap (mapProp f) <$> ps) (mapHtml f <$> cs)
   TextNode t -> TextNode t
@@ -72,7 +74,7 @@ props inj = \case
 
 children :: Applicative f => ([Html m a] -> f [Html m a]) -> Html m a -> f (Html m a)
 children inj = \case
-  Node t ps cs -> (\cs' -> Node t ps cs') <$> inj cs
+  Node t ps cs -> Node t ps <$> inj cs
   t -> pure t
 
 
@@ -88,9 +90,9 @@ textContent inj = \case
   n -> pure n
 
 
-mapProp :: (m :~> n) -> Prop m o -> Prop n o
+mapProp :: (m ~> n) -> Prop m o -> Prop n o
 mapProp f = \case
-  PListener g -> PListener (f # g)
+  PListener g -> PListener (\x y -> f (g x y))
   PText t     -> PText t
   PFlag       -> PFlag
 
@@ -102,13 +104,13 @@ text = TextNode
 flag :: Prop m o
 flag = PFlag
 listener :: m o -> Prop m o
-listener = PListener
+listener = PListener . const . const
 
 
 deriving instance Functor m => Functor (Html m)
 
 
-data Prop m o = PText Text | PListener (m o) | PFlag
+data Prop m o = PText Text | PListener (RawNode -> RawEvent -> m o) | PFlag
 
 
 deriving instance Functor m => Functor (Prop m)
@@ -129,14 +131,15 @@ instance {-# OVERLAPPING #-} IsString [(Text, Prop m o)] where
   {-# INLINE fromString #-}
 
 
-newtype RawNode  = RawNode { unRawNode :: JSVal }
+newtype RawNode  = RawNode  { unRawNode  :: JSVal }
+newtype RawEvent = RawEvent { unRawEvent :: JSVal }
 instance ToJSVal   RawNode where toJSVal   = return . unRawNode
 instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
 
 
 class Shpadoinkle t m a | t m -> a where
   type VNode t m
-  interpret :: (m :~> JSM) -> Html (t m) a -> t m (VNode t m)
+  interpret :: (m ~> JSM) -> Html (t m) a -> t m (VNode t m)
   patch :: RawNode -> Maybe (VNode t m) -> VNode t m -> t m (VNode t m)
   setup :: JSM () -> t m ()
 
@@ -146,32 +149,32 @@ shpadoinkle
    . Shpadoinkle t m a
   => Eq a
   => MonadIO (t m)
-  => (m :~> JSM)
-  -> (t m :~> m)
+  => (m ~> JSM)
+  -> (t m ~> m)
   -> TVar a
   -> (a -> Html (t m) a)
   -> t m RawNode
   -> JSM ()
 shpadoinkle toJSM toM model view stage = do
   let
-    j :: t m :~> JSM
+    j :: t m ~> JSM
     j = toJSM . toM
 
     go :: RawNode -> VNode t m -> TVar a -> JSM ()
     go c n p = do
-      a  <- unwrapNT j . liftIO . atomically $ do
+      a  <- j . liftIO . atomically $ do
         new' <- readTVar model
         old  <- readTVar p
         if new' == old then retry else new' <$ writeTVar p new'
-      m  <- j # interpret toJSM (view a)
-      n' <- j # patch c (Just n) m
+      m  <- j $ interpret toJSM (view a)
+      n' <- j $ patch c (Just n) m
       go c n' p
 
   i' <- liftIO $ readTVarIO model
   p  <- liftIO $ newTVarIO i'
-  unwrapNT j . setup $ do
-    c <- j # stage
-    n <- j # interpret toJSM (view i')
+  j . setup $ do
+    c <- j stage
+    n <- j $ interpret toJSM (view i')
     _ <- forkIO $ go c n p
-    _ <- j # patch c Nothing n
+    _ <- j $ patch c Nothing n :: JSM (VNode t m)
     return ()

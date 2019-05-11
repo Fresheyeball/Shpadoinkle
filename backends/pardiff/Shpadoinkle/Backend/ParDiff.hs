@@ -10,8 +10,8 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -19,26 +19,26 @@
 {-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
+#ifdef GHCJS
+{-# LANGUAGE StandaloneDeriving         #-}
+#endif
 
 module Shpadoinkle.Backend.ParDiff
   ( ParDiffT (..)
-  , runParDiffNT
+  , runParDiff
   , stage
   ) where
 
 
 import           Control.Applicative
-import           Control.Category
 import           Control.Compactable
 import           Control.Lens
 import           Control.Monad.Reader
-import           Control.Natural
 import           Data.Align
 import           Data.Foldable
 import           Data.Kind
 import           Data.Map                    (Map)
 import qualified Data.Map                    as M
-import           Data.Monoid
 import           Data.Once
 import           Data.Text
 import           Data.These
@@ -47,7 +47,6 @@ import           Data.UUID
 import           GHC.Generics
 import           Language.Javascript.JSaddle hiding (( # ))
 import           NeatInterpolation
-import           Prelude                     hiding ((.))
 import           System.Random
 import           UnliftIO
 
@@ -86,8 +85,8 @@ instance MonadUnliftIO m => MonadUnliftIO (ParDiffT r m) where
     inner (run' . flip runReaderT r . unParDiff)
 
 
-runParDiffNT :: TVar model -> ParDiffT model m :~> m
-runParDiffNT t = NT $ \(ParDiffT r) -> runReaderT r t
+runParDiff :: TVar model -> ParDiffT model m ~> m
+runParDiff t = \(ParDiffT r) -> runReaderT r t
 
 
 data ParVNode :: Type -> Type where
@@ -101,7 +100,7 @@ instance Show (ParVNode a) where
     ParTextNode _ t   -> "ParTextNode _ " <> show t
 
 
-data ParVProp a = ParVText Text | ParVListen UUID (JSM a) | ParVFlag
+data ParVProp a = ParVText Text | ParVListen UUID (RawNode -> RawEvent -> JSM a) | ParVFlag
   deriving (Functor, Generic)
 
 
@@ -112,20 +111,17 @@ instance Show (ParVProp a) where
     ParVFlag       -> "ParVFlag"
 
 
-props :: (m :~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
+props :: (m ~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
 props toJSM i ps (RawNode raw) = do
   raw' <- makeObject raw
   void . traverse (uncurry $ prop toJSM i raw') $ M.toList ps
 
 
-prop :: (m :~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
+prop :: (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
 prop toJSM i raw k = \case
-  PText t -> setProp' raw k t
-
-  PListener f ->
-    setListener i (unwrapNT (toJSM . runParDiffNT i) f) raw k
-
-  PFlag -> setProp' raw k =<< toJSVal True
+  PText t     -> setProp' raw k t
+  PListener f -> setListener i (\x y -> toJSM . runParDiff i $ f x y) raw k
+  PFlag       -> setProp' raw k =<< toJSVal True
 
 
 setProp' :: ToJSVal t => Object -> Text -> t -> JSM ()
@@ -134,9 +130,12 @@ setProp' raw' k t = do
    unsafeSetProp (toJSString k) t' raw'
 
 
-setListener :: TVar a -> JSM a -> Object -> Text -> JSM ()
-setListener i m o k = setProp' o ("on" <> k) . fun $ \_ _ _ ->
-  atomically . writeTVar i =<< m
+setListener :: TVar a -> (RawNode -> RawEvent -> JSM a) -> Object -> Text -> JSM ()
+setListener i m o k = do
+  elm <- RawNode <$> toJSVal o
+  setProp' o ("on" <> k) . fun $ \_ _ -> \case
+    e:_ -> atomically . writeTVar i =<< m elm (RawEvent e)
+    _ -> return ()
 
 
 getRaw :: ParVNode a -> Once JSM RawNode
@@ -159,12 +158,12 @@ appendChild (RawNode raw) pn = do
   return pn
 
 
-makeProp :: (m :~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
+makeProp :: (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
 makeProp toJSM i = \case
   PText t     -> return $ ParVText t
   PListener m -> do
     u <- liftIO randomIO
-    return . ParVListen u $ unwrapNT (toJSM . runParDiffNT i) m
+    return . ParVListen u $ \x y -> toJSM . runParDiff i $ m x y
   PFlag       -> return ParVFlag
 
 
@@ -294,7 +293,7 @@ interpret'
   => MonadUnliftIO m
   => Eq a
   => Show a
-  => (m :~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
+  => (m ~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
 interpret' toJSM = \case
 
   TextNode t -> do

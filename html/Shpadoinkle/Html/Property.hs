@@ -41,8 +41,8 @@ className :: Set.Set Text -> (Text, Prop m o)
 className = textProperty "className" . unwords . Set.toList
 
 
-$(fmap msum $ mapM mkTextProp
-  [ "id'", "type'", "rel", "href"
+$(msum <$> mapM mkTextProp
+  [ "id'", "type'", "rel", "href", "placeholder", "value"
   ])
 
 

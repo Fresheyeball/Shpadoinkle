@@ -39,3 +39,19 @@ executables:
       - Shpadoinkle
       - Shpadoinkle-html
       - Shpadoinkle-backend-pardiff
+
+  counter:
+    main: Counter.hs
+    source-dirs: .
+    dependencies:
+      - jsaddle
+      - natural-transformation
+      - text
+
+      - mtl
+      - lens
+      - stm
+
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-backend-pardiff
