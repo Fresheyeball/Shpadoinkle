@@ -65,7 +65,7 @@ view model = div_
     [ header "header"
       [ h1_ [ "todos" ]
       , form [ className "todo-form", onSubmit $ do
-          liftJSM $ putStrLn (show model)
+          liftJSM $ print model
           return $ appendItem model
           ]
         [ input [ className "new-todo"
@@ -75,8 +75,7 @@ view model = div_
         ]
       ]
     , section "main"
-      [ ul "todo-list"
-        (taskView <$> tasks model)
+      [ ul "todo-list" (taskView <$> tasks model)
       ]
     ]
   , footer "info"
