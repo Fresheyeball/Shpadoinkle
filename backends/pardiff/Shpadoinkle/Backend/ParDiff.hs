@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -9,34 +10,35 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
+#ifdef GHCJS
+{-# LANGUAGE StandaloneDeriving         #-}
+#endif
 
 module Shpadoinkle.Backend.ParDiff
   ( ParDiffT (..)
-  , runParDiffNT
+  , runParDiff
   , stage
   ) where
 
 
 import           Control.Applicative
-import           Control.Category
 import           Control.Compactable
 import           Control.Lens
 import           Control.Monad.Reader
-import           Control.Natural
 import           Data.Align
 import           Data.Foldable
 import           Data.Kind
 import           Data.Map                    (Map)
 import qualified Data.Map                    as M
-import           Data.Monoid
 import           Data.Once
 import           Data.Text
 import           Data.These
@@ -45,7 +47,6 @@ import           Data.UUID
 import           GHC.Generics
 import           Language.Javascript.JSaddle hiding (( # ))
 import           NeatInterpolation
-import           Prelude                     hiding ((.))
 import           System.Random
 import           UnliftIO
 
@@ -67,7 +68,11 @@ newtype ParDiffT model m a = ParDiffT { unParDiff :: ReaderT (TVar model) m a }
   )
 
 
+#ifdef GHCJS
 deriving instance MonadJSM m => MonadJSM (ParDiffT model m)
+#endif
+
+
 instance MonadUnliftIO m => MonadUnliftIO (ParDiffT r m) where
   {-# INLINE askUnliftIO #-}
   askUnliftIO = ParDiffT . ReaderT $ \r ->
@@ -80,8 +85,8 @@ instance MonadUnliftIO m => MonadUnliftIO (ParDiffT r m) where
     inner (run' . flip runReaderT r . unParDiff)
 
 
-runParDiffNT :: TVar model -> ParDiffT model m :~> m
-runParDiffNT t = NT $ \(ParDiffT r) -> runReaderT r t
+runParDiff :: TVar model -> ParDiffT model m ~> m
+runParDiff t (ParDiffT r) = runReaderT r t
 
 
 data ParVNode :: Type -> Type where
@@ -95,7 +100,7 @@ instance Show (ParVNode a) where
     ParTextNode _ t   -> "ParTextNode _ " <> show t
 
 
-data ParVProp a = ParVText Text | ParVListen UUID (JSM a) | ParVFlag
+data ParVProp a = ParVText Text | ParVListen UUID (RawNode -> RawEvent -> JSM a) | ParVFlag Bool
   deriving (Functor, Generic)
 
 
@@ -103,34 +108,38 @@ instance Show (ParVProp a) where
   show = \case
     ParVText t     -> "ParVText " <> show t
     ParVListen u _ -> "ParVListen " <> show u <>" _"
-    ParVFlag       -> "ParVFlag"
+    ParVFlag b     -> "ParVFlag " <> show b
 
 
-props :: (m :~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
+props :: (m ~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
 props toJSM i ps (RawNode raw) = do
   raw' <- makeObject raw
   void . traverse (uncurry $ prop toJSM i raw') $ M.toList ps
 
 
-prop :: (m :~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
+prop :: (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
 prop toJSM i raw k = \case
-  PText t -> setProp' raw k t
-
-  PListener f ->
-    setListener i (unwrapNT (toJSM . runParDiffNT i) f) raw k
-
-  PFlag -> setProp' raw k =<< toJSVal True
+  PText t     -> setProp' raw k t
+  PListener f -> setListener i (\x y -> toJSM . runParDiff i $ f x y) raw k
+  PFlag True  -> setProp' raw k =<< toJSVal True
+  PFlag False -> return ()
 
 
 setProp' :: ToJSVal t => Object -> Text -> t -> JSM ()
 setProp' raw' k t = do
-   t' <- toJSVal t
-   unsafeSetProp (JSString k) t' raw'
+  let k' = toJSString k
+  old <- unsafeGetProp k' raw'
+  t' <- toJSVal t
+  b <- strictEqual old t'
+  if b then return () else unsafeSetProp (toJSString k) t' raw'
 
 
-setListener :: TVar a -> JSM a -> Object -> Text -> JSM ()
-setListener i m o k = setProp' o ("on" <> k) . fun $ \_ _ _ ->
-  atomically . writeTVar i =<< m
+setListener :: TVar a -> (RawNode -> RawEvent -> JSM a) -> Object -> Text -> JSM ()
+setListener i m o k = do
+  elm <- RawNode <$> toJSVal o
+  setProp' o ("on" <> k) . fun $ \_ _ -> \case
+    e:_ -> atomically . writeTVar i =<< m elm (RawEvent e)
+    _ -> return ()
 
 
 getRaw :: ParVNode a -> Once JSM RawNode
@@ -153,13 +162,13 @@ appendChild (RawNode raw) pn = do
   return pn
 
 
-makeProp :: (m :~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
+makeProp :: (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
 makeProp toJSM i = \case
   PText t     -> return $ ParVText t
   PListener m -> do
     u <- liftIO randomIO
-    return . ParVListen u $ unwrapNT (toJSM . runParDiffNT i) m
-  PFlag       -> return ParVFlag
+    return . ParVListen u $ \x y -> toJSM . runParDiff i $ m x y
+  PFlag b     -> return $ ParVFlag b
 
 
 setup' :: MonadJSM m => JSM () -> ParDiffT a m ()
@@ -178,19 +187,35 @@ voidJSM :: MonadJSM m => JSM a -> m ()
 voidJSM = void . liftJSM
 
 
+setFlag :: MonadJSM m => Object -> Text -> Bool -> m ()
+setFlag obj' k b = case b of
+  True -> voidJSM $ setProp' obj' k =<< toJSVal True
+  False -> case k of
+    "checked" -> voidJSM $ setProp' obj' k =<< toJSVal False
+    _         -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
+
+
 managePropertyState :: MonadJSM m => TVar a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
 managePropertyState i obj' old new' = void $
   M.toList (align old new') `for` \(k, x) -> case x of
     -- only old had it, delete
-    This _                 -> voidJSM $ jsg2 "deleteProp" (JSString k) obj'
+    This _                 -> case k of
+      "className" -> voidJSM $ obj' ^. js1 "removeAttribute" "class"
+      "htmlFor"   -> voidJSM $ obj' ^. js1 "removeAttribute" "for"
+      "checked"   -> voidJSM $ setProp' obj' k =<< toJSVal False
+      _           -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
     -- new text prop, set
     That  (ParVText t)     -> voidJSM $ setProp' obj' k =<< toJSVal t
     -- changed text prop, set
     These (ParVText t)
           (ParVText t')
-                | t /= t'  -> voidJSM $ setProp' obj' k =<< toJSVal t
+                | t /= t'  -> voidJSM $ setProp' obj' k =<< toJSVal t'
     -- new flag prop, set
-    That   ParVFlag        -> voidJSM $ setProp' obj' k =<< toJSVal True
+    That  (ParVFlag b)  -> setFlag obj' k b
+    -- changed flag prop, set
+    These (ParVFlag t)
+          (ParVFlag t')
+                | t /= t' -> setFlag obj' k t'
     -- new listner, set
     That  (ParVListen _ h) -> voidJSM $ setListener i h obj' k
     -- changed listener, set
@@ -201,7 +226,9 @@ managePropertyState i obj' old new' = void $
 
 patchChildren
   :: MonadUnliftIO m
+#ifdef GHCJS
   => MonadJSM m
+#endif
   => Show a
   => RawNode -> [ParVNode a] -> [ParVNode a] -> ParDiffT a m [ParVNode a]
 patchChildren parent@(RawNode p) old new'' =
@@ -225,7 +252,9 @@ patchChildren parent@(RawNode p) old new'' =
 
 patch'
   :: MonadUnliftIO m
+#ifdef GHCJS
   => MonadJSM m
+#endif
   => Show a
   => RawNode -> Maybe (ParVNode a) -> ParVNode a -> ParDiffT a m (ParVNode a)
 patch' parent old new' = do
@@ -284,7 +313,7 @@ interpret'
   => MonadUnliftIO m
   => Eq a
   => Show a
-  => (m :~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
+  => (m ~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
 interpret' toJSM = \case
 
   TextNode t -> do
