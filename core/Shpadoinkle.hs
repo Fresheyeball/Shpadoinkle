@@ -13,6 +13,7 @@
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
@@ -94,14 +95,14 @@ mapProp :: (m ~> n) -> Prop m o -> Prop n o
 mapProp f = \case
   PListener g -> PListener (\x y -> f (g x y))
   PText t     -> PText t
-  PFlag       -> PFlag
+  PFlag b     -> PFlag b
 
 
 h :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
 h = Node
 text :: Text -> Html m o
 text = TextNode
-flag :: Prop m o
+flag :: Bool -> Prop m o
 flag = PFlag
 listener :: m o -> Prop m o
 listener = PListener . const . const
@@ -110,7 +111,7 @@ listener = PListener . const . const
 deriving instance Functor m => Functor (Html m)
 
 
-data Prop m o = PText Text | PListener (RawNode -> RawEvent -> m o) | PFlag
+data Prop m o = PText Text | PListener (RawNode -> RawEvent -> m o) | PFlag Bool
 
 
 deriving instance Functor m => Functor (Prop m)
@@ -166,8 +167,8 @@ shpadoinkle toJSM toM model view stage = do
         new' <- readTVar model
         old  <- readTVar p
         if new' == old then retry else new' <$ writeTVar p new'
-      m  <- j $ interpret toJSM (view a)
-      n' <- j $ patch c (Just n) m
+      !m  <- j $ interpret toJSM (view a)
+      !n' <- j $ patch c (Just n) m
       go c n' p
 
   i' <- liftIO $ readTVarIO model

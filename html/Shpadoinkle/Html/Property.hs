@@ -41,6 +41,18 @@ className :: Set.Set Text -> (Text, Prop m o)
 className = textProperty "className" . unwords . Set.toList
 
 
+autofocus :: Bool -> (Text, Prop m o)
+autofocus b = ("autofocus", flag b)
+
+
+for' :: Text -> (Text, Prop m o)
+for' = textProperty "htmlFor"
+
+
+checked :: Bool -> (Text, Prop m o)
+checked b = ("checked", flag b)
+
+
 $(msum <$> mapM mkTextProp
   [ "id'", "type'", "rel", "href", "placeholder", "value"
   ])

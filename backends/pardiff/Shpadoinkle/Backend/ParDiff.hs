@@ -86,7 +86,7 @@ instance MonadUnliftIO m => MonadUnliftIO (ParDiffT r m) where
 
 
 runParDiff :: TVar model -> ParDiffT model m ~> m
-runParDiff t = \(ParDiffT r) -> runReaderT r t
+runParDiff t (ParDiffT r) = runReaderT r t
 
 
 data ParVNode :: Type -> Type where
@@ -100,7 +100,7 @@ instance Show (ParVNode a) where
     ParTextNode _ t   -> "ParTextNode _ " <> show t
 
 
-data ParVProp a = ParVText Text | ParVListen UUID (RawNode -> RawEvent -> JSM a) | ParVFlag
+data ParVProp a = ParVText Text | ParVListen UUID (RawNode -> RawEvent -> JSM a) | ParVFlag Bool
   deriving (Functor, Generic)
 
 
@@ -108,7 +108,7 @@ instance Show (ParVProp a) where
   show = \case
     ParVText t     -> "ParVText " <> show t
     ParVListen u _ -> "ParVListen " <> show u <>" _"
-    ParVFlag       -> "ParVFlag"
+    ParVFlag b     -> "ParVFlag " <> show b
 
 
 props :: (m ~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
@@ -121,13 +121,17 @@ prop :: (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM (
 prop toJSM i raw k = \case
   PText t     -> setProp' raw k t
   PListener f -> setListener i (\x y -> toJSM . runParDiff i $ f x y) raw k
-  PFlag       -> setProp' raw k =<< toJSVal True
+  PFlag True  -> setProp' raw k =<< toJSVal True
+  PFlag False -> return ()
 
 
 setProp' :: ToJSVal t => Object -> Text -> t -> JSM ()
 setProp' raw' k t = do
-   t' <- toJSVal t
-   unsafeSetProp (toJSString k) t' raw'
+  let k' = toJSString k
+  old <- unsafeGetProp k' raw'
+  t' <- toJSVal t
+  b <- strictEqual old t'
+  if b then return () else unsafeSetProp (toJSString k) t' raw'
 
 
 setListener :: TVar a -> (RawNode -> RawEvent -> JSM a) -> Object -> Text -> JSM ()
@@ -164,7 +168,7 @@ makeProp toJSM i = \case
   PListener m -> do
     u <- liftIO randomIO
     return . ParVListen u $ \x y -> toJSM . runParDiff i $ m x y
-  PFlag       -> return ParVFlag
+  PFlag b     -> return $ ParVFlag b
 
 
 setup' :: MonadJSM m => JSM () -> ParDiffT a m ()
@@ -187,15 +191,22 @@ managePropertyState :: MonadJSM m => TVar a -> Object -> Map Text (ParVProp a) -
 managePropertyState i obj' old new' = void $
   M.toList (align old new') `for` \(k, x) -> case x of
     -- only old had it, delete
-    This _                 -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
+    This _                 -> case k of
+      "className" -> voidJSM $ obj' ^. js1 "removeAttribute" "class"
+      "htmlFor"   -> voidJSM $ obj' ^. js1 "removeAttribute" "for"
+      "checked"   -> voidJSM $ setProp' obj' k =<< toJSVal False
+      _           -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
     -- new text prop, set
     That  (ParVText t)     -> voidJSM $ setProp' obj' k =<< toJSVal t
     -- changed text prop, set
     These (ParVText t)
           (ParVText t')
-                | t /= t'  -> voidJSM $ setProp' obj' k =<< toJSVal t
+                | t /= t'  -> voidJSM $ setProp' obj' k =<< toJSVal t'
     -- new flag prop, set
-    That   ParVFlag        -> voidJSM $ setProp' obj' k =<< toJSVal True
+    That  (ParVFlag True)  -> voidJSM $ setProp' obj' k =<< toJSVal True
+    That  (ParVFlag False) -> case k of
+      "checked" -> voidJSM $ setProp' obj' k =<< toJSVal False
+      _         -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
     -- new listner, set
     That  (ParVListen _ h) -> voidJSM $ setListener i h obj' k
     -- changed listener, set

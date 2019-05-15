@@ -22,11 +22,11 @@ listen' :: Applicative m => Text -> o -> (Text, Prop m o)
 listen' k f = listen k $ pure f
 
 
-onInput :: MonadJSM m => (Text -> m o) -> (Text, Prop m o)
-onInput f = listenRaw "input" $ \(RawNode n) _ ->
+onInput' :: MonadJSM m => (Text -> m o) -> (Text, Prop m o)
+onInput' f = listenRaw "input" $ \(RawNode n) _ ->
   f =<< liftJSM (valToText =<< unsafeGetProp "value" =<< valToObject n)
-onInput' :: MonadJSM m => (Text -> o) -> (Text, Prop m o)
-onInput' f = onInput (pure . f)
+onInput :: MonadJSM m => (Text -> o) -> (Text, Prop m o)
+onInput f = onInput' (pure . f)
 
 
 type KeyCode = Int
@@ -45,11 +45,11 @@ onKeydown'  f = onKeydown  (pure . f)
 onKeypress' f = onKeypress (pure . f)
 
 
-onSubmit :: MonadJSM m => m o -> (Text, Prop m o)
-onSubmit m = listenRaw "submit" $ \_ (RawEvent e) ->
+onSubmit' :: MonadJSM m => m o -> (Text, Prop m o)
+onSubmit' m = listenRaw "submit" $ \_ (RawEvent e) ->
   liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> m
-onSubmit' :: MonadJSM m => o -> (Text, Prop m o)
-onSubmit' = onSubmit . pure
+onSubmit :: MonadJSM m => o -> (Text, Prop m o)
+onSubmit = onSubmit' . pure
 
 
 $(msum <$> mapM mkEventDSL

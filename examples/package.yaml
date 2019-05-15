@@ -31,6 +31,7 @@ executables:
       - jsaddle
       - natural-transformation
       - text
+      - containers
 
       - mtl
       - lens
