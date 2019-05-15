@@ -20,7 +20,6 @@ import           Shpadoinkle.Html            hiding (main)
 import           Text.Read                   (readMaybe)
 
 
-newtype Field       = Field       { unField       :: Text } deriving (Show, Read, Eq)
 newtype Description = Description { unDescription :: Text } deriving (Show, Read, Eq)
 newtype TaskId      = TaskId      { unTaskId      :: Int  } deriving (Show, Read, Eq, Ord, Num)
 
