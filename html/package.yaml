@@ -28,6 +28,7 @@ library:
       Shpadoinkle.Html
   source-dirs: .
   dependencies:
+    - jsaddle
     - text
     - template-haskell
     - containers
