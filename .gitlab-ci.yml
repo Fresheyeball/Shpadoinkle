@@ -1,4 +1,6 @@
 pages:
+  script:
+  - cp public public
   artifacts:
     paths:
     - public
