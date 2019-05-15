@@ -187,6 +187,14 @@ voidJSM :: MonadJSM m => JSM a -> m ()
 voidJSM = void . liftJSM
 
 
+setFlag :: MonadJSM m => Object -> Text -> Bool -> m ()
+setFlag obj' k b = case b of
+  True -> voidJSM $ setProp' obj' k =<< toJSVal True
+  False -> case k of
+    "checked" -> voidJSM $ setProp' obj' k =<< toJSVal False
+    _         -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
+
+
 managePropertyState :: MonadJSM m => TVar a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
 managePropertyState i obj' old new' = void $
   M.toList (align old new') `for` \(k, x) -> case x of
@@ -203,10 +211,11 @@ managePropertyState i obj' old new' = void $
           (ParVText t')
                 | t /= t'  -> voidJSM $ setProp' obj' k =<< toJSVal t'
     -- new flag prop, set
-    That  (ParVFlag True)  -> voidJSM $ setProp' obj' k =<< toJSVal True
-    That  (ParVFlag False) -> case k of
-      "checked" -> voidJSM $ setProp' obj' k =<< toJSVal False
-      _         -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
+    That  (ParVFlag b)  -> setFlag obj' k b
+    -- changed flag prop, set
+    These (ParVFlag t)
+          (ParVFlag t')
+                | t /= t' -> setFlag obj' k t'
     -- new listner, set
     That  (ParVListen _ h) -> voidJSM $ setListener i h obj' k
     -- changed listener, set
