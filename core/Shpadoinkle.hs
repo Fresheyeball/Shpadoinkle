@@ -1,6 +1,8 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE ExplicitNamespaces     #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
@@ -13,7 +15,6 @@
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
@@ -28,6 +29,7 @@ module Shpadoinkle
   , RawNode (..), RawEvent (..)
   , h, text, flag, listener
   , props, children, name, textContent
+  , MonadJSM, JSM
   ) where
 
 

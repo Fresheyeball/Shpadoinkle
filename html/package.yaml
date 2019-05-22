@@ -25,12 +25,15 @@ dependencies:
 
 library:
   exposed-modules:
-      Shpadoinkle.Html
+    - Shpadoinkle.Html
+    - Shpadoinkle.Html.Utils
+    - Shpadoinkle.Html.LocalStorage
   source-dirs: .
   dependencies:
     - jsaddle
     - text
     - template-haskell
     - containers
+    - stm
 
     - Shpadoinkle

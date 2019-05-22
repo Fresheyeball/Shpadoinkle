@@ -1,17 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+
 module Main where
 
 
 import           Control.Concurrent.STM.TVar
-import           Control.Monad.IO.Class
-import           Control.Natural
 import           Data.Text                   (pack)
-import           Language.Javascript.JSaddle
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Html            (br_', button, div_, h2_, onClick,
                                               text)
+import           Shpadoinkle.Html.Utils
 
 
 view :: Applicative m => Int -> Html m Int
@@ -28,6 +27,4 @@ view count = div_
 main :: IO ()
 main = do
   model <- newTVarIO 0
-  shpadoinkle (NT id) (runParDiffNT model) model view . liftIO $
-    RawNode <$> eval ("document.body" :: String)
-
+  shpadoinkle id (runParDiff model) model view getBody

@@ -26,10 +26,25 @@ dependencies:
 executables:
   todomvc:
     main: TODOMVC.hs
+    other-modules:
+      - TODOMVC.Types
+      - TODOMVC.Update
     source-dirs: .
     dependencies:
-      - jsaddle
-      - natural-transformation
+      - text
+      - containers
+
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-backend-pardiff
+
+  todomvc-lens:
+    main: TODOMVC_Lens.hs
+    other-modules:
+      - TODOMVC.Types
+      - TODOMVC.Update
+    source-dirs: .
+    dependencies:
       - text
       - containers
 
@@ -43,14 +58,10 @@ executables:
 
   counter:
     main: Counter.hs
+    other-modules: []
     source-dirs: .
     dependencies:
-      - jsaddle
-      - natural-transformation
       - text
-
-      - mtl
-      - lens
       - stm
 
       - Shpadoinkle
