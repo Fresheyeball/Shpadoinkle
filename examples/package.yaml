@@ -35,6 +35,13 @@ ghcjs-options:
 dependencies:
     - base
 
+when:
+  - condition: impl(ghcjs)
+    then:
+      dependencies: []
+    else:
+      dependencies:
+        - jsaddle-warp
 
 executables:
   todomvc:
@@ -43,34 +50,9 @@ executables:
       - TODOMVC.Types
       - TODOMVC.Update
     source-dirs: .
-    when:
-      - condition: impl(ghcjs)
-        then:
-          dependencies: []
-        else:
-          dependencies:
-            - jsaddle-warp
     dependencies:
       - text
       - containers
-
-      - Shpadoinkle
-      - Shpadoinkle-html
-      - Shpadoinkle-backend-pardiff
-
-  todomvc-lens:
-    main: TODOMVC_Lens.hs
-    other-modules:
-      - TODOMVC.Types
-      - TODOMVC.Update
-    source-dirs: .
-    dependencies:
-      - text
-      - containers
-
-      - mtl
-      - lens
-      - stm
 
       - Shpadoinkle
       - Shpadoinkle-html

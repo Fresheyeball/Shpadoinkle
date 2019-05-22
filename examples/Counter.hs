@@ -1,15 +1,20 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
 module Main where
 
 
-import           Control.Concurrent.STM.TVar
-import           Data.Text                   (pack)
+import           Control.Monad.IO.Class           (liftIO)
+import           Data.Text                        (pack)
+#ifndef ghcjs_HOST_OS
+import           Language.Javascript.JSaddle.Warp
+#endif
+
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Html            (br_', button, div_, h2_, onClick,
-                                              text)
+import           Shpadoinkle.Html                 (br_', button, div_, h2_,
+                                                   onClick, text)
 import           Shpadoinkle.Html.Utils
 
 
@@ -24,7 +29,16 @@ view count = div_
   ]
 
 
-main :: IO ()
-main = do
-  model <- newTVarIO 0
+app :: JSM ()
+app = do
+  model <- liftIO $ newTVarIO 0
   shpadoinkle id (runParDiff model) model view getBody
+
+
+main :: IO ()
+#ifdef ghcjs_HOST_OS
+main = app
+#else
+main = run 8080 app
+#endif
+

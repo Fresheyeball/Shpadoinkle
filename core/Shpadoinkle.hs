@@ -30,6 +30,7 @@ module Shpadoinkle
   , h, text, flag, listener
   , props, children, name, textContent
   , MonadJSM, JSM
+  , newTVarIO
   ) where
 
 
