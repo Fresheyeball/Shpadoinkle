@@ -23,6 +23,7 @@ ghcjs-options:
     - -Wall
     - -Werror
     - -Wcompat
+    - -fno-warn-missing-home-modules
     - -fwarn-redundant-constraints
     - -fwarn-incomplete-uni-patterns
     - -fwarn-tabs
@@ -47,7 +48,8 @@ executables:
         then:
           dependencies: []
         else:
-          dependencies: []
+          dependencies:
+            - jsaddle-warp
     dependencies:
       - text
       - containers

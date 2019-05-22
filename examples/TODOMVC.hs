@@ -13,7 +13,7 @@ import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Html                 hiding (main)
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Utils
-#ifndef GHCJS_HOST_OS
+#ifndef ghcjs_HOST_OS
 import           Language.Javascript.JSaddle.Warp
 #endif
 
@@ -102,7 +102,7 @@ app = do
 
 
 main :: IO ()
-#ifdef GHCJS_HOST_OS
+#ifdef ghcjs_HOST_OS
 main = app
 #else
 main = run 8080 app

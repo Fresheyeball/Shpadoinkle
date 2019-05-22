@@ -42,8 +42,8 @@
           ghcWithPackages = p: super.ghcWithPackages (
             f: p f ++ (if false && pkgs.lib.inNixShell then [ f.cabal-install f.ghcid ] else [])
           );
-          jsaddle       = self.callCabal2nix "jsaddle" "${jsaddle-src}/jsaddle" {};
-          jsaddle-warp  = self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {};
+          jsaddle       = self.callCabal2nix "jsaddle"      "${jsaddle-src}/jsaddle" {};
+          jsaddle-warp  = dontCheck (self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {});
           comonad       = dontCheck super.comonad;
           extra         = dontCheck super.extra;
           unliftio      = dontCheck super.unliftio;
