@@ -35,5 +35,6 @@ library:
     - template-haskell
     - containers
     - stm
+    - unliftio
 
     - Shpadoinkle

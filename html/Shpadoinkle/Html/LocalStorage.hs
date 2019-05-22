@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
@@ -6,8 +7,7 @@
 module Shpadoinkle.Html.LocalStorage where
 
 
-import           Control.Concurrent
-import           Control.Concurrent.STM
+import           Control.Concurrent.STM      (retry)
 import           Control.Monad
 import           Data.Maybe
 import           Data.Monoid                 ((<>))
@@ -15,34 +15,44 @@ import           Data.String
 import           Data.Text
 import           Language.Javascript.JSaddle
 import           Text.Read
+import           UnliftIO
+import           UnliftIO.Concurrent         (forkIO)
 
 
 newtype LocalStorageKey = LocalStorageKey { unLocalStorageKey :: Text }
   deriving (Semigroup, Monoid, IsString, Eq, Ord, Show, Read)
 
 
-setStorage :: Show a => LocalStorageKey -> a -> IO ()
+setStorage :: MonadJSM m => Show a => LocalStorageKey -> a -> m ()
 setStorage (LocalStorageKey k) m =
-  void . eval $ "localStorage.setItem('" <> k <> "', " <> pack (show (show m)) <> ")"
+  liftJSM . void . eval $ "localStorage.setItem('" <> k <> "', " <> pack (show (show m)) <> ")"
 
 
-getStorage :: Read a => LocalStorageKey -> IO (Maybe a)
+getStorage :: MonadJSM m => Read a => LocalStorageKey -> m (Maybe a)
 getStorage (LocalStorageKey k) =
-  fmap (readMaybe =<<) . fromJSVal =<< eval ("localStorage.getItem('" <> k <> "')")
+  liftJSM $ fmap (readMaybe =<<) . fromJSVal =<< eval ("localStorage.getItem('" <> k <> "')")
 
 
-saveOnChange :: Show a => Eq a => LocalStorageKey -> TVar a -> TVar a -> IO ()
+saveOnChange :: MonadJSM m => Show a => Eq a => LocalStorageKey -> TVar a -> TVar a -> m ()
 saveOnChange k old new' = do
-  n <- atomically $ do
+  n <- liftIO . atomically $ do
     o <- readTVar old; n <- readTVar new'
     if o == n then retry else n <$ writeTVar old n
   setStorage k n
   saveOnChange k old new'
 
 
-manageLocalStorage :: Show a => Read a => Eq a => LocalStorageKey -> a -> IO (TVar a)
+manageLocalStorage
+  :: MonadUnliftIO m
+#ifndef ghcjs_HOST_OS
+  => MonadJSM m
+#endif
+  => Show a
+  => Read a
+  => Eq a
+  => LocalStorageKey -> a -> m (TVar a)
 manageLocalStorage k initial = do
-  model <- newTVarIO . fromMaybe initial =<< getStorage k
-  old   <- newTVarIO =<< readTVarIO model
+  model <- liftIO . newTVarIO . fromMaybe initial =<< getStorage k
+  old   <- liftIO $ newTVarIO =<< readTVarIO model
   void . forkIO $ saveOnChange k old model
   return model

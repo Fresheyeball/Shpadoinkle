@@ -1,11 +1,17 @@
+{-# LANGUAGE OverloadedStrings #-}
+
+
 module TODOMVC.Update where
+
+
+import           TODOMVC.Types
 
 
 appendItem :: Model -> Model
 appendItem m = m
   { tasks = Task (current m) Incomplete ((+ 1)
           $ Prelude.maximum $ 0 : (taskId <$> tasks m)) : tasks m
-  , current = Description "" }
+  , current = "" }
 
 
 updateDescription :: Model -> Description -> Model

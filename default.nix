@@ -29,7 +29,7 @@
 
   targets = {
     Shpadoinkle                  = gitignore ./core;
-    Shpadoinkle-backend-snabbdom = gitignore ./backends/snabbdom;
+    # Shpadoinkle-backend-snabbdom = gitignore ./backends/snabbdom;
     Shpadoinkle-backend-pardiff  = gitignore ./backends/pardiff;
     Shpadoinkle-html             = gitignore ./html;
     Shpadoinkle-examples         = gitignore ./examples;
@@ -43,6 +43,7 @@
             f: p f ++ (if false && pkgs.lib.inNixShell then [ f.cabal-install f.ghcid ] else [])
           );
           jsaddle       = self.callCabal2nix "jsaddle" "${jsaddle-src}/jsaddle" {};
+          jsaddle-warp  = self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {};
           comonad       = dontCheck super.comonad;
           extra         = dontCheck super.extra;
           unliftio      = dontCheck super.unliftio;
@@ -52,8 +53,7 @@
   );
 
 
-  packages = map (t: haskellPackages.${t}) (builtins.attrNames targets)
-          ++ map (t: haskellPackages.${t}) (builtins.attrNames targets);
+  packages = map (t: haskellPackages.${t}) (builtins.attrNames targets);
   buildSet = pkgs.lib.foldl (ps: p: ps // { ${p.pname} = p; }) {} packages;
   tools = [ pkgs.pkgconfig ];
 

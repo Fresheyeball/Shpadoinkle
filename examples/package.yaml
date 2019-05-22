@@ -19,6 +19,18 @@ ghc-options:
     - -fwarn-identities
 
 
+ghcjs-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+    - -dedupe
+
+
 dependencies:
     - base
 
@@ -30,6 +42,12 @@ executables:
       - TODOMVC.Types
       - TODOMVC.Update
     source-dirs: .
+    when:
+      - condition: impl(ghcjs)
+        then:
+          dependencies: []
+        else:
+          dependencies: []
     dependencies:
       - text
       - containers

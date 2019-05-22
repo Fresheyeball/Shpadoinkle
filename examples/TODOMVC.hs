@@ -1,17 +1,21 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
 module Main where
 
 
-import qualified Data.Set                      as Set
-import           Data.Text                     hiding (count, filter, length)
-import           Prelude                       hiding (div, unwords)
+import qualified Data.Set                         as Set
+import           Data.Text                        hiding (count, filter, length)
+import           Prelude                          hiding (div, unwords)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Html              hiding (main)
+import           Shpadoinkle.Html                 hiding (main)
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Utils
+#ifndef GHCJS_HOST_OS
+import           Language.Javascript.JSaddle.Warp
+#endif
 
 import           TODOMVC.Types
 import           TODOMVC.Update
@@ -89,10 +93,18 @@ view model = div_
   ]
 
 
-main :: IO ()
-main = do
+app :: JSM ()
+app = do
   model <- manageLocalStorage "todo" emptyModel
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-common@1.0.5/base.css"
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-app-css@2.2.0/index.css"
   shpadoinkle id (runParDiff model) model view getBody
+
+
+main :: IO ()
+#ifdef GHCJS_HOST_OS
+main = app
+#else
+main = run 8080 app
+#endif
 

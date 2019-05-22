@@ -19,7 +19,7 @@
 {-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-#ifdef GHCJS
+#ifndef ghcjs_HOST_OS
 {-# LANGUAGE StandaloneDeriving         #-}
 #endif
 
@@ -68,7 +68,7 @@ newtype ParDiffT model m a = ParDiffT { unParDiff :: ReaderT (TVar model) m a }
   )
 
 
-#ifdef GHCJS
+#ifndef ghcjs_HOST_OS
 deriving instance MonadJSM m => MonadJSM (ParDiffT model m)
 #endif
 
@@ -188,9 +188,9 @@ voidJSM = void . liftJSM
 
 
 setFlag :: MonadJSM m => Object -> Text -> Bool -> m ()
-setFlag obj' k b = case b of
-  True -> voidJSM $ setProp' obj' k =<< toJSVal True
-  False -> case k of
+setFlag obj' k b = if b then
+    voidJSM $ setProp' obj' k =<< toJSVal True
+  else case k of
     "checked" -> voidJSM $ setProp' obj' k =<< toJSVal False
     _         -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
 
@@ -226,7 +226,7 @@ managePropertyState i obj' old new' = void $
 
 patchChildren
   :: MonadUnliftIO m
-#ifdef GHCJS
+#ifndef ghcjs_HOST_OS
   => MonadJSM m
 #endif
   => Show a
@@ -252,7 +252,7 @@ patchChildren parent@(RawNode p) old new'' =
 
 patch'
   :: MonadUnliftIO m
-#ifdef GHCJS
+#ifndef ghcjs_HOST_OS
   => MonadJSM m
 #endif
   => Show a

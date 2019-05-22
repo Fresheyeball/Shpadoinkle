@@ -1,10 +1,15 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 
 module TODOMVC.Types where
 
 
-newtype Description = Description { unDescription :: Text } deriving (Show, Read, Eq)
+import           Data.String
+import           Data.Text
+
+
+newtype Description = Description { unDescription :: Text } deriving (Show, Read, Eq, IsString)
 newtype TaskId      = TaskId      { unTaskId      :: Int  } deriving (Show, Read, Eq, Ord, Num)
 
 
