@@ -39,6 +39,7 @@ import           Data.Foldable
 import           Data.Kind
 import           Data.Map                    (Map)
 import qualified Data.Map                    as M
+import           Data.Monoid                 ((<>))
 import           Data.Once
 import           Data.Text
 import           Data.These

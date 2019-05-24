@@ -12,6 +12,7 @@ import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Html                 hiding (main)
 import           Shpadoinkle.Html.LocalStorage
+import           Shpadoinkle.Html.Memo
 import           Shpadoinkle.Html.Utils
 #ifndef ghcjs_HOST_OS
 import           Language.Javascript.JSaddle.Warp
@@ -22,7 +23,7 @@ import           TODOMVC.Update
 
 
 filterHtml :: Applicative m => Visibility -> Visibility -> Html m Visibility
-filterHtml cur item = li_
+filterHtml = memo2 $ \cur item -> li_
   [ a (href "#" : onClick item : [className "selected" | cur == item]) [ text . pack $ show item ]
   ]
 
@@ -32,7 +33,7 @@ htmlIfTasks m h' = if Prelude.null (tasks m) then [] else h'
 
 
 taskView :: MonadJSM m => Model -> Task -> Html m Model
-taskView m (Task (Description d) c tid) =
+taskView m = memo $ \(Task (Description d) c tid) ->
   li [ id' . pack . show $ unTaskId tid
      , className . Set.fromList $ [ "completed" | c == Complete ] ++ [ "editing" | Just tid == editing m ]
      ]
@@ -56,40 +57,58 @@ taskView m (Task (Description d) c tid) =
   ]
 
 
+listFooter :: Applicative m => Model -> Html m Model
+listFooter model = footer "footer" $
+  [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ tasks model in
+    [ strong_ [ text . pack $ show co ]
+    , text $ " item" <> (if co == 1 then "" else "s") <> " left"
+    ]
+  , ul "filters" $ fmap (\v -> model { visibility = v })
+                <$> (filterHtml (visibility model) <$> [minBound..maxBound])
+  ] ++ (if count Complete (tasks model) == 0 then [] else
+  [ button [ className "clear-completed", onClick $ clearComplete model ] [ "Clear completed" ]
+  ])
+
+
+
+info :: Html m a
+info = footer "info"
+  [ p_ [ "Double-click to edit a todo" ]
+  , p_ [ "Credits ", a [ href "https://twitter.com/fresheyeball" ] [ "Isaac Shapira" ] ]
+  , p_ [ "Part of ", a [ href "http://todomvc.com" ] [ "TodoMVC" ] ]
+  ]
+
+
+newTaskForm :: MonadJSM m => Model -> Html m Model
+newTaskForm model = form [ className "todo-form", onSubmit (appendItem model) ]
+  [ input' [ className "new-todo"
+           , value . unDescription $ current model
+           , onInput $ updateDescription model . Description
+           , placeholder "What needs to be done?" ]
+  ]
+
+
+todoList :: MonadJSM m => Model -> Html m Model
+todoList model = ul "todo-list" $ taskView model <$> toVisible (visibility model) (tasks model)
+
+
+toggleAllBtn :: Applicative m => Model -> [Html m Model]
+toggleAllBtn model =
+  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange (toggleAll model) ]
+  , label [ for' "toggle-all" ] [ "Mark all as complete" ]
+  ]
+
+
 view :: MonadJSM m => Model -> Html m Model
 view model = div_
   [ section "todoapp" $
     header "header"
-      [ h1_ [ "todos" ]
-      , form [ className "todo-form", onSubmit (appendItem model) ]
-        [ input' [ className "new-todo"
-                 , value . unDescription $ current model
-                 , onInput $ updateDescription model . Description
-                 , placeholder "What needs to be done?" ]
-        ]
-      ]
+      [ h1_ [ "todos" ], newTaskForm model ]
     : htmlIfTasks model
-    [ section "main"
-      [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange (toggleAll model) ]
-      , label [ for' "toggle-all" ] [ "Mark all as complete" ]
-      , ul "todo-list" $ taskView model <$> toVisible (visibility model) (tasks model)
-      ]
-    , footer "footer" $
-      [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ tasks model in
-        [ strong_ [ text . pack $ show co ]
-        , text $ " item" <> (if co == 1 then "" else "s") <> " left"
-        ]
-      , ul "filters" $ fmap (\v -> model { visibility = v })
-                    <$> (filterHtml (visibility model) <$> [minBound..maxBound])
-      ] ++ (if count Complete (tasks model) == 0 then [] else
-      [ button [ className "clear-completed", onClick $ clearComplete model ] [ "Clear completed" ]
-      ])
+    [ section "main" $ toggleAllBtn model ++ [ todoList model ]
+    , listFooter model
     ]
-  , footer "info"
-    [ p_ [ "Double-click to edit a todo" ]
-    , p_ [ "Credits ", a [ href "https://twitter.com/fresheyeball" ] [ "Isaac Shapira" ] ]
-    , p_ [ "Part of ", a [ href "http://todomvc.com" ] [ "TodoMVC" ] ]
-    ]
+  , info
   ]
 
 
