@@ -118,7 +118,7 @@ app = do
   model <- manageLocalStorage "todo" emptyModel
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-common@1.0.5/base.css"
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-app-css@2.2.0/index.css"
-  shpadoinkle id (runParDiff model) model view getBody
+  shpadoinkle id runParDiff emptyModel model view getBody
 
 
 main :: IO ()

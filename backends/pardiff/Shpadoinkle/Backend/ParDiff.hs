@@ -57,24 +57,24 @@ import           Shpadoinkle                 hiding (h, name, props, text)
 default (Text)
 
 
-newtype ParDiffT model m a = ParDiffT { unParDiff :: ReaderT (TVar model) m a }
+newtype ParDiffT s model m a = ParDiffT { unParDiff :: ReaderT (s model) m a }
   deriving
   ( Functor
   , Applicative
   , Alternative
   , Monad
   , MonadIO
-  , MonadReader (TVar model)
+  , MonadReader (s model)
   , MonadTrans
   )
 
 
 #ifndef ghcjs_HOST_OS
-deriving instance MonadJSM m => MonadJSM (ParDiffT model m)
+deriving instance MonadJSM m => MonadJSM (ParDiffT s model m)
 #endif
 
 
-instance MonadUnliftIO m => MonadUnliftIO (ParDiffT r m) where
+instance MonadUnliftIO m => MonadUnliftIO (ParDiffT s r m) where
   {-# INLINE askUnliftIO #-}
   askUnliftIO = ParDiffT . ReaderT $ \r ->
                 withUnliftIO $ \u ->
@@ -86,7 +86,7 @@ instance MonadUnliftIO m => MonadUnliftIO (ParDiffT r m) where
     inner (run' . flip runReaderT r . unParDiff)
 
 
-runParDiff :: TVar model -> ParDiffT model m ~> m
+runParDiff :: t model -> ParDiffT t model m ~> m
 runParDiff t (ParDiffT r) = runReaderT r t
 
 
@@ -112,13 +112,13 @@ instance Show (ParVProp a) where
     ParVFlag b     -> "ParVFlag " <> show b
 
 
-props :: (m ~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
+props :: Territory s => (m ~> JSM) -> s a -> Map Text (Prop (ParDiffT s a m) a) -> RawNode -> JSM ()
 props toJSM i ps (RawNode raw) = do
   raw' <- makeObject raw
   void . traverse (uncurry $ prop toJSM i raw') $ M.toList ps
 
 
-prop :: (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
+prop :: Territory s => (m ~> JSM) -> s a -> Object -> Text -> Prop (ParDiffT s a m) a -> JSM ()
 prop toJSM i raw k = \case
   PText t     -> setProp' raw k t
   PListener f -> setListener i (\x y -> toJSM . runParDiff i $ f x y) raw k
@@ -135,11 +135,11 @@ setProp' raw' k t = do
   if b then return () else unsafeSetProp (toJSString k) t' raw'
 
 
-setListener :: TVar a -> (RawNode -> RawEvent -> JSM a) -> Object -> Text -> JSM ()
+setListener :: Territory s => s a -> (RawNode -> RawEvent -> JSM a) -> Object -> Text -> JSM ()
 setListener i m o k = do
   elm <- RawNode <$> toJSVal o
   setProp' o ("on" <> k) . fun $ \_ _ -> \case
-    e:_ -> atomically . writeTVar i =<< m elm (RawEvent e)
+    e:_ -> writeUpdate i =<< m elm (RawEvent e)
     _ -> return ()
 
 
@@ -163,7 +163,7 @@ appendChild (RawNode raw) pn = do
   return pn
 
 
-makeProp :: (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
+makeProp :: (m ~> JSM) -> t a -> Prop (ParDiffT t a m) a -> JSM (ParVProp a)
 makeProp toJSM i = \case
   PText t     -> return $ ParVText t
   PListener m -> do
@@ -172,7 +172,7 @@ makeProp toJSM i = \case
   PFlag b     -> return $ ParVFlag b
 
 
-setup' :: MonadJSM m => JSM () -> ParDiffT a m ()
+setup' :: MonadJSM m => JSM () -> ParDiffT s a m ()
 setup' cb = liftJSM $ do
   void $ eval @Text [text|
       window.deleteProp = (k, obj) => {
@@ -196,7 +196,7 @@ setFlag obj' k b = if b then
     _         -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
 
 
-managePropertyState :: MonadJSM m => TVar a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
+managePropertyState :: Territory s => MonadJSM m => s a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
 managePropertyState i obj' old new' = void $
   M.toList (align old new') `for` \(k, x) -> case x of
     -- only old had it, delete
@@ -231,7 +231,8 @@ patchChildren
   => MonadJSM m
 #endif
   => Show a
-  => RawNode -> [ParVNode a] -> [ParVNode a] -> ParDiffT a m [ParVNode a]
+  => Territory s
+  => RawNode -> [ParVNode a] -> [ParVNode a] -> ParDiffT s a m [ParVNode a]
 patchChildren parent@(RawNode p) old new'' =
   traverseMaybe (\case
 
@@ -257,7 +258,8 @@ patch'
   => MonadJSM m
 #endif
   => Show a
-  => RawNode -> Maybe (ParVNode a) -> ParVNode a -> ParDiffT a m (ParVNode a)
+  => Territory s
+  => RawNode -> Maybe (ParVNode a) -> ParVNode a -> ParDiffT s a m (ParVNode a)
 patch' parent old new' = do
   i <- ask
   case (old, new') of
@@ -314,7 +316,8 @@ interpret'
   => MonadUnliftIO m
   => Eq a
   => Show a
-  => (m ~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
+  => Territory s
+  => (m ~> JSM) -> Html (ParDiffT s a m) a -> ParDiffT s a m (ParVNode a)
 interpret' toJSM = \case
 
   TextNode t -> do
@@ -343,12 +346,17 @@ interpret' toJSM = \case
     return $ ParNode raw name p cs'
 
 
-instance (MonadUnliftIO m, MonadJSM m, Eq a, Show a) => Shpadoinkle (ParDiffT a) m a where
-  type VNode (ParDiffT a) m = ParVNode a
+instance
+  ( MonadUnliftIO m
+  , MonadJSM m
+  , Eq a
+  , Show a
+  , Territory t ) => Shpadoinkle (ParDiffT t a) m a where
+  type VNode (ParDiffT t a) m = ParVNode a
   interpret = interpret'
   setup = setup'
   patch = patch'
 
 
-stage :: FromJSVal b => MonadJSM m => ParDiffT a m b
+stage :: FromJSVal b => MonadJSM m => ParDiffT s a m b
 stage = liftJSM $ fromJSValUnchecked =<< jsg "container"
