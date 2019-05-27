@@ -32,7 +32,7 @@ view count = div_
 app :: JSM ()
 app = do
   model <- liftIO $ newTVarIO 0
-  shpadoinkle id (runParDiff model) model view getBody
+  shpadoinkle id runParDiff 0 model view getBody
 
 
 main :: IO ()
