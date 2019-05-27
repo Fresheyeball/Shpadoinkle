@@ -172,9 +172,7 @@ instance Territory TVar where
 shpadoinkle
   :: forall b m a t
   -- ^ b for backend, m for monad, a for model, t for territory
-   . Shpadoinkle b m a
-  => Territory t
-  => Eq a
+   . Shpadoinkle b m a => Territory t => Eq a
   => (m ~> JSM)
   -- ^ how to be get to JSM?
   -> (t a -> b m ~> m)
