@@ -197,8 +197,6 @@ shpadoinkle toJSM toM initial model view stage = do
 
   j . setup $ do
     c <- j stage
-    f <- eval ("console.log" :: Text)
-    _ <- call f f $ unRawNode c
     n <- j $ interpret toJSM (view initial)
     _ <- shouldUpdate (go c) n model
     _ <- j $ patch c Nothing n :: JSM (VNode b m)

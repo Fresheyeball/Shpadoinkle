@@ -1,10 +1,13 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module Main where
 
 
+import           Control.Lens                     (Lens', set, view)
 import qualified Data.Set                         as Set
 import           Data.Text                        hiding (count, filter, length)
 import           Prelude                          hiding (div, unwords)
@@ -18,8 +21,12 @@ import           Shpadoinkle.Html.Utils
 import           Language.Javascript.JSaddle.Warp
 #endif
 
-import           TODOMVC.Types
-import           TODOMVC.Update
+import           TODOMVCAtomic.Types
+import           TODOMVCAtomic.Update
+
+
+focus :: forall a b s. (a -> b) -> Lens' s a -> Lens' s b -> s -> s
+focus f x y z = set y (f $ view x z) z
 
 
 filterHtml :: Applicative m => Visibility -> Visibility -> Html m Visibility
@@ -29,14 +36,14 @@ filterHtml = memo2 $ \cur item -> li_
 
 
 htmlIfTasks :: Model -> [Html m a] -> [Html m a]
-htmlIfTasks m h' = if Prelude.null (tasks m) then [] else h'
+htmlIfTasks m h' = if Prelude.null (_tasks m) then [] else h'
 
 
 taskView :: MonadJSM m => Model -> Task -> Html m Model
 taskView m = memo $ \(Task (Description d) c tid) ->
-  li [ id' . pack . show $ unTaskId tid
+  li [ id' . pack . show $ _unTaskId tid
      , className . Set.fromList $ [ "completed" | c == Complete ]
-                               ++ [ "editing"   | Just tid == editing m ]
+                               ++ [ "editing"   | Just tid == _editing m ]
      ]
   [ div "view"
     [ input' [ type' "checkbox"
@@ -60,13 +67,13 @@ taskView m = memo $ \(Task (Description d) c tid) ->
 
 listFooter :: Applicative m => Model -> Html m Model
 listFooter model = footer "footer" $
-  [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ tasks model in
+  [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ _tasks model in
     [ strong_ [ text . pack $ show co ]
     , text $ " item" <> (if co == 1 then "" else "s") <> " left"
     ]
-  , ul "filters" $ fmap (\v -> model { visibility = v })
-                <$> (filterHtml (visibility model) <$> [minBound..maxBound])
-  ] ++ (if count Complete (tasks model) == 0 then [] else
+  , ul "filters" $ fmap (\v -> model { _visibility = v })
+                <$> (filterHtml (_visibility model) <$> [minBound..maxBound])
+  ] ++ (if count Complete (_tasks model) == 0 then [] else
   [ button [ className "clear-completed", onClick $ clearComplete model ] [ "Clear completed" ]
   ])
 
@@ -83,14 +90,14 @@ info = footer "info"
 newTaskForm :: MonadJSM m => Model -> Html m Model
 newTaskForm model = form [ className "todo-form", onSubmit (appendItem model) ]
   [ input' [ className "new-todo"
-           , value . unDescription $ current model
-           , onInput $ updateDescription model . Description
+           , value . _unDescription $ _current model
+           , onInput $ flip (set current) model . Description
            , placeholder "What needs to be done?" ]
   ]
 
 
 todoList :: MonadJSM m => Model -> Html m Model
-todoList model = ul "todo-list" $ taskView model <$> toVisible (visibility model) (tasks model)
+todoList model = ul "todo-list" $ taskView model <$> toVisible (_visibility model) (_tasks model)
 
 
 toggleAllBtn :: Applicative m => Model -> [Html m Model]
@@ -100,8 +107,8 @@ toggleAllBtn model =
   ]
 
 
-view :: MonadJSM m => Model -> Html m Model
-view model = div_
+render :: MonadJSM m => Model -> Html m Model
+render model = div_
   [ section "todoapp" $
     header "header"
       [ h1_ [ "todos" ], newTaskForm model ]
@@ -119,7 +126,7 @@ app = do
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-common@1.0.5/base.css"
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-app-css@2.2.0/index.css"
 
-  shpadoinkle id runSnabbdom emptyModel model view stage
+  shpadoinkle id runSnabbdom emptyModel model render stage
 
 
 main :: IO ()

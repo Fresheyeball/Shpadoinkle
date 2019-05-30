@@ -83,9 +83,7 @@ props toJSM i xs = do
   k <- toJSVal c
   unsafeSetProp "props" p o
   unsafeSetProp "class" k o
-  unsafeSetProp "on" l o
-  cl <- eval "console.log"
-  _ <- call cl cl [o]
+  unsafeSetProp "on"    l o
   return o
 
 

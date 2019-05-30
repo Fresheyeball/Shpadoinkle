@@ -47,12 +47,13 @@ executables:
   todomvcatomic:
     main: TODOMVCAtomic.hs
     other-modules:
-      - TODOMVC.Types
+      - TODOMVCAtomic.Types
       - TODOMVCAtomic.Update
     source-dirs: .
     dependencies:
       - text
       - containers
+      - lens
 
       - Shpadoinkle
       - Shpadoinkle-html

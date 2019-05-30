@@ -25,9 +25,7 @@ window.startApp = cb => setTimeout(() => {
     snabbdom_attributes.default,
     snabbdom_eventlisteners.default
   ]);
-  window.patchh = (a,b) => {
-    return patch(a, b);
-  }
+  window.patchh = (a,b) => patch(a,b);
   window.vnode = h.default;
   window.container = document.createElement('div');
   document.body.appendChild(container);
