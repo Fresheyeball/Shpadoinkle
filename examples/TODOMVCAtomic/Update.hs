@@ -4,16 +4,7 @@
 module TODOMVCAtomic.Update where
 
 
--- import           Control.Lens
-
 import           TODOMVCAtomic.Types
-
-
-appendItem :: Description -> [Task] -> (Description, [Task])
-appendItem d ts = if d /= "" then
-  ("", Task d Incomplete ((+ 1)
-          $ Prelude.maximum $ 0 : (_taskId <$> ts)) : ts)
-  else (d, ts)
 
 
 appendItem' :: Model -> Model
@@ -23,15 +14,15 @@ appendItem' m = if _current m /= "" then m
   , _current = "" }
   else m
 
-toggleCompleted :: Model -> TaskId -> Model
-toggleCompleted m tid = m { _tasks =
+toggleCompleted :: TaskId -> Model -> Model
+toggleCompleted tid m = m { _tasks =
   (\t -> if _taskId t == tid then t { _completed = negC (_completed t) } else t) <$> _tasks m }
   where negC Complete   = Incomplete
         negC Incomplete = Complete
 
 
-updateTaskDescription :: Model -> TaskId -> Description -> Model
-updateTaskDescription m tid desc = m { _tasks = f <$> _tasks m}
+updateTaskDescription :: TaskId -> Description -> Model -> Model
+updateTaskDescription tid desc m = m { _tasks = f <$> _tasks m}
   where f t = if _taskId t == tid then t { _description = desc } else t
 
 

@@ -7,9 +7,8 @@
 module Main where
 
 
-import           Control.Lens                     (Lens', set, view, (%~), (&),
-                                                   (.~), (?~), (^.), _Unwrapped,
-                                                   _Wrapped)
+import           Control.Lens                     (set, to, (%~), (.~), (?~),
+                                                   (^.), _Wrapped)
 import qualified Data.Set                         as Set
 import           Data.Text                        hiding (count, filter, length)
 import           Prelude                          hiding (div, unwords)
@@ -27,55 +26,51 @@ import           TODOMVCAtomic.Types
 import           TODOMVCAtomic.Update
 
 
-focus2 :: Functor m => (a -> b -> Html m (a, b)) -> Lens' s a -> Lens' s b -> s -> Html m s
-focus2 f x y z = (\(j,g) -> set x j $ set y g z) <$> f (view x z) (view y z)
-
-
-filterHtml :: Applicative m => Visibility -> Visibility -> Html m Visibility
-filterHtml = memo2 $ \cur item -> li_
+filterHtml :: Applicative m => Eq v => Show v => v -> v -> Html m v
+filterHtml = memo $ \cur item -> li_
   [ a (href "#" : onClick item : [className "selected" | cur == item]) [ text . pack $ show item ]
   ]
 
 
-htmlIfTasks :: Model -> [Html m a] -> [Html m a]
-htmlIfTasks m h' = if Prelude.null (_tasks m) then [] else h'
+htmlIfTasks :: [b] -> [Html m a] -> [Html m a]
+htmlIfTasks m h' = if Prelude.null m then [] else h'
 
 
-taskView :: MonadJSM m => Model -> Task -> Html m Model
-taskView m = memo $ \(Task (Description d) c tid) ->
+taskView :: MonadJSM m => Maybe TaskId -> Task -> Html m (Model -> Model)
+taskView = memo $ \ed (Task (Description d) c tid) ->
   li [ id' . pack . show $ tid ^. _Wrapped
      , className . Set.fromList $ [ "completed" | c == Complete ]
-                               ++ [ "editing"   | Just tid == m ^. editing ]
+                               ++ [ "editing"   | Just tid == ed ]
      ]
   [ div "view"
     [ input' [ type' "checkbox"
              , className "toggle"
-             , onChange $ toggleCompleted m tid
+             , onChange $ toggleCompleted tid
              , checked $ c == Complete
              ]
-    , label [ onDblclick (m & editing ?~ tid) ] [ text d ]
-    , button' [ className "destroy", onClick $ m & tasks %~ filter ((/= tid) . _taskId) ]
+    , label [ onDblclick $ editing ?~ tid ] [ text d ]
+   , button' [ className "destroy", onClick $ tasks %~ filter ((/= tid) . _taskId) ]
     ]
-  , form [ onSubmit $ m & editing .~ Nothing ]
+  , form [ onSubmit $ editing .~ Nothing ]
     [ input' [ className "edit"
              , value d
-             , onInput $ updateTaskDescription m tid . Description
+             , onInput $ updateTaskDescription tid . Description
              , autofocus True
-             , onBlur $ m & editing .~ Nothing
+             , onBlur $ editing .~ Nothing
              ]
     ]
   ]
 
 
-listFooter :: Applicative m => Model -> Html m Model
-listFooter model = footer "footer" $
-  [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ _tasks model in
-    [ strong_ [ text . pack $ show co ]
-    , text $ " item" <> (if co == 1 then "" else "s") <> " left"
+listFooter :: Applicative m => Int -> Int -> Visibility -> Html m (Model -> Model)
+listFooter = memo $ \ic cc v -> footer "footer" $
+  [ Shpadoinkle.Html.span "todo-count"
+    [ strong_ [ text . pack $ show ic ]
+    , text $ " item" <> (if ic == 1 then "" else "s") <> " left"
     ]
-  , ul "filters" $ fmap (\v -> model & visibility .~ v) . filterHtml (model ^. visibility) <$> [minBound..maxBound]
-  ] ++ (if count Complete (_tasks model) == 0 then [] else
-  [ button [ className "clear-completed", onClick $ clearComplete model ] [ "Clear completed" ]
+  , ul "filters" $ fmap (set visibility) . filterHtml v <$> [minBound..maxBound]
+  ] ++ (if cc == 0 then [] else
+  [ button [ className "clear-completed", onClick clearComplete ] [ "Clear completed" ]
   ])
 
 
@@ -88,29 +83,22 @@ info = footer "info"
   ]
 
 
-newTaskForm :: MonadJSM m => Description -> [Task] -> Html m (Description, [Task])
-newTaskForm desc ts = form [ className "todo-form", onSubmit (appendItem desc ts) ]
-  [ input' [ className "new-todo"
-           , value $ desc ^. _Wrapped
-           , onInput $ \d -> (d ^. _Unwrapped, ts)
-           , placeholder "What needs to be done?" ]
-  ]
-
-newTaskForm' :: MonadJSM m => Description -> Html m (Model -> Model)
-newTaskForm' = memo $ \desc -> form [ className "todo-form", onSubmit appendItem' ]
+newTaskForm :: MonadJSM m => Description -> Html m (Model -> Model)
+newTaskForm = memo $ \desc -> form [ className "todo-form", onSubmit appendItem' ]
   [ input' [ className "new-todo"
            , value $ desc ^. _Wrapped
            , onInput . set $ current . _Wrapped
            , placeholder "What needs to be done?" ]
   ]
 
-todoList :: MonadJSM m => Model -> Html m Model
-todoList model = ul "todo-list" $ taskView model <$> toVisible (_visibility model) (_tasks model)
+
+todoList :: MonadJSM m => Maybe TaskId -> Visibility -> [Task] -> Html m (Model -> Model)
+todoList = memo $ \ed v ts -> ul "todo-list" $ taskView ed <$> toVisible v ts
 
 
-toggleAllBtn :: Applicative m => Model -> [Html m Model]
-toggleAllBtn model =
-  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange (toggleAll model) ]
+toggleAllBtn :: Applicative m => [Html m (Model -> Model)]
+toggleAllBtn =
+  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange toggleAll ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
@@ -124,10 +112,12 @@ render :: MonadJSM m => Model -> Html m Model
 render m = div_
   [ section "todoapp" $
     header "header"
-      [ h1_ [ "todos" ], apply m . newTaskForm' $ m ^. current ]
-    : htmlIfTasks m
-    [ section "main" $ toggleAllBtn m ++ [ todoList m ]
-    , listFooter m
+      [ h1_ [ "todos" ], apply m . newTaskForm $ m ^. current ]
+    : htmlIfTasks (m ^. tasks)
+    [ section "main" $ (apply m <$> toggleAllBtn) ++ [ apply m $ todoList (m ^. editing) (m ^. visibility) (m ^. tasks) ]
+    , apply m $ listFooter (m ^. tasks . to (count Incomplete))
+                           (m ^. tasks . to (count Complete))
+                           (m ^. visibility)
     ]
   , info
   ]
