@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
@@ -44,12 +45,32 @@ onKeyup'    f = onKeyup    (pure . f)
 onKeydown'  f = onKeydown  (pure . f)
 onKeypress' f = onKeypress (pure . f)
 
+onCheck' :: MonadJSM m => (Bool -> m o) -> (Text, Prop m o)
+onCheck' f = listenRaw "update" $ \(RawNode n) _ ->
+  f =<< liftJSM (valToBool =<< unsafeGetProp "checked" =<< valToObject n)
+onCheck :: MonadJSM m => (Bool -> o) -> (Text, Prop m o)
+onCheck f = onCheck' (pure . f)
 
 onSubmit' :: MonadJSM m => m o -> (Text, Prop m o)
 onSubmit' m = listenRaw "submit" $ \_ (RawEvent e) ->
   liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> m
 onSubmit :: MonadJSM m => o -> (Text, Prop m o)
 onSubmit = onSubmit' . pure
+
+
+mkGlobalKey :: Text -> (KeyCode -> JSM ()) -> JSM ()
+mkGlobalKey n t = do
+  d <- makeObject =<< jsg ("window" :: Text)
+  f <- toJSVal . fun $ \_ _ -> \case
+    e:_ -> t =<<
+      fmap round (valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
+    _ -> return ()
+  unsafeSetProp (toJSString $ "on" <> n) f d
+
+globalKeyDown, globalKeyUp, globalKeyPress :: (KeyCode -> JSM ()) -> JSM ()
+globalKeyDown = mkGlobalKey "keydown"
+globalKeyUp = mkGlobalKey "keyup"
+globalKeyPress = mkGlobalKey "keypress"
 
 
 $(msum <$> mapM mkEventDSL

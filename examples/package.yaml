@@ -19,23 +19,55 @@ ghc-options:
     - -fwarn-identities
 
 
+ghcjs-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fno-warn-missing-home-modules
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+    - -dedupe
+
+
 dependencies:
     - base
 
+when:
+  - condition: impl(ghcjs)
+    then:
+      dependencies: []
+    else:
+      dependencies:
+        - jsaddle-warp
 
 executables:
-  todomvc:
-    main: TODOMVC.hs
+  todomvcatomic:
+    main: TODOMVCAtomic.hs
+    other-modules:
+      - TODOMVCAtomic.Types
+      - TODOMVCAtomic.Update
     source-dirs: .
     dependencies:
-      - jsaddle
-      - natural-transformation
       - text
       - containers
-
-      - mtl
       - lens
-      - stm
+
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-backend-snabbdom
+
+  todomvc:
+    main: TODOMVC.hs
+    other-modules:
+      - TODOMVC.Types
+      - TODOMVC.Update
+    source-dirs: .
+    dependencies:
+      - text
+      - containers
 
       - Shpadoinkle
       - Shpadoinkle-html
@@ -43,14 +75,10 @@ executables:
 
   counter:
     main: Counter.hs
+    other-modules: []
     source-dirs: .
     dependencies:
-      - jsaddle
-      - natural-transformation
       - text
-
-      - mtl
-      - lens
       - stm
 
       - Shpadoinkle

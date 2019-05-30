@@ -42,18 +42,21 @@
           ghcWithPackages = p: super.ghcWithPackages (
             f: p f ++ (if false && pkgs.lib.inNixShell then [ f.cabal-install f.ghcid ] else [])
           );
-          jsaddle       = self.callCabal2nix "jsaddle" "${jsaddle-src}/jsaddle" {};
+          jsaddle       = self.callCabal2nix "jsaddle"      "${jsaddle-src}/jsaddle" {};
+          jsaddle-warp  = dontCheck (self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {});
           comonad       = dontCheck super.comonad;
           extra         = dontCheck super.extra;
           unliftio      = dontCheck super.unliftio;
           semigroupoids = dontCheck super.semigroupoids;
           lens          = dontCheck super.lens;
+          hpack         = pkgs.haskell.packages.ghc843.hpack;
+          http-types    = dontCheck super.http-types;
+          silently      = dontCheck super.silently;
       })
   );
 
 
-  packages = map (t: haskellPackages.${t}) (builtins.attrNames targets)
-          ++ map (t: haskellPackages.${t}) (builtins.attrNames targets);
+  packages = map (t: haskellPackages.${t}) (builtins.attrNames targets);
   buildSet = pkgs.lib.foldl (ps: p: ps // { ${p.pname} = p; }) {} packages;
   tools = [ pkgs.pkgconfig ];
 

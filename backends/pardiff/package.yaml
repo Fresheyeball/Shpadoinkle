@@ -30,7 +30,6 @@ library:
   source-dirs: .
   dependencies:
     - jsaddle
-    - natural-transformation
     - unliftio
     - compactable
     - uuid
