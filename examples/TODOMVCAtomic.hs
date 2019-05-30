@@ -8,7 +8,8 @@ module Main where
 
 
 import           Control.Lens                     (Lens', set, view, (%~), (&),
-                                                   (.~), (?~), (^.), _Wrapped)
+                                                   (.~), (?~), (^.), _Unwrapped,
+                                                   _Wrapped)
 import qualified Data.Set                         as Set
 import           Data.Text                        hiding (count, filter, length)
 import           Prelude                          hiding (div, unwords)
@@ -26,8 +27,8 @@ import           TODOMVCAtomic.Types
 import           TODOMVCAtomic.Update
 
 
-focus :: forall a b s. (a -> b) -> Lens' s a -> Lens' s b -> s -> s
-focus f x y z = set y (f $ view x z) z
+focus2 :: Functor m => (a -> b -> Html m (a, b)) -> Lens' s a -> Lens' s b -> s -> Html m s
+focus2 f x y z = (\(j,g) -> set x j $ set y g z) <$> f (view x z) (view y z)
 
 
 filterHtml :: Applicative m => Visibility -> Visibility -> Html m Visibility
@@ -53,7 +54,7 @@ taskView m = memo $ \(Task (Description d) c tid) ->
              , checked $ c == Complete
              ]
     , label [ onDblclick (m & editing ?~ tid) ] [ text d ]
-    , button' [ className "destroy", onClick (m & tasks %~ removeTask tid) ]
+    , button' [ className "destroy", onClick $ m & tasks %~ filter ((/= tid) . _taskId) ]
     ]
   , form [ onSubmit $ m & editing .~ Nothing ]
     [ input' [ className "edit"
@@ -72,8 +73,7 @@ listFooter model = footer "footer" $
     [ strong_ [ text . pack $ show co ]
     , text $ " item" <> (if co == 1 then "" else "s") <> " left"
     ]
-  , ul "filters" $ fmap (\v -> model { _visibility = v })
-                <$> (filterHtml (_visibility model) <$> [minBound..maxBound])
+  , ul "filters" $ fmap (\v -> model & visibility .~ v) . filterHtml (model ^. visibility) <$> [minBound..maxBound]
   ] ++ (if count Complete (_tasks model) == 0 then [] else
   [ button [ className "clear-completed", onClick $ clearComplete model ] [ "Clear completed" ]
   ])
@@ -88,14 +88,21 @@ info = footer "info"
   ]
 
 
-newTaskForm :: MonadJSM m => Model -> Html m Model
-newTaskForm model = form [ className "todo-form", onSubmit (appendItem model) ]
+newTaskForm :: MonadJSM m => Description -> [Task] -> Html m (Description, [Task])
+newTaskForm desc ts = form [ className "todo-form", onSubmit (appendItem desc ts) ]
   [ input' [ className "new-todo"
-           , value $ model ^. current . _Wrapped
-           , onInput $ flip (set current) model . Description
+           , value $ desc ^. _Wrapped
+           , onInput $ \d -> (d ^. _Unwrapped, ts)
            , placeholder "What needs to be done?" ]
   ]
 
+newTaskForm' :: MonadJSM m => Description -> Html m (Model -> Model)
+newTaskForm' = memo $ \desc -> form [ className "todo-form", onSubmit appendItem' ]
+  [ input' [ className "new-todo"
+           , value $ desc ^. _Wrapped
+           , onInput . set $ current . _Wrapped
+           , placeholder "What needs to be done?" ]
+  ]
 
 todoList :: MonadJSM m => Model -> Html m Model
 todoList model = ul "todo-list" $ taskView model <$> toVisible (_visibility model) (_tasks model)
@@ -108,14 +115,19 @@ toggleAllBtn model =
   ]
 
 
+apply :: Functor m => a -> Html m (a -> b) -> Html m b
+apply m v = ($ m) <$> v
+
+
+
 render :: MonadJSM m => Model -> Html m Model
-render model = div_
+render m = div_
   [ section "todoapp" $
     header "header"
-      [ h1_ [ "todos" ], newTaskForm model ]
-    : htmlIfTasks model
-    [ section "main" $ toggleAllBtn model ++ [ todoList model ]
-    , listFooter model
+      [ h1_ [ "todos" ], apply m . newTaskForm' $ m ^. current ]
+    : htmlIfTasks m
+    [ section "main" $ toggleAllBtn m ++ [ todoList m ]
+    , listFooter m
     ]
   , info
   ]

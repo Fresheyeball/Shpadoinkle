@@ -9,13 +9,19 @@ module TODOMVCAtomic.Update where
 import           TODOMVCAtomic.Types
 
 
-appendItem :: Model -> Model
-appendItem m = if _current m /= "" then m
+appendItem :: Description -> [Task] -> (Description, [Task])
+appendItem d ts = if d /= "" then
+  ("", Task d Incomplete ((+ 1)
+          $ Prelude.maximum $ 0 : (_taskId <$> ts)) : ts)
+  else (d, ts)
+
+
+appendItem' :: Model -> Model
+appendItem' m = if _current m /= "" then m
   { _tasks = Task (_current m) Incomplete ((+ 1)
           $ Prelude.maximum $ 0 : (_taskId <$> _tasks m)) : _tasks m
   , _current = "" }
   else m
-
 
 toggleCompleted :: Model -> TaskId -> Model
 toggleCompleted m tid = m { _tasks =
@@ -27,10 +33,6 @@ toggleCompleted m tid = m { _tasks =
 updateTaskDescription :: Model -> TaskId -> Description -> Model
 updateTaskDescription m tid desc = m { _tasks = f <$> _tasks m}
   where f t = if _taskId t == tid then t { _description = desc } else t
-
-
-removeTask :: TaskId -> [Task] -> [Task]
-removeTask tid = filter ((/= tid) . _taskId)
 
 
 toggleAll :: Model -> Model
