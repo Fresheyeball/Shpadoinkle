@@ -29,7 +29,7 @@
 
   targets = {
     Shpadoinkle                  = gitignore ./core;
-    # Shpadoinkle-backend-snabbdom = gitignore ./backends/snabbdom;
+    Shpadoinkle-backend-snabbdom = gitignore ./backends/snabbdom;
     Shpadoinkle-backend-pardiff  = gitignore ./backends/pardiff;
     Shpadoinkle-html             = gitignore ./html;
     Shpadoinkle-examples         = gitignore ./examples;

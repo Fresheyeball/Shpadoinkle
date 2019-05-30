@@ -44,6 +44,20 @@ when:
         - jsaddle-warp
 
 executables:
+  todomvcatomic:
+    main: TODOMVCAtomic.hs
+    other-modules:
+      - TODOMVC.Types
+      - TODOMVCAtomic.Update
+    source-dirs: .
+    dependencies:
+      - text
+      - containers
+
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-backend-snabbdom
+
   todomvc:
     main: TODOMVC.hs
     other-modules:
