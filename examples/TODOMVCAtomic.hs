@@ -7,7 +7,8 @@
 module Main where
 
 
-import           Control.Lens                     (Lens', set, view)
+import           Control.Lens                     (Lens', set, view, (%~), (&),
+                                                   (.~), (?~), (^.), _Wrapped)
 import qualified Data.Set                         as Set
 import           Data.Text                        hiding (count, filter, length)
 import           Prelude                          hiding (div, unwords)
@@ -41,9 +42,9 @@ htmlIfTasks m h' = if Prelude.null (_tasks m) then [] else h'
 
 taskView :: MonadJSM m => Model -> Task -> Html m Model
 taskView m = memo $ \(Task (Description d) c tid) ->
-  li [ id' . pack . show $ _unTaskId tid
+  li [ id' . pack . show $ tid ^. _Wrapped
      , className . Set.fromList $ [ "completed" | c == Complete ]
-                               ++ [ "editing"   | Just tid == _editing m ]
+                               ++ [ "editing"   | Just tid == m ^. editing ]
      ]
   [ div "view"
     [ input' [ type' "checkbox"
@@ -51,15 +52,15 @@ taskView m = memo $ \(Task (Description d) c tid) ->
              , onChange $ toggleCompleted m tid
              , checked $ c == Complete
              ]
-    , label [ onDblclick (toggleEditing m (Just tid)) ] [ text d ]
-    , button' [ className "destroy", onClick (removeTask m tid) ]
+    , label [ onDblclick (m & editing ?~ tid) ] [ text d ]
+    , button' [ className "destroy", onClick (m & tasks %~ removeTask tid) ]
     ]
-  , form [ onSubmit $ toggleEditing m Nothing ]
+  , form [ onSubmit $ m & editing .~ Nothing ]
     [ input' [ className "edit"
              , value d
              , onInput $ updateTaskDescription m tid . Description
              , autofocus True
-             , onBlur $ toggleEditing m Nothing
+             , onBlur $ m & editing .~ Nothing
              ]
     ]
   ]
@@ -90,7 +91,7 @@ info = footer "info"
 newTaskForm :: MonadJSM m => Model -> Html m Model
 newTaskForm model = form [ className "todo-form", onSubmit (appendItem model) ]
   [ input' [ className "new-todo"
-           , value . _unDescription $ _current model
+           , value $ model ^. current . _Wrapped
            , onInput $ flip (set current) model . Description
            , placeholder "What needs to be done?" ]
   ]

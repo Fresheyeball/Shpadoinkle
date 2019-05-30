@@ -24,17 +24,13 @@ toggleCompleted m tid = m { _tasks =
         negC Incomplete = Complete
 
 
-toggleEditing :: Model -> Maybe TaskId -> Model
-toggleEditing m t = m { _editing = t }
-
-
 updateTaskDescription :: Model -> TaskId -> Description -> Model
 updateTaskDescription m tid desc = m { _tasks = f <$> _tasks m}
   where f t = if _taskId t == tid then t { _description = desc } else t
 
 
-removeTask :: Model -> TaskId -> Model
-removeTask m tid = m { _tasks = filter ((/= tid) . _taskId) $ _tasks m}
+removeTask :: TaskId -> [Task] -> [Task]
+removeTask tid = filter ((/= tid) . _taskId)
 
 
 toggleAll :: Model -> Model
