@@ -49,7 +49,7 @@
           unliftio      = dontCheck super.unliftio;
           semigroupoids = dontCheck super.semigroupoids;
           lens          = dontCheck super.lens;
-          hpack         = dontCheck super.hpack; # why?
+          hpack         = pkgs.haskell.packages.ghc843.hpack;
           http-types    = dontCheck super.http-types;
           silently      = dontCheck super.silently;
       })
