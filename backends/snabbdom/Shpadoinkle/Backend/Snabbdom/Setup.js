@@ -21,10 +21,11 @@ addScript(cdnjs("h.min.js"));
 window.startApp = cb => setTimeout(() => {
   const patch = snabbdom.init([
     snabbdom_props.default,
+    snabbdom_class.default,
+    snabbdom_attributes.default,
     snabbdom_eventlisteners.default
   ]);
-  var old;
-  window.patch = (a,b) => old ? old = patch(old, b) : old = patch(a, b);
+  window.patchh = (a,b) => patch(a,b);
   window.vnode = h.default;
   window.container = document.createElement('div');
   document.body.appendChild(container);

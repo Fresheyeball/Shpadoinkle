@@ -1,6 +1,8 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE ExplicitNamespaces     #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
@@ -13,10 +15,8 @@
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-
 
 
 module Shpadoinkle
@@ -24,10 +24,13 @@ module Shpadoinkle
   , mapHtml, mapProp, mapProps, mapChildren
   , Shpadoinkle (..)
   , shpadoinkle
+  , Territory (..)
   , type (~>)
   , RawNode (..), RawEvent (..)
   , h, text, flag, listener
   , props, children, name, textContent
+  , MonadJSM, JSM
+  , newTVarIO
   ) where
 
 
@@ -138,44 +141,63 @@ instance ToJSVal   RawNode where toJSVal   = return . unRawNode
 instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
 
 
-class Shpadoinkle t m a | t m -> a where
-  type VNode t m
-  interpret :: (m ~> JSM) -> Html (t m) a -> t m (VNode t m)
-  patch :: RawNode -> Maybe (VNode t m) -> VNode t m -> t m (VNode t m)
-  setup :: JSM () -> t m ()
+class Shpadoinkle b m a | b m -> a where
+  type VNode b m
+  interpret :: (m ~> JSM) -> Html (b m) a -> b m (VNode b m)
+  patch :: RawNode -> Maybe (VNode b m) -> VNode b m -> b m (VNode b m)
+  setup :: JSM () -> b m ()
+
+
+class Territory s where
+  writeUpdate :: s a -> a -> JSM ()
+  shouldUpdate :: Eq a => (b -> a -> JSM b) -> b -> s a -> JSM ()
+
+
+instance Territory TVar where
+  writeUpdate x = liftIO . atomically . writeTVar x
+  shouldUpdate potato prev model = do
+    i' <- liftIO $ readTVarIO model
+    p  <- liftIO $ newTVarIO i'
+    () <$ forkIO (go prev p)
+    where
+      go x p = do
+        a <- liftIO . atomically $ do
+          new' <- readTVar model
+          old  <- readTVar p
+          if new' == old then retry else new' <$ writeTVar p new'
+        y <- potato x a
+        go y p
 
 
 shpadoinkle
-  :: forall t m a
-   . Shpadoinkle t m a
-  => Eq a
-  => MonadIO (t m)
+  :: forall b m a t
+   . Shpadoinkle b m a => Territory t => Eq a
   => (m ~> JSM)
-  -> (t m ~> m)
-  -> TVar a
-  -> (a -> Html (t m) a)
-  -> t m RawNode
+  -- ^ how to be get to JSM?
+  -> (t a -> b m ~> m)
+  -- ^ how do we run the backend?
+  -> a
+  -- ^ what is the initial state?
+  -> t a
+  -- ^ how can we know when to update?
+  -> (a -> Html (b m) a)
+  -- ^ how should the html look?
+  -> b m RawNode
+  -- ^ where do we render?
   -> JSM ()
-shpadoinkle toJSM toM model view stage = do
+shpadoinkle toJSM toM initial model view stage = do
   let
-    j :: t m ~> JSM
-    j = toJSM . toM
+    j :: b m ~> JSM
+    j = toJSM . toM model
 
-    go :: RawNode -> VNode t m -> TVar a -> JSM ()
-    go c n p = do
-      a  <- j . liftIO . atomically $ do
-        new' <- readTVar model
-        old  <- readTVar p
-        if new' == old then retry else new' <$ writeTVar p new'
+    go :: RawNode -> VNode b m -> a -> JSM (VNode b m)
+    go c n a = do
       !m  <- j $ interpret toJSM (view a)
-      !n' <- j $ patch c (Just n) m
-      go c n' p
+      j $ patch c (Just n) m
 
-  i' <- liftIO $ readTVarIO model
-  p  <- liftIO $ newTVarIO i'
   j . setup $ do
     c <- j stage
-    n <- j $ interpret toJSM (view i')
-    _ <- forkIO $ go c n p
-    _ <- j $ patch c Nothing n :: JSM (VNode t m)
+    n <- j $ interpret toJSM (view initial)
+    _ <- shouldUpdate (go c) n model
+    _ <- j $ patch c Nothing n :: JSM (VNode b m)
     return ()
