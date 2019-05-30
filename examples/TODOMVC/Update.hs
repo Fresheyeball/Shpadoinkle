@@ -8,10 +8,11 @@ import           TODOMVC.Types
 
 
 appendItem :: Model -> Model
-appendItem m = m
+appendItem m = if current m /= "" then m
   { tasks = Task (current m) Incomplete ((+ 1)
           $ Prelude.maximum $ 0 : (taskId <$> tasks m)) : tasks m
   , current = "" }
+  else m
 
 
 updateDescription :: Model -> Description -> Model
