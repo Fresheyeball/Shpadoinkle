@@ -92,12 +92,14 @@ runParDiff t (ParDiffT r) = runReaderT r t
 
 data ParVNode :: Type -> Type where
   ParNode     :: Once JSM RawNode -> Text -> Map Text (ParVProp a) -> [ParVNode a] -> ParVNode a
+  ParPotato   :: Once JSM RawNode -> ParVNode a
   ParTextNode :: Once JSM RawNode -> Text -> ParVNode a
 
 
 instance Show (ParVNode a) where
   show = \case
     ParNode _ t ps cs -> "ParNode _ " <> show t <> " " <> show ps <> " " <> show cs
+    ParPotato _       -> "ParPotato _"
     ParTextNode _ t   -> "ParTextNode _ " <> show t
 
 
@@ -146,12 +148,14 @@ setListener i m o k = do
 getRaw :: ParVNode a -> Once JSM RawNode
 getRaw = \case
   ParNode mk _ _ _ -> mk
+  ParPotato mk     -> mk
   ParTextNode mk _ -> mk
 
 
 setRaw :: Once JSM RawNode -> ParVNode a -> ParVNode a
 setRaw r = \case
   ParNode _ a b c -> ParNode r a b c
+  ParPotato _     -> ParPotato r
   ParTextNode _ a -> ParTextNode r a
 
 
@@ -325,6 +329,10 @@ interpret' toJSM = \case
       doc <- jsg "document"
       RawNode <$> doc ^. js1 "createTextNode" t
     return $ ParTextNode raw t
+
+  Potato p -> do
+    raw <- liftJSM $ newOnce p
+    return $ ParPotato raw
 
   Node name (M.fromList -> ps) cs -> do
     i <- ask
