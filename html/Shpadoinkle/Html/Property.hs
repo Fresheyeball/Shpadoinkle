@@ -41,6 +41,10 @@ className :: Set.Set Text -> (Text, Prop m o)
 className = textProperty "className" . unwords . Set.toList
 
 
+class' :: Text -> (Text, Prop m o)
+class' = className . Set.singleton
+
+
 autofocus :: Bool -> (Text, Prop m o)
 autofocus b = ("autofocus", flag b)
 
@@ -53,8 +57,20 @@ checked :: Bool -> (Text, Prop m o)
 checked b = ("checked", flag b)
 
 
+hidden :: Bool -> (Text, Prop m o)
+hidden b = ("hidden", flag b)
+
+
+selected :: Bool -> (Text, Prop m o)
+selected b = ("selected", flag b)
+
+
+autocomplete :: Bool -> (Text, Prop m o)
+autocomplete b = ("autocomplete", flag b)
+
+
 $(msum <$> mapM mkTextProp
-  [ "id'", "type'", "rel", "href", "placeholder", "value"
+  [ "id'", "type'", "rel", "href", "placeholder", "value", "src", "title", "accept", "accpetCharset", "action"
   ])
 
 

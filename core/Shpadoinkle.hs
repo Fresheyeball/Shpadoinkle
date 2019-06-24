@@ -27,7 +27,7 @@ module Shpadoinkle
   , Territory (..)
   , type (~>)
   , RawNode (..), RawEvent (..)
-  , h, text, flag, listener
+  , h, text, flag, listener, baked
   , props, children, name, textContent
   , MonadJSM, JSM
   , newTVarIO
@@ -46,15 +46,17 @@ import           UnliftIO.Concurrent
 
 data Html :: (Type -> Type) -> Type -> Type where
   Node :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
+  Potato :: JSM RawNode -> Html m o
   TextNode :: Text -> Html m o
 
 
 type m ~> n = forall a. m a -> n a
 
 
-mapHtml :: (m ~> n) -> Html m o -> Html n o
+mapHtml :: Functor m => (m ~> n) -> Html m o -> Html n o
 mapHtml f = \case
   Node t ps cs -> Node t (fmap (mapProp f) <$> ps) (mapHtml f <$> cs)
+  Potato p -> Potato p
   TextNode t -> TextNode t
 
 
@@ -103,6 +105,8 @@ mapProp f = \case
 
 h :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
 h = Node
+baked :: JSM RawNode -> Html m o
+baked = Potato
 text :: Text -> Html m o
 text = TextNode
 flag :: Bool -> Prop m o
