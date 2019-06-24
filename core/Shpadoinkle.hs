@@ -27,7 +27,7 @@ module Shpadoinkle
   , Territory (..)
   , type (~>)
   , RawNode (..), RawEvent (..)
-  , h, text, flag, listener
+  , h, text, flag, listener, baked
   , props, children, name, textContent
   , MonadJSM, JSM
   , newTVarIO
@@ -105,6 +105,8 @@ mapProp f = \case
 
 h :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
 h = Node
+baked :: JSM RawNode -> Html m o
+baked = Potato
 text :: Text -> Html m o
 text = TextNode
 flag :: Bool -> Prop m o
