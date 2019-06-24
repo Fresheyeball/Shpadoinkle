@@ -27,6 +27,7 @@ window.startApp = cb => setTimeout(() => {
   ]);
   window.patchh = (a,b) => patch(a,b);
   window.vnode = h.default;
+  window.potato = (n, e) => n.elm.appendChild(e)
   window.container = document.createElement('div');
   document.body.appendChild(container);
   cb();
