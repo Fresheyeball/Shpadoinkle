@@ -7,7 +7,6 @@ compile:
   stage: build
   script:
   - nix-build --argstr compiler ghc843
-  - nix-build --argstr compiler ghc861
   artifacts:
     untracked: true
 
