@@ -1,6 +1,13 @@
-pages:
+image: nixos/nix
+
+stages:
+  - build
+
+compile:
+  stage: build
   script:
-  - echo "foo"
+  - nix-build --argstr compiler ghc843
+  - nix-build --argstr compiler ghc861
   artifacts:
-    paths:
-    - public
+    untracked: true
+

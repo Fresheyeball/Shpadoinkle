@@ -106,6 +106,18 @@ instance (MonadJSM m, Eq a) => Shpadoinkle (SnabbdomT a) m a where
         traverse ((toJSM . runSnabbdom i) . interpret toJSM >=> toJSVal) children
           >>= jsg3 "vnode" name o >>= fromJSValUnchecked
 
+    Potato mrn -> liftJSM $ do
+      o <- create
+      hook <- create
+      rn <- mrn
+      ins <- toJSVal =<< function (\_ _ -> \case
+        [n] -> void $ jsg2 "potato" n rn
+        _ -> return ())
+      unsafeSetProp "insert" ins hook
+      hoo <- toJSVal hook
+      unsafeSetProp "hook" hoo o
+      fromJSValUnchecked =<< jsg2 "vnode" "div" o
+
 
   patch :: RawNode -> Maybe SnabVNode -> SnabVNode -> SnabbdomT a m SnabVNode
   patch (RawNode r) f t = t <$ (liftJSM . void $ jsg2 "patchh" f' t)
