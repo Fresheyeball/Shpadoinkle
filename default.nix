@@ -1,7 +1,7 @@
 { compiler ? "ghcjs84" }: let
 
 
-  rev = "24596d7a4a4b07bd9ce3ad748b8dabf5957003c5";
+  rev = "ad85b9a9f8d81d6f3fe8d5006c917ab123d2f62f";
 
   pkgs = import (builtins.fetchTarball {
         url    = "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz";
@@ -46,6 +46,8 @@
           jsaddle-warp  = dontCheck (self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {});
           comonad       = dontCheck super.comonad;
           extra         = dontCheck super.extra;
+          SHA           = dontCheck super.SHA;
+          pureMD5       = dontCheck super.pureMD5;
           unliftio      = dontCheck super.unliftio;
           semigroupoids = dontCheck super.semigroupoids;
           lens          = dontCheck super.lens;
