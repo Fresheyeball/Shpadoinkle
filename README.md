@@ -1,5 +1,7 @@
 # Shpadoinkle
 
+[![pipeline status](https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg)](https://gitlab.com/fresheyeball/Shpadoinkle/commits/master)
+
 ### I think I know precisely what I mean...
 
 Shpadoinkle is a UI programming model focused on simplicity and performance.
