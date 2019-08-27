@@ -9,3 +9,16 @@ compile:
   artifacts:
     untracked: true
 
+pages:
+  stage: build
+  script:
+  - nix-build -A Shpadoinkle-examples
+  - mkdir public
+  - cp -r result/bin/todomvcatomic.jsexe/* public
+  artifacts:
+    paths:
+    - public
+
+  only:
+  - master
+
