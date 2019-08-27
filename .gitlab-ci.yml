@@ -14,7 +14,7 @@ pages:
   script:
   - nix-build -A Shpadoinkle-examples
   - mkdir public
-  - cp -r result/bin/todomvcatomic.jsexe/* public
+  - cp -r result/bin/todomvc.jsexe/* public
   artifacts:
     paths:
     - public
