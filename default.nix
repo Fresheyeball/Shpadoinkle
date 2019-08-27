@@ -50,6 +50,7 @@
           pureMD5       = dontCheck super.pureMD5;
           unliftio      = dontCheck super.unliftio;
           semigroupoids = dontCheck super.semigroupoids;
+          megaparsec    = dontCheck super.megaparsec;
           lens          = dontCheck super.lens;
           hpack         = pkgs.haskell.packages.ghc843.hpack;
           http-types    = dontCheck super.http-types;
