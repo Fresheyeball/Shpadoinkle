@@ -20,7 +20,7 @@
 
 
 module Shpadoinkle
-  ( Html (..), Prop (..)
+  ( Html (..), Prop (..), Props
   , mapHtml, mapProp, mapProps, mapChildren
   , Shpadoinkle (..)
   , shpadoinkle
@@ -122,6 +122,9 @@ data Prop m o = PText Text | PListener (RawNode -> RawEvent -> m o) | PFlag Bool
 
 
 deriving instance Functor m => Functor (Prop m)
+
+
+type Props m o = [(Text, Prop m o)]
 
 
 instance IsString (Html m o) where

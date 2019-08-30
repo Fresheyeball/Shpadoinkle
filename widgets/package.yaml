@@ -1,0 +1,48 @@
+name:         Shpadoinkle-widgets
+license:      BSD3
+license-file: LICENSE
+version:      0.0.0.1
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+
+
+ghc-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+dependencies:
+    - base
+
+
+library:
+  exposed-modules:
+    - Shpadoinkle.Widgets.Form.Input
+    - Shpadoinkle.Widgets.Form.Search
+    - Shpadoinkle.Widgets.Types
+    - Shpadoinkle.Widgets.Types.Choice
+    - Shpadoinkle.Widgets.Types.Core
+    - Shpadoinkle.Widgets.Types.Form
+    - Shpadoinkle.Widgets.Types.Physical
+    - Shpadoinkle.Widgets.Types.Remote
+    - Shpadoinkle.Widgets.Present
+  source-dirs: .
+  dependencies:
+    - compactable
+    - jsaddle
+    - text
+    - template-haskell
+    - containers
+    - stm
+    - unliftio
+
+    - Shpadoinkle
+    - Shpadoinkle-html

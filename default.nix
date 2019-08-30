@@ -1,4 +1,4 @@
-{ compiler ? "ghcjs84" }: let
+{ compiler ? "ghc843" }: let
 
 
   rev = "ad85b9a9f8d81d6f3fe8d5006c917ab123d2f62f";
@@ -32,6 +32,7 @@
     Shpadoinkle-backend-snabbdom = gitignore ./backends/snabbdom;
     Shpadoinkle-backend-pardiff  = gitignore ./backends/pardiff;
     Shpadoinkle-html             = gitignore ./html;
+    Shpadoinkle-widgets          = gitignore ./widgets;
     Shpadoinkle-examples         = gitignore ./examples;
   };
 

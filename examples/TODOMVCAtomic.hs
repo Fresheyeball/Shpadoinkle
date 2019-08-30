@@ -1,7 +1,9 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE RankNTypes           #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
 module Main where
@@ -9,7 +11,6 @@ module Main where
 
 import           Control.Lens                     (set, to, (%~), (.~), (?~),
                                                    (^.), _Wrapped)
-import qualified Data.Set                         as Set
 import           Data.Text                        hiding (count, filter, length)
 import           Prelude                          hiding (div, unwords)
 import           Shpadoinkle
@@ -26,9 +27,12 @@ import           TODOMVCAtomic.Types
 import           TODOMVCAtomic.Update
 
 
+default (Text)
+
+
 filterHtml :: Applicative m => Eq v => Show v => v -> v -> Html m v
 filterHtml = memo $ \cur item -> li_
-  [ a (href "#" : onClick item : [className "selected" | cur == item]) [ text . pack $ show item ]
+  [ a [href "#" , onClick item , className [("selected", cur == item)]] [ text . pack $ show item ]
   ]
 
 
@@ -39,8 +43,8 @@ htmlIfTasks m h' = if Prelude.null m then [] else h'
 taskView :: MonadJSM m => Maybe TaskId -> Task -> Html m (Model -> Model)
 taskView = memo $ \ed (Task (Description d) c tid) ->
   li [ id' . pack . show $ tid ^. _Wrapped
-     , className . Set.fromList $ [ "completed" | c == Complete ]
-                               ++ [ "editing"   | Just tid == ed ]
+     , className [ ("completed", c == Complete)
+                 , ("editing",   Just tid == ed) ]
      ]
   [ div "view"
     [ input' [ type' "checkbox"
