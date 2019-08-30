@@ -1,7 +1,10 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE TemplateHaskell            #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
@@ -9,7 +12,7 @@ module Shpadoinkle.Html.Property where
 
 
 import           Control.Monad       (msum)
-import           Data.Set            (Set)
+import           Data.Maybe          (mapMaybe)
 import qualified Data.Set            as Set
 import           Data.String         hiding (unwords)
 import           Data.Text
@@ -29,48 +32,44 @@ instance ToPropText Float where toPropText = pack . show
 instance ToPropText Bool where toPropText = \case True -> "true"; False -> "false"
 
 
-instance IsString a => IsString (Set a) where
-  fromString = Set.singleton . fromString
-
-
 textProperty :: ToPropText a => Text -> a -> (Text, Prop m o)
 textProperty k = (,) k . PText . toPropText
 
 
-className :: Set.Set Text -> (Text, Prop m o)
-className = textProperty "className" . unwords . Set.toList
+newtype ClassList = ClassList { unClassList :: Set.Set Text } deriving (Eq, Ord, Show, Semigroup, Monoid)
+class ClassListRep a where asClass :: a -> ClassList
+instance ClassListRep Text where asClass = ClassList . Set.singleton
+instance ClassListRep [Text] where asClass = ClassList . Set.fromList
+instance ClassListRep ClassList where asClass = id
+instance ClassListRep [(Text, Bool)] where asClass = asClass . mapMaybe (\(a, b) -> if b then Just a else Nothing)
+instance ClassListRep (Text, Bool) where asClass = asClass . (:[])
+instance IsString ClassList where fromString = ClassList . Set.singleton . pack
 
 
-class' :: Text -> (Text, Prop m o)
-class' = className . Set.singleton
+flagProperty :: Text -> Bool -> (Text, Prop m o)
+flagProperty t = (,) t . flag
 
 
-autofocus :: Bool -> (Text, Prop m o)
-autofocus b = ("autofocus", flag b)
+className :: ClassListRep cl => cl -> (Text, Prop m o)
+className = textProperty "className" . unwords . Set.toList . unClassList . asClass
 
 
 for' :: Text -> (Text, Prop m o)
 for' = textProperty "htmlFor"
 
 
-checked :: Bool -> (Text, Prop m o)
-checked b = ("checked", flag b)
-
-
-hidden :: Bool -> (Text, Prop m o)
-hidden b = ("hidden", flag b)
-
-
-selected :: Bool -> (Text, Prop m o)
-selected b = ("selected", flag b)
-
-
-autocomplete :: Bool -> (Text, Prop m o)
-autocomplete b = ("autocomplete", flag b)
-
+$(msum <$> mapM mkBoolProp
+  [ "checked", "selected", "hidden", "autocomplete", "autofocus", "disabled", "autoplay", "controls", "loop"
+  , "multiple", "novalidate", "readonly", "required", "ismap", "usemap", "default'", "reversed"
+  ])
 
 $(msum <$> mapM mkTextProp
-  [ "id'", "type'", "rel", "href", "placeholder", "value", "src", "title", "accept", "accpetCharset", "action"
+  [ "id'", "type'", "rel", "href", "placeholder", "value", "src", "title"
+  , "accept", "accpetCharset", "action", "acceptCharset", "enctype", "method", "pattern"
+  , "max", "min", "step", "wrap", "target", "download", "hreflang", "media", "ping", "shape", "coords"
+  , "alt", "preload", "poster", "name'", "kind'", "srclang", "sandbox", "srcdoc", "align"
+  , "headers", "scope", "datetime", "pubdate", "manifest", "contextmenu", "draggable"
+  , "dropzone", "itemprop"
   ])
 
 

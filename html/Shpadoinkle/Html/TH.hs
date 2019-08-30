@@ -71,6 +71,28 @@ mkTextProp name' = let
     , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
     ]
 
+mkBoolProp :: String -> Q [Dec]
+mkBoolProp name' = let
+
+
+    name = reverse $ case reverse name' of
+             '\'':rs -> rs
+             rs      -> rs
+    m = VarT $ mkName "m"
+    o = VarT $ mkName "o"
+    l = mkName "flagProperty"
+    n = mkName name'
+
+  in return
+
+    [ SigD n (ForallT [] []
+      (AppT (AppT ArrowT (ConT ''Bool))
+      (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
+      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) o))))
+
+    , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
+    ]
+
 
 mkElement :: String -> Q [Dec]
 mkElement name = let

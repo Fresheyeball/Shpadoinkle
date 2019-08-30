@@ -1,3 +1,8 @@
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE StandaloneDeriving   #-}
+{-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 
@@ -12,12 +17,14 @@ module Shpadoinkle.Widgets.Table
   ) where
 
 
+import           Data.Kind
+import           Data.List                   (sortBy)
 import           Language.Javascript.JSaddle
-import           Shpadoinkle.Class
-import           Shpadoinkle.Html            hiding (a, s)
-import qualified Shpadoinkle.Html            as Html
 
-import           Kassir.Humanize
+import           Shpadoinkle
+import           Shpadoinkle.Html            hiding (a, a', max, min, s, s')
+import qualified Shpadoinkle.Html            as Html
+import           Shpadoinkle.Widgets.Present
 
 
 data Sort = ASC | DESC
@@ -77,13 +84,13 @@ simple ::
   => a -> SortCol a -> Html m (SortCol a)
 simple xs s@(SortCol sorton sortorder) =
   table []
-  [ thead_ [ tr_ $ cth_ <$> bounds ]
+  [ thead_ [ tr_ $ cth_ <$> [minBound..maxBound] ]
   , tbody_ $ tr_ . toCells <$> sortBy (sortTable s) (toRows xs)
   ]
 
   where
 
-  cth_ c = th [] . pure . Html.a [ onclick' (toggleSort c s) ]
+  cth_ c = th [] . pure . Html.a [ onClick (toggleSort c s) ]
          . mappend [ text (humanize c) ] . pure . text $
           if c == sorton then
             case sortorder of ASC -> "↑"; DESC -> "↓"

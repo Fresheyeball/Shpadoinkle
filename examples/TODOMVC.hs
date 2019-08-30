@@ -1,11 +1,12 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
 module Main where
 
 
-import qualified Data.Set                         as Set
 import           Data.Text                        hiding (count, filter, length)
 import           Prelude                          hiding (div, unwords)
 import           Shpadoinkle
@@ -22,9 +23,12 @@ import           TODOMVC.Types
 import           TODOMVC.Update
 
 
+default (Text)
+
+
 filterHtml :: Applicative m => Visibility -> Visibility -> Html m Visibility
 filterHtml = memo2 $ \cur item -> li_
-  [ a (href "#" : onClick item : [className "selected" | cur == item]) [ text . pack $ show item ]
+  [ a (href "#" : onClick item : [className ("selected", cur == item)]) [ text . pack $ show item ]
   ]
 
 
@@ -35,8 +39,8 @@ htmlIfTasks m h' = if Prelude.null (tasks m) then [] else h'
 taskView :: MonadJSM m => Model -> Task -> Html m Model
 taskView m = memo $ \(Task (Description d) c tid) ->
   li [ id' . pack . show $ unTaskId tid
-     , className . Set.fromList $ [ "completed" | c == Complete ]
-                               ++ [ "editing"   | Just tid == editing m ]
+     , className [ ("completed", c == Complete)
+                 , ("editing", Just tid == editing m) ]
      ]
   [ div "view"
     [ input' [ type' "checkbox"
