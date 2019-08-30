@@ -12,7 +12,7 @@ compile:
 pages:
   stage: build
   script:
-  - nix-build -A Shpadoinkle-examples
+  - nix-build --argstr compiler ghcjs84 -A Shpadoinkle-examples
   - mkdir public
   - cp -r result/bin/todomvc.jsexe/* public
   artifacts:
