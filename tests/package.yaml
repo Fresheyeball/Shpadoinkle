@@ -1,0 +1,34 @@
+name:         Shpadoinkle-tests
+license:      BSD3
+license-file: LICENSE
+version:      0.0.0.1
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+
+
+ghc-options:
+    - -fwarn-redundant-constraints
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+executables:
+  tests:
+    main: Main.hs
+    source-dirs: .
+    dependencies:
+      - base
+      - text
+      - containers
+
+      - hspec
+      - hspec-core
+      - QuickCheck
+      - webdriver
+      - optparse-applicative
+      - wai-app-static
+      - warp
+      - process
