@@ -1,11 +1,27 @@
 stages:
   - build
+  - test
 
-compile:
+compile-ghc:
   stage: build
   script:
   - nix-build --argstr compiler ghc843
+  - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghc843 --command "echo works"
+  artifacts:
+    untracked: true
+
+compile-ghcjs:
+  stage: build
+  script:
   - nix-build --argstr compiler ghcjs84
+  - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghcjs84 --command "echo works"
+  artifacts:
+    untracked: true
+
+test:
+  stage: test
+  script:
+  - NIXPKGS_ALLOW_UNFREE=1 nix-build test.nix
   artifacts:
     untracked: true
 
