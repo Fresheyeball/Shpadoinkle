@@ -59,11 +59,16 @@ hang = liftIO . forever $ threadDelay maxBound
 
 
 delay :: MonadIO m => m ()
-delay = liftIO $ threadDelay 1000000
+delay = liftIO $ threadDelay 100000
 
 
 port :: Int
 port = 8080
+
+
+sendKeysSlowly :: Text -> Element -> WD ()
+sendKeysSlowly ks elm = forM_ (unpack ks) $
+  \k -> sendKeys (pack [k]) elm
 
 
 chrome' :: Maybe FilePath -> Maybe FilePath -> Browser
@@ -85,7 +90,6 @@ itWD :: String -> WD () -> Spec
 itWD should test =
   it should $ do
     opts@Options {..} <- getOptions
-    print opts
     runSession (useBrowser (chrome' chromePath dataDir) defaultConfig) $ do
       openPage $ "http://localhost:" <> show port <> case compiler of
         "ghcjs84" -> "/index.html"
@@ -99,3 +103,7 @@ expectText :: Element -> Text -> WD ()
 expectText e t = do
   t' <- getText e
   if t' == t then return () else liftIO $ t' `shouldBe` t
+
+
+equals :: (Show a, Eq a) => a -> a -> WD ()
+equals x y = liftIO $ x `shouldBe` y

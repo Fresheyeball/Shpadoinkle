@@ -4,8 +4,6 @@
 module CounterSpec (spec) where
 
 
-import           Control.Monad.IO.Class
-
 import           Test.Hspec
 import           Test.WebDriver
 

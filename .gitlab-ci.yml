@@ -9,6 +9,7 @@ build:
   - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghc843 --command "echo works"
   - nix-build --argstr compiler ghcjs84
   - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghcjs84 --command "echo works"
+  - rm -r result*
   artifacts:
     untracked: true
 
@@ -16,6 +17,7 @@ test:
   stage: test
   script:
   - NIXPKGS_ALLOW_UNFREE=1 nix-build test.nix
+  - rm -r result
   artifacts:
     untracked: true
 
