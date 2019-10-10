@@ -16,8 +16,10 @@ let
       sha256 = "1vzfi3i3fpl8wqs1yq95jzdi6cpaby80n8xwnwa8h2jvcw3j7kdz";
     }) {}).gitignoreSource
       [ ".git"
-        ".ghc.environment.x86_64-linux-8.4.3"
+        "*.ghc*"
         "*.cabal"
+        "*result*"
+        "*dist*"
       ];
 
 
