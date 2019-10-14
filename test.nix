@@ -15,6 +15,7 @@ let pkgs = import ./pkgs.nix; in with pkgs; with lib; let
     COMPILER = compiler;
     EXAMPLES = "${packages.Shpadoinkle-examples}";
     CHROME = "${chrome}/bin/google-chrome-stable";
+    HEADLESS = true;
     buildInputs =
     [
       tigervnc
@@ -42,7 +43,7 @@ let pkgs = import ./pkgs.nix; in with pkgs; with lib; let
     socat UNIX-LISTEN:/tmp/.X11-unix/X10 TCP:localhost:8999 &
 
     # start selenium in the background
-    selenium-server &
+    selenium-server &> selenium.log &
     # wait for selenium to start
     sleep 3
 

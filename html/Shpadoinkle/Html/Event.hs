@@ -13,6 +13,7 @@ import           Language.Javascript.JSaddle
 
 import           Shpadoinkle
 import           Shpadoinkle.Html.TH
+import           Shpadoinkle.Keyboard
 
 
 listenRaw :: Text -> (RawNode -> RawEvent -> m o) -> (Text, Prop m o)
@@ -28,9 +29,6 @@ onInput' f = listenRaw "input" $ \(RawNode n) _ ->
   f =<< liftJSM (valToText =<< unsafeGetProp "value" =<< valToObject n)
 onInput :: MonadJSM m => (Text -> o) -> (Text, Prop m o)
 onInput f = onInput' (pure . f)
-
-
-type KeyCode = Int
 
 
 mkOnKey :: MonadJSM m => Text -> (KeyCode -> m o) -> (Text, Prop m o)

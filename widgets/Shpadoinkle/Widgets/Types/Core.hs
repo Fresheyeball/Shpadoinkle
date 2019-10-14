@@ -6,15 +6,21 @@
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module Shpadoinkle.Widgets.Types.Core where
 
 
+import           Data.Text
+import           Language.Javascript.JSaddle
+
+import           Shpadoinkle
+
+
 data Hygiene = Clean | Dirty
-  deriving (Eq, Ord, Show, Enum, Bounded)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded)
 
 
 instance Semigroup Hygiene where
@@ -40,4 +46,10 @@ fromBool True  = Enabled
 fromBool False = Disabled
 
 
+class Humanize a where humanize :: a -> Text
 
+class Present a where present :: MonadJSM m => a -> [Html m b]
+
+instance {-# OVERLAPPABLE #-} Humanize a => Present a where
+  present = pure . text . humanize
+  {-# INLINE present #-}

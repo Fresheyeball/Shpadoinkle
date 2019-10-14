@@ -6,7 +6,6 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
@@ -28,7 +27,7 @@ module Shpadoinkle
   , type (~>)
   , RawNode (..), RawEvent (..)
   , h, text, flag, listener, baked
-  , props, children, name, textContent
+  , props, children, name, textContent, injectProps
   , MonadJSM, JSM
   , newTVarIO
   ) where
@@ -101,6 +100,12 @@ mapProp f = \case
   PListener g -> PListener (\x y -> f (g x y))
   PText t     -> PText t
   PFlag b     -> PFlag b
+
+
+injectProps :: [(Text, Prop m o)] -> Html m o -> Html m o
+injectProps ps html = case html of
+  Node t ps' cs -> Node t (ps' ++ ps) cs
+  x             -> x
 
 
 h :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o

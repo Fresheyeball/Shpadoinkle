@@ -13,7 +13,7 @@ import           Util
 spec :: Spec
 spec = around_ (serve "counter") .
   itWD "increments and decrements" $ do
-    [dec, inc]<- findElems (ByTag "button")
+    [dec, inc] <- findElems (ByTag "button")
     out <- findElem (ById "out")
     expectText out "0"
 

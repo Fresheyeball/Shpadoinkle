@@ -49,49 +49,38 @@ mkEventDSL evt = let
     ]
 
 
-mkTextProp :: String -> Q [Dec]
-mkTextProp name' = let
-
+mkProp :: Name -> String -> String -> Q [Dec]
+mkProp type' l' name' = let
 
     name = reverse $ case reverse name' of
              '\'':rs -> rs
              rs      -> rs
     m = VarT $ mkName "m"
     o = VarT $ mkName "o"
-    l = mkName "textProperty"
+    l = mkName l'
     n = mkName name'
 
   in return
 
     [ SigD n (ForallT [] []
-      (AppT (AppT ArrowT (ConT ''Data.Text.Text))
+      (AppT (AppT ArrowT (ConT type'))
       (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
       (AppT (AppT (ConT ''Shpadoinkle.Prop) m) o))))
 
     , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
     ]
+
+
+mkTextProp :: String -> Q [Dec]
+mkTextProp = mkProp ''Data.Text.Text "textProperty"
+
 
 mkBoolProp :: String -> Q [Dec]
-mkBoolProp name' = let
+mkBoolProp = mkProp ''Bool "flagProperty"
 
 
-    name = reverse $ case reverse name' of
-             '\'':rs -> rs
-             rs      -> rs
-    m = VarT $ mkName "m"
-    o = VarT $ mkName "o"
-    l = mkName "flagProperty"
-    n = mkName name'
-
-  in return
-
-    [ SigD n (ForallT [] []
-      (AppT (AppT ArrowT (ConT ''Bool))
-      (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) o))))
-
-    , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
-    ]
+mkIntProp :: String -> Q [Dec]
+mkIntProp = mkProp ''Int "textProperty"
 
 
 mkElement :: String -> Q [Dec]

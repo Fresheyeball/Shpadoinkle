@@ -1,21 +1,29 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DefaultSignatures     #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE IncoherentInstances   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 
 module Shpadoinkle.Widgets.Types.Choice where
 
 
+import           Control.Applicative
 import           Control.Compactable
+import qualified Data.Foldable       as F
 import           Data.Kind
 import qualified Data.List.NonEmpty  as NE
+import           Data.Maybe
 import           Data.Set            as Set
 import           GHC.Generics
 
@@ -30,8 +38,8 @@ type family Selected (p :: Pick) (a :: Type) :: Type where
 
 
 data Choice (p :: Pick) a = Choice
-  { selected :: Selected p a
-  , options  :: Set a
+  { _selected :: Selected p a
+  , _options  :: Set a
   }
 
 
@@ -62,7 +70,8 @@ instance Ord a => Semigroup (Choice 'One a)  where
   _                 <> y           = y
 instance Ord a => Semigroup (Choice 'AtleastOne a)  where Choice x _ <> Choice y ys = if Set.member x ys then Choice x ys else Choice y ys
 instance Ord a => Semigroup (Choice 'Many a) where Choice x _ <> Choice y ys = Choice (Set.intersection x ys <> y) ys
-instance Ord a => Monoid    (Choice 'One a)  where mempty = emptyFromSet mempty
+instance Ord a => Monoid    (Choice 'One  a) where mempty = noselection (mempty :: Set a)
+instance Ord a => Monoid    (Choice 'Many a) where mempty = noselection (mempty :: Set a)
 
 
 instance Compactable (Choice 'One) where
@@ -72,171 +81,197 @@ instance Compactable (Choice 'One) where
   partition p (Choice x xs) = let (l, r) = Set.partition p xs; (l',r') = Control.Compactable.partition p x in (Choice l' l, Choice r' r)
 
 
-class SetMap (p :: Pick)    where smap :: Ord b => (a -> b) -> Choice p a -> Choice p b
-instance SetMap 'One        where smap f (Choice x xs) = Choice (f <$> x)     (Set.map f xs)
-instance SetMap 'AtleastOne where smap f (Choice x xs) = Choice (f x)         (Set.map f xs)
-instance SetMap 'Many       where smap f (Choice x xs) = Choice (Set.map f x) (Set.map f xs)
+instance Compactable (Choice 'Many) where
+  compact (Choice x xs) = Choice (compact x) (compact xs)
+  separate (Choice x xs) = let (l,r) = separate xs; (l',r') = separate x in (Choice l' l, Choice r' r)
+  filter p (Choice x xs) = Choice (Control.Compactable.filter p x) $ Set.filter p xs
+  partition p (Choice x xs) = let (l, r) = Set.partition p xs; (l',r') = Control.Compactable.partition p x in (Choice l' l, Choice r' r)
 
 
-class Selection (p :: Pick) where
-  select :: Ord a => Choice p a -> Selected p a -> Choice p a
-  select1 :: Ord a => Choice p a -> a -> Choice p a
+class SetLike f where
+  -- must be injective
+  toSet :: Ord a => f a -> Set a
+  smap  :: Ord b => (a -> b) -> f a -> f b
+  valid :: Ord a => f a -> Bool
 
-instance Selection 'One where
-  select (Choice _ xs) y = Choice y (maybe xs (`Set.insert` xs) y)
-  select1 c = select c . Just
+instance SetLike Set where
+  toSet = id
+  smap  = Set.map
+  valid = Set.valid
 
-instance Selection 'AtleastOne where
+instance SetLike Maybe where
+  toSet = maybe mempty Set.singleton
+  smap  = fmap
+  valid = const True
+
+instance SetLike (Choice 'One) where
+  toSet (Choice x xs) = toSet x <> xs
+  smap f (Choice x xs) = Choice (f <$> x)     (Set.map f xs)
+  valid (Choice _ xs) = Set.valid xs
+
+instance SetLike (Choice 'AtleastOne) where
+  toSet (Choice x xs) = Set.singleton x <> xs
+  smap f (Choice x xs) = Choice (f x)         (Set.map f xs)
+  valid (Choice _ xs)  = Set.valid xs
+
+instance SetLike (Choice 'Many) where
+  toSet (Choice x xs) = toSet x <> xs
+  smap f (Choice x xs) = Choice (Set.map f x) (Set.map f xs)
+  valid (Choice x xs)  = Set.valid x && Set.valid xs
+
+
+ftoSet :: (Ord a, Foldable g) => g a -> Set a
+ftoSet = Set.fromList . F.toList
+
+
+class SetLike (f p) => Selection f (p :: Pick) where
+  select       :: Ord a => f p a -> Selected p a -> f p a
+  select'      :: Ord a => f p a -> a -> f p a
+  unselected   :: Ord a => f p a -> Set a
+  selected     :: Ord a => f p a -> Selected p a
+  withOptions  :: (Foldable g, Ord a) => Selected p a -> g a -> f p a
+  withOptions' :: (Foldable g, Ord a) => a -> g a -> f p a
+
+instance Selection Choice 'One where
+  select (Choice w xs) y = Choice y (toSet w <> toSet y <> xs)
+  select' c = select c . Just
+  unselected (Choice x xs) = maybe xs (`Set.delete` xs) x
+  selected = _selected
+  withOptions x (ftoSet -> xs) = Choice x $ maybe xs (`Set.insert` xs) x
+  withOptions' = withOptions . Just
+
+instance Selection Choice 'AtleastOne where
   select (Choice _ xs) y = Choice y (Set.insert y xs)
-  select1 = select
+  select' = select
+  unselected (Choice x xs) = Set.delete x xs
+  selected = _selected
+  withOptions x (ftoSet -> xs) = Choice x (Set.insert x xs)
+  withOptions' = withOptions
 
-instance Selection 'Many where
+instance Selection Choice 'Many where
   select (Choice x xs) y = Choice (y <> x) (y <> xs)
-  select1 c = select c . Set.singleton
+  select' c = select c . Set.singleton
+  unselected (Choice x xs) = Set.difference xs x
+  selected = _selected
+  withOptions x (ftoSet -> xs) = Choice x (x <> xs)
+  withOptions' = withOptions . Set.singleton
 
 
-class WithOptions  (p :: Pick)   where withOptions :: Ord a => Selected p a -> Set a -> Choice p a
-instance WithOptions 'AtleastOne where withOptions x xs = Choice x (Set.insert x xs)
-instance WithOptions 'Many       where withOptions x xs = Choice x (x <> xs)
+class Selection f p => Deselection f (p :: Pick) where
+  noselection :: (Foldable g, Ord a) => g a -> f p a
+  deselect    :: Ord a => f p a -> f p a
+
+instance Deselection Choice 'One where
+  noselection = Choice Nothing . Set.fromList . F.toList
+  deselect = flip select Nothing
+
+instance Deselection Choice 'Many where
+  noselection = Choice mempty . Set.fromList . F.toList
+  deselect (Choice ys xs) = Choice mempty (ys <> xs)
 
 
-class Valid (p :: Pick)    where valid :: Ord a => Choice p a -> Bool
-instance Valid 'One        where valid (Choice x xs) = Set.valid xs && maybe True (`Set.member` xs) x
-instance Valid 'AtleastOne where valid (Choice x xs)  = Set.member x xs && Set.valid xs
-instance Valid 'Many       where valid (Choice x xs)  = x `Set.isSubsetOf` xs && Set.valid x && Set.valid xs
-
-
-class Deselection (p :: Pick) where deselect :: Ord a => Choice p a -> Choice p a
-instance Deselection 'One where deselect (Choice _ xs) = Choice Nothing xs
-instance Deselection 'Many where deselect (Choice _ xs) = Choice mempty xs
-
-
-next, nextLoop, prev, prevLoop :: Ord a => Choice 'AtleastOne a -> Choice 'AtleastOne a
-next     c@(Choice x xs) = maybe c                                (select c) $ Set.lookupGT x xs
-nextLoop c@(Choice x xs) = maybe (unsafeSelectFirst c) (select c) $ Set.lookupGT x xs
-prev     c@(Choice x xs) = maybe c                                (select c) $ Set.lookupLT x xs
-prevLoop c@(Choice x xs) = maybe (unsafeSelectLast c)  (select c) $ Set.lookupLT x xs
+next, nextLoop, prev, prevLoop :: (Selection f 'AtleastOne, Ord a) => f 'AtleastOne a -> f 'AtleastOne a
+next     xs = maybe xs                     (select xs) . Set.lookupGT (selected xs) $ toSet xs
+nextLoop xs = maybe (unsafeSelectFirst xs) (select xs) . Set.lookupGT (selected xs) $ toSet xs
+prev     xs = maybe xs                     (select xs) . Set.lookupLT (selected xs) $ toSet xs
+prevLoop xs = maybe (unsafeSelectLast xs)  (select xs) . Set.lookupLT (selected xs) $ toSet xs
 
 
 selectAll :: Choice 'Many a -> Choice 'Many a
 selectAll (Choice _ xs) = Choice xs xs
 
 
-unsafeSelectFirst :: (Selection p, Ord a) => Choice p a -> Choice p a
-unsafeSelectFirst c = select1 c . Set.findMin $ options c
+unsafeSelectFirst :: (Selection f p, Ord a) => f p a -> f p a
+unsafeSelectFirst c = select' c . Set.findMin $ toSet c
 
 
-unsafeSelectLast :: (Selection p, Ord a) => Choice p a -> Choice p a
-unsafeSelectLast c = select1 c . Set.findMax $ options c
+unsafeSelectLast :: (Selection f p, Ord a) => f p a -> f p a
+unsafeSelectLast c = select' c . Set.findMax $ toSet c
 
 
-selectFirst :: (Selection p, Ord a) => Choice p a -> Maybe (Choice p a)
-selectFirst c = fmap (select1 c) . Set.lookupMin $ options c
+selectFirst :: (Selection f p, Ord a) => f p a -> Maybe (f p a)
+selectFirst c = fmap (select' c) . Set.lookupMin $ toSet c
 
 
-selectLast :: (Selection p, Ord a) => Choice p a -> Maybe (Choice p a)
-selectLast c = fmap (select1 c) . Set.lookupMax $ options c
+selectLast :: (Selection f p, Ord a) => f p a -> Maybe (f p a)
+selectLast c = fmap (select' c) . Set.lookupMax $ toSet c
 
 
 fullset :: (Bounded a, Enum a) => Set a
 fullset = Set.fromDistinctAscList [minBound..maxBound]
 
 
-fullOptions :: (Bounded a, Enum a) => Choice 'One a
-fullOptions = Choice Nothing fullset
+fullOptions :: (Deselection f p, Bounded a, Enum a, Ord a) => f p a
+fullOptions = noselection fullset
 
 
-emptyFromList :: Ord a => [a] -> Choice 'One a
-emptyFromList xs = emptyFromSet $ Set.fromList xs
+fromNonEmpty :: (Selection f p, Ord a) => NE.NonEmpty a -> f p a
+fromNonEmpty xs' = let (x NE.:| xs) = NE.sort xs' in x `withOptions'` Set.fromList xs
 
 
-emptyFromSet :: Set a -> Choice 'One a
-emptyFromSet = Choice Nothing
-
-
-nonEmptyFromList :: Ord a => [a] -> Maybe (Choice 'AtleastOne a)
-nonEmptyFromList xs'@(_:_) = let x = minimum xs' in Just $ Choice x $ Set.fromList xs'
-nonEmptyFromList _        = Nothing
-
-
-fromNonEmpty :: Ord a => NE.NonEmpty a -> Choice 'AtleastOne a
-fromNonEmpty xs' = let (x NE.:| xs) = NE.sort xs' in withOptions x $ Set.fromList xs
-
-
-selectWhen :: Ord a => (a -> Bool) -> Choice p a -> Maybe (Choice 'Many a)
-selectWhen p (Choice _ xs) = if sub == Set.empty then Nothing else Just (Choice sub xs)
+selectWhen :: (SetLike g, Selection f 'Many, Ord a) => (a -> Bool) -> g a -> Maybe (f 'Many a)
+selectWhen p xs' = if sub == Set.empty then Nothing else Just (sub `withOptions` xs)
   where sub = Set.filter p xs
+        xs = toSet xs'
 
 
-selectFirstWhen :: Ord a => (a -> Bool) -> Choice p a -> Maybe (Choice 'One a)
-selectFirstWhen p (Choice _ xs) = if sub == Set.empty then Nothing else selectFirst $ emptyFromSet sub
-  where sub = Set.filter p xs
+selectFirstWhen :: (SetLike g, Deselection f p, Ord a) => (a -> Bool) -> g a -> Maybe (f p a)
+selectFirstWhen p xs = if sub == Set.empty then Nothing else selectFirst $ noselection sub
+  where sub = Set.filter p $ toSet xs
 
 
-selectLastWhen :: Ord a => (a -> Bool) -> Choice p a -> Maybe (Choice 'One a)
-selectLastWhen p (Choice _ xs) = if sub == Set.empty then Nothing else selectLast $ emptyFromSet sub
-  where sub = Set.filter p xs
+selectLastWhen :: (SetLike g, Deselection f p, Ord a) => (a -> Bool) -> g a -> Maybe (f p a)
+selectLastWhen p xs = if sub == Set.empty then Nothing else selectLast $ noselection sub
+  where sub = Set.filter p $ toSet xs
 
 
-toSet :: Choice p a -> Set a
-toSet = options
+toList :: (SetLike f, Ord a) => f a -> [a]
+toList = Set.toList . toSet
 
 
-toList :: Choice p a -> [a]
-toList = Set.toList . options
+singleton :: (Selection f p, Ord a) => a -> f p a
+singleton x = x `withOptions'` Set.singleton x
 
 
-singleton :: a -> Choice 'AtleastOne a
-singleton x = Choice x $ Set.singleton x
+before :: (Selection f 'AtleastOne, Ord a) => f 'AtleastOne a -> Set a
+before xs = Set.filter (< selected xs) $ toSet xs
 
 
-before :: Ord a => Choice 'AtleastOne a -> Set a
-before (Choice x xs) = Set.filter (< x) xs
+unsafeSelectAt :: (SetLike g, Selection f 'AtleastOne, Ord a) => Int -> g a -> f 'AtleastOne a
+unsafeSelectAt i xs' = let xs = toSet xs' in Set.elemAt i xs `withOptions'` xs
 
 
-unsafeSelectAt :: Int -> Choice p a -> Choice 'AtleastOne a
-unsafeSelectAt i (Choice _ xs) = Choice (Set.elemAt i xs) xs
+getIndex :: (Selection f 'AtleastOne, Ord a) => f 'AtleastOne a -> Int
+getIndex xs = findIndex (selected xs) $ toSet xs
 
 
-getIndex :: Ord a => Choice 'AtleastOne a -> Int
-getIndex (Choice x xs) = findIndex x xs
+after :: (Selection f 'AtleastOne, Ord a) => f 'AtleastOne a -> Set a
+after xs = Set.filter (> selected xs) $ toSet xs
 
 
-after :: Ord a => Choice 'AtleastOne a -> Set a
-after (Choice x xs) = Set.filter (> x) xs
+size :: (SetLike g, Ord a) => g a -> Int
+size = Set.size . toSet
 
 
-size :: Choice p a -> Int
-size (Choice _ xs) = Set.size xs
+insert :: (Selection f p, Ord a) => a -> f p a -> f p a
+insert y xs = selected xs `withOptions` Set.insert y (toSet xs)
 
 
-insert :: Ord a => a -> Choice p a -> Choice p a
-insert y (Choice x xs) = Choice x (Set.insert y xs)
+delete :: (Compactable (f p), Ord a) => a -> f p a -> f p a
+delete y = Control.Compactable.filter (/= y)
 
 
-delete :: Ord a => a -> Choice 'One a -> Choice 'One a
-delete y (Choice x xs) = Choice (if x == Just y then Nothing else x) $ Set.delete y xs
-
-
-addSelection :: Ord a => a -> Choice 'Many a -> Choice 'Many a
+addSelection :: (Selection f 'Many, Ord a) => a -> f 'Many a -> f 'Many a
 addSelection y c = select c $ Set.singleton y
 
 
-deselectMany :: Ord a => Set a -> Choice 'Many a -> Maybe (Choice 'Many a)
-deselectMany y (Choice x xs) = let w = Set.difference x y in if w == Set.empty then Nothing else Just $ Choice w xs
-
-
-deselect1 :: Ord a => a -> Choice 'Many a -> Maybe (Choice 'Many a)
-deselect1 x = deselectMany (Set.singleton x)
-
-
-replaceSelection :: (Selection p, Ord a) => Selected p a -> Choice p a -> Choice p a
-replaceSelection y c = let Choice _ xs = select c y in Choice y xs
+deselectMany :: (Compactable (f p), Ord a) => Set a -> f p a -> f p a
+deselectMany y = Control.Compactable.filter (`Set.member` y)
 
 
 data ConsideredChoice p a = ConsideredChoice
-  { consideration :: Considered p a
-  , choice        :: Choice p a
+  { _consideration :: Considered p a
+  , _choice        :: Choice p a
   }
 
 
@@ -246,26 +281,109 @@ deriving instance (Eq   (Selected p a), Eq   (Considered p a), Eq a)          =>
 deriving instance (Ord  (Selected p a), Ord  (Considered p a), Ord a)         => Ord  (ConsideredChoice p a)
 deriving instance Generic (ConsideredChoice p a)
 
+instance (Compactable (Choice p), Compactable (Considered p)) => Compactable (ConsideredChoice p) where
+  compact (ConsideredChoice x xs) = ConsideredChoice (compact x) (compact xs)
+  separate (ConsideredChoice x xs) = let (l,r) = separate xs; (l',r') = separate x in (ConsideredChoice l' l, ConsideredChoice r' r)
+  filter p (ConsideredChoice x xs) = ConsideredChoice (Control.Compactable.filter p x) $ Control.Compactable.filter p xs
+  partition p (ConsideredChoice x xs) = let (l, r) = Control.Compactable.partition p xs; (l',r') = Control.Compactable.partition p x in (ConsideredChoice l' l, ConsideredChoice r' r)
 
-type family Considered (p :: Pick) a where
-  Considered 'One        a = a
-  Considered 'AtleastOne a = a
-  Considered 'Many       a = Set a
+instance (Ord a, Considered p ~ Maybe, Semigroup (Choice p a))
+    => Semigroup (ConsideredChoice p a) where
+  ConsideredChoice c cc <> ConsideredChoice c' cc' = ConsideredChoice (c <|> c') (cc <> cc')
 
-
-class InjectConsidered (p :: Pick) where injectConsidered :: Ord a => Considered p a -> Choice p a -> Choice p a
-instance InjectConsidered 'One     where injectConsidered = Shpadoinkle.Widgets.Types.Choice.insert
-instance InjectConsidered 'Many    where injectConsidered xs (Choice y ys) = Choice y (xs <> ys)
-
-
-consider :: (InjectConsidered p, Ord a) => Considered p a -> ConsideredChoice p a -> ConsideredChoice p a
-consider x (ConsideredChoice _ c) = ConsideredChoice x (injectConsidered x c)
+instance {-# OVERLAPPING #-} (Ord a) => Semigroup (ConsideredChoice 'Many a) where
+  ConsideredChoice c cc <> ConsideredChoice c' cc' = ConsideredChoice (c <> c') (cc <> cc')
 
 
-shrug :: ConsideredChoice p a -> Choice p a
-shrug = choice
+type family Considered (p :: Pick) :: Type -> Type where
+  Considered 'One        = Maybe
+  Considered 'AtleastOne = Maybe
+  Considered 'Many       = Set
 
 
-choose :: (Considered p a ~ Selected p a, Selection p, Ord a)
-       => ConsideredChoice p a -> ConsideredChoice p a
-choose (ConsideredChoice x xs) = ConsideredChoice x $ select xs x
+instance (Considered p ~ Maybe, SetLike (Choice p)) => SetLike (ConsideredChoice p) where
+  toSet (ConsideredChoice x xs) = toSet xs <> case x of
+    Just y -> Set.singleton y
+    _      -> mempty
+  smap f (ConsideredChoice x xs) = ConsideredChoice (f <$> x) (smap f xs)
+  valid (ConsideredChoice _ xs) = Shpadoinkle.Widgets.Types.Choice.valid xs
+
+
+instance SetLike (ConsideredChoice 'Many) where
+  toSet (ConsideredChoice ys xs) = ys <> toSet xs
+  smap f (ConsideredChoice ys xs) = ConsideredChoice (smap f ys) (smap f xs)
+  valid (ConsideredChoice ys xs) = Set.valid ys && Shpadoinkle.Widgets.Types.Choice.valid xs
+
+
+instance (Considered p ~ Maybe, SetLike (ConsideredChoice p), Selection Choice p)
+    => Selection ConsideredChoice p where
+  select  (ConsideredChoice c xs) x = ConsideredChoice c (select xs x)
+  select' (ConsideredChoice c xs) x = ConsideredChoice c (select' xs x)
+  unselected        = unselected . _choice
+  selected          = selected . _choice
+  withOptions  x xs = ConsideredChoice Nothing (x `withOptions` xs)
+  withOptions' x xs = ConsideredChoice Nothing (x `withOptions'` xs)
+
+
+instance SetLike (ConsideredChoice 'Many) => Selection ConsideredChoice 'Many where
+  select  (ConsideredChoice c xs) x = ConsideredChoice c (select xs x)
+  select' (ConsideredChoice c xs) x = ConsideredChoice c (select' xs x)
+  unselected        = unselected . _choice
+  selected          = selected . _choice
+  withOptions  x xs = ConsideredChoice mempty (x `withOptions` xs)
+  withOptions' x xs = ConsideredChoice mempty (x `withOptions'` xs)
+
+
+instance Selection ConsideredChoice 'One => Deselection ConsideredChoice 'One where
+  noselection = ConsideredChoice Nothing . noselection
+  deselect (ConsideredChoice c xs) = ConsideredChoice c $ deselect (select xs c)
+
+instance Selection ConsideredChoice 'Many => Deselection ConsideredChoice 'Many where
+  noselection = ConsideredChoice mempty . noselection
+  deselect (ConsideredChoice c xs) = ConsideredChoice c $ deselect (select xs c)
+
+
+class Selection f p => Consideration f (p :: Pick) where
+  consider   :: Ord a => Considered p a -> f p a -> f p a
+  consider'  :: Ord a => a -> f p a -> f p a
+  choose     :: Ord a => f p a -> f p a
+  choice     :: Ord a => f p a -> Choice p a
+  considered :: Ord a => f p a -> Considered p a
+  shrug      :: Ord a => f p a -> f p a
+
+instance Consideration ConsideredChoice 'One where
+  consider x = ConsideredChoice x . maybe id Shpadoinkle.Widgets.Types.Choice.insert x . _choice
+  consider' = consider @ConsideredChoice @'One . Just
+  choose (ConsideredChoice x xs) = ConsideredChoice Nothing $ select xs x
+  choice = _choice
+  considered = _consideration
+  shrug (ConsideredChoice _ xs) = ConsideredChoice Nothing xs
+
+instance Consideration ConsideredChoice 'AtleastOne where
+  consider x = ConsideredChoice x . maybe id Shpadoinkle.Widgets.Types.Choice.insert x . _choice
+  consider' = consider @ConsideredChoice @'AtleastOne . Just
+  choose (ConsideredChoice x xs) = ConsideredChoice Nothing . fromMaybe xs $ select xs <$> x
+  choice = _choice
+  considered = _consideration
+  shrug (ConsideredChoice _ xs) = ConsideredChoice Nothing xs
+
+instance Selection ConsideredChoice 'Many => Consideration ConsideredChoice 'Many where
+  consider xs (ConsideredChoice _ (Choice y ys)) = ConsideredChoice xs (Choice y (xs <> ys))
+  consider' = consider @ConsideredChoice @'Many . Set.singleton
+  choose (ConsideredChoice s xs) = ConsideredChoice Set.empty $ select xs s
+  choice = _choice
+  considered = _consideration
+  shrug (ConsideredChoice _ xs) = ConsideredChoice mempty xs
+
+
+unsafeConsiderFirst :: (Consideration f p, Ord a) => f p a -> f p a
+unsafeConsiderFirst c = Set.findMin (toSet c) `consider'` c
+
+
+unsafeConsiderLast :: (Consideration f p, Ord a) => f p a -> f p a
+unsafeConsiderLast c = Set.findMax (toSet c) `consider'` c
+
+
+considerNext, considerPrev :: (Considered p a ~ Maybe a, Consideration f p, Ord a) => f p a -> f p a
+considerNext c = maybe (unsafeConsiderFirst c) (`consider'` c) $ considered c >>= (\x -> Set.lookupGT x $ toSet c)
+considerPrev c = maybe (unsafeConsiderLast c)  (`consider'` c) $ considered c >>= (\x -> Set.lookupLT x $ toSet c)

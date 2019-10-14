@@ -84,3 +84,16 @@ executables:
       - Shpadoinkle
       - Shpadoinkle-html
       - Shpadoinkle-backend-pardiff
+
+  widgets:
+    main: Widgets.hs
+    source-dirs: ./widgets
+    dependencies:
+      - text
+      - stm
+
+      - Shpadoinkle
+      - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-html
+      - Shpadoinkle-widgets
+

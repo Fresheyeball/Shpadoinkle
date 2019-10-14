@@ -24,7 +24,7 @@ import           Language.Javascript.JSaddle
 import           Shpadoinkle
 import           Shpadoinkle.Html            hiding (a, a', max, min, s, s')
 import qualified Shpadoinkle.Html            as Html
-import           Shpadoinkle.Widgets.Present
+import           Shpadoinkle.Widgets.Types
 
 
 data Sort = ASC | DESC

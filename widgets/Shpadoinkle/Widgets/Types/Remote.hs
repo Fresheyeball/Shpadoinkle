@@ -13,7 +13,7 @@ data Remote e a
   | Failure e
   | Loading
   | NotAsked
-  deriving (Eq, Ord, Generic, Functor)
+  deriving (Eq, Ord, Show, Read, Generic, Functor)
 
 
 instance Applicative (Remote e) where
