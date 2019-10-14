@@ -29,6 +29,7 @@ library:
     - Shpadoinkle.Html.Memo
     - Shpadoinkle.Html.Utils
     - Shpadoinkle.Html.LocalStorage
+    - Shpadoinkle.Keyboard
   source-dirs: .
   dependencies:
     - jsaddle

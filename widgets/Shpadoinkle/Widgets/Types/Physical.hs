@@ -1,3 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
+
+
 module Shpadoinkle.Widgets.Types.Physical where
 
 
@@ -5,7 +8,7 @@ import           Shpadoinkle.Widgets.Types.Core
 
 
 data Toggle = Closed Hygiene | Open
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Read)
 
 
 instance Enum Toggle where
@@ -36,10 +39,23 @@ instance Monoid Toggle where
   mempty = Closed Clean
 
 
-setClosed :: Toggle -> Toggle
-setClosed t = case t of
-  Open -> Closed Dirty
-  _    -> t
+class IsToggle a where
+  close    :: a -> a
+  toggle   :: a -> a
+  open     :: a -> a
+
+
+instance IsToggle Toggle where
+
+  close = \case
+    Open -> Closed Dirty
+    t    -> t
+
+  toggle = \case
+    Open     -> Closed Dirty
+    Closed _ -> Open
+
+  open = const Open
 
 
 data Visbility = Visible | Hidden

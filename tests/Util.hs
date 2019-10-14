@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# OPTIONS_GHC -fno-warn-incomplete-record-updates      #-}
@@ -9,6 +10,7 @@ module Util where
 
 import           Control.Monad
 import           Control.Monad.IO.Class
+import           Data.Maybe
 import           Data.Text
 import           GHC.Conc
 import           Network.Wai.Application.Static
@@ -27,16 +29,23 @@ data Options = Options
   , path       :: String
   , chromePath :: Maybe FilePath
   , dataDir    :: Maybe FilePath
+  , headless   :: Bool
   } deriving Show
 
 
 getOptions :: IO Options
-getOptions = Options <$> getEnv "COMPILER" <*> getEnv "EXAMPLES" <*> lookupEnv "CHROME" <*> lookupEnv "DATADIR"
+getOptions = Options
+  <$> getEnv "COMPILER"
+  <*> getEnv "EXAMPLES"
+  <*> lookupEnv "CHROME"
+  <*> lookupEnv "DATADIR"
+  <*> ((==) (Just "1") <$> lookupEnv "HEADLESS")
 
 
 serve :: String -> IO () -> IO ()
 serve package test = do
-  Options {..} <- getOptions
+  ops@Options {..} <- getOptions
+  -- print ops
   case compiler of
 
 
@@ -59,7 +68,7 @@ hang = liftIO . forever $ threadDelay maxBound
 
 
 delay :: MonadIO m => m ()
-delay = liftIO $ threadDelay 100000
+delay = liftIO . threadDelay $ 500 * 1000
 
 
 port :: Int
@@ -71,12 +80,11 @@ sendKeysSlowly ks elm = forM_ (unpack ks) $
   \k -> sendKeys (pack [k]) elm
 
 
-chrome' :: Maybe FilePath -> Maybe FilePath -> Browser
-chrome' chromePath dataDir = chrome
+chrome' :: Maybe FilePath -> Maybe FilePath -> Bool -> Browser
+chrome' chromePath dataDir headless = chrome
   { chromeBinary = chromePath
-  , chromeOptions =
+  , chromeOptions = [ "--headless" | headless ] <>
       [ "--no-sandbox"
-      , "--headless"
       , "--profile-directory=Default"
       , "--disable-gpu"
       , "--window-size=1024,768"
@@ -90,7 +98,7 @@ itWD :: String -> WD () -> Spec
 itWD should test =
   it should $ do
     opts@Options {..} <- getOptions
-    runSession (useBrowser (chrome' chromePath dataDir) defaultConfig) $ do
+    runSession (useBrowser (chrome' chromePath dataDir headless) defaultConfig) $ do
       openPage $ "http://localhost:" <> show port <> case compiler of
         "ghcjs84" -> "/index.html"
         "ghc843"  -> ""
@@ -102,8 +110,17 @@ itWD should test =
 expectText :: Element -> Text -> WD ()
 expectText e t = do
   t' <- getText e
-  if t' == t then return () else liftIO $ t' `shouldBe` t
+  if t' == t then return () else t' `equals` t
 
 
 equals :: (Show a, Eq a) => a -> a -> WD ()
 equals x y = liftIO $ x `shouldBe` y
+
+
+expectClass :: Element -> Text -> WD ()
+expectClass e t = attr e "class" >>= equals (Just t)
+
+
+times :: Applicative m => Int -> m () -> m ()
+times i m = () <$ traverse (const m) [1..i]
+

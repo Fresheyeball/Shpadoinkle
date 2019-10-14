@@ -1,9 +1,11 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 
 module Shpadoinkle.Widgets.Types.Form where
 
 
+import           Data.String
 import           Data.Text
 
 import           Shpadoinkle.Widgets.Types.Core
@@ -12,7 +14,7 @@ import           Shpadoinkle.Widgets.Types.Core
 data Input a = Input
   { hygiene :: Hygiene
   , value   :: a
-  } deriving (Eq, Ord, Show, Functor)
+  } deriving (Eq, Ord, Show, Read, Functor)
 
 
 instance Applicative Input where
@@ -33,3 +35,9 @@ instance Monoid a => Monoid (Input a) where
 
 
 newtype Placeholder = Placeholder { unPlaceholder :: Text }
+  deriving (Eq, Ord, Show, Read, IsString, Semigroup, Monoid)
+
+
+newtype Search = Search { unSearch :: Text }
+  deriving (Eq, Ord, Show, Read, IsString, Semigroup, Monoid)
+

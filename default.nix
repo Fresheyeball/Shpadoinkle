@@ -1,4 +1,4 @@
-{ compiler ? "ghc843" }: let pkgs = import ./pkgs.nix; in with pkgs; with lib;
+{ compiler ? "ghc843", pack ? "all" }: let pkgs = import ./pkgs.nix; in with pkgs; with lib;
 let
 
   jsaddle-src = fetchFromGitHub
@@ -43,7 +43,7 @@ let
       (packageSourceOverrides targets)
       (self: super: {
           ghcWithPackages = p: super.ghcWithPackages (
-            f: p f ++ (if false && inNixShell then [ f.cabal-install f.ghcid ] else [])
+            f: p f ++ (if inNixShell then [ f.cabal-install f.ghcid ] else [])
           );
           jsaddle           = self.callCabal2nix            "jsaddle"      "${jsaddle-src}/jsaddle" {};
           jsaddle-warp      = dontCheck (self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {});
@@ -62,13 +62,19 @@ let
       })
   );
 
+  ghc843Tools = with haskell.packages.ghc843; [ stylish-haskell cabal-install ghcid ];
 
   packages = map (t: haskellPackages.${t}) (attrNames targets ++ [ "Shpadoinkle-tests" ]);
 
 in
 
-  if pkgs.lib.inNixShell
+  if inNixShell
   then haskellPackages.shellFor {
-    packages = _: packages;
-    buildInputs = [ pkgconfig selenium-server-standalone chromedriver chrome ];
+    packages = _: if pack == "all" then packages else [ haskellPackages.${pack} ];
+    COMPILER = "ghcjs84";
+    EXAMPLES = "../result";
+    CHROME   = "${chrome}/bin/google-chrome-stable";
+    HEADLESS = false;
+    buildInputs = [ selenium-server-standalone chromedriver chrome ] ++ ghc843Tools;
+    withHoogle = true;
   } else foldl (ps: p: ps // { ${p.pname} = p; }) {} packages

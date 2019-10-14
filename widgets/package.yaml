@@ -26,14 +26,13 @@ dependencies:
 library:
   exposed-modules:
     - Shpadoinkle.Widgets.Form.Input
-    - Shpadoinkle.Widgets.Form.Search
+    - Shpadoinkle.Widgets.Form.Dropdown
     - Shpadoinkle.Widgets.Types
     - Shpadoinkle.Widgets.Types.Choice
     - Shpadoinkle.Widgets.Types.Core
     - Shpadoinkle.Widgets.Types.Form
     - Shpadoinkle.Widgets.Types.Physical
     - Shpadoinkle.Widgets.Types.Remote
-    - Shpadoinkle.Widgets.Present
   source-dirs: .
   dependencies:
     - compactable
@@ -46,3 +45,16 @@ library:
 
     - Shpadoinkle
     - Shpadoinkle-html
+
+
+tests:
+  unit:
+    source-dirs: tests
+    main: Test.hs
+    dependencies:
+      - containers
+
+      - QuickCheck
+      - hspec
+
+      - Shpadoinkle-widgets

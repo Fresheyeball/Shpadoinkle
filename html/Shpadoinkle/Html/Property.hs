@@ -54,6 +54,10 @@ className :: ClassListRep cl => cl -> (Text, Prop m o)
 className = textProperty "className" . unwords . Set.toList . unClassList . asClass
 
 
+class' :: ClassList -> (Text, Prop m o)
+class' = className
+
+
 for' :: Text -> (Text, Prop m o)
 for' = textProperty "htmlFor"
 
@@ -72,4 +76,9 @@ $(msum <$> mapM mkTextProp
   , "dropzone", "itemprop"
   ])
 
+$(msum <$> mapM mkIntProp
+ [ "tabIndex", "width", "height" ])
 
+
+tabbable :: (Text, Prop m o)
+tabbable = tabIndex 0
