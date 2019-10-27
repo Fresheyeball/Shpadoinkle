@@ -32,6 +32,7 @@ let
   targets = {
     Shpadoinkle                  = gitignore ./core;
     Shpadoinkle-backend-snabbdom = gitignore ./backends/snabbdom;
+    Shpadoinkle-backend-static   = gitignore ./backends/static;
     Shpadoinkle-backend-pardiff  = gitignore ./backends/pardiff;
     Shpadoinkle-html             = gitignore ./html;
     Shpadoinkle-widgets          = gitignore ./widgets;
