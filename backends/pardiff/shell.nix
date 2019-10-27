@@ -1,1 +1,1 @@
-import ../default.nix { pack = "Shpadoinkle-backend-pardiff"; }
+import ../../default.nix { pack = "Shpadoinkle-backend-pardiff"; }
