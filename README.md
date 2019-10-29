@@ -1,6 +1,7 @@
 # Shpadoinkle
 
 [![pipeline status](https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg)](https://gitlab.com/fresheyeball/Shpadoinkle/commits/master)
+[![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
 
 ### I think I know precisely what I mean...
 
