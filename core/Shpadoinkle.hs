@@ -35,7 +35,9 @@ module Shpadoinkle
   , Territory (..)
   , type (~>)
   , RawNode (..), RawEvent (..)
-  , h, text, flag, listener, baked
+  , h, text, flag
+  , listener, listen, listenRaw, listen'
+  , baked
   , props, children, name, textContent, injectProps
   , MonadJSM, JSM
   , newTVarIO
@@ -156,10 +158,18 @@ text = TextNode
 -- | Construct a 'PFlag'
 flag :: Bool -> Prop m o
 flag = PFlag
--- | Construct a simple `PListener` that will perform an action independent of the event target or event object.
+-- | Construct a simple 'PListener` that will perform an action.
 listener :: m o -> Prop m o
 listener = PListener . const . const
-
+-- | Construct a 'PListener' from it's 'Text' name a raw listener.
+listenRaw :: Text -> (RawNode -> RawEvent -> m o) -> (Text, Prop m o)
+listenRaw k = (,) k . PListener
+-- | Construct a 'PListener' from it's 'Text' name and a Monad action.
+listen :: Text -> m o -> (Text, Prop m o)
+listen k = listenRaw k . const . const
+-- | Construct a 'PListener' from it's 'Text' name and an ouput value.
+listen' :: Applicative m => Text -> o -> (Text, Prop m o)
+listen' k f = listen k $ pure f
 
 -- | @(Html m)@ is not a 'Monad', and not even 'Applicative', by design.
 deriving instance Functor m => Functor (Html m)

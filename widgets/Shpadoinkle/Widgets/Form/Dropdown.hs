@@ -51,10 +51,8 @@ instance (Consideration ConsideredChoice p, Ord a)
   open   p = shrug $ p { _toggle = open   (_toggle p) }
 
 
-data Config m = Config
-  { _placeholder :: Placeholder
-  , _attrs       :: forall a. [(Text, Prop m a)]
-  }
+newtype Config m = Config
+  { _attrs :: forall a. [(Text, Prop m a)] }
 
 
 defConfig :: Config m

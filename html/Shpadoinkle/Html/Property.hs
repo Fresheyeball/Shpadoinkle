@@ -8,6 +8,20 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
+-- | This module prives a DSL for HTML properties
+-- This DSL is entirely optional. You may use the 'Prop' constructors
+-- provided by Shpadoinkle core and completely ignore this module.
+-- But for those who like a typed DSL with named functions for
+-- different properties, and nice overloading, this is for you.
+--
+-- Unlike Events and Elements, Properties come in one flavor. Vanilla.
+--
+-- Each named function documents the type of property it constructs
+-- whether it be 'Text' or 'Bool'. We also support other types
+-- such as `Int`, and `Float`, but via converting them to 'Text' and
+-- letting JavaScript weirdness cast them to the correct underlying type.
+
+
 module Shpadoinkle.Html.Property where
 
 
@@ -25,6 +39,8 @@ import           Shpadoinkle.Html.TH
 type TextProperty a = forall m o. ToPropText a => a -> (Text, Prop m o)
 
 
+-- | How do we take a non-textual value, and make it text JavaScript will
+-- cast appropriately
 class ToPropText a where toPropText :: a -> Text
 instance ToPropText Text where toPropText = id
 instance ToPropText Int where toPropText = pack . show

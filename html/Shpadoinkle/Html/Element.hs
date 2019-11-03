@@ -3,6 +3,35 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 
+-- | This module provides a DSL of HTML elements
+-- This DSL is entirely optional. You may use the 'Html' constuctors
+-- provided by Shpadoinkle core and completely ignore this module.
+-- You can write your code `h` style and not use this module. But for
+-- those who like a typed DSL with named functions for different tags
+-- this is for you.
+--
+-- Each HTML element comes in 3 flavors. Delicous flavors. Plain (IE 'div'),
+-- prime (IE 'div''), and underscore (IE 'div_'). The following should hold
+--
+-- @
+--   x [] = x'
+--   flip x [] = x_
+--   h "x" = x
+-- @
+--
+-- So plain versions like 'div' are for cases where we care about properties
+-- as well as children. `div\'' is for cases where we care about children
+-- but not properties. And 'div_' is for cases where we care about properties
+-- but not children.
+--
+-- Due to 'OverloadedStrings' this yields a pleasent DSL
+--
+-- @
+--  div "foo" [ "hiya" ]
+--  > <div class="foo"\>hiya</div\>
+-- @
+
+
 module Shpadoinkle.Html.Element where
 
 
@@ -13,7 +42,7 @@ import           Shpadoinkle
 import           Shpadoinkle.Html.TH
 
 
-$(fmap msum $ mapM mkElement
+$(msum <$> mapM mkElement
   [ "h1"
   , "h2"
   , "h3"
