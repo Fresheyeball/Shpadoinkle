@@ -24,9 +24,9 @@
 --
 -- Right now this module features limited specialization. But ideally we specialize
 -- all of these listeners. For example the 'onInput' listener takes a function
--- @(Text -> m o)@ where 'Text' is the current value of the input, and 'onKeyup' takes
--- a function of type @(KeyCode -> m o)@ from 'Shpadoinkle.Keyboard'. Mouse move
--- listeners for example, should take a function of @((Float, Float) -> m o)@ but
+-- @(Text -> m a)@ where 'Text' is the current value of the input, and 'onKeyup' takes
+-- a function of type @(KeyCode -> m a)@ from 'Shpadoinkle.Keyboard'. Mouse move
+-- listeners for example, should take a function of @((Float, Float) -> m a)@ but
 -- this work is not yet done. See https://gitlab.com/fresheyeball/Shpadoinkle/issues/5
 
 
@@ -42,35 +42,35 @@ import           Shpadoinkle.Html.TH
 import           Shpadoinkle.Keyboard
 
 
-onInput' :: MonadJSM m => (Text -> m o) -> (Text, Prop m o)
+onInput' :: MonadJSM m => (Text -> m a) -> (Text, Prop m a)
 onInput' f = listenRaw "input" $ \(RawNode n) _ ->
   f =<< liftJSM (valToText =<< unsafeGetProp "value" =<< valToObject n)
-onInput :: MonadJSM m => (Text -> o) -> (Text, Prop m o)
+onInput :: MonadJSM m => (Text -> a) -> (Text, Prop m a)
 onInput f = onInput' (pure . f)
 
 
-mkOnKey :: MonadJSM m => Text -> (KeyCode -> m o) -> (Text, Prop m o)
+mkOnKey :: MonadJSM m => Text -> (KeyCode -> m a) -> (Text, Prop m a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
   f =<< liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
-onKeyup, onKeydown, onKeypress :: MonadJSM m => (KeyCode -> m o) -> (Text, Prop m o)
+onKeyup, onKeydown, onKeypress :: MonadJSM m => (KeyCode -> m a) -> (Text, Prop m a)
 onKeyup    = mkOnKey "keyup"
 onKeydown  = mkOnKey "keydown"
 onKeypress = mkOnKey "keypress"
-onKeyup', onKeydown', onKeypress' :: MonadJSM m => (KeyCode -> o) -> (Text, Prop m o)
+onKeyup', onKeydown', onKeypress' :: MonadJSM m => (KeyCode -> a) -> (Text, Prop m a)
 onKeyup'    f = onKeyup    (pure . f)
 onKeydown'  f = onKeydown  (pure . f)
 onKeypress' f = onKeypress (pure . f)
 
-onCheck' :: MonadJSM m => (Bool -> m o) -> (Text, Prop m o)
+onCheck' :: MonadJSM m => (Bool -> m a) -> (Text, Prop m a)
 onCheck' f = listenRaw "update" $ \(RawNode n) _ ->
   f =<< liftJSM (valToBool =<< unsafeGetProp "checked" =<< valToObject n)
-onCheck :: MonadJSM m => (Bool -> o) -> (Text, Prop m o)
+onCheck :: MonadJSM m => (Bool -> a) -> (Text, Prop m a)
 onCheck f = onCheck' (pure . f)
 
-onSubmit' :: MonadJSM m => m o -> (Text, Prop m o)
+onSubmit' :: MonadJSM m => m a -> (Text, Prop m a)
 onSubmit' m = listenRaw "submit" $ \_ (RawEvent e) ->
   liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> m
-onSubmit :: MonadJSM m => o -> (Text, Prop m o)
+onSubmit :: MonadJSM m => a -> (Text, Prop m a)
 onSubmit = onSubmit' . pure
 
 

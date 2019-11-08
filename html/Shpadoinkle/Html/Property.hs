@@ -36,7 +36,7 @@ import           Shpadoinkle
 import           Shpadoinkle.Html.TH
 
 
-type TextProperty a = forall m o. ToPropText a => a -> (Text, Prop m o)
+type TextProperty t = forall m a. ToPropText t => t -> (Text, Prop m a)
 
 
 -- | How do we take a non-textual value, and make it text JavaScript will
@@ -62,19 +62,19 @@ instance ClassListRep (Text, Bool) where asClass = asClass . (:[])
 instance IsString ClassList where fromString = ClassList . Set.singleton . pack
 
 
-flagProperty :: Text -> Bool -> (Text, Prop m o)
+flagProperty :: Text -> Bool -> (Text, Prop m a)
 flagProperty t = (,) t . flag
 
 
-className :: ClassListRep cl => cl -> (Text, Prop m o)
+className :: ClassListRep cl => cl -> (Text, Prop m a)
 className = textProperty "className" . unwords . Set.toList . unClassList . asClass
 
 
-class' :: ClassList -> (Text, Prop m o)
+class' :: ClassList -> (Text, Prop m a)
 class' = className
 
 
-for' :: Text -> (Text, Prop m o)
+for' :: Text -> (Text, Prop m a)
 for' = textProperty "htmlFor"
 
 

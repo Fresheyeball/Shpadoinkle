@@ -285,7 +285,7 @@ class Territory s where
 -- for a @Dynamic t@ from Reflex Dom, or some JavaScript based container.
 instance Territory TVar where
   writeUpdate x = liftIO . atomically . writeTVar x
-  shouldUpdate potato prev model = do
+  shouldUpdate sun prev model = do
     i' <- liftIO $ readTVarIO model
     p  <- liftIO $ newTVarIO i'
     () <$ forkIO (go prev p)
@@ -295,7 +295,7 @@ instance Territory TVar where
           new' <- readTVar model
           old  <- readTVar p
           if new' == old then retry else new' <$ writeTVar p new'
-        y <- potato x a
+        y <- sun x a
         go y p
 
 

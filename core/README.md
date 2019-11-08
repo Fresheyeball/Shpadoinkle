@@ -105,7 +105,7 @@ input = h "input" [ onInput id ] []
 
 view :: Text -> Html m Text
 view s = h "div" []
-  [ hero -- no impedance, this Html is fully generic
+  [ hero  -- no impedance, this Html is fully generic
   , input -- no impedance, this Html has matching types `(Text ~ Text)`
   , text $ "Reversed: \"" <> reverse s <> "\""
   ]
@@ -130,7 +130,7 @@ view (i,t) = h "div" []
   ]
 ```
 
-## The primative
+## The primitive
 
 The Shpadoinkle programming model core primative is the `shpadoinkle` function.
 
