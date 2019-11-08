@@ -86,13 +86,13 @@ mkIntProp = mkProp ''Int "textProperty"
 mkElement :: String -> Q [Dec]
 mkElement name = let
 
-    n = mkName name
-    n' = mkName $ name ++ "'"
-    n_ = mkName $ name ++ "_"
-    n_' = mkName $ name ++ "_'"
-    m = VarT $ mkName "m"
-    o = VarT $ mkName "o"
-    l = mkName "h"
+    n   = mkName name
+    n'  = mkName $ name ++ "'"
+    n_  = mkName $ name ++  "_"
+    n'_ = mkName $ name ++ "'_"
+    m   = VarT $ mkName "m"
+    o   = VarT $ mkName "o"
+    l   = mkName "h"
 
   in return
 
@@ -120,10 +120,10 @@ mkElement name = let
     , ValD (VarP n') (NormalB (AppE (AppE (VarE (mkName "flip")) (VarE n)) (ListE []))) []
 
 
-    , SigD n_' (ForallT [] []
+    , SigD n'_ (ForallT [] []
       (AppT (AppT (ConT ''Shpadoinkle.Html) m) o))
 
-    , ValD (VarP n_')
+    , ValD (VarP n'_)
       (NormalB (AppE (AppE (VarE n) (ListE [])) (ListE []))) []
 
     ]

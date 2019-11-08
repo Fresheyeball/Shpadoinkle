@@ -10,12 +10,13 @@
 -- those who like a typed DSL with named functions for different tags
 -- this is for you.
 --
--- Each HTML element comes in 3 flavors. Delicous flavors. Plain (IE 'div'),
--- prime (IE 'div''), and underscore (IE 'div_'). The following should hold
+-- Each HTML element comes in 4 flavors. Delicous flavors. Plain (IE 'div'),
+-- prime (IE 'div''), underscore (IE 'div_'), and both (IE 'div_''). The following should hold
 --
 -- @
 --   x [] = x'
 --   flip x [] = x_
+--   x [] [] = x'_
 --   h "x" = x
 -- @
 --
