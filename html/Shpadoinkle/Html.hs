@@ -1,5 +1,4 @@
 -- | This module re-exports the complete HTML DSL,
--- including elements, properties, and events.
 
 module Shpadoinkle.Html
   ( module Shpadoinkle.Html.Element

@@ -23,6 +23,8 @@ import           Data.Text
 import           GHC.Generics
 import           Prelude                   hiding (div)
 
+
+import           Shpadoinkle
 import           Shpadoinkle.Html          hiding (p, s, s', selected)
 import           Shpadoinkle.Keyboard
 import           Shpadoinkle.Widgets.Types
@@ -56,7 +58,7 @@ newtype Config m = Config
 
 
 defConfig :: Config m
-defConfig = Config "Search" []
+defConfig = Config []
 
 
 instance (Compactable (ConsideredChoice p)) => Compactable (Dropdown p) where

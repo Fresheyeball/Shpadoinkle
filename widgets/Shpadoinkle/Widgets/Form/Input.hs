@@ -6,6 +6,7 @@ module Shpadoinkle.Widgets.Form.Input where
 
 import           Data.Text
 
+import           Shpadoinkle
 import           Shpadoinkle.Html               as Html
 import           Shpadoinkle.Widgets.Types.Core
 import           Shpadoinkle.Widgets.Types.Form as Form

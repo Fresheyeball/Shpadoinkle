@@ -14,8 +14,8 @@ import           Language.Javascript.JSaddle.Warp
 
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Html                 (br_', button, div_, h2_, id',
-                                                   onClick, span, text)
+import           Shpadoinkle.Html                 (br'_, button, div_, h2_, id',
+                                                   onClick, span)
 import           Shpadoinkle.Html.Utils
 
 
@@ -24,7 +24,7 @@ view count = div_
   [ h2_ [ "Counter Example" ]
   , "The current count is: "
   , span [ id' "out" ] [ text (pack $ show count) ]
-  , br_', br_'
+  , br'_, br'_
   , button [ onClick (count - 1) ] [ "Decrement" ]
   , button [ onClick (count + 1) ] [ "Increment" ]
   ]
