@@ -100,10 +100,8 @@ or are parametric. For example.
 hero :: Html m a
 hero = h "h1" [] [ text "Online String Reverse" ]
 
-
 input :: Html m Text
 input = h "input" [ onInput id ] []
-
 
 view :: Text -> Html m Text
 view s = h "div" []
@@ -120,9 +118,9 @@ we can resolve the mismatch using 'fmap' like so:
 input :: Html m Text
 input = h "input" [ onInput id ] []
 
-
 view :: (Int, Text) -> Html m (Int, Text)
 view (i,t) = h "div" []
+
   -- here we update the `Text` side of the model
   -- with the value produced by `input`, and we
   -- increment the `Int` as well.
@@ -139,13 +137,10 @@ The Shpadoinkle programming model core primative is the `shpadoinkle` function.
 ```haskell
 shpadoinkle
   :: (Shpadoinkle b m a, Territory t, Eq a) =>
-  => (m ~> JSM)
-  -> (t a -> b m ~> m)
-  -> a
-  -> t a
-  -> (a -> Html (b m) a)
-  -> b m RawNode
-  -> JSM ()
+  => (m ~> JSM) -> (t a -> b m ~> m) -- How to render
+  -> a -> t a                        -- What is our model
+  -> (a -> Html (b m) a)             -- What to render
+  -> b m RawNode -> JSM ()           -- Actually render
 ```
 
 This is the machine that runs a Shpadoinkle view. To run we need
