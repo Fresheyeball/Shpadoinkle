@@ -23,6 +23,7 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 #endif
 
+
 module Shpadoinkle.Backend.ParDiff
   ( ParDiffT (..)
   , runParDiff
@@ -359,7 +360,7 @@ instance
   , MonadJSM m
   , Eq a
   , Show a
-  , Territory t ) => Shpadoinkle (ParDiffT t a) m a where
+  , Territory t ) => Backend (ParDiffT t a) m a where
   type VNode (ParDiffT t a) m = ParVNode a
   interpret = interpret'
   setup = setup'

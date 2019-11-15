@@ -87,7 +87,7 @@ props toJSM i xs = do
   return o
 
 
-instance (MonadJSM m, Eq a) => Shpadoinkle (SnabbdomT a) m a where
+instance (MonadJSM m, Eq a) => Backend (SnabbdomT a) m a where
   type VNode (SnabbdomT a) m = SnabVNode
 
   interpret :: (m ~> JSM) -> Html (SnabbdomT a m) a -> SnabbdomT a m SnabVNode

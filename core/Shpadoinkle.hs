@@ -22,15 +22,15 @@
 
    A frontend abstraction motivated by simplicity, performance, and egonomics.
    This core module provides core abstractions and types with no implimentation details of any kind. IE no batteries included.
-   You may use this model a la carte, build ontop of it, or include more Shpadoinkle packages for additional batteries.
+   You may use this model a la carte, build ontop of it, or include more Backend packages for additional batteries.
 
-   Shpadoinkle is focused on letting you build your frontend the way you want to. And so is as unopinionated as possible, beyond providing a concrete programming model.
+   Backend is focused on letting you build your frontend the way you want to. And so is as unopinionated as possible, beyond providing a concrete programming model.
 -}
 
 module Shpadoinkle
   ( Html (..), Prop (..), Props
   , mapHtml, mapProp, mapProps, mapChildren
-  , Shpadoinkle (..)
+  , Backend (..)
   , shpadoinkle
   , Territory (..)
   , type (~>)
@@ -55,20 +55,20 @@ import           Language.Javascript.JSaddle
 import           UnliftIO.Concurrent
 
 
--- | This is the core type in Shpadoinkle.
+-- | This is the core type in Backend.
 -- The (Html m) 'Functor' is used to describe Html documents.
--- Please note, this is NOT a the Virtual Dom used by Shpadoinkle
+-- Please note, this is NOT a the Virtual Dom used by Backend
 -- this type backs a DSL that is then /interpreted/ into Virual Dom
 -- by the backend of your choosing. Html comments are not supported.
 data Html :: (Type -> Type) -> Type -> Type where
   -- | A standard node in the dom tree
   Node :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
   -- | If you can bake an element into a 'RawNode' you can embed it as a baked potato.
-  -- Shpadoinkle does not provide any state management or abstraction to deal with
+  -- Backend does not provide any state management or abstraction to deal with
   -- custom embeded content. It's own you to decide how and when this 'RawNode' will
   -- be updated. For example, if you wanted to embed a google map as a baked potato,
-  -- and you are driving your Shpadoinkle view with a 'TVar', you would need to build
-  -- the 'RawNode' for this map /outside/ of your Shpadoinkle view, and pass it in
+  -- and you are driving your Backend view with a 'TVar', you would need to build
+  -- the 'RawNode' for this map /outside/ of your Backend view, and pass it in
   -- as an argument. The 'RawNode' is a reference you control.
   Potato :: JSM RawNode -> Html m o
   -- | The humble text node
@@ -175,7 +175,7 @@ listen' k f = listen k $ pure f
 deriving instance Functor m => Functor (Html m)
 
 
--- | Properties of a Dom node, Shpadoinkle does not use attributes directly,
+-- | Properties of a Dom node, Backend does not use attributes directly,
 -- but rather is focued on the more capable properties that may be set on a dom
 -- node in JavaScript. If you wish to add attributes, you may do so
 -- by setting its corrosponding property.
@@ -226,7 +226,7 @@ instance {-# OVERLAPPING #-} IsString [(Text, Prop m o)] where
 
 
 -- | A dom node reference.
--- Useful for building baked potatoes, and binding a Shpadoinkle view to the page
+-- Useful for building baked potatoes, and binding a Backend view to the page
 newtype RawNode  = RawNode  { unRawNode  :: JSVal }
 -- | A raw event object reference
 newtype RawEvent = RawEvent { unRawEvent :: JSVal }
@@ -234,18 +234,18 @@ instance ToJSVal   RawNode where toJSVal   = return . unRawNode
 instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
 
 
--- | The Shpadoinkle class describes a backend that can render 'Html'.
+-- | The Backend class describes a backend that can render 'Html'.
 -- Backends are generally Monad Transformers @b@ over some Monad @m@.
-class Shpadoinkle b m a | b m -> a where
+class Backend b m a | b m -> a where
   -- | VNode type family allows backends to have their own Virtual Dom.
-  -- As such we can change out the rendering of our Shpadoinkle view
+  -- As such we can change out the rendering of our Backend view
   -- with new backends without updating our view logic.
   type VNode b m
   -- | A backend must be able to interpret 'Html' into its own internal Virtual Dom
   interpret
     :: (m ~> JSM)
     -- ^ Natural transformation for some @m@ to 'JSM'.
-    -- This is how Shpadoinkle get access to 'JSM' to perform the rendering side effect
+    -- This is how Backend get access to 'JSM' to perform the rendering side effect
     -> Html (b m) a
     -- ^ 'Html' to interpret
     -> b m (VNode b m)
@@ -255,7 +255,7 @@ class Shpadoinkle b m a | b m -> a where
   -- new view if the Virtual Dom changed.
   patch
     :: RawNode
-    -- ^ The container for rendering the Shpadoinkle view.
+    -- ^ The container for rendering the Backend view.
     -> Maybe (VNode b m)
     -- ^ Perhaps there is a previous Virtual Dom for use to diff. Will be 'Nothing' on the first run.
     -> VNode b m
@@ -301,10 +301,10 @@ instance Territory TVar where
 
 -- | The core view instantiation function.
 -- This combines a backend, a territory, and a model
--- and renders the Shpadoinkle view to the page.
+-- and renders the Backend view to the page.
 shpadoinkle
   :: forall b m a t
-   . Shpadoinkle b m a => Territory t => Eq a
+   . Backend b m a => Territory t => Eq a
   => (m ~> JSM)
   -- ^ how to be get to JSM?
   -> (t a -> b m ~> m)
