@@ -97,3 +97,37 @@ executables:
       - Shpadoinkle-html
       - Shpadoinkle-widgets
 
+  servant-crud-client:
+    main: Client.hs
+    source-dirs: ./servant-crud
+    other-modules:
+      - Types
+    dependencies:
+      - text
+      - stm
+      - containers
+      - servant
+      - polysemy
+
+      - Shpadoinkle
+      - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-html
+      - Shpadoinkle-widgets
+
+  servant-crud-server:
+    main: Server.hs
+    source-dirs: ./servant-crud
+    other-modules:
+      - Types
+    dependencies:
+      - text
+      - stm
+      - containers
+      - servant
+      - polysemy
+
+      - Shpadoinkle
+      - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-html
+      - Shpadoinkle-widgets
+

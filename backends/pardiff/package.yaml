@@ -36,6 +36,7 @@ library:
     - neat-interpolation
     - containers
     - these
+    - semialign
     - lens
     - random
     - text

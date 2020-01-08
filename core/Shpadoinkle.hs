@@ -1,8 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE BangPatterns           #-}
+{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE ExplicitNamespaces     #-}
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
@@ -31,9 +33,9 @@ module Shpadoinkle
   ( Html (..), Prop (..), Props
   , mapHtml, mapProp, mapProps, mapChildren
   , Backend (..)
-  , shpadoinkle
+  , shpadoinkle, fullPage
   , Territory (..)
-  , type (~>)
+  , type (~>), Html'
   , RawNode (..), RawEvent (..)
   , h, text, flag
   , listener, listen, listenRaw, listen'
@@ -41,6 +43,7 @@ module Shpadoinkle
   , props, children, name, textContent, injectProps
   , MonadJSM, JSM
   , newTVarIO
+  , runJSorWarp
   ) where
 
 
@@ -49,9 +52,12 @@ import           Control.Monad.IO.Class
 import           Data.Kind
 import           Data.String
 import           Data.Text
-import           GHC.Conc                    hiding (forkIO)
-import           GHC.Conc                    (retry)
+import           GHC.Conc                         hiding (forkIO)
+import           GHC.Conc                         (retry)
 import           Language.Javascript.JSaddle
+#ifndef ghcjs_HOST_OS
+import           Language.Javascript.JSaddle.Warp
+#endif
 import           UnliftIO.Concurrent
 
 
@@ -77,6 +83,7 @@ data Html :: (Type -> Type) -> Type -> Type where
 
 -- | Natural Transformation
 type m ~> n = forall a. m a -> n a
+type Html' a = forall m. Html m a
 
 
 -- | If you can provide a Natural Transformation from one Monad to another
@@ -234,6 +241,9 @@ instance ToJSVal   RawNode where toJSVal   = return . unRawNode
 instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
 
 
+-- |
+-- patch raw Nothing >=> patch raw Nothing = patch raw Nothing
+
 -- | The Backend class describes a backend that can render 'Html'.
 -- Backends are generally Monad Transformers @b@ over some Monad @m@.
 class Backend b m a | b m -> a where
@@ -334,3 +344,28 @@ shpadoinkle toJSM toM initial model view stage = do
     _ <- shouldUpdate (go c) n model
     _ <- j $ patch c Nothing n :: JSM (VNode b m)
     return ()
+
+
+
+fullPage
+  :: Backend b JSM a => Eq a
+  => (TVar a -> b JSM ~> JSM)
+  -- ^ What backend are we running?
+  -> a
+  -- ^ what is the initial state?
+  -> (a -> Html (b JSM) a)
+  -- ^ how should the html look?
+  -> b JSM RawNode
+  -- ^ where do we render?
+  -> JSM ()
+fullPage f i view getStage = do
+  model <- liftIO $ newTVarIO i
+  shpadoinkle id f i model view getStage
+
+
+runJSorWarp :: Int -> JSM () -> IO ()
+#ifdef ghcjs_HOST_OS
+runJSorWarp _ = id
+#else
+runJSorWarp = run
+#endif

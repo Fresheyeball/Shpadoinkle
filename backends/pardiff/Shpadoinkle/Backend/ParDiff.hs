@@ -24,6 +24,22 @@
 #endif
 
 
+{-|
+   This backend is to serve as a cannonical representation of a well
+   behaved backend. Defining well behaved in the context of web development
+   is rather difficult, and complex.
+
+   The rules of a backend are informal. Roughly, if we give the backend
+   some Html, we expect it to update the dom at runtime in the way we expect.
+
+   Since this is cannonical, all other backends are expected to behave
+   identically to this one. If differences exist they should be patched,
+   so that we retain renderer polymorphism. Such that we can change out
+   the renderer of our application, without updating the application logic
+   with confidence it will behave as expected.
+-}
+
+
 module Shpadoinkle.Backend.ParDiff
   ( ParDiffT (..)
   , runParDiff
