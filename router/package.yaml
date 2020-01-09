@@ -1,0 +1,45 @@
+name:         Shpadoinkle-router
+license:      BSD3
+license-file: LICENSE
+version:      0.0.0.1
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+
+
+ghc-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+ghcjs-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fno-warn-missing-home-modules
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+    - -dedupe
+
+
+dependencies:
+    - base
+
+    - servant
+    - http-api-data
+    - network-uri
+    - jsaddle
+    - text
+
+library:
+  source-dirs: .

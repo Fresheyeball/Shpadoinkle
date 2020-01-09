@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -66,7 +67,7 @@ class TableTerritory a where
   data TableColumn a :: Type
   data TableRow a :: Type
   toRows :: a -> [TableRow a]
-  toCells :: TableRow a -> [Html m b]
+  toCell :: TableRow a -> TableColumn a -> [Html m b]
   sortTable :: SortCol a -> TableRow a -> TableRow a -> Ordering
 
 
@@ -74,7 +75,7 @@ toggleSort :: Eq (TableColumn a) => TableColumn a -> SortCol a -> SortCol a
 toggleSort c (SortCol c' s) = if c == c' then SortCol c $ negateSort s else SortCol c mempty
 
 
-simple ::
+simple :: forall m a.
   ( MonadJSM m
   , TableTerritory a
   , Humanize (TableColumn a)
@@ -85,7 +86,9 @@ simple ::
 simple xs s@(SortCol sorton sortorder) =
   table []
   [ thead_ [ tr_ $ cth_ <$> [minBound..maxBound] ]
-  , tbody_ $ tr_ . toCells <$> sortBy (sortTable s) (toRows xs)
+  , tbody_ $ do
+      row <- sortBy (sortTable s) (toRows xs)
+      return . tr_ $ td_ . toCell row <$> [minBound..maxBound]
   ]
 
   where

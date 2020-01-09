@@ -1,11 +1,20 @@
 { isJS ? false, compiler ? "ghc864", pack ? "all" }: let pkgs = import <nixpkgs> {}; in with pkgs; with lib;
 let
 
+
   jsaddle-src = fetchFromGitHub
     { owner = "ghcjs";
       repo = "jsaddle";
       rev = "9b37e9972108f77e773ad0aa65ac2dd394d5f61e";
       sha256 = "0j1kbmck88drdgjj50si20n7iiyhbddgpwd3siclgpkpqa2gq1j0";
+    };
+
+
+  servant-src = fetchFromGitHub
+    { owner = "haskell-servant";
+      repo = "servant";
+      rev = "b4e5aa0deff238e117137be68a4345bb02b7a80b";
+      sha256 = "0x27bgrasbxzp045rqj4ldrfnm2k832ch7vfkl9s7xj0afrcy6pg";
     };
 
 
@@ -35,6 +44,7 @@ let
     Shpadoinkle-backend-static   = gitignore ./backends/static;
     Shpadoinkle-backend-pardiff  = gitignore ./backends/pardiff;
     Shpadoinkle-html             = gitignore ./html;
+    Shpadoinkle-router           = gitignore ./router;
     Shpadoinkle-widgets          = gitignore ./widgets;
     Shpadoinkle-examples         = gitignore ./examples;
   };
@@ -49,20 +59,25 @@ let
           ghcWithPackages = p: super.ghcWithPackages (
             f: p f ++ (if inNixShell then [ f.cabal-install f.ghcid ] else [])
           );
-          jsaddle           = self.callCabal2nix            "jsaddle"      "${jsaddle-src}/jsaddle" {};
-          jsaddle-warp      = dontCheck (self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {});
-          comonad           = dontCheck super.comonad;
-          extra             = dontCheck super.extra;
-          SHA               = dontCheck super.SHA;
-          pureMD5           = dontCheck super.pureMD5;
-          unliftio          = dontCheck super.unliftio;
-          semigroupoids     = dontCheck super.semigroupoids;
-          megaparsec        = dontCheck super.megaparsec;
-          lens              = dontCheck super.lens;
-          hpack             = haskell.packages.${compiler}.hpack;
-          http-types        = dontCheck super.http-types;
-          silently          = dontCheck super.silently;
-          Shpadoinkle-tests = haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ./tests) {};
+          jsaddle              = self.callCabal2nix            "jsaddle"      "${jsaddle-src}/jsaddle" {};
+          jsaddle-warp         = dontCheck (self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {});
+          comonad              = dontCheck super.comonad;
+          extra                = dontCheck super.extra;
+          SHA                  = dontCheck super.SHA;
+          pureMD5              = dontCheck super.pureMD5;
+          unliftio             = dontCheck super.unliftio;
+          semigroupoids        = dontCheck super.semigroupoids;
+          megaparsec           = dontCheck super.megaparsec;
+          lens                 = dontCheck super.lens;
+          hpack                = haskell.packages.${compiler}.hpack;
+          http-types           = dontCheck super.http-types;
+          silently             = dontCheck super.silently;
+          servant              = dontCheck (self.callCabal2nix "servant" "${servant-src}/servant" {});
+          servant-server       = dontCheck (self.callCabal2nix "servant-server" "${servant-src}/servant-server" {});
+          servant-client       = dontCheck (self.callCabal2nix "servant-client" "${servant-src}/servant-client" {});
+          servant-client-ghcjs = dontCheck (self.callCabal2nix "servant-client-ghcjs" "${servant-src}/servant-client-ghcjs" {});
+
+          Shpadoinkle-tests    = haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ./tests) {};
       })
   );
 

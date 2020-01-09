@@ -103,6 +103,8 @@ executables:
     other-modules:
       - Types
     dependencies:
+      - aeson
+      - lens
       - text
       - stm
       - containers
@@ -113,6 +115,14 @@ executables:
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-html
       - Shpadoinkle-widgets
+    when:
+      - condition: impl(ghcjs)
+        then:
+          dependencies:
+            - servant-client-ghcjs
+        else:
+          dependencies:
+            - servant-client
 
   servant-crud-server:
     main: Server.hs
@@ -120,7 +130,9 @@ executables:
     other-modules:
       - Types
     dependencies:
+      - aeson
       - text
+      - lens
       - stm
       - containers
       - servant
