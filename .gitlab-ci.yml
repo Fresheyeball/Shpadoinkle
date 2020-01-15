@@ -35,6 +35,8 @@ stages:
 build-864-ghc:
   stage: build
   script:
+  - export NIXPKGS_ALLOW_UNFREE=1
+  - export NIXPKGS_ALLOW_BROKEN=1
   - nix-build --argstr compiler ghc864 --fallback
   - rm -r result*
   artifacts:
@@ -43,6 +45,8 @@ build-864-ghc:
 build-864-ghcjs:
   stage: build
   script:
+  - export NIXPKGS_ALLOW_UNFREE=1
+  - export NIXPKGS_ALLOW_BROKEN=1
   - nix-build --argstr compiler ghc864 --arg isJS true --fallback
   - rm -r result*
   artifacts:
@@ -69,7 +73,9 @@ shell-864-ghcjs:
 test:
   stage: test
   script:
-  - NIXPKGS_ALLOW_UNFREE=1 nix-build test.nix --fallback
+  - export NIXPKGS_ALLOW_UNFREE=1
+  - export NIXPKGS_ALLOW_BROKEN=1
+  - nix-build test.nix --fallback
   - rm -r result
   artifacts:
     untracked: true
@@ -77,6 +83,8 @@ test:
 pages:
   stage: build
   script:
+  - export NIXPKGS_ALLOW_UNFREE=1
+  - export NIXPKGS_ALLOW_BROKEN=1
   - nix-build --arg isJS true -A Shpadoinkle-examples --fallback
   - mkdir public
   - cp -r result/bin/todomvc.jsexe/* public
