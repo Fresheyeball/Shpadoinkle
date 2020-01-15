@@ -62,7 +62,7 @@ let
             f: p f ++ (if inNixShell then [ f.cabal-install f.ghcid ] else [])
           );
           jsaddle              =              self.callCabal2nix "jsaddle"      "${jsaddle-src}/jsaddle" {};
-          jsaddle-warp         = dontCheckJs (self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {});
+          jsaddle-warp         = dontCheck   (self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {});
           comonad              = dontCheckJs super.comonad;
           extra                = dontCheckJs super.extra;
           SHA                  = dontCheckJs super.SHA;
@@ -74,6 +74,8 @@ let
           hpack                = haskell.packages.${compiler}.hpack;
           http-types           = dontCheckJs super.http-types;
           silently             = dontCheckJs super.silently;
+          QuickCheck           = dontCheckJs super.QuickCheck;
+          temporary            = dontCheckJs super.temporary;
           servant              = dontCheckJs (self.callCabal2nix "servant"              "${servant-src}/servant" {});
           servant-server       = dontCheck   (self.callCabal2nix "servant-server"       "${servant-src}/servant-server" {});
           servant-client       = dontCheck   (self.callCabal2nix "servant-client"       "${servant-src}/servant-client" {});
