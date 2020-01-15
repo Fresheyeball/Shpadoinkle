@@ -5,4 +5,4 @@ import           Types
 
 
 main :: IO ()
-main = putStrLn $ show Foo
+main = putStrLn $ "IT's gonna work" ++ show Root

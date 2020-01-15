@@ -58,3 +58,6 @@ class Present a where
   default present :: Humanize a => a -> [Html m b]
   present = pure . text . humanize
   {-# INLINE present #-}
+
+
+instance {-# OVERLAPPABLE #-} Humanize a => Present a

@@ -143,4 +143,4 @@ executables:
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-html
       - Shpadoinkle-widgets
-
+      - Shpadoinkle-router
