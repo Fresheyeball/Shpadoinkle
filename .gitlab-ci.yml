@@ -51,14 +51,18 @@ build-864-ghcjs:
 shell-864-ghc:
   stage: build
   script:
-  - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghc864 --command "echo works" --fallback
+  - export NIXPKGS_ALLOW_UNFREE=1
+  - export NIXPKGS_ALLOW_BROKEN=1
+  - nix-shell --argstr compiler ghc864 --command "echo works" --fallback
   artifacts:
     untracked: true
 
 shell-864-ghcjs:
   stage: build
   script:
-  - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghc864 --arg isJS true --command "echo works" --fallback
+  - export NIXPKGS_ALLOW_UNFREE=1
+  - export NIXPKGS_ALLOW_BROKEN=1
+  - nix-shell --argstr compiler ghc864 --arg isJS true --command "echo works" --fallback
   artifacts:
     untracked: true
 
