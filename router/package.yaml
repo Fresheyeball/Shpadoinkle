@@ -35,11 +35,15 @@ ghcjs-options:
 dependencies:
     - base
 
+    - compactable
     - servant
     - http-api-data
     - network-uri
-    - jsaddle
+    - ghcjs-dom
+    - jsaddle-dom
     - text
+
+    - Shpadoinkle
 
 library:
   source-dirs: .

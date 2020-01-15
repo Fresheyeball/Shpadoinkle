@@ -33,7 +33,7 @@ module Shpadoinkle
   ( Html (..), Prop (..), Props
   , mapHtml, mapProp, mapProps, mapChildren
   , Backend (..)
-  , shpadoinkle, fullPage
+  , shpadoinkle, fullPage, fullPageJSM
   , Territory (..)
   , type (~>), Html'
   , RawNode (..), RawEvent (..)
@@ -41,24 +41,22 @@ module Shpadoinkle
   , listener, listen, listenRaw, listen'
   , baked
   , props, children, name, textContent, injectProps
-  , MonadJSM, JSM
+  , MonadJSM, JSM, liftJSM
   , newTVarIO
   , runJSorWarp
   ) where
 
 
-
-import           Control.Monad.IO.Class
 import           Data.Kind
 import           Data.String
 import           Data.Text
-import           GHC.Conc                         hiding (forkIO)
 import           GHC.Conc                         (retry)
 import           Language.Javascript.JSaddle
 #ifndef ghcjs_HOST_OS
 import           Language.Javascript.JSaddle.Warp
 #endif
 import           UnliftIO.Concurrent
+import           UnliftIO.STM
 
 
 -- | This is the core type in Backend.
@@ -284,29 +282,35 @@ class Backend b m a | b m -> a where
 -- type you wish where this semantic can be implimented.
 class Territory s where
   -- | How do we update the state?
-  writeUpdate :: s a -> a -> JSM ()
+  writeUpdate :: s a -> (a -> JSM a) -> JSM ()
   -- | When should consider a state updated? This is akin to React's component should update thing.
   -- The idea is to provide a semantic for when we consider the model to have changed.
   shouldUpdate :: Eq a => (b -> a -> JSM b) -> b -> s a -> JSM ()
+  -- | Create a new territory
+  createTerritory :: a -> JSM (s a)
 
 
 -- | Cannoncal default implimentation of 'Territory' is just a 'TVar'.
 -- However there is nothing stopping your from writing your own alternative
 -- for a @Dynamic t@ from Reflex Dom, or some JavaScript based container.
 instance Territory TVar where
-  writeUpdate x = liftIO . atomically . writeTVar x
+  writeUpdate x f = do
+    a <- f =<< readTVarIO x
+    atomically $ writeTVar x a
+
   shouldUpdate sun prev model = do
-    i' <- liftIO $ readTVarIO model
-    p  <- liftIO $ newTVarIO i'
+    i' <- readTVarIO model
+    p  <- createTerritory i'
     () <$ forkIO (go prev p)
     where
       go x p = do
-        a <- liftIO . atomically $ do
+        a <- atomically $ do
           new' <- readTVar model
           old  <- readTVar p
           if new' == old then retry else new' <$ writeTVar p new'
         y <- sun x a
         go y p
+  createTerritory = newTVarIO
 
 
 -- | The core view instantiation function.
@@ -346,10 +350,27 @@ shpadoinkle toJSM toM initial model view stage = do
     return ()
 
 
-
 fullPage
-  :: Backend b JSM a => Eq a
-  => (TVar a -> b JSM ~> JSM)
+  :: Backend b m a => Territory t => Eq a
+  => (m ~> JSM)
+  -- ^ how do we get to JSM?
+  -> (t a -> b m ~> m)
+  -- ^ What backend are we running?
+  -> a
+  -- ^ what is the initial state?
+  -> (a -> Html (b m) a)
+  -- ^ how should the html look?
+  -> b m RawNode
+  -- ^ where do we render?
+  -> JSM ()
+fullPage g f i view getStage = do
+  model <- createTerritory i
+  shpadoinkle g f i model view getStage
+
+
+fullPageJSM
+  :: Backend b JSM a => Territory t => Eq a
+  => (t a -> b JSM ~> JSM)
   -- ^ What backend are we running?
   -> a
   -- ^ what is the initial state?
@@ -358,9 +379,7 @@ fullPage
   -> b JSM RawNode
   -- ^ where do we render?
   -> JSM ()
-fullPage f i view getStage = do
-  model <- liftIO $ newTVarIO i
-  shpadoinkle id f i model view getStage
+fullPageJSM = fullPage id
 
 
 runJSorWarp :: Int -> JSM () -> IO ()
