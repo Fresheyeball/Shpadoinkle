@@ -109,7 +109,6 @@ executables:
       - stm
       - containers
       - servant
-      - polysemy
 
       - Shpadoinkle
       - Shpadoinkle-backend-pardiff
@@ -137,7 +136,6 @@ executables:
       - stm
       - containers
       - servant
-      - polysemy
 
       - Shpadoinkle
       - Shpadoinkle-backend-pardiff

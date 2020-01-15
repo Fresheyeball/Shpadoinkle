@@ -8,13 +8,13 @@ build:
 
   - nix-build --argstr compiler ghc844 --fallback
   - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghc844 --command "echo works" --fallback
-  - nix-build --argstr compiler ghcjs84 --fallback
-  - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghcjs84 --command "echo works" --fallback
+  - nix-build --argstr compiler ghc844 --arg isJS true --fallback
+  - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghc844 --arg isJS true --command "echo works" --fallback
 
   - nix-build --argstr compiler ghc864 --fallback
   - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghc864 --command "echo works" --fallback
-  - nix-build --argstr compiler ghcjs86 --fallback
-  - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghcjs86 --command "echo works" --fallback
+  - nix-build --argstr compiler ghc864 --arg isJS true --fallback
+  - NIXPKGS_ALLOW_UNFREE=1 nix-shell --argstr compiler ghc864 --arg isJS true --command "echo works" --fallback
 
   - rm -r result*
   artifacts:
@@ -31,7 +31,7 @@ test:
 pages:
   stage: build
   script:
-  - nix-build --argstr compiler ghcjs86 -A Shpadoinkle-examples --fallback
+  - nix-build --arg isJS true -A Shpadoinkle-examples --fallback
   - mkdir public
   - cp -r result/bin/todomvc.jsexe/* public
   artifacts:
