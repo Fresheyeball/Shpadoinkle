@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RecordWildCards      #-}
 {-# LANGUAGE TypeApplications     #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
@@ -20,7 +21,9 @@ import           Servant.Client
 #endif
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
+import qualified Shpadoinkle.Html            as H
 import           Shpadoinkle.Html.Utils
+import           Shpadoinkle.Router          (fullPageSPA, navigate)
 import           Shpadoinkle.Widgets.Table   as Table
 
 import           Types
@@ -35,25 +38,34 @@ deleteSpaceCraft :: SpaceCraftId -> ClientM ()
   = client (Proxy @API)
 
 
-start :: Frontend
-start = Frontend
+start :: Route -> Frontend
+start r = Frontend
   { _table =
     [ SpaceCraft 2 0 (Just "thang") 1 AwayTeam Operational
     , SpaceCraft 3 0 (Just "sweet") 2 Scout    Operational
     , SpaceCraft 4 1 (Just "hey")   3 Scout    Inoperable
     ]
   , _sort  = SortCol SKUT ASC
+  , _route = r
   }
 
 
 view :: MonadJSM m => Frontend -> Html m Frontend
-view fe = ($ fe) . set sort <$> Table.simple (fe ^. table) (fe ^. sort)
+view fe = case fe ^. route of
+  Root   -> H.div_
+   [ ($ fe) . set sort <$> Table.simple (fe ^. table) (fe ^. sort)
+   , H.a [ H.onClick' (fe <$ navigate @SPA (Echo $ Just "plex")) ] [ text "ECHO" ]
+   ]
+  Echo t -> H.div_
+    [ maybe (text "Erie silence") text t
+    , H.a [ H.onClick' (fe <$ navigate @SPA Root) ] [ text "ROOT" ]
+    ]
 
 
 app :: JSM ()
 app = do
   addStyle "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-  fullPage runParDiff start view getBody
+  fullPageSPA @SPA id runParDiff start view getBody (const return) routes
 
 
 main :: IO ()

@@ -23,12 +23,14 @@ import           Control.Lens
 import           Control.Lens.TH           ()
 import           Data.Aeson
 import           Data.Function
+import           Data.Proxy
 import           Data.Set                  as Set
 import           Data.String
 import           Data.Text
 import           GHC.Generics
 import           Servant.API               hiding (Description)
 import           Shpadoinkle
+import           Shpadoinkle.Router
 import           Shpadoinkle.Widgets.Table
 import           Shpadoinkle.Widgets.Types
 
@@ -113,16 +115,37 @@ instance TableTerritory (Set SpaceCraft) where
 data Frontend = Frontend
   { _table :: Set SpaceCraft
   , _sort  :: SortCol (Set SpaceCraft)
+  , _route :: Route
   } deriving (Eq, Ord, Show)
+
+
+data Route
+  = Root
+  | Echo (Maybe Text)
+  deriving (Eq, Ord, Show)
 
 
 makeFieldsNoPrefix ''Frontend
 
 
-type API = "space-craft" :> Capture "id" SpaceCraftId :> Get '[JSON] SpaceCraft
-      :<|> "space-craft" :> Capture "id" SpaceCraftId :> ReqBody '[JSON] SpaceCraftUpdate :> Post '[JSON] ()
-      :<|> "space-craft" :> ReqBody '[JSON] SpaceCraftUpdate :> Put '[JSON] SpaceCraftId
-      :<|> "space-craft" :> ReqBody '[JSON] SpaceCraftId :> Delete '[JSON] ()
+type API = "api" :> "space-craft" :> Capture "id" SpaceCraftId :> Get '[JSON] SpaceCraft
+      :<|> "api" :> "space-craft" :> Capture "id" SpaceCraftId :> ReqBody '[JSON] SpaceCraftUpdate :> Post '[JSON] ()
+      :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftUpdate :> Put '[JSON] SpaceCraftId
+      :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftId :> Delete '[JSON] ()
 
 
-type SPA = "app" :> View
+type SPA = View
+      :<|> "app" :> View
+      :<|> "app" :> "echo" :> QueryParam "echo" Text :> View
+
+
+routes :: SPA `RoutedAs` Route
+routes = Root
+    :<|> Root
+    :<|> Echo
+
+
+instance Routed SPA Route where
+  redirect = \case
+    Root   -> Redirect (Proxy @("app" :> View)) id
+    Echo t -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> View)) ($ t)

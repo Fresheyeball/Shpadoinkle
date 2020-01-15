@@ -3,7 +3,6 @@
 {-# LANGUAGE EmptyDataDecls            #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances         #-}
-{-# LANGUAGE FunctionalDependencies    #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
@@ -34,6 +33,7 @@ import           Data.Maybe                    (isJust)
 import           Data.Proxy
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
+import           GHC.Conc
 import           GHC.TypeLits
 import           GHCJS.DOM
 import           GHCJS.DOM.EventM              (on)
@@ -57,46 +57,45 @@ data View
 
 -- | Term level API representation
 data Router a where
-    RChoice      :: Router a -> Router a -> Router a
-    RCapture     :: FromHttpApiData x => (x -> Router a) -> Router a
-    RQueryParam  :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> (Maybe x -> Router a) -> Router a
-    RQueryParams :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> ([x] -> Router a) -> Router a
-    RQueryFlag   :: KnownSymbol sym => Proxy sym -> (Bool -> Router a) -> Router a
-    RPath        :: KnownSymbol sym => Proxy sym -> Router a -> Router a
-    RView        :: a -> Router a
+  RChoice      :: Router a -> Router a -> Router a
+  RCapture     :: FromHttpApiData x => (x -> Router a) -> Router a
+  RQueryParam  :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> (Maybe x -> Router a) -> Router a
+  RQueryParams :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> ([x] -> Router a) -> Router a
+  RQueryFlag   :: KnownSymbol sym => Proxy sym -> (Bool -> Router a) -> Router a
+  RPath        :: KnownSymbol sym => Proxy sym -> Router a -> Router a
+  RView        :: a -> Router a
 
 
 -- | Redirect is an existentialized Proxy that must be a member of the API
 data Redirect api
-    = forall sub. (IsElem sub api, HasLink sub)
-    => Redirect !(Proxy sub) !(MkLink sub Link -> Link)
+  = forall sub. (IsElem sub api, HasLink sub)
+  => Redirect !(Proxy sub) !(MkLink sub Link -> Link)
 
 
-class Routed a r | r -> a where
-   redirect :: r -> Redirect api
+class Routed a r where
+  redirect :: r -> Redirect a
 
 
 navigate :: forall a m r. MonadJSM m => Routed a r => r -> m ()
 navigate r = do
-    window <- currentWindowUnchecked
-    history <- getHistory window
-    case redirect r :: Redirect a of
-      Redirect pr mf -> do
-        let uri = linkURI . mf $ safeLink (Proxy @a) pr
-        pushState history () ("" :: Text) . Just . T.pack $
-          uriPath uri ++ uriQuery uri ++ uriFragment uri
+  window  <- currentWindowUnchecked
+  history <- getHistory window
+  case redirect r :: Redirect a of
+    Redirect pr mf -> do
+      let uri = linkURI . mf $ safeLink (Proxy @a) pr
+      pushState history () ("" :: Text) . Just . T.pack $
+        uriPath uri ++ uriQuery uri ++ uriFragment uri
 
 
-fullPageSPA :: forall layout t b a r m
+fullPageSPA :: forall layout b a r m
    . HasRouter layout
   => Backend b m a
-  => Territory t
   => Eq a
   => (m ~> JSM)
   -- ^ how do we get to JSM?
-  -> (t a -> b m ~> m)
+  -> (TVar a -> b m ~> m)
   -- ^ What backend are we running?
-  -> a
+  -> (r -> a)
   -- ^ what is the initial state?
   -> (a -> Html (b m) a)
   -- ^ how should the html look?
@@ -107,10 +106,16 @@ fullPageSPA :: forall layout t b a r m
   -> layout `RoutedAs` r
   -- ^ how shall we relate urls to routes?
   -> JSM ()
-fullPageSPA toJSM backend i view getStage onRoute routes = do
-  model <- createTerritory i
-  _ <- listenPopState @layout routes $ writeUpdate model . (toJSM .) . onRoute
-  shpadoinkle toJSM backend i model view getStage
+fullPageSPA toJSM backend i' view getStage onRoute routes = do
+  let router = route @layout @r routes
+  window <- currentWindowUnchecked
+  getRoute window router $ \case
+    Nothing -> return ()
+    Just r -> do
+      let i = i' r
+      model <- createTerritory i
+      _ <- listenPopState router $ writeUpdate model . (toJSM .) . onRoute
+      shpadoinkle toJSM backend i model view getStage
 
 
 -- | ?foo=bar&baz=qux -> [("foo","bar"),("baz","qux")]
@@ -130,18 +135,20 @@ popstate :: EventName Window PopStateEvent
 popstate = unsafeEventName "popstate"
 
 
+getRoute
+  :: Window -> Router r -> (Maybe r -> JSM a) -> JSM a
+getRoute window router handle = do
+  location <- getLocation window
+  path     <- getPathname location
+  search   <- getSearch location
+  handle $ fromRouter (parseQuery search) (parseSegments path) router
+
+
 listenPopState
-  :: forall layout r. HasRouter layout
-  => layout `RoutedAs` r -> (r -> JSM ()) -> JSM (JSM ())
-listenPopState routes handle = do
-  w <- currentWindowUnchecked
-  w `on` popstate $ do
-    location <- getLocation w
-    path     <- getPathname location
-    search   <- getSearch location
-    maybe (return ()) (liftJSM . handle)
-      $ fromRouter (parseQuery search) (parseSegments path)
-      $ route @layout @r routes
+  :: Router r -> (r -> JSM ()) -> JSM (JSM ())
+listenPopState router handle = do
+  window  <- currentWindowUnchecked
+  window `on` popstate $ liftJSM . getRoute window router $ maybe (return ()) handle
 
 
 -- | Get an @r@ from a route and url context

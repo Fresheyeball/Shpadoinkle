@@ -115,6 +115,7 @@ executables:
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-html
       - Shpadoinkle-widgets
+      - Shpadoinkle-router
     when:
       - condition: impl(ghcjs)
         then:

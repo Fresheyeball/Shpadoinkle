@@ -158,7 +158,7 @@ setListener :: Territory s => s a -> (RawNode -> RawEvent -> JSM a) -> Object ->
 setListener i m o k = do
   elm <- RawNode <$> toJSVal o
   setProp' o ("on" <> k) . fun $ \_ _ -> \case
-    e:_ -> writeUpdate i =<< m elm (RawEvent e)
+    e:_ -> writeUpdate i . const $ m elm (RawEvent e)
     _ -> return ()
 
 
