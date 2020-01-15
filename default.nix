@@ -77,6 +77,7 @@ let
           QuickCheck           = dontCheckJs super.QuickCheck;
           temporary            = dontCheckJs super.temporary;
           Diff                 = dontCheckJs super.Diff;
+          hspec-discover       = dontCheckJs super.hspec-discover;
           servant              = dontCheckJs (self.callCabal2nix "servant"              "${servant-src}/servant" {});
           servant-server       = dontCheck   (self.callCabal2nix "servant-server"       "${servant-src}/servant-server" {});
           servant-client       = dontCheck   (self.callCabal2nix "servant-client"       "${servant-src}/servant-client" {});
