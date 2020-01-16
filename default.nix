@@ -75,6 +75,7 @@ let
           http-types           = dontCheckJs super.http-types;
           silently             = dontCheckJs super.silently;
           QuickCheck           = dontCheckJs super.QuickCheck;
+          tasty-quickcheck     = dontCheckJs super.tasty-quickcheck;
           temporary            = dontCheckJs super.temporary;
           Diff                 = dontCheckJs super.Diff;
           hspec                = dontCheckJs super.hspec;
