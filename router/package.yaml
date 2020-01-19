@@ -19,19 +19,6 @@ ghc-options:
     - -fwarn-identities
 
 
-ghcjs-options:
-    - -Wall
-    - -Werror
-    - -Wcompat
-    - -fno-warn-missing-home-modules
-    - -fwarn-redundant-constraints
-    - -fwarn-incomplete-uni-patterns
-    - -fwarn-tabs
-    - -fwarn-incomplete-record-updates
-    - -fwarn-identities
-    - -dedupe
-
-
 dependencies:
     - base
 

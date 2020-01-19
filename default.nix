@@ -56,34 +56,38 @@ let
   haskellPackages = with haskell.lib; haskell.packages.${compilerjs}.extend (composeExtensions
       (packageSourceOverrides targets)
       (self: super: let
-         dontCheckJs = if isJS then dontCheck else id;
+         dontJS = if isJS then x: dontHaddock (dontCheck x) else id;
       in {
           ghcWithPackages = p: super.ghcWithPackages (
             f: p f ++ (if inNixShell then [ f.cabal-install f.ghcid ] else [])
           );
-          jsaddle              =              self.callCabal2nix "jsaddle"      "${jsaddle-src}/jsaddle" {};
-          jsaddle-warp         = dontCheck   (self.callCabal2nix "jsaddle-warp" "${jsaddle-src}/jsaddle-warp" {});
-          comonad              = dontCheckJs super.comonad;
-          extra                = dontCheckJs super.extra;
-          SHA                  = dontCheckJs super.SHA;
-          pureMD5              = dontCheckJs super.pureMD5;
-          unliftio             = dontCheckJs super.unliftio;
-          semigroupoids        = dontCheckJs super.semigroupoids;
-          megaparsec           = dontCheckJs super.megaparsec;
-          lens                 = dontCheckJs super.lens;
-          hpack                = haskell.packages.${compiler}.hpack;
-          http-types           = dontCheckJs super.http-types;
-          silently             = dontCheckJs super.silently;
-          QuickCheck           = dontCheckJs super.QuickCheck;
-          tasty-quickcheck     = dontCheckJs super.tasty-quickcheck;
-          temporary            = dontCheckJs super.temporary;
-          Diff                 = dontCheckJs super.Diff;
-          hspec                = dontCheckJs super.hspec;
-          servant              = dontCheckJs (self.callCabal2nix "servant"              "${servant-src}/servant" {});
-          servant-server       = dontCheck   (self.callCabal2nix "servant-server"       "${servant-src}/servant-server" {});
-          servant-client       = dontCheck   (self.callCabal2nix "servant-client"       "${servant-src}/servant-client" {});
-          servant-client-ghcjs = dontCheck   (self.callCabal2nix "servant-client-ghcjs" "${servant-src}/servant-client-ghcjs" {});
+          comonad              = dontJS super.comonad;
+          cryptohash-sha1      = dontJS super.cryptohash-sha1;
+          cryptohash-md5       = dontJS super.cryptohash-md5;
+          extra                = dontJS super.extra;
+          SHA                  = dontJS super.SHA;
+          pureMD5              = dontJS super.pureMD5;
+          unliftio             = dontJS super.unliftio;
+          semigroupoids        = dontJS super.semigroupoids;
+          megaparsec           = dontJS super.megaparsec;
+          lens                 = dontJS super.lens;
+          http-types           = dontJS super.http-types;
+          silently             = dontJS super.silently;
+          QuickCheck           = dontJS super.QuickCheck;
+          tasty-quickcheck     = dontJS super.tasty-quickcheck;
+          temporary            = dontJS super.temporary;
+          Diff                 = dontJS super.Diff;
+          hspec                = dontJS super.hspec;
+          time-compat          = dontJS super.time-compat;
+          scientific           = dontJS super.scientific;
+          servant              = dontJS    (self.callCabal2nix "servant"              "${servant-src}/servant" {});
+          servant-server       = dontCheck (self.callCabal2nix "servant-server"       "${servant-src}/servant-server" {});
+          servant-client       = dontCheck (self.callCabal2nix "servant-client"       "${servant-src}/servant-client" {});
+          servant-client-ghcjs = doJailbreak (dontJS (self.callCabal2nix "servant-client-ghcjs" "${servant-src}/servant-client-ghcjs" {}));
+          jsaddle-warp         = dontCheck (self.callCabal2nix "jsaddle-warp"         "${jsaddle-src}/jsaddle-warp" {});
+          jsaddle              =            self.callCabal2nix "jsaddle"              "${jsaddle-src}/jsaddle" {};
 
+          hpack                = haskell.packages.${compiler}.hpack;
           Shpadoinkle-tests    = haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ./tests) {};
       })
   );
