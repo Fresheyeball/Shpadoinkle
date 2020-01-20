@@ -1,4 +1,4 @@
-let pkgs = import ./pkgs.nix; in with pkgs; with lib; let
+let pkgs = import <nixpkgs> {}; in with pkgs; with lib; let
 
   chrome-rev = "9619debe3d8b99bc56342ec4e0ee818aaa5eb985";
   chrome = (import (builtins.fetchTarball {
@@ -62,8 +62,8 @@ let pkgs = import ./pkgs.nix; in with pkgs; with lib; let
     (let built = import ./default.nix { inherit compiler; };
     in [ (attrValues built) (test compiler built) ])) []
     [
-      "ghc843"
-      "ghcjs84"
+      "ghc864"
+      "ghcjs86"
     ];
 
 in releaseTools.aggregate {
