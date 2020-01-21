@@ -52,7 +52,7 @@ in runCommand "${util.compilerjs}-test" {
     export DATADIR=$out/userDataDir
 
     # run the end to end tests
-    ${packages.Shpadoinkle-tests}/bin/tests
+    ${packages.Shpadoinkle-tests}/bin/tests --fail-fast
     rm -r $out
     echo SUCCESS > $out
 

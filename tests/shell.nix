@@ -1,1 +1,1 @@
-import ../default.nix { pack = "Shpadoinkle-tests"; }
+{ isJS ? true }: import ../default.nix { pack = "Shpadoinkle-tests"; inherit isJS; }

@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# OPTIONS_GHC -fno-warn-incomplete-record-updates      #-}
 
@@ -8,6 +9,8 @@
 module Util where
 
 
+import           Control.Concurrent
+import           Control.Exception
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Maybe
@@ -16,6 +19,7 @@ import           GHC.Conc
 import           Network.Wai.Application.Static
 import           Network.Wai.Handler.Warp
 import           System.Environment
+import           System.IO.Unsafe
 import           System.Process
 
 import           Test.Hspec
@@ -46,6 +50,10 @@ isJS :: String -> Bool
 isJS = isInfixOf "js" . pack
 
 
+lock :: MVar ()
+lock = unsafePerformIO $ newMVar ()
+
+
 serve :: String -> IO () -> IO ()
 serve package test = do
   ops@Options {..} <- getOptions
@@ -54,19 +62,29 @@ serve package test = do
 
     then do
       let serving = path <> "/bin/" <> package <> ".jsexe/"
-      putStrLn $ "Serving -> " ++ serving
-      delay >> delay
+      putStrLn $ "Serving " ++ package ++ " -> " ++ serving
+      _ <- takeMVar lock
       thread <- forkIO . run port . staticApp $ defaultWebAppSettings serving
-      test
+      delay
+      catch @SomeException test $ \e -> do
+        killThread thread
+        throw e
       killThread thread
+      delay
+      putMVar lock ()
 
     else do
       let exe = path <> "/bin/" <> package
-      putStrLn $ "Running -> " ++ exe
-      delay >> delay
+      putStrLn $ "Running " ++ package ++ " -> " ++ exe
+      _ <- takeMVar lock
       handle <- runCommand exe
-      test
+      delay
+      catch @SomeException test $ \e -> do
+        terminateProcess handle
+        throw e
       terminateProcess handle
+      delay
+      putMVar lock ()
 
 
 hang :: MonadIO m => m ()
@@ -74,7 +92,7 @@ hang = liftIO . forever $ threadDelay maxBound
 
 
 delay :: MonadIO m => m ()
-delay = liftIO . threadDelay $ 500 * 1000
+delay = liftIO . threadDelay $ 1000 * 1000
 
 
 port :: Int
@@ -114,9 +132,7 @@ itWD should test =
 
 
 expectText :: Element -> Text -> WD ()
-expectText e t = do
-  t' <- getText e
-  if t' == t then return () else t' `equals` t
+expectText e t = getText e >>= equals t
 
 
 equals :: (Show a, Eq a) => a -> a -> WD ()

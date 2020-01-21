@@ -103,7 +103,6 @@ spec = around_ (serve "todomvc") $ do
     equals 1 =<< countItems
     a <- findElem $ ById "1"
     expectText a "a"
-
     click all
     delay
     equals 2 =<< countItems
@@ -111,4 +110,4 @@ spec = around_ (serve "todomvc") $ do
     click check'
     delay
     equals 2 =<< countItems
-    equals 0 =<< countTodos
+    equals 2 =<< countTodos
