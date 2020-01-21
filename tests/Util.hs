@@ -42,25 +42,27 @@ getOptions = Options
   <*> ((==) (Just "1") <$> lookupEnv "HEADLESS")
 
 
+isJS :: String -> Bool
+isJS = isInfixOf "js" . pack
+
+
 serve :: String -> IO () -> IO ()
 serve package test = do
   ops@Options {..} <- getOptions
   -- print ops
-  case compiler of
+  if isJS compiler
 
-
-    "ghc843" -> do
-      let exe = path <> "/bin/" <> package
-      handle <- runCommand exe
-      test
-      terminateProcess handle
-
-
-    "ghcjs84" ->  do
+    then do
       let serving = path <> "/bin/" <> package <> ".jsexe/"
       thread <- forkIO . run port . staticApp $ defaultWebAppSettings serving
       test
       killThread thread
+
+    else do
+      let exe = path <> "/bin/" <> package
+      handle <- runCommand exe
+      test
+      terminateProcess handle
 
 
 hang :: MonadIO m => m ()
@@ -99,9 +101,9 @@ itWD should test =
   it should $ do
     opts@Options {..} <- getOptions
     runSession (useBrowser (chrome' chromePath dataDir headless) defaultConfig) $ do
-      openPage $ "http://localhost:" <> show port <> case compiler of
-        "ghcjs84" -> "/index.html"
-        "ghc843"  -> ""
+      openPage $ "http://localhost:" <> show port <> if isJS compiler
+        then "/index.html"
+        else ""
       delay
       test
       closeSession

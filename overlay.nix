@@ -4,7 +4,7 @@
   util = import ./util.nix { inherit compiler isJS; };
 
 
-  chrome-rev = "9619debe3d8b99bc56342ec4e0ee818aaa5eb985";
+  chrome-rev = "71336116f3f78d3bb1f499bf4b88efcd8738a9cf";
 
 
   jsaddle-src = super.fetchFromGitHub
