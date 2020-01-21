@@ -65,7 +65,7 @@ in {
           jsaddle-warp         = dontCheck (hself.callCabal2nix "jsaddle-warp"         "${jsaddle-src}/jsaddle-warp" {});
           jsaddle              =            hself.callCabal2nix "jsaddle"              "${jsaddle-src}/jsaddle" {};
 
-          Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
+#          Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
         };
       };
     };
