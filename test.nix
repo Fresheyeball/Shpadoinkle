@@ -1,20 +1,19 @@
-let pkgs = import <nixpkgs> {}; in with pkgs; with lib; let
+{ compiler ? "ghc864", isJS ? true }:
+let pkgs = import ./pkgs.nix compiler isJS "19.09"; in with pkgs; with lib; let
 
-  chrome-rev = "9619debe3d8b99bc56342ec4e0ee818aaa5eb985";
-  chrome = (import (builtins.fetchTarball {
-      url = "https://github.com/NixOS/nixpkgs/archive/${chrome-rev}.tar.gz";
-    }) {}).google-chrome;
+  packages = import ./default.nix { inherit compiler isJS; };
+  util = import ./util.nix { inherit compiler isJS; };
 
-  test = compiler: packages: runCommand "${compiler}-test" {
+in runCommand "${util.compilerjs}-test" {
 
     # chrome needs fonts to live
     FONTCONFIG_FILE = makeFontsConf {
       inherit fontconfig;
       fontDirectories = [ "${corefonts}" ];
     };
-    COMPILER = compiler;
+    COMPILER = util.compilerjs;
     EXAMPLES = "${packages.Shpadoinkle-examples}";
-    CHROME = "${chrome}/bin/google-chrome-stable";
+    CHROME = "${google-chrome}/bin/google-chrome-stable";
     HEADLESS = true;
     buildInputs =
     [
@@ -22,7 +21,7 @@ let pkgs = import <nixpkgs> {}; in with pkgs; with lib; let
       socat
       selenium-server-standalone
       chromedriver
-      chrome
+      google-chrome
     ];
 
   } ''
@@ -55,19 +54,4 @@ let pkgs = import <nixpkgs> {}; in with pkgs; with lib; let
     rm -r $out
     echo SUCCESS > $out
 
-  '';
-
-
-  constituents = foldl (xs: {compiler,isJS}: xs ++
-    (let built = import ./default.nix { inherit compiler isJS; };
-    in [ (attrValues built) (test compiler built) ])) []
-    [
-      { compiler = "ghc864"; isJS = true; }
-      { compiler = "ghc864"; isJS = false; }
-    ];
-
-in releaseTools.aggregate {
-  name = "shapdoinkle_release";
-  constituents = constituents;
-}
-
+  ''

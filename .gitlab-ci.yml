@@ -70,12 +70,22 @@ shell-864-ghcjs:
   artifacts:
     untracked: true
 
-test:
+test-864-ghc:
   stage: test
   script:
   - export NIXPKGS_ALLOW_UNFREE=1
   - export NIXPKGS_ALLOW_BROKEN=1
-  - nix-build test.nix --fallback
+  - nix-build test.nix --argstr compiler ghc864 --arg isJS false --fallback
+  - rm -r result
+  artifacts:
+    untracked: true
+
+test-864-ghcjs:
+  stage: test
+  script:
+  - export NIXPKGS_ALLOW_UNFREE=1
+  - export NIXPKGS_ALLOW_BROKEN=1
+  - nix-build test.nix --argstr compiler ghc864 --arg isJS true --fallback
   - rm -r result
   artifacts:
     untracked: true
