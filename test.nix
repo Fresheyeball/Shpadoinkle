@@ -58,12 +58,12 @@ let pkgs = import <nixpkgs> {}; in with pkgs; with lib; let
   '';
 
 
-  constituents = foldl (xs: compiler: xs ++
-    (let built = import ./default.nix { inherit compiler; };
+  constituents = foldl (xs: {compiler,isJS}: xs ++
+    (let built = import ./default.nix { inherit compiler isJS; };
     in [ (attrValues built) (test compiler built) ])) []
     [
-      "ghc864"
-      "ghcjs86"
+      { compiler = "ghc864"; isJS = true; }
+      { compiler = "ghc864"; isJS = false; }
     ];
 
 in releaseTools.aggregate {

@@ -67,6 +67,7 @@ let
           extra                = dontJS super.extra;
           SHA                  = dontJS super.SHA;
           pureMD5              = dontJS super.pureMD5;
+          hex                  = dontJS super.hex;
           unliftio             = dontJS super.unliftio;
           semigroupoids        = dontJS super.semigroupoids;
           megaparsec           = dontJS super.megaparsec;
