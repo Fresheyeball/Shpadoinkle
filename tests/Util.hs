@@ -54,12 +54,16 @@ serve package test = do
 
     then do
       let serving = path <> "/bin/" <> package <> ".jsexe/"
+      putStrLn $ "Serving -> " ++ serving
+      delay >> delay
       thread <- forkIO . run port . staticApp $ defaultWebAppSettings serving
       test
       killThread thread
 
     else do
       let exe = path <> "/bin/" <> package
+      putStrLn $ "Running -> " ++ exe
+      delay >> delay
       handle <- runCommand exe
       test
       terminateProcess handle
