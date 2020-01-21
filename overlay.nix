@@ -37,9 +37,6 @@ in {
       let dontJS = if isJS then x: dontHaddock (dontCheck x) else id;
       in super.haskell.packages.${util.compilerjs}.override {
         overrides = hself: hsuper: {
-          ghcWithPackages = p: hsuper.ghcWithPackages (
-            f: p f ++ (if pkgs.lib.inNixShell then [ f.cabal-install f.ghcid ] else [])
-          );
           comonad              = dontJS hsuper.comonad;
           cryptohash-sha1      = dontJS hsuper.cryptohash-sha1;
           cryptohash-md5       = dontJS hsuper.cryptohash-md5;

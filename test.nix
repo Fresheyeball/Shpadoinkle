@@ -1,5 +1,5 @@
-{ compiler ? "ghc864", isJS ? true }:
-let pkgs = import ./pkgs.nix compiler isJS "19.09"; in with pkgs; with lib; let
+{ compiler ? "ghc864", chan ? "19.09", isJS ? true }:
+let pkgs = import ./pkgs.nix compiler isJS chan; in with pkgs; with lib; let
 
   packages = import ./default.nix { inherit compiler isJS; };
   util = import ./util.nix { inherit compiler isJS; };
