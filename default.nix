@@ -1,4 +1,4 @@
-{ isJS ? false, compiler ? "ghc864", pack ? "all", chan ? "19.09" }:
+{ isJS ? false, compiler ? "ghc864", pack ? "all", chan ? "e1843646b04fb564abf6330a9432a76df3269d2f" }:
 
 
 let pkgs = import ./pkgs.nix compiler isJS chan; in with pkgs; with lib;
@@ -35,15 +35,13 @@ let
 
 
   haskellPackages = with haskell.lib; haskell.packages.${util.compilerjs}.extend
-  (composeExtensions (packageSourceOverrides targets) (self: super: {
+    (composeExtensions (packageSourceOverrides targets) (self: super: {
       hpack                = haskell.packages.${compiler}.hpack;
       Shpadoinkle-tests    = haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ./tests) {};
-  }));
+    }));
 
 
   ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ];
-
-
   packages = map (t: haskellPackages.${t}) (attrNames targets ++ [ "Shpadoinkle-tests" ]);
 
 
