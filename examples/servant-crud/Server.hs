@@ -1,17 +1,34 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE TypeOperators     #-}
 
 
 module Main where
 
 
+import           Data.Proxy
 import           Network.Wai
+import           Network.Wai.Application.Static
 import           Network.Wai.Handler.Warp
 import           Options.Applicative
 import           Servant.API
 import           Servant.Server
 import           Servant.Server.StaticFiles
+import           WaiAppStatic.Types
 
 import           Types
+
+
+defaultSPAServerSettings :: FilePath -> StaticSettings
+defaultSPAServerSettings root = settings { ssLookupFile = orIndex }
+  where
+  settings   = defaultFileServerSettings root
+  orIndex ps = do
+    res <- ssLookupFile settings ps
+    case (res, toPieces ["index.html"]) of
+      (LRNotFound, Just ps') -> ssLookupFile settings ps'
+      _                      -> return res
 
 
 data Options = Options
@@ -23,7 +40,7 @@ data Options = Options
 parser :: Parser Options
 parser = Options
   <$> strOption   (long "assets" <> short 'a' <> metavar "FILEPATH")
-  <*> option auto (long "port"   <> short 'p' <> metavar "PORT" <> showDefault <> value 8081)
+  <*> option auto (long "port"   <> short 'p' <> metavar "PORT" <> showDefault <> value 8080)
 
 
 getSpaceCraft :: SpaceCraftId -> Handler SpaceCraft
@@ -43,11 +60,21 @@ deleteSpaceCraft = undefined
 
 
 app :: FilePath -> Application
-app path = serve (addStatic api) $ serveDirectoryWebApp path
-  :<|> getSpaceCraft
-  :<|> updateSpaceCraft
-  :<|> createSpaceCraft
-  :<|> deleteSpaceCraft
+app root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
+  where
+
+  serveApi = getSpaceCraft
+        :<|> updateSpaceCraft
+        :<|> createSpaceCraft
+        :<|> deleteSpaceCraft
+        :: Server API
+
+  static = serveDirectoryWith $ defaultSPAServerSettings root
+
+  serveSpa = static
+        :<|> static
+        :<|> const static
+        :: Server SPA
 
 
 main :: IO ()

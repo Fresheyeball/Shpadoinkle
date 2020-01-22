@@ -16,7 +16,7 @@
 
 
 module Shpadoinkle.Router
-    ( View, Redirect(..)
+    ( Raw, Redirect(..)
     , fromRouter
     , HasRouter(..)
     , HasLink(..)
@@ -49,10 +49,6 @@ import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
 import           Shpadoinkle
-
-
--- | A stub to represent HTML rendering on the page
-data View
 
 
 -- | Term level API representation
@@ -90,7 +86,7 @@ navigate r = do
 fullPageSPA :: forall layout b a r m
    . HasRouter layout
   => Backend b m a
-  => Eq a
+  => Eq a => Show r
   => (m ~> JSM)
   -- ^ how do we get to JSM?
   -> (TVar a -> b m ~> m)
@@ -128,7 +124,7 @@ parseQuery =  (=<<) toKVs . T.splitOn "&" . T.drop 1
 
 -- | /foo/bar -> ["foo","bar"]
 parseSegments :: Text -> [Text]
-parseSegments = T.splitOn "/"
+parseSegments = C.filter (/= "") .  T.splitOn "/"
 
 
 popstate :: EventName Window PopStateEvent
@@ -141,7 +137,9 @@ getRoute window router handle = do
   location <- getLocation window
   path     <- getPathname location
   search   <- getSearch location
-  handle $ fromRouter (parseQuery search) (parseSegments path) router
+  let query = parseQuery search
+      segs  = parseSegments path
+  handle $ fromRouter query segs router
 
 
 listenPopState
@@ -217,12 +215,8 @@ instance (HasRouter sub, KnownSymbol path)
     route = RPath (Proxy @path) . route @sub
     {-# INLINABLE route #-}
 
-instance HasRouter View where
-    type RoutedAs View a = a
+instance HasRouter Raw where
+    type RoutedAs Raw a = a
     route = RView
     {-# INLINABLE route #-}
 
-instance HasLink View where
-  type MkLink View a = Link
-  toLink _ _ = id
-  {-# INLINABLE toLink #-}

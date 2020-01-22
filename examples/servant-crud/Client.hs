@@ -12,6 +12,7 @@ module Main where
 
 
 import           Control.Lens                hiding (view)
+import           Data.Proxy
 import           Servant.API
 #ifdef ghcjs_HOST_OS
 import           Servant.Client.Ghcjs
@@ -35,7 +36,7 @@ deleteSpaceCraft :: SpaceCraftId -> ClientM ()
 
 
 (getSpaceCraft :<|> updateSpaceCraft :<|> newSpaceCraft :<|> deleteSpaceCraft)
-  = client api
+  = client (Proxy @API)
 
 
 start :: Route -> Frontend

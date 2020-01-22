@@ -140,21 +140,9 @@ type API = "api" :> "space-craft" :> Capture "id" SpaceCraftId :> Get '[JSON] Sp
       :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftId :> Delete '[JSON] ()
 
 
-api :: Proxy API
-api = Proxy
-
-
-addStatic :: Proxy a -> Proxy (Raw :<|> a)
-addStatic _ = Proxy
-
-
-type SPA = View
-      :<|> "app" :> View
-      :<|> "app" :> "echo" :> QueryParam "echo" Text :> View
-
-
-spa :: Proxy SPA
-spa = Proxy
+type SPA = Raw
+  :<|> "app" :> Raw
+  :<|> "app" :> "echo" :> QueryParam "echo" Text :> Raw
 
 
 routes :: SPA `RoutedAs` Route
@@ -165,5 +153,5 @@ routes = Root
 
 instance Routed SPA Route where
   redirect = \case
-    Root   -> Redirect (Proxy @("app" :> View)) id
-    Echo t -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> View)) ($ t)
+    Root   -> Redirect (Proxy @("app" :> Raw)) id
+    Echo t -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> Raw)) ($ t)
