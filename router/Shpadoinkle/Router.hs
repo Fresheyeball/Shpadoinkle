@@ -86,7 +86,7 @@ navigate r = do
 fullPageSPA :: forall layout b a r m
    . HasRouter layout
   => Backend b m a
-  => Eq a => Show r
+  => Eq a
   => (m ~> JSM)
   -- ^ how do we get to JSM?
   -> (TVar a -> b m ~> m)
