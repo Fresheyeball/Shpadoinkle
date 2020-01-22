@@ -37,7 +37,6 @@ in {
       let dontJS = if isJS then x: dontHaddock (dontCheck x) else id;
       in super.haskell.packages.${util.compilerjs}.override {
         overrides = hself: hsuper: {
-          ghc                  = dontJS hsuper.ghc;
           hashable             = dontJS hsuper.hashable;
           comonad              = dontJS hsuper.comonad;
           cryptohash-sha1      = dontJS hsuper.cryptohash-sha1;
