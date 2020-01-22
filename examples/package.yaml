@@ -125,6 +125,12 @@ executables:
             - servant-client
 
   servant-crud-server:
+    when:
+      - condition: impl(ghcjs)
+        then:
+          buildable: False
+        else:
+          buildable: True
     main: Server.hs
     source-dirs: ./servant-crud
     other-modules:
@@ -136,6 +142,10 @@ executables:
       - stm
       - containers
       - servant
+      - servant-server
+      - optparse-applicative
+      - wai
+      - warp
 
       - Shpadoinkle
       - Shpadoinkle-backend-pardiff

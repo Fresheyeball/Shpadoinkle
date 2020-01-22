@@ -37,12 +37,18 @@ import           Shpadoinkle.Widgets.Types
 
 newtype SKU          = SKU          { unSKU          :: Int  }
   deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON) deriving anyclass (Humanize, Present)
+
+
 newtype Description  = Description  { unDescription  :: Text }
   deriving newtype (Eq, Ord, Show, IsString, ToJSON, FromJSON) deriving anyclass (Humanize, Present)
+
+
 newtype SerialNumber = SerialNumber { unSerialNumber :: Int  }
   deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON) deriving anyclass (Humanize, Present)
+
+
 newtype SpaceCraftId = SpaceCraftId { unSpaceCraftId :: Int }
-  deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON, ToHttpApiData) deriving anyclass (Humanize, Present)
+  deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON, FromHttpApiData, ToHttpApiData) deriving anyclass (Humanize, Present)
 
 
 data Operable = Inoperable | Operational       deriving (Eq, Ord, Show, Humanize, Present, Generic, ToJSON, FromJSON)
@@ -134,9 +140,21 @@ type API = "api" :> "space-craft" :> Capture "id" SpaceCraftId :> Get '[JSON] Sp
       :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftId :> Delete '[JSON] ()
 
 
+api :: Proxy API
+api = Proxy
+
+
+addStatic :: Proxy a -> Proxy (Raw :<|> a)
+addStatic _ = Proxy
+
+
 type SPA = View
       :<|> "app" :> View
       :<|> "app" :> "echo" :> QueryParam "echo" Text :> View
+
+
+spa :: Proxy SPA
+spa = Proxy
 
 
 routes :: SPA `RoutedAs` Route
