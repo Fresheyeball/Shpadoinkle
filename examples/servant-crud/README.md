@@ -1,7 +1,12 @@
 # See the example
 
 ```bash
-nix-build --arg isJS true  -A Shpadoinkle-examples -o client
-nix-build --arg isJS false -A Shpadoinkle-examples -o server
-./server/bin/server-crud-server --assets ./client/bin/servant-crud-client.jsexe
+./run-crud.sh
 ```
+
+This is the batteries included example. A Shpadoinkle single page application, exploiting:
+
+- Server side rendering
+- Servant routing isomorphism
+- Servant type safe api bindings
+- Form validation isomorphism

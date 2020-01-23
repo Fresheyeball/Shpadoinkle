@@ -137,6 +137,7 @@ executables:
       - Types
     dependencies:
       - aeson
+      - bytestring
       - text
       - lens
       - stm
@@ -149,7 +150,7 @@ executables:
       - warp
 
       - Shpadoinkle
-      - Shpadoinkle-backend-pardiff
       - Shpadoinkle-html
       - Shpadoinkle-widgets
       - Shpadoinkle-router
+      - Shpadoinkle-backend-static

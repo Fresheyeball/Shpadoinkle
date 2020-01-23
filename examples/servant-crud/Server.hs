@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeApplications  #-}
@@ -7,7 +8,9 @@
 module Main where
 
 
+import           Data.ByteString.Lazy           as BS
 import           Data.Proxy
+import           Data.Text.Encoding
 import           Network.Wai
 import           Network.Wai.Application.Static
 import           Network.Wai.Handler.Warp
@@ -17,18 +20,36 @@ import           Servant.Server
 import           Servant.Server.StaticFiles
 import           WaiAppStatic.Types
 
+import           Shpadoinkle
+import           Shpadoinkle.Backend.Static
+import qualified Shpadoinkle.Html               as H
+
 import           Types
 
 
-defaultSPAServerSettings :: FilePath -> StaticSettings
-defaultSPAServerSettings root = settings { ssLookupFile = orIndex }
+toFile :: Piece -> ByteString -> File
+toFile p bs = File
+  { fileGetSize = fromIntegral $ BS.length bs
+  , fileToResponse = \status headers -> responseLBS status headers bs
+  , fileName = p
+  , fileGetHash = pure Nothing
+  , fileGetModified = Nothing
+  }
+
+
+defaultSPAServerSettings :: FilePath -> Html m a -> StaticSettings
+defaultSPAServerSettings root html = settings { ssLookupFile = orIndex }
   where
-  settings   = defaultFileServerSettings root
+
+  settings   = defaultWebAppSettings root
+
   orIndex ps = do
+    let file ps' = toFile ps' . BS.fromStrict . encodeUtf8 . renderStatic
     res <- ssLookupFile settings ps
-    case (res, toPieces ["index.html"]) of
-      (LRNotFound, Just ps') -> ssLookupFile settings ps'
-      _                      -> return res
+    return $ case (res, toPieces ["index.html"]) of
+      (LRNotFound, Just [ps'])               -> LRFile $ file ps' html
+      (_,          Just [ps']) | [ps'] == ps -> LRFile $ file ps' html
+      _                                      -> res
 
 
 data Options = Options
@@ -69,7 +90,7 @@ app root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
         :<|> deleteSpaceCraft
         :: Server API
 
-  static = serveDirectoryWith $ defaultSPAServerSettings root
+  static = serveDirectoryWith $ defaultSPAServerSettings root $ H.div_ ["WOWZERS"]
 
   serveSpa = static
         :<|> static
@@ -80,5 +101,6 @@ app root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
 main :: IO ()
 main = do
   Options {..} <- execParser . info (parser <**> helper) $
-    fullDesc <> progDesc "Servant CRUD Example" <> header "Space craft manager as an example of Shpadoinkle"
+    fullDesc <> progDesc "Servant CRUD Example"
+             <> header "Space craft manager as an example of Shpadoinkle"
   run port $ app assets
