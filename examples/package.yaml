@@ -102,6 +102,7 @@ executables:
     source-dirs: ./servant-crud
     other-modules:
       - Types
+      - View
     dependencies:
       - aeson
       - lens
@@ -135,6 +136,7 @@ executables:
     source-dirs: ./servant-crud
     other-modules:
       - Types
+      - View
     dependencies:
       - aeson
       - bytestring

@@ -22,10 +22,11 @@ import           WaiAppStatic.Types
 
 import           Shpadoinkle
 import           Shpadoinkle.Backend.Static
-import qualified Shpadoinkle.Html               as H
 
 import           Types
+import           View
 
+import           Debug.Trace
 
 toFile :: Piece -> ByteString -> File
 toFile p bs = File
@@ -47,9 +48,9 @@ defaultSPAServerSettings root html = settings { ssLookupFile = orIndex }
     let file ps' = toFile ps' . BS.fromStrict . encodeUtf8 . renderStatic
     res <- ssLookupFile settings ps
     return $ case (res, toPieces ["index.html"]) of
-      (LRNotFound, Just [ps'])               -> LRFile $ file ps' html
-      (_,          Just [ps']) | [ps'] == ps -> LRFile $ file ps' html
-      _                                      -> res
+      (LRNotFound, Just [ps'])                           -> LRFile $ file ps' html
+      (_,          Just [ps']) | [ps'] == ps || ps == [] -> LRFile $ file ps' html
+      _                                                  -> res
 
 
 data Options = Options
@@ -65,7 +66,14 @@ parser = Options
 
 
 getSpaceCraft :: SpaceCraftId -> Handler SpaceCraft
-getSpaceCraft = undefined
+getSpaceCraft _ = return $ SpaceCraft
+  { _identity    = SpaceCraftId 0
+  , _sku         = SKU 23
+  , _description = Nothing
+  , _serial      = SerialNumber 12312
+  , _squadron    = AwayTeam
+  , _operable    = Operational
+  }
 
 
 updateSpaceCraft :: SpaceCraftId -> SpaceCraftUpdate -> Handler ()
@@ -90,11 +98,11 @@ app root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
         :<|> deleteSpaceCraft
         :: Server API
 
-  static = serveDirectoryWith $ defaultSPAServerSettings root $ H.div_ ["WOWZERS"]
+  ui = serveDirectoryWith . defaultSPAServerSettings root . template . view @JSM
 
-  serveSpa = static
-        :<|> static
-        :<|> const static
+  serveSpa = ui (start $ Echo $ Just "frog")
+        :<|> ui (start $ Echo $ Just "wat")
+        :<|> ui . start . Echo . trace "wowzer"
         :: Server SPA
 
 

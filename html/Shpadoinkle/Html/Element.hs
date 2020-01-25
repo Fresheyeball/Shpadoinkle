@@ -156,4 +156,7 @@ $(msum <$> mapM mkElement
   , "embed"
   , "object"
   , "param"
+
+  , "html"
+  , "body"
   ])
