@@ -3,6 +3,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 
 -- | Local storage IO operations
@@ -14,16 +15,17 @@ module Shpadoinkle.Html.LocalStorage where
 
 import           Control.Monad
 import           Data.Maybe
-import           Data.Monoid                 ((<>))
 import           Data.String
 import           Data.Text
 import           GHC.Generics
-import           Language.Javascript.JSaddle
+import           GHCJS.DOM
+import           GHCJS.DOM.Storage
+import           GHCJS.DOM.Window
 import           Text.Read
 import           UnliftIO
-import           UnliftIO.Concurrent         (forkIO)
+import           UnliftIO.Concurrent (forkIO)
 
-import           Shpadoinkle                 (Territory (..))
+import           Shpadoinkle         (MonadJSM, Territory (..), liftJSM)
 
 
 -- | The key for a specific state kept in local storage
@@ -32,13 +34,15 @@ newtype LocalStorageKey a = LocalStorageKey { unLocalStorageKey :: Text }
 
 
 setStorage :: MonadJSM m => Show a => LocalStorageKey a -> a -> m ()
-setStorage (LocalStorageKey k) m =
-  liftJSM . void . eval $ "localStorage.setItem('" <> k <> "', " <> pack (show (show m)) <> ")"
+setStorage (LocalStorageKey k) m = do
+  s <- getLocalStorage =<< currentWindowUnchecked
+  setItem s k $ show m
 
 
 getStorage :: MonadJSM m => Read a => LocalStorageKey a -> m (Maybe a)
-getStorage (LocalStorageKey k) =
-  liftJSM $ fmap (readMaybe =<<) . fromJSVal =<< eval ("localStorage.getItem('" <> k <> "')")
+getStorage (LocalStorageKey k) = do
+  s <- getLocalStorage =<< currentWindowUnchecked
+  (>>= readMaybe) <$> getItem s k
 
 
 -- Whe we should update we save

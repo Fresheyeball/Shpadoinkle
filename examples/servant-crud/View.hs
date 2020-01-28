@@ -36,7 +36,7 @@ view :: MonadJSM m => Frontend -> Html m Frontend
 view fe = case fe ^. route of
   Root   -> H.div_
    [ ($ fe) . set sort <$> Table.simple (fe ^. table) (fe ^. sort)
-   , H.a [ H.onClick' (fe <$ navigate @SPA (Echo $ Just "plex")) ] [ text "ECHO" ]
+   , H.a [ H.onClick' (fe <$ navigate @SPA (Echo $ Just "plex")) ] [ text "Go to Echo" ]
    ]
   Echo t -> H.div_
     [ maybe (text "Erie silence") text t
@@ -51,6 +51,8 @@ template stage = H.html_
       [ H.rel "stylesheet"
       , H.src "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
       ]
+    , H.meta [ H.charset "ISO-8859-1" ] []
+    , H.script [ H.src "/all.js" ] []
     ]
   , H.body_
     [ stage

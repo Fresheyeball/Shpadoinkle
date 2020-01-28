@@ -26,7 +26,6 @@ import           Shpadoinkle.Backend.Static
 import           Types
 import           View
 
-import           Debug.Trace
 
 toFile :: Piece -> ByteString -> File
 toFile p bs = File
@@ -100,9 +99,9 @@ app root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
 
   ui = serveDirectoryWith . defaultSPAServerSettings root . template . view @JSM
 
-  serveSpa = ui (start $ Echo $ Just "frog")
-        :<|> ui (start $ Echo $ Just "wat")
-        :<|> ui . start . Echo . trace "wowzer"
+  serveSpa = ui . start . Echo
+        :<|> ui (start Root)
+        :<|> ui (start Root)
         :: Server SPA
 
 

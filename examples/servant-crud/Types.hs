@@ -140,15 +140,15 @@ type API = "api" :> "space-craft" :> Capture "id" SpaceCraftId :> Get '[JSON] Sp
       :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftId :> Delete '[JSON] ()
 
 
-type SPA = Raw
-  :<|> "app" :> Raw
-  :<|> "app" :> "echo" :> QueryParam "echo" Text :> Raw
+type SPA = "app" :> "echo" :> QueryParam "echo" Text :> Raw
+      :<|> "app" :> Raw
+      :<|> Raw
 
 
 routes :: SPA `RoutedAs` Route
-routes = Root
+routes = Echo
     :<|> Root
-    :<|> Echo
+    :<|> Root
 
 
 instance Routed SPA Route where

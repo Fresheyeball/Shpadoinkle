@@ -26,6 +26,8 @@ dependencies:
     - servant
     - http-api-data
     - network-uri
+    - lens
+    - jsaddle
     - ghcjs-dom
     - jsaddle-dom
     - text

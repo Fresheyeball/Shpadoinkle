@@ -36,6 +36,8 @@ library:
   source-dirs: .
   dependencies:
     - jsaddle
+    - jsaddle-dom
+    - ghcjs-dom
     - text
     - template-haskell
     - containers

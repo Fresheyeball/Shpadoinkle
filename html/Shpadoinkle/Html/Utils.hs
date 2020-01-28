@@ -1,29 +1,43 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
 module Shpadoinkle.Html.Utils where
 
 
-import           Control.Monad
-import           Data.Monoid                 ((<>))
 import           Data.Text
-import           Language.Javascript.JSaddle
+import           GHCJS.DOM
+import           GHCJS.DOM.Document as Doc
+import           GHCJS.DOM.Element
+import           GHCJS.DOM.Node
+import           GHCJS.DOM.Types    (toJSVal)
 
 import           Shpadoinkle
 
 
+default (Text)
+
+
 addStyle :: MonadJSM m => Text -> m ()
-addStyle x = liftJSM . void . eval $
-  "const l = document.createElement('link') \n" <>
-  "l.href = '" <> x <> "' \n" <>
-  "l.rel = 'stylesheet' \n" <>
-  "document.head.appendChild(l)"
+addStyle x = do
+  doc <- currentDocumentUnchecked
+  link <- createElement doc "link"
+  setAttribute link "href" x
+  setAttribute link "rel" "stylesheet"
+  () <$ appendChild doc link
 
 
 setTitle :: MonadJSM m => Text -> m ()
-setTitle t = liftJSM . void . eval $ "document.title = '" <> t <> "';"
+setTitle t = do
+  doc <- currentDocumentUnchecked
+  Doc.setTitle doc t
 
 
 getBody :: MonadJSM m => m RawNode
-getBody = liftJSM $ RawNode <$> eval ("document.body" :: Text)
+getBody = do
+  doc <- currentDocumentUnchecked
+  body <- Doc.getBodyUnsafe doc
+  setInnerHTML body ""
+  liftJSM $ RawNode <$> toJSVal body

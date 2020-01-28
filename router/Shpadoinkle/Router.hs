@@ -1,7 +1,9 @@
 {-# LANGUAGE AllowAmbiguousTypes       #-}
+{-# LANGUAGE CPP                       #-}
 {-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE EmptyDataDecls            #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExtendedDefaultRules      #-}
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE LambdaCase                #-}
@@ -13,6 +15,7 @@
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeOperators             #-}
 {-# LANGUAGE UndecidableInstances      #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
 module Shpadoinkle.Router
@@ -37,11 +40,13 @@ import           GHC.Conc
 import           GHC.TypeLits
 import           GHCJS.DOM
 import           GHCJS.DOM.EventM              (on)
+import           GHCJS.DOM.EventTarget
 import           GHCJS.DOM.EventTargetClosures
 import           GHCJS.DOM.History
 import           GHCJS.DOM.Location            (getPathname, getSearch)
-import           GHCJS.DOM.Types               (PopStateEvent)
+import           GHCJS.DOM.PopStateEvent
 import           GHCJS.DOM.Window
+import           Language.Javascript.JSaddle
 import           Servant.API                   hiding (uriPath, uriQuery)
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)
@@ -49,6 +54,17 @@ import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
 import           Shpadoinkle
+
+
+default (Text)
+
+
+-- #ifdef ghcjs_HOST_OS
+-- foreign import javascript unsafe "window.foo($1)" dispatchIt :: JSVal -> JSM ()
+-- #else
+-- dispatchIt :: JSVal -> JSM ()
+-- dispatchIt = undefined
+-- #endif
 
 
 -- | Term level API representation
@@ -65,22 +81,25 @@ data Router a where
 -- | Redirect is an existentialized Proxy that must be a member of the API
 data Redirect api
   = forall sub. (IsElem sub api, HasLink sub)
-  => Redirect !(Proxy sub) !(MkLink sub Link -> Link)
+  => Redirect (Proxy sub) (MkLink sub Link -> Link)
 
 
-class Routed a r where
-  redirect :: r -> Redirect a
+-- | Ensure global coherence between routes and the api
+class Routed a r where redirect :: r -> Redirect a
 
 
 navigate :: forall a m r. MonadJSM m => Routed a r => r -> m ()
 navigate r = do
-  window  <- currentWindowUnchecked
-  history <- getHistory window
+  w <- currentWindowUnchecked
+  history <- getHistory w
   case redirect r :: Redirect a of
     Redirect pr mf -> do
       let uri = linkURI . mf $ safeLink (Proxy @a) pr
-      pushState history () ("" :: Text) . Just . T.pack $
-        uriPath uri ++ uriQuery uri ++ uriFragment uri
+      pushState history () "" . Just . T.pack $
+        "/" ++ uriPath uri ++ uriQuery uri ++ uriFragment uri
+      e <- newPopStateEvent "popstate" Nothing
+      _ <- dispatchEvent_ w e
+      liftJSM GHCJS.DOM.syncPoint
 
 
 fullPageSPA :: forall layout b a r m
