@@ -31,6 +31,9 @@ module Shpadoinkle.Router
 
 import           Control.Applicative
 import           Control.Compactable           as C
+import           Control.Concurrent
+import           Control.Monad
+import           Control.Monad.IO.Class
 import           Data.Kind
 import           Data.Maybe                    (isJust)
 import           Data.Proxy
@@ -40,7 +43,6 @@ import           GHC.Conc
 import           GHC.TypeLits
 import           GHCJS.DOM
 import           GHCJS.DOM.EventM              (on)
-import           GHCJS.DOM.EventTarget
 import           GHCJS.DOM.EventTargetClosures
 import           GHCJS.DOM.History
 import           GHCJS.DOM.Location            (getPathname, getSearch)
@@ -50,20 +52,22 @@ import           Language.Javascript.JSaddle
 import           Servant.API                   hiding (uriPath, uriQuery)
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)
+import           System.IO.Unsafe
 import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
 import           Shpadoinkle
 
+-- import           Debug.Trace
 
 default (Text)
 
 
 -- #ifdef ghcjs_HOST_OS
--- foreign import javascript unsafe "window.foo($1)" dispatchIt :: JSVal -> JSM ()
+-- foreign import javascript unsafe "window.foo()" foo :: JSM ()
 -- #else
--- dispatchIt :: JSVal -> JSM ()
--- dispatchIt = undefined
+-- foo :: JSM ()
+-- foo = undefined
 -- #endif
 
 
@@ -88,6 +92,10 @@ data Redirect api
 class Routed a r where redirect :: r -> Redirect a
 
 
+syncRoute :: MVar ()
+syncRoute = unsafePerformIO newEmptyMVar
+
+
 navigate :: forall a m r. MonadJSM m => Routed a r => r -> m ()
 navigate r = do
   w <- currentWindowUnchecked
@@ -97,9 +105,7 @@ navigate r = do
       let uri = linkURI . mf $ safeLink (Proxy @a) pr
       pushState history () "" . Just . T.pack $
         "/" ++ uriPath uri ++ uriQuery uri ++ uriFragment uri
-      e <- newPopStateEvent "popstate" Nothing
-      _ <- dispatchEvent_ w e
-      liftJSM GHCJS.DOM.syncPoint
+      liftIO $ putMVar syncRoute ()
 
 
 fullPageSPA :: forall layout b a r m
@@ -161,11 +167,19 @@ getRoute window router handle = do
   handle $ fromRouter query segs router
 
 
+forkJSM :: JSM () -> JSM ()
+forkJSM a = void . liftIO . forkIO . runJSM a =<< askJSM
+
+
 listenPopState
   :: Router r -> (r -> JSM ()) -> JSM (JSM ())
 listenPopState router handle = do
-  window  <- currentWindowUnchecked
-  window `on` popstate $ liftJSM . getRoute window router $ maybe (return ()) handle
+  w  <- currentWindowUnchecked
+  let action = getRoute w router $ maybe (return ()) handle
+  _ <- liftJSM . forkJSM . forever $ do
+    liftIO $ takeMVar syncRoute
+    getRoute w router $ maybe (return ()) handle
+  w `on` popstate $ liftJSM action
 
 
 -- | Get an @r@ from a route and url context
