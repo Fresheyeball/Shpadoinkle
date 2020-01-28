@@ -58,17 +58,8 @@ import           Web.HttpApiData               (parseQueryParamMaybe,
 
 import           Shpadoinkle
 
--- import           Debug.Trace
 
 default (Text)
-
-
--- #ifdef ghcjs_HOST_OS
--- foreign import javascript unsafe "window.foo()" foo :: JSM ()
--- #else
--- foo :: JSM ()
--- foo = undefined
--- #endif
 
 
 -- | Term level API representation
@@ -135,7 +126,7 @@ fullPageSPA toJSM backend i' view getStage onRoute routes = do
     Just r -> do
       let i = i' r
       model <- createTerritory i
-      _ <- listenPopState router $ writeUpdate model . (toJSM .) . onRoute
+      _ <- listenStateChange router $ writeUpdate model . (toJSM .) . onRoute
       shpadoinkle toJSM backend i model view getStage
 
 
@@ -169,11 +160,12 @@ getRoute window router handle = do
 
 forkJSM :: JSM () -> JSM ()
 forkJSM a = void . liftIO . forkIO . runJSM a =<< askJSM
+{-# INLINE forkJSM #-}
 
 
-listenPopState
+listenStateChange
   :: Router r -> (r -> JSM ()) -> JSM (JSM ())
-listenPopState router handle = do
+listenStateChange router handle = do
   w  <- currentWindowUnchecked
   let action = getRoute w router $ maybe (return ()) handle
   _ <- liftJSM . forkJSM . forever $ do
