@@ -28,13 +28,14 @@ import           Types
 import           View
 
 
+listSpaceCraft   :: ClientM [SpaceCraft]
 getSpaceCraft    :: SpaceCraftId -> ClientM SpaceCraft
 updateSpaceCraft :: SpaceCraftId -> SpaceCraftUpdate -> ClientM ()
 newSpaceCraft    :: SpaceCraftUpdate -> ClientM SpaceCraftId
 deleteSpaceCraft :: SpaceCraftId -> ClientM ()
 
 
-(getSpaceCraft :<|> updateSpaceCraft :<|> newSpaceCraft :<|> deleteSpaceCraft)
+(listSpaceCraft :<|> getSpaceCraft :<|> updateSpaceCraft :<|> newSpaceCraft :<|> deleteSpaceCraft)
   = client (Proxy @API)
 
 

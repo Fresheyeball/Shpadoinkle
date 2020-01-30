@@ -16,6 +16,9 @@
 module Shpadoinkle.Router.Server where
 
 
+#ifndef ghcjs_HOST_OS
+
+
 import           Data.ByteString.Lazy           as BS
 import           Data.Text.Encoding
 import           GHC.TypeLits
@@ -56,12 +59,9 @@ defaultSPAServerSettings root html = settings { ssLookupFile = orIndex }
       _                                                  -> res
 
 
-ui :: FilePath -> Html n a -> ServerT Raw m
-ui root = serveDirectoryWith . defaultSPAServerSettings root
-
-
 class ServeRouter layout route where
   serveUI :: FilePath -> (route -> Html m a) -> layout :>> route -> Server layout
+
 
 instance (ServeRouter x r, ServeRouter y r)
   => ServeRouter (x :<|> y) r where
@@ -101,4 +101,6 @@ instance ServeRouter sub r
 
 instance ServeRouter Raw r where
   serveUI :: FilePath -> (r -> Html m a) -> Raw :>> r -> Server Raw
-  serveUI root view = ui root . view
+  serveUI root view = serveDirectoryWith . defaultSPAServerSettings root . view
+
+#endif
