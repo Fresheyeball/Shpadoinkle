@@ -22,34 +22,10 @@ import           WaiAppStatic.Types
 
 import           Shpadoinkle
 import           Shpadoinkle.Backend.Static
+import           Shpadoinkle.Router.Server
 
 import           Types
 import           View
-
-
-toFile :: Piece -> ByteString -> File
-toFile p bs = File
-  { fileGetSize = fromIntegral $ BS.length bs
-  , fileToResponse = \status headers -> responseLBS status headers bs
-  , fileName = p
-  , fileGetHash = pure Nothing
-  , fileGetModified = Nothing
-  }
-
-
-defaultSPAServerSettings :: FilePath -> Html m a -> StaticSettings
-defaultSPAServerSettings root html = settings { ssLookupFile = orIndex }
-  where
-
-  settings   = defaultWebAppSettings root
-
-  orIndex ps = do
-    let file ps' = toFile ps' . BS.fromStrict . encodeUtf8 . renderStatic
-    res <- ssLookupFile settings ps
-    return $ case (res, toPieces ["index.html"]) of
-      (LRNotFound, Just [ps'])                           -> LRFile $ file ps' html
-      (_,          Just [ps']) | [ps'] == ps || ps == [] -> LRFile $ file ps' html
-      _                                                  -> res
 
 
 data Options = Options
@@ -64,6 +40,10 @@ parser = Options
   <*> option auto (long "port"   <> short 'p' <> metavar "PORT" <> showDefault <> value 8080)
 
 
+listSpaceCraft :: Handler [SpaceCraft]
+listSpaceCraft = return []
+
+
 getSpaceCraft :: SpaceCraftId -> Handler SpaceCraft
 getSpaceCraft _ = return $ SpaceCraft
   { _identity    = SpaceCraftId 0
@@ -76,11 +56,11 @@ getSpaceCraft _ = return $ SpaceCraft
 
 
 updateSpaceCraft :: SpaceCraftId -> SpaceCraftUpdate -> Handler ()
-updateSpaceCraft = undefined
+updateSpaceCraft _ _ = return ()
 
 
 createSpaceCraft :: SpaceCraftUpdate -> Handler SpaceCraftId
-createSpaceCraft = undefined
+createSpaceCraft _ = return $ SpaceCraftId 0
 
 
 deleteSpaceCraft :: SpaceCraftId -> Handler ()
@@ -91,18 +71,14 @@ app :: FilePath -> Application
 app root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
   where
 
-  serveApi = getSpaceCraft
+  serveApi = listSpaceCraft
+        :<|> getSpaceCraft
         :<|> updateSpaceCraft
         :<|> createSpaceCraft
         :<|> deleteSpaceCraft
         :: Server API
 
-  ui = serveDirectoryWith . defaultSPAServerSettings root . template . view @JSM
-
-  serveSpa = ui . start . Echo
-        :<|> ui (start Root)
-        :<|> ui (start Root)
-        :: Server SPA
+  serveSpa = serveUI @SPA root (template . view @JSM . start) routes
 
 
 main :: IO ()

@@ -18,6 +18,19 @@ ghc-options:
     - -fwarn-incomplete-record-updates
     - -fwarn-identities
 
+when:
+  - condition: impl(ghcjs)
+    then:
+      dependencies: []
+    else:
+      dependencies:
+        - bytestring
+        - servant-server
+        - wai
+        - wai-app-static
+        - warp
+        - Shpadoinkle-backend-static
+
 
 dependencies:
     - base

@@ -10,19 +10,22 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module Types where
 
 
-import           Control.Lens
+import           Control.Lens              as Lens
 import           Control.Lens.TH           ()
 import           Data.Aeson
 import           Data.Function
+import           Data.Maybe
 import           Data.Proxy
 import           Data.Set                  as Set
 import           Data.String
@@ -31,7 +34,7 @@ import           GHC.Generics
 import           Servant.API               hiding (Description)
 import           Shpadoinkle
 import           Shpadoinkle.Router
-import           Shpadoinkle.Widgets.Table
+import           Shpadoinkle.Widgets.Table as Table
 import           Shpadoinkle.Widgets.Types
 
 
@@ -110,11 +113,11 @@ instance TableTerritory (Set SpaceCraft) where
     SquadronT     -> present _squadron
     OperableT     -> present _operable
   sortTable (SortCol c d) = f $ case c of
-    SKUT          -> compare `on` view sku         . unRow
-    DescriptionT  -> compare `on` view description . unRow
-    SerialNumberT -> compare `on` view serial      . unRow
-    SquadronT     -> compare `on` view squadron    . unRow
-    OperableT     -> compare `on` view operable    . unRow
+    SKUT          -> compare `on` Lens.view sku         . unRow
+    DescriptionT  -> compare `on` Lens.view description . unRow
+    SerialNumberT -> compare `on` Lens.view serial      . unRow
+    SquadronT     -> compare `on` Lens.view squadron    . unRow
+    OperableT     -> compare `on` Lens.view operable    . unRow
     where f = case d of ASC -> id; DESC -> flip
 
 
@@ -126,32 +129,45 @@ data Frontend = Frontend
 
 
 data Route
-  = Root
-  | Echo (Maybe Text)
+  = Echo (Maybe Text)
+  | RList (Input Search)
+  | RNew
+  | RExisting SpaceCraftId
   deriving (Eq, Ord, Show)
 
 
 makeFieldsNoPrefix ''Frontend
 
 
-type API = "api" :> "space-craft" :> Capture "id" SpaceCraftId :> Get '[JSON] SpaceCraft
+type API = "api" :> "space-craft" :> Get '[JSON] [SpaceCraft]
+      :<|> "api" :> "space-craft" :> Capture "id" SpaceCraftId :> Get '[JSON] SpaceCraft
       :<|> "api" :> "space-craft" :> Capture "id" SpaceCraftId :> ReqBody '[JSON] SpaceCraftUpdate :> Post '[JSON] ()
       :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftUpdate :> Put '[JSON] SpaceCraftId
       :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftId :> Delete '[JSON] ()
 
 
 type SPA = "app" :> "echo" :> QueryParam "echo" Text :> Raw
-      :<|> "app" :> Raw
+      :<|> "app" :> "new"  :> Raw
+      :<|> "app" :> "edit" :> Capture "id" SpaceCraftId :> Raw
+      :<|> "app" :> QueryParam "search" Search :> Raw
       :<|> Raw
 
 
-routes :: SPA `RoutedAs` Route
+routes :: SPA :>> Route
 routes = Echo
-    :<|> Root
-    :<|> Root
+    :<|> RNew
+    :<|> RExisting
+    :<|> RList . Input Clean . fromMaybe ""
+    :<|> RList (Input Clean "")
+
+
+deriving newtype instance ToHttpApiData   Search
+deriving newtype instance FromHttpApiData Search
 
 
 instance Routed SPA Route where
   redirect = \case
-    Root   -> Redirect (Proxy @("app" :> Raw)) id
-    Echo t -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> Raw)) ($ t)
+    Echo t      -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> Raw)) ($ t)
+    RNew        -> Redirect (Proxy @("app" :> "new" :> Raw)) id
+    RExisting i -> Redirect (Proxy @("app" :> "edit" :> Capture "id" SpaceCraftId :> Raw)) ($ i)
+    RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> Raw)) ($ Just (value s))

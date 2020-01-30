@@ -53,6 +53,16 @@ class Humanize a where
   {-# INLINE humanize #-}
 
 
+instance Humanize Text where
+  humanize = id
+  {-# INLINE humanize #-}
+
+
+instance Humanize String where
+  humanize = pack
+  {-# INLINE humanize #-}
+
+
 class Present a where
   present :: a -> [Html m b]
   default present :: Humanize a => a -> [Html m b]

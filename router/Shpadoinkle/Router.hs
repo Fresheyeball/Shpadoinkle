@@ -6,6 +6,7 @@
 {-# LANGUAGE ExtendedDefaultRules      #-}
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE InstanceSigs              #-}
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE OverloadedStrings         #-}
@@ -115,7 +116,7 @@ fullPageSPA :: forall layout b a r m
   -- ^ where do we render?
   -> (r -> a -> m a)
   -- ^ listen for route changes
-  -> layout `RoutedAs` r
+  -> layout :>> r
   -- ^ how shall we relate urls to routes?
   -> JSM ()
 fullPageSPA toJSM backend i' view getStage onRoute routes = do
@@ -203,45 +204,70 @@ fromRouter queries segs = \case
 class HasRouter layout where
     -- | RoutedAs should be surjective.
     -- As in one route can be the handler for more than one url.
-    type RoutedAs layout route :: Type
-    route :: RoutedAs layout route -> Router route
+    type layout :>> route :: Type
+    route :: layout :>> route -> Router route
 
-instance (HasRouter x, HasRouter y) => HasRouter (x :<|> y) where
-    type RoutedAs (x :<|> y) r = RoutedAs x r :<|> RoutedAs y r
+
+infixr 4 :>>
+
+
+instance (HasRouter x, HasRouter y)
+    => HasRouter (x :<|> y) where
+    type (x :<|> y) :>> r = x :>> r :<|> y :>> r
+
+    route :: x :>> r :<|> y :>> r -> Router r
     route (x :<|> y) = RChoice (route @x x) (route @y y)
     {-# INLINABLE route #-}
 
 instance (HasRouter sub, FromHttpApiData x)
     => HasRouter (Capture sym x :> sub) where
-    type RoutedAs (Capture sym x :> sub) a = x -> RoutedAs sub a
+
+    type (Capture sym x :> sub) :>> a = x -> sub :>> a
+
+    route :: (x -> sub :>> r) -> Router r
     route = RCapture . (route @sub .)
     {-# INLINABLE route #-}
 
 instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
     => HasRouter (QueryParam sym x :> sub) where
-    type RoutedAs (QueryParam sym x :> sub) a = Maybe x -> RoutedAs sub a
+
+    type (QueryParam sym x :> sub) :>> a = Maybe x -> sub :>> a
+
+    route :: (Maybe x -> sub :>> r) -> Router r
     route = RQueryParam (Proxy @sym) . (route @sub .)
     {-# INLINABLE route #-}
 
 instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
     => HasRouter (QueryParams sym x :> sub) where
-    type RoutedAs (QueryParams sym x :> sub) a = [x] -> RoutedAs sub a
+
+    type (QueryParams sym x :> sub) :>> a = [x] -> sub :>> a
+
+    route :: ([x] -> sub :>> r) -> Router r
     route = RQueryParams (Proxy @sym) . (route @sub .)
     {-# INLINABLE route #-}
 
 instance (HasRouter sub, KnownSymbol sym)
     => HasRouter (QueryFlag sym :> sub) where
-    type RoutedAs (QueryFlag sym :> sub) a = Bool -> RoutedAs sub a
+
+    type (QueryFlag sym :> sub) :>> a = Bool -> sub :>> a
+
+    route :: (Bool -> sub :>> r) -> Router r
     route = RQueryFlag (Proxy @sym) . (route @sub .)
+    {-# INLINABLE route #-}
 
 instance (HasRouter sub, KnownSymbol path)
     => HasRouter (path :> sub) where
-    type RoutedAs (path :> sub) a = RoutedAs sub a
+
+    type (path :> sub) :>> a = sub :>> a
+
+    route :: sub :>> r -> Router r
     route = RPath (Proxy @path) . route @sub
     {-# INLINABLE route #-}
 
 instance HasRouter Raw where
-    type RoutedAs Raw a = a
+    type Raw :>> a = a
+
+    route :: r -> Router r
     route = RView
     {-# INLINABLE route #-}
 

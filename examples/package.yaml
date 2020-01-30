@@ -35,14 +35,6 @@ ghcjs-options:
 dependencies:
     - base
 
-when:
-  - condition: impl(ghcjs)
-    then:
-      dependencies: []
-    else:
-      dependencies:
-        - jsaddle-warp
-
 executables:
   #  todomvcatomic:
   #    main: TODOMVCAtomic.hs
