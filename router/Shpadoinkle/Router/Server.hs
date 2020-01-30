@@ -1,13 +1,16 @@
-{-# LANGUAGE AllowAmbiguousTypes   #-}
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE InstanceSigs          #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE CPP                    #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE InstanceSigs           #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 
 module Shpadoinkle.Router.Server where
@@ -15,6 +18,7 @@ module Shpadoinkle.Router.Server where
 
 import           Data.ByteString.Lazy           as BS
 import           Data.Text.Encoding
+import           GHC.TypeLits
 import           Network.Wai
 import           Network.Wai.Application.Static
 import           Servant.API
@@ -60,10 +64,10 @@ class ServeRouter layout route where
   serveUI :: FilePath -> (route -> Html m a) -> layout :>> route -> Server layout
 
 instance (ServeRouter x r, ServeRouter y r)
-   => ServeRouter (x :<|> y) r where
+  => ServeRouter (x :<|> y) r where
 
-   serveUI :: FilePath -> (r -> Html m a) -> (x :<|> y) :>> r -> Server (x :<|> y)
-   serveUI root view (x :<|> y) = serveUI @x root view x :<|> serveUI @y root view y
+  serveUI :: FilePath -> (r -> Html m a) -> (x :<|> y) :>> r -> Server (x :<|> y)
+  serveUI root view (x :<|> y) = serveUI @x root view x :<|> serveUI @y root view y
 
 instance ServeRouter sub r
   => ServeRouter (Capture sym x :> sub) r where
@@ -89,11 +93,8 @@ instance ServeRouter sub r
   serveUI :: FilePath -> (r -> Html m a) -> (Bool -> sub :>> r) -> Server (QueryFlag sym :> sub)
   serveUI root view = (serveUI @sub root view .)
 
-instance
-  ( ServeRouter sub r
-  , ServerT sub Handler ~ ServerT (path :> sub) Handler
-  , ((path :> sub) :>> r) ~ (sub :>> r))
-  => ServeRouter (path :> sub) r where
+instance ServeRouter sub r
+  => ServeRouter ((path :: Symbol) :> sub) r where
 
   serveUI :: FilePath -> (r -> Html m a) -> (path :> sub) :>> r -> Server (path :> sub)
   serveUI root view = serveUI @sub root view

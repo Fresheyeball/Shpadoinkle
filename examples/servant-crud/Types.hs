@@ -129,7 +129,7 @@ data Frontend = Frontend
 
 
 data Route
-  = Echo (Maybe Text)
+  = REcho (Maybe Text)
   | RList (Input Search)
   | RNew
   | RExisting SpaceCraftId
@@ -154,7 +154,7 @@ type SPA = "app" :> "echo" :> QueryParam "echo" Text :> Raw
 
 
 routes :: SPA :>> Route
-routes = Echo
+routes = REcho
     :<|> RNew
     :<|> RExisting
     :<|> RList . Input Clean . fromMaybe ""
@@ -167,7 +167,7 @@ deriving newtype instance FromHttpApiData Search
 
 instance Routed SPA Route where
   redirect = \case
-    Echo t      -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> Raw)) ($ t)
+    REcho t     -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> Raw)) ($ t)
     RNew        -> Redirect (Proxy @("app" :> "new" :> Raw)) id
     RExisting i -> Redirect (Proxy @("app" :> "edit" :> Capture "id" SpaceCraftId :> Raw)) ($ i)
     RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> Raw)) ($ Just (value s))

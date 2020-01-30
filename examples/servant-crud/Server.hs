@@ -8,20 +8,14 @@
 module Main where
 
 
-import           Data.ByteString.Lazy           as BS
 import           Data.Proxy
-import           Data.Text.Encoding
 import           Network.Wai
-import           Network.Wai.Application.Static
 import           Network.Wai.Handler.Warp
 import           Options.Applicative
 import           Servant.API
 import           Servant.Server
-import           Servant.Server.StaticFiles
-import           WaiAppStatic.Types
 
 import           Shpadoinkle
-import           Shpadoinkle.Backend.Static
 import           Shpadoinkle.Router.Server
 
 import           Types

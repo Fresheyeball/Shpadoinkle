@@ -202,7 +202,7 @@ fromRouter queries segs = \case
 -- | This type class traverses the Servant API, and sets up a function to
 -- build its term level representation.
 class HasRouter layout where
-    -- | RoutedAs should be surjective.
+    -- | :>> (pronounced "routed as") should be surjective.
     -- As in one route can be the handler for more than one url.
     type layout :>> route :: Type
     route :: layout :>> route -> Router route
@@ -256,7 +256,7 @@ instance (HasRouter sub, KnownSymbol sym)
     {-# INLINABLE route #-}
 
 instance (HasRouter sub, KnownSymbol path)
-    => HasRouter (path :> sub) where
+    => HasRouter ((path :: Symbol) :> sub) where
 
     type (path :> sub) :>> a = sub :>> a
 
