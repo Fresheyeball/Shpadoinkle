@@ -8,6 +8,7 @@
 module Main where
 
 
+import           Control.Monad.IO.Class
 import           Data.Proxy
 import           Network.Wai
 import           Network.Wai.Handler.Warp
@@ -34,8 +35,12 @@ parser = Options
   <*> option auto (long "port"   <> short 'p' <> metavar "PORT" <> showDefault <> value 8080)
 
 
-listSpaceCraft :: Handler [SpaceCraft]
-listSpaceCraft = return []
+listSpaceCraft :: IO [SpaceCraft]
+listSpaceCraft = return
+  [ SpaceCraft 2 0 (Just "thang") 1 AwayTeam Operational
+  , SpaceCraft 3 0 (Just "sweet") 2 Scout    Operational
+  , SpaceCraft 4 1 (Just "hey")   3 Scout    Inoperable
+  ]
 
 
 getSpaceCraft :: SpaceCraftId -> Handler SpaceCraft
@@ -65,14 +70,14 @@ app :: FilePath -> Application
 app root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
   where
 
-  serveApi = listSpaceCraft
+  serveApi = liftIO listSpaceCraft
         :<|> getSpaceCraft
         :<|> updateSpaceCraft
         :<|> createSpaceCraft
         :<|> deleteSpaceCraft
         :: Server API
 
-  serveSpa = serveUI @SPA root (template . view @JSM . start) routes
+  serveSpa = serveUI @SPA root (return . template . view @JSM . start) routes
 
 
 main :: IO ()

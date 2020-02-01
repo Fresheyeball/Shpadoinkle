@@ -128,12 +128,13 @@ data Frontend = Frontend
   } deriving (Eq, Ord, Show)
 
 
+
 data Route
   = REcho (Maybe Text)
   | RList (Input Search)
   | RNew
   | RExisting SpaceCraftId
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
 
 
 makeFieldsNoPrefix ''Frontend

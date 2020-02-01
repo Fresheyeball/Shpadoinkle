@@ -108,7 +108,7 @@ fullPageSPA :: forall layout b a r m
   -- ^ how do we get to JSM?
   -> (TVar a -> b m ~> m)
   -- ^ What backend are we running?
-  -> (r -> a)
+  -> (r -> m a)
   -- ^ what is the initial state?
   -> (a -> Html (b m) a)
   -- ^ how should the html look?
@@ -125,7 +125,7 @@ fullPageSPA toJSM backend i' view getStage onRoute routes = do
   getRoute window router $ \case
     Nothing -> return ()
     Just r -> do
-      let i = i' r
+      i <- toJSM $ i' r
       model <- createTerritory i
       _ <- listenStateChange router $ writeUpdate model . (toJSM .) . onRoute
       shpadoinkle toJSM backend i model view getStage

@@ -44,8 +44,8 @@ toFile p bs = File
   }
 
 
-defaultSPAServerSettings :: FilePath -> Html m a -> StaticSettings
-defaultSPAServerSettings root html = settings { ssLookupFile = orIndex }
+defaultSPAServerSettings :: FilePath -> IO (Html m a) -> StaticSettings
+defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex }
   where
 
   settings   = defaultWebAppSettings root
@@ -53,6 +53,7 @@ defaultSPAServerSettings root html = settings { ssLookupFile = orIndex }
   orIndex ps = do
     let file ps' = toFile ps' . BS.fromStrict . encodeUtf8 . renderStatic
     res <- ssLookupFile settings ps
+    html <- mhtml
     return $ case (res, toPieces ["index.html"]) of
       (LRNotFound, Just [ps'])                           -> LRFile $ file ps' html
       (_,          Just [ps']) | [ps'] == ps || ps == [] -> LRFile $ file ps' html
@@ -60,47 +61,54 @@ defaultSPAServerSettings root html = settings { ssLookupFile = orIndex }
 
 
 class ServeRouter layout route where
-  serveUI :: FilePath -> (route -> Html m a) -> layout :>> route -> Server layout
+  serveUI :: FilePath -> (route -> IO (Html m a)) -> layout :>> route -> Server layout
 
 
 instance (ServeRouter x r, ServeRouter y r)
   => ServeRouter (x :<|> y) r where
 
-  serveUI :: FilePath -> (r -> Html m a) -> (x :<|> y) :>> r -> Server (x :<|> y)
+  serveUI :: FilePath -> (r -> IO (Html m a)) -> (x :<|> y) :>> r -> Server (x :<|> y)
   serveUI root view (x :<|> y) = serveUI @x root view x :<|> serveUI @y root view y
+  {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter (Capture sym x :> sub) r where
 
-  serveUI :: FilePath -> (r -> Html m a) -> (x -> sub :>> r) -> Server (Capture sym x :> sub)
+  serveUI :: FilePath -> (r -> IO (Html m a)) -> (x -> sub :>> r) -> Server (Capture sym x :> sub)
   serveUI root view = (serveUI @sub root view .)
+  {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter (QueryParam sym x :> sub) r where
 
-  serveUI :: FilePath -> (r -> Html m a) -> (Maybe x -> sub :>> r) -> Server (QueryParam sym x :> sub)
+  serveUI :: FilePath -> (r -> IO (Html m a)) -> (Maybe x -> sub :>> r) -> Server (QueryParam sym x :> sub)
   serveUI root view = (serveUI @sub root view .)
+  {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter (QueryParams sym x :> sub) r where
 
-  serveUI :: FilePath -> (r -> Html m a) -> ([x] -> sub :>> r) -> Server (QueryParams sym x :> sub)
+  serveUI :: FilePath -> (r -> IO (Html m a)) -> ([x] -> sub :>> r) -> Server (QueryParams sym x :> sub)
   serveUI root view = (serveUI @sub root view .)
+  {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter (QueryFlag sym :> sub) r where
 
-  serveUI :: FilePath -> (r -> Html m a) -> (Bool -> sub :>> r) -> Server (QueryFlag sym :> sub)
+  serveUI :: FilePath -> (r -> IO (Html m a)) -> (Bool -> sub :>> r) -> Server (QueryFlag sym :> sub)
   serveUI root view = (serveUI @sub root view .)
+  {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter ((path :: Symbol) :> sub) r where
 
-  serveUI :: FilePath -> (r -> Html m a) -> (path :> sub) :>> r -> Server (path :> sub)
+  serveUI :: FilePath -> (r -> IO (Html m a)) -> (path :> sub) :>> r -> Server (path :> sub)
   serveUI root view = serveUI @sub root view
+  {-# INLINABLE serveUI #-}
 
 instance ServeRouter Raw r where
-  serveUI :: FilePath -> (r -> Html m a) -> Raw :>> r -> Server Raw
+  serveUI :: FilePath -> (r -> IO (Html m a)) -> Raw :>> r -> Server Raw
   serveUI root view = serveDirectoryWith . defaultSPAServerSettings root . view
+  {-# INLINABLE serveUI #-}
 
 #endif

@@ -23,11 +23,7 @@ import           Types
 
 start :: Route -> Frontend
 start r = Frontend
-  { _table =
-    [ SpaceCraft 2 0 (Just "thang") 1 AwayTeam Operational
-    , SpaceCraft 3 0 (Just "sweet") 2 Scout    Operational
-    , SpaceCraft 4 1 (Just "hey")   3 Scout    Inoperable
-    ]
+  { _table = []
   , _sort  = SortCol SKUT ASC
   , _route = r
   }
