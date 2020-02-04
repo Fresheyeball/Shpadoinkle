@@ -24,6 +24,7 @@ module Shpadoinkle.Widgets.Table
   ) where
 
 
+import           Data.Aeson
 import           Data.Kind
 import           Data.List                   (sortBy)
 import           Data.Text
@@ -37,7 +38,7 @@ import           Shpadoinkle.Widgets.Types
 
 
 data Sort = ASC | DESC
-  deriving (Show, Eq, Ord, Bounded, Enum, Generic)
+  deriving (Show, Eq, Ord, Bounded, Enum, Generic, ToJSON, FromJSON)
 
 
 instance Semigroup Sort where (<>) = min
@@ -54,6 +55,9 @@ deriving instance Show (TableColumn a) => Show (SortCol a)
 deriving instance Eq   (TableColumn a) => Eq   (SortCol a)
 deriving instance Ord  (TableColumn a) => Ord  (SortCol a)
 deriving instance Functor TableColumn => Functor SortCol
+deriving instance Generic (SortCol a)
+instance (ToJSON   (TableColumn a)) => ToJSON (SortCol a)
+instance (FromJSON (TableColumn a)) => FromJSON (SortCol a)
 
 
 instance Ord (TableColumn a) => Semigroup (SortCol a) where

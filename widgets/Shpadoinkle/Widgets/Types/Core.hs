@@ -2,6 +2,8 @@
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DefaultSignatures    #-}
+{-# LANGUAGE DeriveAnyClass       #-}
+{-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE InstanceSigs         #-}
 {-# LANGUAGE RankNTypes           #-}
@@ -14,13 +16,15 @@
 module Shpadoinkle.Widgets.Types.Core where
 
 
+import           Data.Aeson
 import           Data.Text
+import           GHC.Generics
 
 import           Shpadoinkle
 
 
 data Hygiene = Clean | Dirty
-  deriving (Eq, Ord, Show, Read, Enum, Bounded)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON)
 
 
 instance Semigroup Hygiene where

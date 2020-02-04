@@ -171,7 +171,7 @@ listenStateChange router handle = do
   let action = getRoute w router $ maybe (return ()) handle
   _ <- liftJSM . forkJSM . forever $ do
     liftIO $ takeMVar syncRoute
-    getRoute w router $ maybe (return ()) handle
+    action
   w `on` popstate $ liftJSM action
 
 

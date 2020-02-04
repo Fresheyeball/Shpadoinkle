@@ -18,6 +18,9 @@ module View where
 
 
 import           Control.Lens              hiding (view)
+import           Data.Aeson
+import           Data.ByteString.Lazy      (toStrict)
+import           Data.Text.Encoding
 import           Shpadoinkle
 import qualified Shpadoinkle.Html          as H
 import           Shpadoinkle.Router        (navigate)
@@ -85,14 +88,16 @@ view fe = case fe of
   M404 -> text "404"
 
 
-template :: Html m a -> Html m a
-template stage = H.html_
+template :: Frontend -> Html m a -> Html m a
+template fe stage = H.html_
   [ H.head_
     [ H.link'
       [ H.rel "stylesheet"
       , H.href "https://cdn.usebootstrap.com/bootstrap/4.3.1/css/bootstrap.min.css"
       ]
     , H.meta [ H.charset "ISO-8859-1" ] []
+    , H.script_
+      [ text . decodeUtf8 . toStrict $ "window.initState = '" <> encode fe <> "'" ]
     , H.script [ H.src "/all.js" ] []
     ]
   , H.body_

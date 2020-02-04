@@ -36,6 +36,7 @@ library:
     - Shpadoinkle.Widgets.Types.Remote
   source-dirs: .
   dependencies:
+    - aeson
     - compactable
     - jsaddle
     - text

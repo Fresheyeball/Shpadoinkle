@@ -5,6 +5,7 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE DerivingVia                #-}
 {-# LANGUAGE DuplicateRecordFields      #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -34,8 +35,8 @@ import           Data.Set                          as Set
 import           Data.String
 import           Data.Text
 import           Database.Beam
-import           Database.Beam.Backend.SQL.SQL92
 #ifndef ghcjs_HOST_OS
+import           Database.Beam.Backend.SQL.SQL92
 import           Database.Beam.Sqlite
 import           Database.Beam.Sqlite.Syntax
 import           Database.SQLite.Simple.FromField
@@ -49,39 +50,55 @@ import           Shpadoinkle.Widgets.Types
 
 
 newtype SKU = SKU { unSKU :: Int  }
-  deriving newtype (Eq, Ord, Show, Read, Num, ToJSON, FromJSON, FromBackendRow Sqlite)
+  deriving newtype (Eq, Ord, Show, Read, Num, ToJSON, FromJSON)
   deriving anyclass (Humanize, Present)
+#ifndef ghcjs_HOST_OS
+  deriving newtype (FromBackendRow Sqlite)
+#endif
 
 
 newtype Description = Description { unDescription  :: Text }
   deriving stock (Generic)
-  deriving newtype (Eq, Ord, Show, Read, IsString, ToJSON, FromJSON, FromBackendRow Sqlite)
-  deriving anyclass (Humanize, Present)
-
+  deriving newtype (Eq, Ord, Show, Read, IsString, ToJSON, FromJSON, Humanize)
+  deriving anyclass (Present)
+#ifndef ghcjs_HOST_OS
+  deriving newtype (FromBackendRow Sqlite)
+#endif
 
 newtype SerialNumber = SerialNumber { unSerialNumber :: Int  }
-  deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON, FromBackendRow Sqlite)
+  deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON)
   deriving anyclass (Humanize, Present)
+#ifndef ghcjs_HOST_OS
+  deriving newtype (FromBackendRow Sqlite)
+#endif
 
 
 newtype SpaceCraftId = SpaceCraftId { unSpaceCraftId :: Int }
-  deriving newtype ( Eq, Ord, Show, Num, ToJSON, FromJSON, FromHttpApiData, ToHttpApiData
-                   , FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
+  deriving newtype ( Eq, Ord, Show, Num, ToJSON, FromJSON, FromHttpApiData, ToHttpApiData)
   deriving anyclass (Humanize, Present)
+#ifndef ghcjs_HOST_OS
+  deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
+#endif
 
 
 data Operable = Inoperable | Operational
-  deriving (Eq, Ord, Enum, Bounded, Read, Show, Humanize, Present, Generic, ToJSON, FromJSON, FromBackendRow Sqlite)
-
-
-instance FromField Operable where fromField = fmap read <$> fromField
+  deriving (Eq, Ord, Enum, Bounded, Read, Show, Humanize, Present, Generic, ToJSON, FromJSON)
+#ifndef ghcjs_HOST_OS
+  deriving (FromBackendRow Sqlite)
+#endif
 
 
 data Squadron = AwayTeam | StrikeForce | Scout
-  deriving (Eq, Ord, Enum, Bounded, Read, Show, Present, Generic, ToJSON, FromJSON, FromBackendRow Sqlite)
+  deriving (Eq, Ord, Enum, Bounded, Read, Show, Present, Generic, ToJSON, FromJSON)
+#ifndef ghcjs_HOST_OS
+  deriving (FromBackendRow Sqlite)
+#endif
 
 
+#ifndef ghcjs_HOST_OS
+instance FromField Operable where fromField = fmap read <$> fromField
 instance FromField Squadron where fromField = fmap read <$> fromField
+#endif
 
 
 instance Humanize Squadron where
@@ -146,6 +163,9 @@ data Roster = Roster
 deriving instance Eq   Roster
 deriving instance Ord  Roster
 deriving instance Show Roster
+deriving instance Generic Roster
+instance (ToJSON (TableColumn (Set SpaceCraft)))   => ToJSON   Roster
+instance (FromJSON (TableColumn (Set SpaceCraft))) => FromJSON Roster
 
 
 makeFieldsNoPrefix ''Roster
@@ -157,7 +177,7 @@ data EditForm = EditForm
   , _serial      :: Input SerialNumber
   , _squadron    :: Dropdown 'One Squadron
   , _operable    :: Dropdown 'One Operable
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
 
 makeFieldsNoPrefix ''EditForm
@@ -178,7 +198,11 @@ data Frontend
   | MList Roster
   | MDetail (Maybe SpaceCraftId) EditForm
   | M404
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
+
+
+instance (ToJSON   (TableColumn (Set SpaceCraft))) => ToJSON   Frontend
+instance (FromJSON (TableColumn (Set SpaceCraft))) => FromJSON Frontend
 
 
 makeLenses ''Frontend
@@ -249,7 +273,7 @@ instance Humanize (TableColumn (Set SpaceCraft)) where
 instance TableTerritory (Set SpaceCraft) where
   data TableColumn (Set SpaceCraft) =
     SKUT | DescriptionT | SerialNumberT | SquadronT | OperableT
-    deriving (Eq, Ord, Show, Enum, Bounded)
+    deriving (Eq, Ord, Show, Enum, Bounded, Generic, ToJSON, FromJSON)
 
   newtype TableRow (Set SpaceCraft) = Row { unRow :: SpaceCraft }
     deriving (Eq, Ord, Show)

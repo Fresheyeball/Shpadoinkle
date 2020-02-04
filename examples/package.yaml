@@ -97,6 +97,7 @@ executables:
       - View
     dependencies:
       - aeson
+      - bytestring
       - beam-core
       - containers
       - lens
@@ -104,8 +105,11 @@ executables:
       - stm
       - servant
       - mtl
+      - unliftio
+      - jsaddle
       - jsaddle-dom
       - ghcjs-dom
+      - exceptions
 
       - Shpadoinkle
       - Shpadoinkle-backend-pardiff

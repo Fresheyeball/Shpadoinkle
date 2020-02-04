@@ -1,14 +1,19 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE LambdaCase     #-}
 
 
 module Shpadoinkle.Widgets.Types.Physical where
 
 
+import           Data.Aeson
+import           GHC.Generics
+
 import           Shpadoinkle.Widgets.Types.Core
 
 
 data Toggle = Closed Hygiene | Open
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON)
 
 
 instance Enum Toggle where

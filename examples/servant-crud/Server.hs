@@ -56,14 +56,6 @@ parser = Options
   <*> option auto (long "port"   <> short 'p' <> metavar "PORT" <> showDefault <> value 8080)
 
 
-listSpaceCraftM :: Monad m => m [SpaceCraft]
-listSpaceCraftM = return
-  [ SpaceCraft 2 0 (Just "thang") 1 AwayTeam Operational
-  , SpaceCraft 3 0 (Just "sweet") 2 Scout    Operational
-  , SpaceCraft 4 1 (Just "hey")   3 Scout    Inoperable
-  ]
-
-
 runSql :: (MonadIO m, MonadReader Connection m) => SqliteM b -> m b
 runSql x = do conn <- ask; liftIO $ runBeamSqlite conn x
 
@@ -96,7 +88,8 @@ app conn root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
 
   serveSpa :: Server SPA
   serveSpa = serveUI @ SPA root
-    (fmap (template . view @ JSM) . toHandler conn . start) routes
+    (\r -> toHandler conn $ do
+      i <- start r; return . template i $ view @ JSM i) routes
 
 
 main :: IO ()

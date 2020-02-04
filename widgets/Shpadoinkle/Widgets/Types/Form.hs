@@ -1,12 +1,17 @@
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 
 module Shpadoinkle.Widgets.Types.Form where
 
 
+import           Data.Aeson
 import           Data.String
 import           Data.Text
+import           GHC.Generics
 
 import           Shpadoinkle.Widgets.Types.Core
 
@@ -14,7 +19,7 @@ import           Shpadoinkle.Widgets.Types.Core
 data Input a = Input
   { hygiene :: Hygiene
   , value   :: a
-  } deriving (Eq, Ord, Show, Read, Functor)
+  } deriving (Eq, Ord, Show, Read, Functor, Generic, ToJSON, FromJSON)
 
 
 instance Applicative Input where
@@ -35,9 +40,11 @@ instance Monoid a => Monoid (Input a) where
 
 
 newtype Placeholder = Placeholder { unPlaceholder :: Text }
-  deriving (Eq, Ord, Show, Read, IsString, Semigroup, Monoid)
+  deriving newtype (Eq, Ord, Show, Read, IsString, Semigroup, Monoid, ToJSON, FromJSON)
+  deriving stock Generic
 
 
 newtype Search = Search { unSearch :: Text }
-  deriving (Eq, Ord, Show, Read, IsString, Semigroup, Monoid)
+  deriving newtype (Eq, Ord, Show, Read, IsString, Semigroup, Monoid, ToJSON, FromJSON)
+  deriving stock Generic
 
