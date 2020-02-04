@@ -97,10 +97,11 @@ executables:
       - View
     dependencies:
       - aeson
+      - beam-core
+      - containers
       - lens
       - text
       - stm
-      - containers
       - servant
 
       - Shpadoinkle
@@ -132,9 +133,13 @@ executables:
     dependencies:
       - aeson
       - bytestring
+      - beam-core
+      - beam-sqlite
       - text
       - lens
       - stm
+      - mtl
+      - sqlite-simple
       - containers
       - servant
       - servant-server

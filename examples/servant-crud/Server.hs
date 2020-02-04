@@ -1,15 +1,25 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 
 module Main where
 
 
-import           Control.Monad.IO.Class
+import           Control.Monad.Except
+import           Control.Monad.Reader
 import           Data.Proxy
+import           Data.Set                  as Set
+import           Database.Beam
+import           Database.Beam.Sqlite
+import           Database.SQLite.Simple
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Options.Applicative
@@ -29,55 +39,61 @@ data Options = Options
   }
 
 
+newtype App a = App { runApp :: ReaderT Connection IO a }
+  deriving (Functor, Applicative, Monad, MonadIO, MonadReader Connection)
+
+
+toHandler :: MonadIO m => Connection -> App a -> m a
+toHandler c a = liftIO $ runReaderT (runApp a) c
+
+
 parser :: Parser Options
 parser = Options
   <$> strOption   (long "assets" <> short 'a' <> metavar "FILEPATH")
   <*> option auto (long "port"   <> short 'p' <> metavar "PORT" <> showDefault <> value 8080)
 
 
-listSpaceCraft :: IO [SpaceCraft]
-listSpaceCraft = return
+listSpaceCraftM :: Monad m => m [SpaceCraft]
+listSpaceCraftM = return
   [ SpaceCraft 2 0 (Just "thang") 1 AwayTeam Operational
   , SpaceCraft 3 0 (Just "sweet") 2 Scout    Operational
   , SpaceCraft 4 1 (Just "hey")   3 Scout    Inoperable
   ]
 
 
-getSpaceCraft :: SpaceCraftId -> Handler SpaceCraft
-getSpaceCraft _ = return $ SpaceCraft
-  { _identity    = SpaceCraftId 0
-  , _sku         = SKU 23
-  , _description = Nothing
-  , _serial      = SerialNumber 12312
-  , _squadron    = AwayTeam
-  , _operable    = Operational
-  }
+runSql :: (MonadIO m, MonadReader Connection m) => SqliteM b -> m b
+runSql x = do conn <- ask; liftIO $ runBeamSqlite conn x
 
 
-updateSpaceCraft :: SpaceCraftId -> SpaceCraftUpdate -> Handler ()
-updateSpaceCraft _ _ = return ()
+instance CRUDSpaceCraft App where
+
+  listSpaceCraft =
+    fmap Set.fromList . runSql . runSelectReturningList . select . all_ $ _roster db
+
+  getSpaceCraft i =
+    runSql . runSelectReturningOne . select
+           . filter_ (\s -> val_ (SpaceCraftKey i) ==. primaryKey s) . all_ $ _roster db
+
+  updateSpaceCraft _ _ = error "TODO"
+  deleteSpaceCraft     = error "TODO"
+  createSpaceCraft _   = error "TODO"
 
 
-createSpaceCraft :: SpaceCraftUpdate -> Handler SpaceCraftId
-createSpaceCraft _ = return $ SpaceCraftId 0
-
-
-deleteSpaceCraft :: SpaceCraftId -> Handler ()
-deleteSpaceCraft = undefined
-
-
-app :: FilePath -> Application
-app root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
+app :: Connection -> FilePath -> Application
+app conn root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
   where
 
-  serveApi = liftIO listSpaceCraft
-        :<|> getSpaceCraft
-        :<|> updateSpaceCraft
-        :<|> createSpaceCraft
-        :<|> deleteSpaceCraft
-        :: Server API
+  serveApi :: Server API
+  serveApi = hoistServer (Proxy @ API) (toHandler conn)
+       $ listSpaceCraft
+    :<|> getSpaceCraft
+    :<|> updateSpaceCraft
+    :<|> createSpaceCraft
+    :<|> deleteSpaceCraft
 
-  serveSpa = serveUI @SPA root (return . template . view @JSM . start) routes
+  serveSpa :: Server SPA
+  serveSpa = serveUI @ SPA root
+    (fmap (template . view @ JSM) . toHandler conn . start) routes
 
 
 main :: IO ()
@@ -85,4 +101,5 @@ main = do
   Options {..} <- execParser . info (parser <**> helper) $
     fullDesc <> progDesc "Servant CRUD Example"
              <> header "Space craft manager as an example of Shpadoinkle"
-  run port $ app assets
+  conn <- open "roster.db"
+  run port $ app conn assets
