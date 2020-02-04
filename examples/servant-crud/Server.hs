@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -15,8 +16,10 @@ module Main where
 
 import           Control.Monad.Except
 import           Control.Monad.Reader
+import           Data.FileEmbed
 import           Data.Proxy
 import           Data.Set                  as Set
+import           Data.Text.Encoding
 import           Database.Beam
 import           Database.Beam.Sqlite
 import           Database.SQLite.Simple
@@ -102,4 +105,5 @@ main = do
     fullDesc <> progDesc "Servant CRUD Example"
              <> header "Space craft manager as an example of Shpadoinkle"
   conn <- open "roster.db"
+  execute_ conn . Query $ decodeUtf8 $(embedFile "./servant-crud/migrate.sql")
   run port $ app conn assets

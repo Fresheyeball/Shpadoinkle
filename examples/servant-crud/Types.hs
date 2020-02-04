@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -34,9 +35,11 @@ import           Data.String
 import           Data.Text
 import           Database.Beam
 import           Database.Beam.Backend.SQL.SQL92
+#ifndef ghcjs_HOST_OS
 import           Database.Beam.Sqlite
 import           Database.Beam.Sqlite.Syntax
 import           Database.SQLite.Simple.FromField
+#endif
 import           Servant.API                       hiding (Description)
 import           Shpadoinkle
 import           Shpadoinkle.Router
@@ -91,7 +94,7 @@ instance Humanize Squadron where
 data SpaceCraftT f = SpaceCraft
   { _identity    :: Columnar f SpaceCraftId
   , _sku         :: Columnar f SKU
-  , _description :: Columnar f (Maybe Description)
+  , _description :: Columnar (Nullable f) Description
   , _serial      :: Columnar f SerialNumber
   , _squadron    :: Columnar f Squadron
   , _operable    :: Columnar f Operable
@@ -140,6 +143,11 @@ data Roster = Roster
   }
 
 
+deriving instance Eq   Roster
+deriving instance Ord  Roster
+deriving instance Show Roster
+
+
 makeFieldsNoPrefix ''Roster
 
 
@@ -149,7 +157,7 @@ data EditForm = EditForm
   , _serial      :: Input SerialNumber
   , _squadron    :: Dropdown 'One Squadron
   , _operable    :: Dropdown 'One Operable
-  }
+  } deriving (Eq, Ord, Show)
 
 
 makeFieldsNoPrefix ''EditForm
@@ -170,6 +178,7 @@ data Frontend
   | MList Roster
   | MDetail (Maybe SpaceCraftId) EditForm
   | M404
+  deriving (Eq, Ord, Show)
 
 
 makeLenses ''Frontend
@@ -246,12 +255,14 @@ instance TableTerritory (Set SpaceCraft) where
     deriving (Eq, Ord, Show)
 
   toRows = fmap Row . Set.toList
+
   toCell (Row SpaceCraft {..}) = \case
     SKUT          -> present _sku
     DescriptionT  -> maybe [text "N/A"] present _description
     SerialNumberT -> present _serial
     SquadronT     -> present _squadron
     OperableT     -> present _operable
+
   sortTable (SortCol c d) = f $ case c of
     SKUT          -> compare `on` Lens.view sku         . unRow
     DescriptionT  -> compare `on` Lens.view description . unRow

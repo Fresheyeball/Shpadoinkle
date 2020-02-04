@@ -103,6 +103,9 @@ executables:
       - text
       - stm
       - servant
+      - mtl
+      - jsaddle-dom
+      - ghcjs-dom
 
       - Shpadoinkle
       - Shpadoinkle-backend-pardiff
@@ -117,6 +120,8 @@ executables:
         else:
           dependencies:
             - servant-client
+            - beam-sqlite
+            - sqlite-simple
 
   servant-crud-server:
     when:
@@ -135,12 +140,13 @@ executables:
       - bytestring
       - beam-core
       - beam-sqlite
+      - containers
+      - file-embed
       - text
       - lens
       - stm
       - mtl
       - sqlite-simple
-      - containers
       - servant
       - servant-server
       - optparse-applicative
