@@ -44,6 +44,7 @@ module Shpadoinkle
   , MonadJSM, JSM, liftJSM
   , newTVarIO
   , runJSorWarp
+  , runJSM, askJSM
   ) where
 
 

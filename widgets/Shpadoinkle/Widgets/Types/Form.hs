@@ -17,9 +17,17 @@ import           Shpadoinkle.Widgets.Types.Core
 
 
 data Input a = Input
-  { hygiene :: Hygiene
-  , value   :: a
+  { _hygiene :: Hygiene
+  , _value   :: a
   } deriving (Eq, Ord, Show, Read, Functor, Generic, ToJSON, FromJSON)
+
+
+hygiene :: Applicative f => (Hygiene -> f Hygiene) -> Input a -> f (Input a)
+hygiene f i = (\h -> i { _hygiene = h }) <$> f (_hygiene i)
+
+
+value :: Applicative f => (a -> f a) -> Input a -> f (Input a)
+value f i = (\a -> i { _value = a }) <$> f (_value i)
 
 
 instance Applicative Input where

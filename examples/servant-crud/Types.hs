@@ -42,7 +42,6 @@ import           Database.Beam.Sqlite.Syntax
 import           Database.SQLite.Simple.FromField
 #endif
 import           Servant.API                       hiding (Description)
-import           Shpadoinkle
 import           Shpadoinkle.Router
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
 import           Shpadoinkle.Widgets.Table         as Table
@@ -64,6 +63,9 @@ newtype Description = Description { unDescription  :: Text }
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite)
 #endif
+
+instance Humanize (Maybe Description) where
+  humanize = maybe "N/A" humanize
 
 newtype SerialNumber = SerialNumber { unSerialNumber :: Int  }
   deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON)
@@ -250,7 +252,7 @@ instance Routed SPA Route where
     REcho t     -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> Raw)) ($ t)
     RNew        -> Redirect (Proxy @("app" :> "new" :> Raw)) id
     RExisting i -> Redirect (Proxy @("app" :> "edit" :> Capture "id" SpaceCraftId :> Raw)) ($ i)
-    RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> Raw)) ($ Just (value s))
+    RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> Raw)) ($ Just (_value s))
 
 
 class CRUDSpaceCraft m where
@@ -282,7 +284,7 @@ instance TableTerritory (Set SpaceCraft) where
 
   toCell (Row SpaceCraft {..}) = \case
     SKUT          -> present _sku
-    DescriptionT  -> maybe [text "N/A"] present _description
+    DescriptionT  -> present _description
     SerialNumberT -> present _serial
     SquadronT     -> present _squadron
     OperableT     -> present _operable

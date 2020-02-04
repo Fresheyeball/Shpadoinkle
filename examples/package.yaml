@@ -106,9 +106,6 @@ executables:
       - servant
       - mtl
       - unliftio
-      - jsaddle
-      - jsaddle-dom
-      - ghcjs-dom
       - exceptions
 
       - Shpadoinkle

@@ -24,7 +24,7 @@ emptyCfg = Config (Placeholder "") []
 
 mkInput :: MonadJSM m => Text -> (Text -> a) -> (a -> Text) -> Config m a -> Input a -> Html m (Input a)
 mkInput t to from (Config (Placeholder ph) attrs) inp = Html.input
-  ( Html.value (from $ Form.value inp)
+  ( Html.value (from $ Form._value inp)
   : Html.placeholder ph
   : Html.onInput (Input Dirty . to)
   : Html.type' t

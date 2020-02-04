@@ -3,6 +3,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
@@ -46,7 +47,7 @@ newtype App a = App { runApp :: ReaderT Connection IO a }
   deriving (Functor, Applicative, Monad, MonadIO, MonadReader Connection)
 
 
-toHandler :: MonadIO m => Connection -> App a -> m a
+toHandler :: MonadIO m => Connection -> App ~> m
 toHandler c a = liftIO $ runReaderT (runApp a) c
 
 
@@ -56,7 +57,7 @@ parser = Options
   <*> option auto (long "port"   <> short 'p' <> metavar "PORT" <> showDefault <> value 8080)
 
 
-runSql :: (MonadIO m, MonadReader Connection m) => SqliteM b -> m b
+runSql :: (MonadIO m, MonadReader Connection m) => SqliteM ~> m
 runSql x = do conn <- ask; liftIO $ runBeamSqlite conn x
 
 

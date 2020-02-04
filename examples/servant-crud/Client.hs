@@ -15,23 +15,18 @@ module Main where
 
 import           Control.Monad.Catch
 import           Control.Monad.Reader
-import           Data.Aeson
-import           Data.ByteString.Lazy        (fromStrict)
 import           Data.Proxy
 import           Data.Set
-import           Data.Text.Encoding
 import           Servant.API
 #ifdef ghcjs_HOST_OS
 import           Servant.Client.Ghcjs
 #else
 import           Servant.Client
 #endif
-import           GHCJS.DOM.Types             (askJSM, runJSM)
-import           Language.Javascript.JSaddle (fromJSVal, jsg)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Html.Utils
-import           Shpadoinkle.Router          (fullPageSPA)
+import           Shpadoinkle.Router          (fullPageSPA, withHydration)
 import           UnliftIO
 
 import           Types
@@ -47,12 +42,10 @@ newtype App a = App { runApp :: JSM a }
 
 instance MonadUnliftIO App where
   {-# INLINE askUnliftIO #-}
-  askUnliftIO = do
-    ctx <- askJSM
-    return $ UnliftIO $ \(App m) -> runJSM m ctx
+  askUnliftIO = do ctx <- askJSM; return $ UnliftIO $ \(App m) -> runJSM m ctx
 
 
-runXHR :: ClientM a -> App a
+runXHR :: ClientM ~> App
 #ifdef ghcjs_HOST_OS
 runXHR m = App $ either throwM pure =<< runClientM m
 #else
@@ -79,17 +72,8 @@ deleteSpaceCraftM :: SpaceCraftId -> ClientM ()
   = client (Proxy @ API)
 
 
-startWithContext :: Route -> App Frontend
-startWithContext r = do
-  i <- liftJSM $ fromJSVal =<< jsg "initState"
-  case decode . fromStrict . encodeUtf8 =<< i of
-    Just fe -> return fe
-    _       -> start r
-
-
-
 app :: JSM ()
-app = fullPageSPA @ SPA runApp runParDiff startWithContext view getBody (const . start) routes
+app = fullPageSPA @ SPA runApp runParDiff (withHydration start) view getBody (const . start) routes
 
 
 main :: IO ()

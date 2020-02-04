@@ -27,6 +27,8 @@ module Shpadoinkle.Router
     , Routed(..)
     , fullPageSPA
     , navigate
+    , withHydration
+    , toHydration
     ) where
 
 
@@ -35,11 +37,14 @@ import           Control.Compactable           as C
 import           Control.Concurrent
 import           Control.Monad
 import           Control.Monad.IO.Class
+import           Data.Aeson
+import           Data.ByteString.Lazy          (fromStrict, toStrict)
 import           Data.Kind
 import           Data.Maybe                    (isJust)
 import           Data.Proxy
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
+import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
 import           GHC.Conc
 import           GHC.TypeLits
 import           GHCJS.DOM
@@ -86,6 +91,18 @@ class Routed a r where redirect :: r -> Redirect a
 
 syncRoute :: MVar ()
 syncRoute = unsafePerformIO newEmptyMVar
+
+
+withHydration :: (MonadJSM m, FromJSON a) => (r -> m a) -> r -> m a
+withHydration s r = do
+  i <- liftJSM $ fromJSVal =<< jsg "initState"
+  case decode . fromStrict . encodeUtf8 =<< i of
+    Just fe -> return fe
+    _       -> s r
+
+toHydration :: ToJSON a => a -> Html m b
+toHydration fe =
+  h "script" [] [ text . decodeUtf8 . toStrict $ "window.initState = '" <> encode fe <> "'" ]
 
 
 navigate :: forall a m r. MonadJSM m => Routed a r => r -> m ()

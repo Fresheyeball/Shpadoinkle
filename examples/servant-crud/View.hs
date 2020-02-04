@@ -18,12 +18,11 @@ module View where
 
 
 import           Control.Lens              hiding (view)
-import           Data.Aeson
-import           Data.ByteString.Lazy      (toStrict)
-import           Data.Text.Encoding
+import           Data.Set                  as Set
+import           Data.Text                 as T
 import           Shpadoinkle
 import qualified Shpadoinkle.Html          as H
-import           Shpadoinkle.Router        (navigate)
+import           Shpadoinkle.Router        (navigate, toHydration)
 import           Shpadoinkle.Widgets.Table as Table
 import           Shpadoinkle.Widgets.Types
 
@@ -73,11 +72,25 @@ tableCfg = TableConfig
 (<+---) big out trans in0 in1 in2 = (\s -> set out s big) <$> trans (big ^. in0) (big ^. in1) (big ^. in2)
 
 
+fuzzySearch :: Input Search -> SpaceCraft -> Bool
+fuzzySearch (Input _ (Search s)) sc = T.isInfixOf s . T.unwords $ (sc ^.)  <$>
+  [ sku         . to humanize
+  , description . to humanize
+  , serial      . to humanize
+  , squadron    . to humanize
+  , operable    . to humanize
+  ]
+
+
 view :: MonadJSM m => Frontend -> Html m Frontend
 view fe = case fe of
   MList r -> MList <$> H.div "container-fluid"
    [ H.h2_ [ "Space Craft Roster" ]
-   , (r <+-- sort) (Table.viewWith tableCfg) table sort
+   , H.input' [ H.value   $ r ^. search . value . to unSearch
+              , H.onInput $ \s -> r & search . value .~ Search s
+              , H.placeholder "Search"
+              ]
+   , (r <+-- sort) (Table.viewWith tableCfg) (table . to (Set.filter . fuzzySearch $ r ^. search)) sort
    , H.a [ H.onClick' (r <$ navigate @SPA (REcho $ Just "plex")) ] [ text "Go to Echo" ]
    ]
   MDetail sid _ -> H.div_ $ maybe [text "New"] present sid
@@ -96,8 +109,7 @@ template fe stage = H.html_
       , H.href "https://cdn.usebootstrap.com/bootstrap/4.3.1/css/bootstrap.min.css"
       ]
     , H.meta [ H.charset "ISO-8859-1" ] []
-    , H.script_
-      [ text . decodeUtf8 . toStrict $ "window.initState = '" <> encode fe <> "'" ]
+    , toHydration fe
     , H.script [ H.src "/all.js" ] []
     ]
   , H.body_

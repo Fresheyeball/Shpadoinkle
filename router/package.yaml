@@ -35,6 +35,7 @@ when:
 dependencies:
     - base
 
+    - aeson
     - compactable
     - servant
     - http-api-data
@@ -44,6 +45,7 @@ dependencies:
     - ghcjs-dom
     - jsaddle-dom
     - text
+    - bytestring
 
     - Shpadoinkle
 
