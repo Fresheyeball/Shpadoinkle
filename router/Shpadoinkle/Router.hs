@@ -62,6 +62,7 @@ import           System.IO.Unsafe
 import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
+import           Debug.Trace                   (trace)
 import           Shpadoinkle
 
 
@@ -99,6 +100,7 @@ withHydration s r = do
   case decode . fromStrict . encodeUtf8 =<< i of
     Just fe -> return fe
     _       -> s r
+
 
 toHydration :: ToJSON a => a -> Html m b
 toHydration fe =
@@ -161,10 +163,6 @@ parseSegments :: Text -> [Text]
 parseSegments = C.filter (/= "") .  T.splitOn "/"
 
 
-popstate :: EventName Window PopStateEvent
-popstate = unsafeEventName "popstate"
-
-
 getRoute
   :: Window -> Router r -> (Maybe r -> JSM a) -> JSM a
 getRoute window router handle = do
@@ -181,15 +179,20 @@ forkJSM a = void . liftIO . forkIO . runJSM a =<< askJSM
 {-# INLINE forkJSM #-}
 
 
+popstate :: EventName Window PopStateEvent
+popstate = unsafeEventName "popstate"
+
+
 listenStateChange
-  :: Router r -> (r -> JSM ()) -> JSM (JSM ())
-listenStateChange router handle = do
+  :: Router r -> (r -> JSM ()) -> JSM ()
+listenStateChange router handler = do
   w  <- currentWindowUnchecked
-  let action = getRoute w router $ maybe (return ()) handle
-  _ <- liftJSM . forkJSM . forever $ do
+  _ <- w `on` popstate $ liftIO $ do
+    putStrLn "POPSTATE"
+    putMVar syncRoute ()
+  liftJSM . forkJSM . forever $ do
     liftIO $ takeMVar syncRoute
-    action
-  w `on` popstate $ liftJSM action
+    getRoute w router . trace "WOWZERS" $ maybe (return ()) handler
 
 
 -- | Get an @r@ from a route and url context

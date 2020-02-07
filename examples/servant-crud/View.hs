@@ -18,13 +18,12 @@ module View where
 
 
 import           Control.Lens              hiding (view)
-import           Data.Set                  as Set
 import           Data.Text                 as T
 import           Shpadoinkle
 import qualified Shpadoinkle.Html          as H
 import           Shpadoinkle.Router        (navigate, toHydration)
 import           Shpadoinkle.Widgets.Table as Table
-import           Shpadoinkle.Widgets.Types
+import           Shpadoinkle.Widgets.Types hiding (search)
 
 import           Types
 
@@ -72,25 +71,30 @@ tableCfg = TableConfig
 (<+---) big out trans in0 in1 in2 = (\s -> set out s big) <$> trans (big ^. in0) (big ^. in1) (big ^. in2)
 
 
-fuzzySearch :: Input Search -> SpaceCraft -> Bool
-fuzzySearch (Input _ (Search s)) sc = T.isInfixOf s . T.unwords $ (sc ^.)  <$>
-  [ sku         . to humanize
-  , description . to humanize
-  , serial      . to humanize
-  , squadron    . to humanize
-  , operable    . to humanize
-  ]
+fuzzySearch :: Input Search -> [SpaceCraft] -> [SpaceCraft]
+fuzzySearch (Input _ (Search s)) = Prelude.filter (\sc -> s `isInfixOf` asText sc)
+  where
+
+  asText sc = T.unwords $ (sc ^.)  <$>
+    [ sku         . to humanize
+    , description . to humanize
+    , serial      . to humanize
+    , squadron    . to humanize
+    , operable    . to humanize
+    ]
 
 
 view :: MonadJSM m => Frontend -> Html m Frontend
 view fe = case fe of
   MList r -> MList <$> H.div "container-fluid"
-   [ H.h2_ [ "Space Craft Roster" ]
-   , H.input' [ H.value   $ r ^. search . value . to unSearch
-              , H.onInput $ \s -> r & search . value .~ Search s
-              , H.placeholder "Search"
-              ]
-   , (r <+-- sort) (Table.viewWith tableCfg) (table . to (Set.filter . fuzzySearch $ r ^. search)) sort
+   [ H.div "d-flex justify-content-between"
+     [ H.h2_ [ "Space Craft Roster" ]
+     , H.input' [ H.value   $ r ^. search . value . to unSearch
+                , H.onInput $ \s -> r & search . value .~ Search s
+                , H.placeholder "Search"
+                ]
+     ]
+   , (r <+-- sort) (Table.viewWith tableCfg) (table . to (fuzzySearch $ r ^. search)) sort
    , H.a [ H.onClick' (r <$ navigate @SPA (REcho $ Just "plex")) ] [ text "Go to Echo" ]
    ]
   MDetail sid _ -> H.div_ $ maybe [text "New"] present sid

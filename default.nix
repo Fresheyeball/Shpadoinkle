@@ -1,6 +1,5 @@
 { isJS ? false, compiler ? "ghc864", pack ? "all", chan ? "e1843646b04fb564abf6330a9432a76df3269d2f" }:
 
-
 let pkgs = import ./pkgs.nix compiler isJS chan; in with pkgs; with lib;
 let
 

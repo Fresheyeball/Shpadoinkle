@@ -16,7 +16,6 @@ module Main where
 import           Control.Monad.Catch
 import           Control.Monad.Reader
 import           Data.Proxy
-import           Data.Set
 import           Servant.API
 #ifdef ghcjs_HOST_OS
 import           Servant.Client.Ghcjs
@@ -61,7 +60,7 @@ instance CRUDSpaceCraft App where
   deleteSpaceCraft     = runXHR . deleteSpaceCraftM
 
 
-listSpaceCraftM   :: ClientM (Set SpaceCraft)
+listSpaceCraftM   :: ClientM [SpaceCraft]
 getSpaceCraftM    :: SpaceCraftId -> ClientM (Maybe SpaceCraft)
 updateSpaceCraftM :: SpaceCraftId -> SpaceCraftUpdate -> ClientM ()
 createSpaceCraftM :: SpaceCraftUpdate -> ClientM SpaceCraftId

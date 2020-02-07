@@ -31,9 +31,9 @@ import           Data.Aeson
 import           Data.Function
 import           Data.Maybe
 import           Data.Proxy
-import           Data.Set                          as Set
 import           Data.String
 import           Data.Text
+-- import           Data.Text.Metrics
 import           Database.Beam
 #ifndef ghcjs_HOST_OS
 import           Database.Beam.Backend.SQL.SQL92
@@ -42,6 +42,7 @@ import           Database.Beam.Sqlite.Syntax
 import           Database.SQLite.Simple.FromField
 #endif
 import           Servant.API                       hiding (Description)
+import qualified Shpadoinkle.Html                  as H
 import           Shpadoinkle.Router
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
 import           Shpadoinkle.Widgets.Table         as Table
@@ -156,9 +157,9 @@ makeFieldsNoPrefix ''SpaceCraftUpdate
 
 
 data Roster = Roster
-  { _sort   :: SortCol (Set SpaceCraft)
+  { _sort   :: SortCol [SpaceCraft]
   , _search :: Input Search
-  , _table  :: Set SpaceCraft
+  , _table  :: [SpaceCraft]
   }
 
 
@@ -166,8 +167,8 @@ deriving instance Eq   Roster
 deriving instance Ord  Roster
 deriving instance Show Roster
 deriving instance Generic Roster
-instance (ToJSON (TableColumn (Set SpaceCraft)))   => ToJSON   Roster
-instance (FromJSON (TableColumn (Set SpaceCraft))) => FromJSON Roster
+instance (ToJSON   (TableColumn [SpaceCraft])) => ToJSON   Roster
+instance (FromJSON (TableColumn [SpaceCraft])) => FromJSON Roster
 
 
 makeFieldsNoPrefix ''Roster
@@ -203,8 +204,8 @@ data Frontend
   deriving (Eq, Ord, Show, Generic)
 
 
-instance (ToJSON   (TableColumn (Set SpaceCraft))) => ToJSON   Frontend
-instance (FromJSON (TableColumn (Set SpaceCraft))) => FromJSON Frontend
+instance (ToJSON   (TableColumn [SpaceCraft])) => ToJSON   Frontend
+instance (FromJSON (TableColumn [SpaceCraft])) => FromJSON Frontend
 
 
 makeLenses ''Frontend
@@ -221,7 +222,7 @@ data Route
 makeLenses ''Route
 
 
-type API = "api" :> "space-craft" :> Get '[JSON] (Set SpaceCraft)
+type API = "api" :> "space-craft" :> Get '[JSON] [SpaceCraft]
       :<|> "api" :> "space-craft" :> Capture "id" SpaceCraftId :> Get '[JSON] (Maybe SpaceCraft)
       :<|> "api" :> "space-craft" :> Capture "id" SpaceCraftId :> ReqBody '[JSON] SpaceCraftUpdate :> Post '[JSON] ()
       :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftUpdate :> Put '[JSON] SpaceCraftId
@@ -256,31 +257,32 @@ instance Routed SPA Route where
 
 
 class CRUDSpaceCraft m where
-  listSpaceCraft   :: m (Set SpaceCraft)
+  listSpaceCraft   :: m [SpaceCraft]
   getSpaceCraft    :: SpaceCraftId -> m (Maybe SpaceCraft)
   updateSpaceCraft :: SpaceCraftId -> SpaceCraftUpdate -> m ()
   createSpaceCraft :: SpaceCraftUpdate -> m SpaceCraftId
   deleteSpaceCraft :: SpaceCraftId -> m ()
 
 
-instance Humanize (TableColumn (Set SpaceCraft)) where
+instance Humanize (TableColumn [SpaceCraft]) where
   humanize = \case
     SKUT          -> "SKU"
     DescriptionT  -> "Desc"
     SerialNumberT -> "Serial #"
     SquadronT     -> "Squadron"
     OperableT     -> "Operable"
+    ToolsT        -> ""
 
 
-instance TableTerritory (Set SpaceCraft) where
-  data TableColumn (Set SpaceCraft) =
-    SKUT | DescriptionT | SerialNumberT | SquadronT | OperableT
+instance TableTerritory [SpaceCraft] where
+  data TableColumn [SpaceCraft] =
+    SKUT | DescriptionT | SerialNumberT | SquadronT | OperableT | ToolsT
     deriving (Eq, Ord, Show, Enum, Bounded, Generic, ToJSON, FromJSON)
 
-  newtype TableRow (Set SpaceCraft) = Row { unRow :: SpaceCraft }
+  newtype TableRow [SpaceCraft] = Row { unRow :: SpaceCraft }
     deriving (Eq, Ord, Show)
 
-  toRows = fmap Row . Set.toList
+  toRows = fmap Row
 
   toCell (Row SpaceCraft {..}) = \case
     SKUT          -> present _sku
@@ -288,6 +290,9 @@ instance TableTerritory (Set SpaceCraft) where
     SerialNumberT -> present _serial
     SquadronT     -> present _squadron
     OperableT     -> present _operable
+    ToolsT        ->
+      [ H.a [ H.onClick' (navigate @ SPA (RExisting _identity)) ] [ "Edit" ]
+      ]
 
   sortTable (SortCol c d) = f $ case c of
     SKUT          -> compare `on` Lens.view sku         . unRow
@@ -295,4 +300,7 @@ instance TableTerritory (Set SpaceCraft) where
     SerialNumberT -> compare `on` Lens.view serial      . unRow
     SquadronT     -> compare `on` Lens.view squadron    . unRow
     OperableT     -> compare `on` Lens.view operable    . unRow
+    ToolsT        -> \_ _ -> EQ
     where f = case d of ASC -> id; DESC -> flip
+
+

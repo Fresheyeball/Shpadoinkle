@@ -40,6 +40,7 @@ library:
     - compactable
     - jsaddle
     - text
+    - text-metrics
     - template-haskell
     - containers
     - stm

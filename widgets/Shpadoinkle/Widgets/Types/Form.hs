@@ -50,9 +50,3 @@ instance Monoid a => Monoid (Input a) where
 newtype Placeholder = Placeholder { unPlaceholder :: Text }
   deriving newtype (Eq, Ord, Show, Read, IsString, Semigroup, Monoid, ToJSON, FromJSON)
   deriving stock Generic
-
-
-newtype Search = Search { unSearch :: Text }
-  deriving newtype (Eq, Ord, Show, Read, IsString, Semigroup, Monoid, ToJSON, FromJSON)
-  deriving stock Generic
-

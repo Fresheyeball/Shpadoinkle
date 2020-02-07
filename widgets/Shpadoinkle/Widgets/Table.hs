@@ -78,9 +78,9 @@ compareOn ASC  = flip compare
 
 class TableTerritory a where
   data TableColumn a :: Type
-  data TableRow a :: Type
+  data TableRow a    :: Type
   toRows    :: a -> [TableRow a]
-  toCell    :: TableRow a -> TableColumn a -> [Html m b]
+  toCell    :: MonadJSM m => TableRow a -> TableColumn a -> [Html m ()]
   sortTable :: SortCol a -> TableRow a -> TableRow a -> Ordering
 
 
@@ -130,7 +130,7 @@ viewWith TableConfig {..} xs s@(SortCol sorton sortorder) =
   [ thead headProps [ tr_ $ cth_ <$> [minBound..maxBound] ]
   , tbody bodyProps $ do
       row <- sortBy (sortTable s) (toRows xs)
-      return . tr_ $ td_ . toCell row <$> [minBound..maxBound]
+      return . (s <$) . tr_ $ td_ . toCell row <$> [minBound..maxBound]
   ]
 
   where

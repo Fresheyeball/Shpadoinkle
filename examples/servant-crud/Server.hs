@@ -19,7 +19,6 @@ import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Data.FileEmbed
 import           Data.Proxy
-import           Data.Set                  as Set
 import           Data.Text.Encoding
 import           Database.Beam
 import           Database.Beam.Sqlite
@@ -64,7 +63,7 @@ runSql x = do conn <- ask; liftIO $ runBeamSqlite conn x
 instance CRUDSpaceCraft App where
 
   listSpaceCraft =
-    fmap Set.fromList . runSql . runSelectReturningList . select . all_ $ _roster db
+    runSql . runSelectReturningList . select . all_ $ _roster db
 
   getSpaceCraft i =
     runSql . runSelectReturningOne . select

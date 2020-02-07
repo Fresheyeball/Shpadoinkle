@@ -102,6 +102,7 @@ executables:
       - containers
       - lens
       - text
+      - text-metrics
       - stm
       - servant
       - mtl
@@ -144,6 +145,7 @@ executables:
       - containers
       - file-embed
       - text
+      - text-metrics
       - lens
       - stm
       - mtl
