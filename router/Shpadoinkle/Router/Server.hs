@@ -45,7 +45,7 @@ toFile p bs = File
 
 
 defaultSPAServerSettings :: FilePath -> IO (Html m a) -> StaticSettings
-defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex }
+defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex, ssMaxAge = MaxAgeSeconds 0 }
   where
 
   settings   = defaultWebAppSettings root
