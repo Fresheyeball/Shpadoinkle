@@ -54,7 +54,7 @@ import           GHCJS.DOM.History
 import           GHCJS.DOM.Location            (getPathname, getSearch)
 import           GHCJS.DOM.PopStateEvent
 import           GHCJS.DOM.Window
-import           Language.Javascript.JSaddle
+import           Language.Javascript.JSaddle   (fromJSVal, jsg)
 import           Servant.API                   hiding (uriPath, uriQuery)
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)
@@ -62,7 +62,6 @@ import           System.IO.Unsafe
 import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
-import           Debug.Trace                   (trace)
 import           Shpadoinkle
 
 
@@ -100,7 +99,6 @@ withHydration s r = do
   case decode . fromStrict . encodeUtf8 =<< i of
     Just fe -> return fe
     _       -> s r
-
 
 toHydration :: ToJSON a => a -> Html m b
 toHydration fe =
@@ -163,6 +161,10 @@ parseSegments :: Text -> [Text]
 parseSegments = C.filter (/= "") .  T.splitOn "/"
 
 
+popstate :: EventName Window PopStateEvent
+popstate = unsafeEventName "popstate"
+
+
 getRoute
   :: Window -> Router r -> (Maybe r -> JSM a) -> JSM a
 getRoute window router handle = do
@@ -179,20 +181,15 @@ forkJSM a = void . liftIO . forkIO . runJSM a =<< askJSM
 {-# INLINE forkJSM #-}
 
 
-popstate :: EventName Window PopStateEvent
-popstate = unsafeEventName "popstate"
-
-
 listenStateChange
   :: Router r -> (r -> JSM ()) -> JSM ()
-listenStateChange router handler = do
-  w  <- currentWindowUnchecked
-  _ <- w `on` popstate $ liftIO $ do
-    putStrLn "POPSTATE"
-    putMVar syncRoute ()
-  liftJSM . forkJSM . forever $ do
+listenStateChange router handle = do
+  w <- currentWindowUnchecked
+  _ <- on w popstate . liftIO $ putMVar syncRoute ()
+  _ <- liftJSM . forkJSM . forever $ do
     liftIO $ takeMVar syncRoute
-    getRoute w router . trace "WOWZERS" $ maybe (return ()) handler
+    getRoute w router $ maybe (return ()) handle
+  syncPoint
 
 
 -- | Get an @r@ from a route and url context
