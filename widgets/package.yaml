@@ -34,13 +34,14 @@ library:
     - Shpadoinkle.Widgets.Types.Form
     - Shpadoinkle.Widgets.Types.Physical
     - Shpadoinkle.Widgets.Types.Remote
+    - Shpadoinkle.Widgets.Types.Search
   source-dirs: .
   dependencies:
     - aeson
     - compactable
     - jsaddle
     - text
-    - text-metrics
+    - edit-distance
     - template-haskell
     - containers
     - stm

@@ -23,7 +23,7 @@ import           Shpadoinkle
 import qualified Shpadoinkle.Html          as H
 import           Shpadoinkle.Router        (navigate, toHydration)
 import           Shpadoinkle.Widgets.Table as Table
-import           Shpadoinkle.Widgets.Types hiding (search)
+import           Shpadoinkle.Widgets.Types
 
 import           Types
 
@@ -71,11 +71,8 @@ tableCfg = TableConfig
 (<+---) big out trans in0 in1 in2 = (\s -> set out s big) <$> trans (big ^. in0) (big ^. in1) (big ^. in2)
 
 
-fuzzySearch :: Input Search -> [SpaceCraft] -> [SpaceCraft]
-fuzzySearch (Input _ (Search s)) = Prelude.filter (\sc -> s `isInfixOf` asText sc)
-  where
-
-  asText sc = T.unwords $ (sc ^.)  <$>
+fuzzy :: [SpaceCraft -> Text]
+fuzzy = flip (^.) <$>
     [ sku         . to humanize
     , description . to humanize
     , serial      . to humanize
@@ -94,7 +91,7 @@ view fe = case fe of
                 , H.placeholder "Search"
                 ]
      ]
-   , (r <+-- sort) (Table.viewWith tableCfg) (table . to (fuzzySearch $ r ^. search)) sort
+   , (r <+-- sort) (Table.viewWith tableCfg) (table . to (fuzzySearch fuzzy $ r ^. search . value)) sort
    , H.a [ H.onClick' (r <$ navigate @SPA (REcho $ Just "plex")) ] [ text "Go to Echo" ]
    ]
   MDetail sid _ -> H.div_ $ maybe [text "New"] present sid
