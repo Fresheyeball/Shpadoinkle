@@ -146,6 +146,7 @@ fullPageSPA toJSM backend i' view getStage onRoute routes = do
       model <- createTerritory i
       _ <- listenStateChange router $ writeUpdate model . (toJSM .) . onRoute
       shpadoinkle toJSM backend i model view getStage
+      syncPoint
 
 
 -- | ?foo=bar&baz=qux -> [("foo","bar"),("baz","qux")]
@@ -189,7 +190,7 @@ listenStateChange router handle = do
   _ <- liftJSM . forkJSM . forever $ do
     liftIO $ takeMVar syncRoute
     getRoute w router $ maybe (return ()) handle
-  syncPoint
+  return ()
 
 
 -- | Get an @r@ from a route and url context
