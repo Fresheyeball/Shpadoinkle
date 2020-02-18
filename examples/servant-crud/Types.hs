@@ -33,7 +33,6 @@ import           Data.Maybe
 import           Data.Proxy
 import           Data.String
 import           Data.Text
--- import           Data.Text.Metrics
 import           Database.Beam
 #ifndef ghcjs_HOST_OS
 import           Database.Beam.Backend.SQL.SQL92

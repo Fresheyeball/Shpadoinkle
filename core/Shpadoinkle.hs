@@ -82,7 +82,7 @@ data Html :: (Type -> Type) -> Type -> Type where
 
 -- | Natural Transformation
 type m ~> n = forall a. m a -> n a
-type Html' a = forall m. Html m a
+type Html' a = forall m. Applicative m => Html m a
 
 
 -- | If you can provide a Natural Transformation from one Monad to another
@@ -155,24 +155,31 @@ injectProps ps html = case html of
 -- | JSX style @h@ constructor
 h :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
 h = Node
+
 -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'
 baked :: JSM RawNode -> Html m o
 baked = Potato
+
 -- | Construct a 'TextNode'
 text :: Text -> Html m o
 text = TextNode
+
 -- | Construct a 'PFlag'
 flag :: Bool -> Prop m o
 flag = PFlag
+
 -- | Construct a simple 'PListener` that will perform an action.
 listener :: m o -> Prop m o
 listener = PListener . const . const
+
 -- | Construct a 'PListener' from it's 'Text' name a raw listener.
 listenRaw :: Text -> (RawNode -> RawEvent -> m o) -> (Text, Prop m o)
 listenRaw k = (,) k . PListener
+
 -- | Construct a 'PListener' from it's 'Text' name and a Monad action.
 listen :: Text -> m o -> (Text, Prop m o)
 listen k = listenRaw k . const . const
+
 -- | Construct a 'PListener' from it's 'Text' name and an ouput value.
 listen' :: Applicative m => Text -> o -> (Text, Prop m o)
 listen' k f = listen k $ pure f
@@ -298,6 +305,7 @@ instance Territory TVar where
   writeUpdate x f = do
     a <- f =<< readTVarIO x
     atomically $ writeTVar x a
+  {-# INLINE writeUpdate #-}
 
   shouldUpdate sun prev model = do
     i' <- readTVarIO model
@@ -367,6 +375,7 @@ fullPage
 fullPage g f i view getStage = do
   model <- createTerritory i
   shpadoinkle g f i model view getStage
+{-# INLINE fullPage #-}
 
 
 fullPageJSM
@@ -381,11 +390,14 @@ fullPageJSM
   -- ^ where do we render?
   -> JSM ()
 fullPageJSM = fullPage id
+{-# INLINE fullPageJSM #-}
 
 
 runJSorWarp :: Int -> JSM () -> IO ()
 #ifdef ghcjs_HOST_OS
 runJSorWarp _ = id
+{-# INLINE runJSorWarp #-}
 #else
 runJSorWarp = run
+{-# INLINE runJSorWarp #-}
 #endif

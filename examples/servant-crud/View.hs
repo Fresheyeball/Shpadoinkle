@@ -9,6 +9,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -17,12 +18,15 @@
 module View where
 
 
-import           Control.Lens              hiding (view)
-import           Data.Text                 as T
+import           Control.Lens                      hiding (view)
+import           Data.Maybe
+import           Data.Text                         as T
 import           Shpadoinkle
-import qualified Shpadoinkle.Html          as H
-import           Shpadoinkle.Router        (navigate, toHydration)
-import           Shpadoinkle.Widgets.Table as Table
+import qualified Shpadoinkle.Html                  as H
+import           Shpadoinkle.Router                (navigate, toHydration)
+import           Shpadoinkle.Widgets.Form.Dropdown
+import qualified Shpadoinkle.Widgets.Form.Input    as Input
+import           Shpadoinkle.Widgets.Table         as Table
 import           Shpadoinkle.Widgets.Types
 
 import           Types
@@ -38,11 +42,37 @@ toEditForm sc = EditForm
   }
 
 
+editForm :: MonadJSM m => EditForm -> Html m EditForm
+editForm ef = H.form_
+
+  [ H.label [ H.for' "sku" ] [ "SKU" ]
+  , (\s -> ef & sku .~ (SKU . round <$> s))
+    <$> Input.number [ H.name' "sku" ]
+    (fromIntegral . unSKU <$> ef ^. sku)
+
+  , H.label [ H.for' "description" ] [ "Description" ]
+  , (\s -> ef & description .~ (Just <$> s))
+    <$> Input.text [ H.name' "description" ]
+    (fromMaybe "" <$> ef ^. description)
+
+  , H.label [ H.for' "serial" ] [ "Serial Number" ]
+  , (\s -> ef & serial .~ (SerialNumber . round <$> s))
+    <$> Input.number [ H.name' "serial" ]
+    (fromIntegral . unSerialNumber <$> ef ^. serial)
+
+  , H.label [ H.for' "squadron" ] [ "Squadron" ]
+  , (\s -> ef & squadron .~ s) <$>
+    dropdown bootstrap defConfig
+    (ef ^. squadron)
+
+  ]
+
+
 start :: (Monad m, CRUDSpaceCraft m) => Route -> m Frontend
 start = \case
-  RList s -> MList . Roster (SortCol SKUT ASC) s <$> listSpaceCraft
-  REcho t -> return $ MEcho t
-  RNew -> return $ MDetail Nothing $ emptyEditForm
+  RList s     -> MList . Roster (SortCol SKUT ASC) s <$> listSpaceCraft
+  REcho t     -> return $ MEcho t
+  RNew        -> return $ MDetail Nothing $ emptyEditForm
   RExisting i -> do
     mcraft <- getSpaceCraft i
     return $ case mcraft of
@@ -84,17 +114,22 @@ fuzzy = flip (^.) <$>
 view :: MonadJSM m => Frontend -> Html m Frontend
 view fe = case fe of
   MList r -> MList <$> H.div "container-fluid"
-   [ H.div "d-flex justify-content-between"
+   [ H.div "flex justify-content-between"
      [ H.h2_ [ "Space Craft Roster" ]
-     , H.input' [ H.value   $ r ^. search . value . to unSearch
-                , H.onInput $ \s -> r & search . value .~ Search s
-                , H.placeholder "Search"
-                ]
+     , H.div [ H.class' "input-group flex-nowrap", H.textProperty "style" ("width:200px" :: Text) ]
+       [ (r <+- search) (Input.search [ H.class' "form-control", H.placeholder "Search" ]) search
+       ]
+     , H.a [ H.onClick' (r <$ navigate @SPA RNew), H.class' "btn btn-primary" ] [ "Register" ]
      ]
    , (r <+-- sort) (Table.viewWith tableCfg) (table . to (fuzzySearch fuzzy $ r ^. search . value)) sort
    , H.a [ H.onClick' (r <$ navigate @SPA (REcho $ Just "plex")) ] [ text "Go to Echo" ]
    ]
-  MDetail sid _ -> H.div_ $ maybe [text "New"] present sid
+  MDetail sid form -> MDetail sid <$> H.div "container-fluid"
+    [ H.div "d-flex justify-content-between"
+      [ H.h2_ [ text $ maybe "Register New Space Craft" (\i -> "Edit Space Craft: " <> pack (show i)) sid ]
+      , editForm form
+      ]
+    ]
   MEcho t -> H.div_
     [ maybe (text "Erie silence") text t
     , H.a [ H.onClick' (fe <$ navigate @SPA (RList $ Input Clean "")) ] [ "Go To Space Craft Roster" ]

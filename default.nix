@@ -26,6 +26,7 @@ let
     Shpadoinkle-backend-snabbdom = gitignore ./backends/snabbdom;
     Shpadoinkle-backend-static   = gitignore ./backends/static;
     Shpadoinkle-backend-pardiff  = gitignore ./backends/pardiff;
+    Shpadoinkle-lens             = gitignore ./lens;
     Shpadoinkle-html             = gitignore ./html;
     Shpadoinkle-router           = gitignore ./router;
     Shpadoinkle-widgets          = gitignore ./widgets;
@@ -56,4 +57,7 @@ in
     HEADLESS = false;
     buildInputs = [ selenium-server-standalone chromedriver google-chrome ] ++ ghcTools;
     withHoogle = true;
+    shellHook = ''
+      hpack
+    '';
   } else foldl (ps: p: ps // { ${p.pname} = p; }) {} packages

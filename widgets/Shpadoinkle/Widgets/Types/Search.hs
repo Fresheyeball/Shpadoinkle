@@ -31,7 +31,8 @@ instance Eq       a => Ord      (Levenshtiened a) where
 
 
 mkLevenshtiened :: Text -> Search -> a -> Levenshtiened a
-mkLevenshtiened  t (Search s) x = Levenshtiened (levenshteinDistance defaultEditCosts (prep s) (prep t)) x
+mkLevenshtiened  t (Search s) x =
+  Levenshtiened (levenshteinDistance defaultEditCosts (prep s) (prep t)) x
   where prep = unpack . strip
 
 
