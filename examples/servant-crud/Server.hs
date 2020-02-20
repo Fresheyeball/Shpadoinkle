@@ -1,16 +1,12 @@
+{-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
 
@@ -45,7 +41,7 @@ data Options = Options
 
 
 newtype App a = App { runApp :: ReaderT Connection IO a }
-  deriving (Functor, Applicative, Monad, MonadIO, MonadReader Connection)
+  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader Connection)
 
 
 toHandler :: MonadIO m => Connection -> App ~> m
@@ -58,8 +54,19 @@ parser = Options
   <*> option auto (long "port"   <> short 'p' <> metavar "PORT" <> showDefault <> value 8080)
 
 
+options :: ParserInfo Options
+options = info (parser <**> helper) $
+    fullDesc <> progDesc "Servant CRUD Example"
+             <> header "Space craft manager as an example of Shpadoinkle"
+
+
 runSql :: (MonadIO m, MonadReader Connection m) => SqliteM ~> m
 runSql x = do conn <- ask; liftIO $ runBeamSqlite conn x
+
+
+newtype Noop a = Noop (JSM a)
+  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadJSM)
+  deriving anyclass CRUDSpaceCraft
 
 
 instance CRUDSpaceCraft App where
@@ -73,11 +80,13 @@ instance CRUDSpaceCraft App where
 
   updateSpaceCraft _ _ = error "TODO"
   deleteSpaceCraft     = error "TODO"
-  createSpaceCraft _   = error "TODO"
 
-
-newtype Noop a = Noop (JSM a) deriving (Functor, Applicative, Monad, MonadIO, MonadJSM)
-instance CRUDSpaceCraft Noop
+  createSpaceCraft SpaceCraftUpdate {..} = do
+    xs <- runSql . runInsertReturningList . insert (_roster db) $ insertExpressions
+      [ SpaceCraft default_ (val_ _sku) (val_ _description) (val_ _serial) (val_ _squadron) (val_ _operable) ]
+    case xs of
+      [x] -> return $ _identity x
+      _   -> throwE "failed to insert"
 
 
 app :: Connection -> FilePath -> Application
@@ -100,9 +109,7 @@ app conn root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
 
 main :: IO ()
 main = do
-  Options {..} <- execParser . info (parser <**> helper) $
-    fullDesc <> progDesc "Servant CRUD Example"
-             <> header "Space craft manager as an example of Shpadoinkle"
+  Options {..} <- execParser options
   conn <- open "roster.db"
   execute_ conn . Query $ decodeUtf8 $(embedFile "./servant-crud/migrate.sql")
   run port $ app conn assets

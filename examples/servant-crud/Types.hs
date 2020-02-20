@@ -154,11 +154,11 @@ db = defaultDbSettings
 
 
 data SpaceCraftUpdate = SpaceCraftUpdate
-  { _sku         :: Maybe SKU
-  , _description :: Maybe Description
-  , _serial      :: Maybe SerialNumber
-  , _squadron    :: Maybe Squadron
-  , _operable    :: Maybe Operable
+  { _sku         :: SKU
+  , _description :: Description
+  , _serial      :: SerialNumber
+  , _squadron    :: Squadron
+  , _operable    :: Operable
   } deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
 
