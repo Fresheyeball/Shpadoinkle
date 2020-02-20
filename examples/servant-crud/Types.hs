@@ -62,7 +62,7 @@ instance Rewrapped SKU SKU
 
 newtype Description = Description { unDescription  :: Text }
   deriving stock (Generic)
-  deriving newtype (Eq, Ord, Show, Read, IsString, ToJSON, FromJSON, Humanize)
+  deriving newtype (Eq, Ord, Show, Read, IsString, ToJSON, FromJSON, Humanize, Semigroup, Monoid)
   deriving anyclass (Present)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite)

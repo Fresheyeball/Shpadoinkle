@@ -28,6 +28,7 @@ import           Shpadoinkle.Widgets.Form.Dropdown
 import qualified Shpadoinkle.Widgets.Form.Input    as Input
 import           Shpadoinkle.Widgets.Table         as Table
 import           Shpadoinkle.Widgets.Types
+import           Shpadoinkle.Widgets.Types.Form    as Form
 
 import           Types
 
@@ -43,7 +44,13 @@ toEditForm sc = EditForm
 
 
 fromEditForm :: EditForm -> SpaceCraftUpdate
-fromEditForm = undefined
+fromEditForm ef = SpaceCraftUpdate
+  { _sku         = ef ^? sku . value
+  , _description = ef ^. description . Form.value
+  , _serial      = ef ^? serial . value
+  , _squadron    = ef ^. squadron . to selected
+  , _operable    = ef ^? operable . to selected
+  }
 
 
 editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> EditForm -> Html m EditForm
@@ -73,6 +80,7 @@ editForm mid ef = H.form_
     [ H.onClick' $ case mid of
       Nothing  -> ef <$ createSpaceCraft (fromEditForm ef)
       Just sid -> ef <$ updateSpaceCraft sid (fromEditForm ef)
+    , H.class' "btn btn-primary"
     ] [ "Save" ]
 
   ]
