@@ -19,10 +19,10 @@ module View where
 
 
 import           Control.Lens                      hiding (view)
-import           Data.Maybe
 import           Data.Text                         as T
 import           Shpadoinkle
 import qualified Shpadoinkle.Html                  as H
+import           Shpadoinkle.Lens
 import           Shpadoinkle.Router                (navigate, toHydration)
 import           Shpadoinkle.Widgets.Form.Dropdown
 import qualified Shpadoinkle.Widgets.Form.Input    as Input
@@ -42,28 +42,38 @@ toEditForm sc = EditForm
   }
 
 
-editForm :: MonadJSM m => EditForm -> Html m EditForm
-editForm ef = H.form_
+fromEditForm :: EditForm -> SpaceCraftUpdate
+fromEditForm = undefined
+
+
+editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> EditForm -> Html m EditForm
+editForm mid ef = H.form_
 
   [ H.label [ H.for' "sku" ] [ "SKU" ]
-  , (\s -> ef & sku .~ (SKU . round <$> s))
-    <$> Input.number [ H.name' "sku" ]
-    (fromIntegral . unSKU <$> ef ^. sku)
+  , ef <+ sku . mapping (_Wrapped . rounding)
+  $ Input.number [ H.name' "sku" ]
 
   , H.label [ H.for' "description" ] [ "Description" ]
-  , (\s -> ef & description .~ (Just <$> s))
-    <$> Input.text [ H.name' "description" ]
-    (fromMaybe "" <$> ef ^. description)
+  , ef <+ description . mapping (defaulting "")
+  $ Input.text [ H.name' "description" ]
 
   , H.label [ H.for' "serial" ] [ "Serial Number" ]
-  , (\s -> ef & serial .~ (SerialNumber . round <$> s))
-    <$> Input.number [ H.name' "serial" ]
-    (fromIntegral . unSerialNumber <$> ef ^. serial)
+  , ef <+ serial . mapping (_Wrapped . rounding)
+  $ Input.number [ H.name' "serial" ]
 
   , H.label [ H.for' "squadron" ] [ "Squadron" ]
-  , (\s -> ef & squadron .~ s) <$>
-    dropdown bootstrap defConfig
-    (ef ^. squadron)
+  , ef <+ squadron
+  $ dropdown bootstrap defConfig
+
+  , H.label [ H.for' "operable" ] [ "Operable" ]
+  , ef <+ operable
+  $ dropdown bootstrap defConfig
+
+  , H.a
+    [ H.onClick' $ case mid of
+      Nothing  -> ef <$ createSpaceCraft (fromEditForm ef)
+      Just sid -> ef <$ updateSpaceCraft sid (fromEditForm ef)
+    ] [ "Save" ]
 
   ]
 
@@ -85,22 +95,6 @@ tableCfg = TableConfig
   [ H.class' "table table-striped table-bordered" ] [] []
 
 
-(<+) :: Functor m => s -> ASetter' s a -> Html m a -> Html m s
-(<+) s out = fmap $ \a -> s & out .~ a
-
-
-(<+-) :: Functor m => s -> ASetter' s b -> (a -> Html m b) -> Getting a s a -> Html m s
-(<+-) big out trans in0 = (\s -> set out s big) <$> trans (big ^. in0)
-
-
-(<+--) :: Functor m => s -> ASetter' s c -> (a -> b -> Html m c) -> Getting a s a -> Getting b s b -> Html m s
-(<+--) big out trans in0 in1 = (\s -> set out s big) <$> trans (big ^. in0) (big ^. in1)
-
-
-(<+---) :: Functor m => s -> ASetter' s d -> (a -> b -> c -> Html m d) -> Getting a s a -> Getting b s b -> Getting c s c -> Html m s
-(<+---) big out trans in0 in1 in2 = (\s -> set out s big) <$> trans (big ^. in0) (big ^. in1) (big ^. in2)
-
-
 fuzzy :: [SpaceCraft -> Text]
 fuzzy = flip (^.) <$>
     [ sku         . to humanize
@@ -111,23 +105,23 @@ fuzzy = flip (^.) <$>
     ]
 
 
-view :: MonadJSM m => Frontend -> Html m Frontend
+view :: (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
 view fe = case fe of
   MList r -> MList <$> H.div "container-fluid"
    [ H.div "flex justify-content-between"
      [ H.h2_ [ "Space Craft Roster" ]
      , H.div [ H.class' "input-group flex-nowrap", H.textProperty "style" ("width:200px" :: Text) ]
-       [ (r <+- search) (Input.search [ H.class' "form-control", H.placeholder "Search" ]) search
+       [ r <+ search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
        ]
      , H.a [ H.onClick' (r <$ navigate @SPA RNew), H.class' "btn btn-primary" ] [ "Register" ]
      ]
-   , (r <+-- sort) (Table.viewWith tableCfg) (table . to (fuzzySearch fuzzy $ r ^. search . value)) sort
+   , r <+ sort $ Table.viewWith tableCfg $ r ^. table . to (fuzzySearch fuzzy $ r ^. search . value)
    , H.a [ H.onClick' (r <$ navigate @SPA (REcho $ Just "plex")) ] [ text "Go to Echo" ]
    ]
   MDetail sid form -> MDetail sid <$> H.div "container-fluid"
     [ H.div "d-flex justify-content-between"
       [ H.h2_ [ text $ maybe "Register New Space Craft" (\i -> "Edit Space Craft: " <> pack (show i)) sid ]
-      , editForm form
+      , editForm sid form
       ]
     ]
   MEcho t -> H.div_

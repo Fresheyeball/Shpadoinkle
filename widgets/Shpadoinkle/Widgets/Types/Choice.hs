@@ -208,6 +208,14 @@ fullOptions :: (Deselection f p, Bounded a, Enum a, Ord a) => f p a
 fullOptions = noselection fullset
 
 
+fullOptionsMin :: (Selection f p, Bounded a, Enum a, Ord a) => f p a
+fullOptionsMin = fromNonEmpty $ minBound NE.:| [succ minBound..maxBound]
+
+
+fullOptionsMax :: (Selection f p, Bounded a, Enum a, Ord a) => f p a
+fullOptionsMax = fromNonEmpty $ maxBound NE.:| [minBound..pred maxBound]
+
+
 fromNonEmpty :: (Selection f p, Ord a) => NE.NonEmpty a -> f p a
 fromNonEmpty xs' = let (x NE.:| xs) = NE.sort xs' in x `withOptions'` Set.fromList xs
 

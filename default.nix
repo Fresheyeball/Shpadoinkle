@@ -1,4 +1,4 @@
-{ isJS ? false, compiler ? "ghc864", pack ? "all", chan ? "e1843646b04fb564abf6330a9432a76df3269d2f" }:
+{ isJS ? false, compiler ? "ghc864", pack ? "all", chan ? "e1843646b04fb564abf6330a9432a76df3269d2f", withHoogle ? false }:
 
 let pkgs = import ./pkgs.nix compiler isJS chan; in with pkgs; with lib;
 let
@@ -56,7 +56,7 @@ in
     CHROME   = "${google-chrome}/bin/google-chrome-stable";
     HEADLESS = false;
     buildInputs = [ selenium-server-standalone chromedriver google-chrome ] ++ ghcTools;
-    withHoogle = true;
+    inherit withHoogle;
     shellHook = ''
       hpack
     '';

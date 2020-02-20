@@ -113,6 +113,7 @@ executables:
       - Shpadoinkle-html
       - Shpadoinkle-widgets
       - Shpadoinkle-router
+      - Shpadoinkle-lens
     when:
       - condition: impl(ghcjs)
         then:
@@ -160,3 +161,4 @@ executables:
       - Shpadoinkle-widgets
       - Shpadoinkle-router
       - Shpadoinkle-backend-static
+      - Shpadoinkle-lens

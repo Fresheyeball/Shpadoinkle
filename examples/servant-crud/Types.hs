@@ -49,11 +49,14 @@ import           Shpadoinkle.Widgets.Types
 
 
 newtype SKU = SKU { unSKU :: Int  }
+  deriving stock Generic
   deriving newtype (Eq, Ord, Show, Read, Num, ToJSON, FromJSON)
   deriving anyclass (Humanize, Present)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite)
 #endif
+instance Wrapped SKU
+instance Rewrapped SKU SKU
 
 
 newtype Description = Description { unDescription  :: Text }
@@ -67,13 +70,15 @@ newtype Description = Description { unDescription  :: Text }
 instance Humanize (Maybe Description) where
   humanize = maybe "N/A" humanize
 
-newtype SerialNumber = SerialNumber { unSerialNumber :: Int  }
+newtype SerialNumber = SerialNumber { unSerialNumber :: Integer  }
+  deriving stock Generic
   deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON)
   deriving anyclass (Humanize, Present)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite)
 #endif
-
+instance Wrapped SerialNumber
+instance Rewrapped SerialNumber SerialNumber
 
 newtype SpaceCraftId = SpaceCraftId { unSpaceCraftId :: Int }
   deriving newtype ( Eq, Ord, Show, Num, ToJSON, FromJSON, FromHttpApiData, ToHttpApiData)
@@ -108,6 +113,10 @@ instance Humanize Squadron where
     AwayTeam    -> "Away Team"
     StrikeForce -> "Strike Force"
     Scout       -> "Scouting"
+
+
+instance Humanize (Maybe Squadron) where
+  humanize = maybe "N/A" humanize
 
 
 data SpaceCraftT f = SpaceCraft
@@ -178,7 +187,7 @@ data EditForm = EditForm
   , _description :: Input (Maybe Description)
   , _serial      :: Input SerialNumber
   , _squadron    :: Dropdown 'One Squadron
-  , _operable    :: Dropdown 'One Operable
+  , _operable    :: Dropdown 'AtleastOne Operable
   } deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
 
@@ -191,7 +200,7 @@ emptyEditForm = EditForm
   , _description = Input Clean Nothing
   , _serial      = Input Clean 0
   , _squadron    = fullOptions
-  , _operable    = fullOptions
+  , _operable    = fullOptionsMin
   }
 
 

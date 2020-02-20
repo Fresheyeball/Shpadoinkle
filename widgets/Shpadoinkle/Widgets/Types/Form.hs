@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -19,7 +21,7 @@ import           Shpadoinkle.Widgets.Types.Core
 data Input a = Input
   { _hygiene :: Hygiene
   , _value   :: a
-  } deriving (Eq, Ord, Show, Read, Functor, Generic, ToJSON, FromJSON)
+  } deriving (Eq, Ord, Show, Read, Functor, Traversable, Foldable, Generic, ToJSON, FromJSON)
 
 
 hygiene :: Applicative f => (Hygiene -> f Hygiene) -> Input a -> f (Input a)
