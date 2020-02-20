@@ -26,9 +26,9 @@ infixl 8 <+
 
 
 fracIntegral :: forall s a. Integral a => RealFrac s => Prism' s a
-fracIntegral = prism' fromIntegral $
+fracIntegral = prism fromIntegral $
   \f -> let r = round f in
-    if fromIntegral r == f then Just r else Nothing
+    if fromIntegral r == f then Right r else Left f
 
 
 rounding :: Integral s => RealFrac a => Iso' s a

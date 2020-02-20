@@ -6,10 +6,12 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
 
 module Main where
@@ -74,6 +76,10 @@ instance CRUDSpaceCraft App where
   createSpaceCraft _   = error "TODO"
 
 
+newtype Noop a = Noop (JSM a) deriving (Functor, Applicative, Monad, MonadIO, MonadJSM)
+instance CRUDSpaceCraft Noop
+
+
 app :: Connection -> FilePath -> Application
 app conn root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
   where
@@ -89,7 +95,7 @@ app conn root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
   serveSpa :: Server SPA
   serveSpa = serveUI @ SPA root
     (\r -> toHandler conn $ do
-      i <- start r; return . template i $ view @ JSM i) routes
+      i <- start r; return . template i $ view @ Noop i) routes
 
 
 main :: IO ()

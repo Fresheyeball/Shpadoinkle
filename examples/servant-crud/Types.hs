@@ -27,6 +27,7 @@ module Types where
 
 import           Control.Lens                      as Lens
 import           Control.Lens.TH                   ()
+import           Control.Monad.Trans
 import           Data.Aeson
 import           Data.Function
 import           Data.Maybe
@@ -270,6 +271,14 @@ class CRUDSpaceCraft m where
   updateSpaceCraft :: SpaceCraftId -> SpaceCraftUpdate -> m ()
   createSpaceCraft :: SpaceCraftUpdate -> m SpaceCraftId
   deleteSpaceCraft :: SpaceCraftId -> m ()
+
+
+instance (MonadTrans t, Monad m, CRUDSpaceCraft m) => CRUDSpaceCraft (t m) where
+  listSpaceCraft     = lift listSpaceCraft
+  getSpaceCraft      = lift . getSpaceCraft
+  updateSpaceCraft x = lift . updateSpaceCraft x
+  createSpaceCraft   = lift . createSpaceCraft
+  deleteSpaceCraft   = lift . deleteSpaceCraft
 
 
 instance Humanize (TableColumn [SpaceCraft]) where
