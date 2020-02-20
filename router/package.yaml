@@ -21,11 +21,13 @@ ghc-options:
 when:
   - condition: impl(ghcjs)
     then:
-      dependencies: []
+      dependencies:
+        - servant-client-ghcjs
     else:
       dependencies:
         - bytestring
         - servant-server
+        - servant-client
         - wai
         - wai-app-static
         - warp
@@ -37,6 +39,7 @@ dependencies:
 
     - aeson
     - compactable
+    - exceptions
     - servant
     - http-api-data
     - network-uri
@@ -46,6 +49,7 @@ dependencies:
     - jsaddle-dom
     - text
     - bytestring
+    - unliftio
 
     - Shpadoinkle
 

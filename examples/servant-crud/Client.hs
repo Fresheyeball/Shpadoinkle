@@ -1,14 +1,7 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DerivingStrategies         #-}
-{-# LANGUAGE ExtendedDefaultRules       #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedLists            #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TypeApplications           #-}
-{-# LANGUAGE TypeOperators              #-}
-{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
 module Main where
@@ -18,15 +11,11 @@ import           Control.Monad.Catch
 import           Control.Monad.Reader
 import           Data.Proxy
 import           Servant.API
-#ifdef ghcjs_HOST_OS
-import           Servant.Client.Ghcjs
-#else
-import           Servant.Client
-#endif
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Html.Utils
 import           Shpadoinkle.Router          (fullPageSPA, withHydration)
+import           Shpadoinkle.Router.Client
 import           UnliftIO
 
 import           Types
@@ -45,20 +34,12 @@ instance MonadUnliftIO App where
   askUnliftIO = do ctx <- askJSM; return $ UnliftIO $ \(App m) -> runJSM m ctx
 
 
-runXHR :: ClientM ~> App
-#ifdef ghcjs_HOST_OS
-runXHR m = App $ either throwM pure =<< runClientM m
-#else
-runXHR = error "not supported for ghc"
-#endif
-
-
 instance CRUDSpaceCraft App where
-  listSpaceCraft       = runXHR listSpaceCraftM
-  getSpaceCraft        = runXHR . getSpaceCraftM
-  updateSpaceCraft x y = runXHR $ updateSpaceCraftM x y
-  createSpaceCraft     = runXHR . createSpaceCraftM
-  deleteSpaceCraft     = runXHR . deleteSpaceCraftM
+  listSpaceCraft       = runXHR App listSpaceCraftM
+  getSpaceCraft        = runXHR App . getSpaceCraftM
+  updateSpaceCraft x y = runXHR App $ updateSpaceCraftM x y
+  createSpaceCraft     = runXHR App . createSpaceCraftM
+  deleteSpaceCraft     = runXHR App . deleteSpaceCraftM
 
 
 listSpaceCraftM   :: ClientM [SpaceCraft]
