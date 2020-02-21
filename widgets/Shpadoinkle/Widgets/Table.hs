@@ -1,14 +1,18 @@
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE DeriveAnyClass       #-}
-{-# LANGUAGE DeriveFunctor        #-}
-{-# LANGUAGE DeriveGeneric        #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE RecordWildCards      #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE StandaloneDeriving   #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DeriveAnyClass         #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE RecordWildCards        #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 
 module Shpadoinkle.Widgets.Table
@@ -16,8 +20,9 @@ module Shpadoinkle.Widgets.Table
   , SortCol (..)
   , compareOn
   , negateSort
-  , TableTerritory (..)
-  , TableConfig (..)
+  , Tabular (..)
+  , Column, Row
+  , Config (..)
   , toggleSort
   , view
   , viewWith
@@ -26,14 +31,13 @@ module Shpadoinkle.Widgets.Table
 
 import           Data.Aeson
 import           Data.Kind
-import           Data.List                   (sortBy)
+import           Data.List                 (sortBy)
 import           Data.Text
 import           GHC.Generics
-import           Language.Javascript.JSaddle
 
 import           Shpadoinkle
-import           Shpadoinkle.Html            hiding (a, a', max, min, s, s')
-import qualified Shpadoinkle.Html            as Html
+import           Shpadoinkle.Html          hiding (a, a', max, min, s, s')
+import qualified Shpadoinkle.Html          as Html
 import           Shpadoinkle.Widgets.Types
 
 
@@ -50,23 +54,23 @@ negateSort ASC  = DESC
 negateSort DESC = ASC
 
 
-data SortCol a = SortCol (TableColumn a) Sort
-deriving instance Show (TableColumn a) => Show (SortCol a)
-deriving instance Eq   (TableColumn a) => Eq   (SortCol a)
-deriving instance Ord  (TableColumn a) => Ord  (SortCol a)
-deriving instance Functor TableColumn => Functor SortCol
+data SortCol a = SortCol (Column a) Sort
+deriving instance Show (Column a) => Show (SortCol a)
+deriving instance Eq   (Column a) => Eq   (SortCol a)
+deriving instance Ord  (Column a) => Ord  (SortCol a)
+deriving instance Functor Column => Functor SortCol
 deriving instance Generic (SortCol a)
-instance (ToJSON   (TableColumn a)) => ToJSON (SortCol a)
-instance (FromJSON (TableColumn a)) => FromJSON (SortCol a)
+instance (ToJSON   (Column a)) => ToJSON   (SortCol a)
+instance (FromJSON (Column a)) => FromJSON (SortCol a)
 
 
-instance Ord (TableColumn a) => Semigroup (SortCol a) where
+instance Ord (Column a) => Semigroup (SortCol a) where
   SortCol a s <> SortCol a' s' = SortCol (max a a') (min s s')
 
 
-instance ( Bounded (TableColumn a)
-         , Ord (TableColumn a)
-         , Enum (TableColumn a)
+instance ( Bounded (Column a)
+         , Ord (Column a)
+         , Enum (Column a)
          ) => Monoid (SortCol a) where
   mempty = SortCol minBound maxBound
 
@@ -76,56 +80,62 @@ compareOn DESC = compare
 compareOn ASC  = flip compare
 
 
-class TableTerritory a where
-  data TableColumn a :: Type
-  data TableRow a    :: Type
-  toRows    :: a -> [TableRow a]
-  toCell    :: MonadJSM m => TableRow a -> TableColumn a -> [Html m ()]
-  sortTable :: SortCol a -> TableRow a -> TableRow a -> Ordering
+data family Column (a :: Type) :: Type
+data family Row    (a :: Type) :: Type
 
 
-toggleSort :: Eq (TableColumn a) => TableColumn a -> SortCol a -> SortCol a
+class Tabular a where
+  type Effect a (m :: Type -> Type) :: Constraint
+  type Effect a m = Applicative m
+  toRows    :: a -> [Row a]
+  toCell    :: Effect a m => Row a -> Column a -> b -> [Html m b]
+  sortTable :: SortCol a -> Row a -> Row a -> Ordering
+
+
+toggleSort :: Eq (Column a) => Column a -> SortCol a -> SortCol a
 toggleSort c (SortCol c' s) = if c == c' then SortCol c $ negateSort s else SortCol c mempty
 
 
-data TableConfig m a = TableConfig
+data Config m a = Config
   { tableProps :: [(Text, Prop m (SortCol a))]
   , headProps  :: [(Text, Prop m (SortCol a))]
   , bodyProps  :: [(Text, Prop m (SortCol a))]
   } deriving Generic
 
 
-deriving instance Eq   (Prop m (SortCol a)) => Eq   (TableConfig m a)
-deriving instance Ord  (Prop m (SortCol a)) => Ord  (TableConfig m a)
-deriving instance Show (Prop m (SortCol a)) => Show (TableConfig m a)
-instance Semigroup (TableConfig m a) where
-  TableConfig x y z <> TableConfig x' y' z' =
-    TableConfig (x <> x') (y <> y') (z <> z')
-instance Monoid (TableConfig m a) where
-  mempty = TableConfig mempty mempty mempty
-deriving instance (Functor TableColumn, Functor m) => Functor (TableConfig m)
+deriving instance Eq   (Prop m (SortCol a)) => Eq   (Config m a)
+deriving instance Ord  (Prop m (SortCol a)) => Ord  (Config m a)
+deriving instance Show (Prop m (SortCol a)) => Show (Config m a)
+instance Semigroup (Config m a) where
+  Config x y z <> Config x' y' z' =
+    Config (x <> x') (y <> y') (z <> z')
+instance Monoid (Config m a) where
+  mempty = Config mempty mempty mempty
+deriving instance (Functor Column, Functor m) => Functor (Config m)
 
 
 view :: forall m a.
-  ( MonadJSM m
-  , TableTerritory a
-  , Humanize (TableColumn a)
-  , Bounded  (TableColumn a)
-  , Ord      (TableColumn a)
-  , Enum     (TableColumn a) )
+  ( Tabular a
+  , Effect a m
+  , Applicative m
+  , Humanize (Column a)
+  , Bounded  (Column a)
+  , Ord      (Column a)
+  , Enum     (Column a) )
   => a -> SortCol a -> Html m (SortCol a)
 view = viewWith mempty
 
 
 viewWith :: forall m a.
-  ( MonadJSM m
-  , TableTerritory a
-  , Humanize (TableColumn a)
-  , Bounded  (TableColumn a)
-  , Ord      (TableColumn a)
-  , Enum     (TableColumn a) )
-  => TableConfig m a -> a -> SortCol a -> Html m (SortCol a)
-viewWith TableConfig {..} xs s@(SortCol sorton sortorder) =
+  ( Tabular a
+  , Effect a m
+  , Applicative m
+  , Humanize (Column a)
+  , Bounded  (Column a)
+  , Ord      (Column a)
+  , Enum     (Column a) )
+  => Config m a -> a -> SortCol a -> Html m (SortCol a)
+viewWith Config {..} xs s@(SortCol sorton sortorder) =
   table tableProps
   [ thead headProps [ tr_ $ cth_ <$> [minBound..maxBound] ]
   , tbody bodyProps $ do

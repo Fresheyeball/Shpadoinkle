@@ -99,8 +99,8 @@ start = \case
      _          -> M404
 
 
-tableCfg :: TableConfig m a
-tableCfg = TableConfig
+tableCfg :: Table.Config m a
+tableCfg = Table.Config
   [ H.class' "table table-striped table-bordered" ] [] []
 
 

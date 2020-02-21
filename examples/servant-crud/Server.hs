@@ -13,7 +13,6 @@
 module Main where
 
 
-import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Data.FileEmbed
 import           Data.Proxy
@@ -26,8 +25,6 @@ import           Network.Wai.Handler.Warp
 import           Options.Applicative
 import           Servant.API
 import           Servant.Server
-
-import           GHC.IO.Exception          (IOException)
 
 import           Shpadoinkle
 import           Shpadoinkle.Router.Server
@@ -43,7 +40,7 @@ data Options = Options
 
 
 newtype App a = App { runApp :: ReaderT Connection IO a }
-  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader Connection, MonadError IOException)
+  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader Connection)
 
 
 toHandler :: MonadIO m => Connection -> App ~> m
@@ -80,15 +77,16 @@ instance CRUDSpaceCraft App where
     runSql . runSelectReturningOne . select
            . filter_ (\s -> val_ (SpaceCraftKey i) ==. primaryKey s) . all_ $ _roster db
 
-  updateSpaceCraft _ _ = error "TODO"
-  deleteSpaceCraft     = error "TODO"
+  updateSpaceCraft i SpaceCraftUpdate {..} =
+    runSql . runUpdate $ save (_roster db) $
+      SpaceCraft i _sku _description _serial _squadron _operable
 
-  createSpaceCraft SpaceCraftUpdate {..} = do
-    xs <- runSql . runInsertReturningList . insert (_roster db) $ insertExpressions
-      [ SpaceCraft default_ (val_ _sku) (val_ _description) (val_ _serial) (val_ _squadron) (val_ _operable) ]
-    case xs of
-      [x] -> return $ _identity x
-      _   -> throwError $ userError "Failed to insert"
+  deleteSpaceCraft i =
+    runSql . runDelete $ delete (_roster db) $ \sc -> val_ (SpaceCraftKey i) ==. primaryKey sc
+
+  createSpaceCraft SpaceCraftUpdate {..} =
+    runSql . fmap (_identity . head) . runInsertReturningList . insert (_roster db) $ insertExpressions
+        [ SpaceCraft default_ (val_ _sku) (val_ _description) (val_ _serial) (val_ _squadron) (val_ _operable) ]
 
 
 app :: Connection -> FilePath -> Application

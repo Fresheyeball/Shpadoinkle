@@ -131,7 +131,7 @@ bootstrap Dropdown {..} = Theme
     [ className [ ("dropdown-menu", True)
                 , ("show", _toggle == Open) ]
     ]
-  , _item    = a [ className "dropdown-item", href "#" ]
+  , _item    = a [ className "dropdown-item" ]
   }
 
 

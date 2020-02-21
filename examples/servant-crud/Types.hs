@@ -42,6 +42,7 @@ import           Database.Beam.Sqlite.Syntax
 import           Database.SQLite.Simple.FromField
 #endif
 import           Servant.API                       hiding (Description)
+import           Shpadoinkle
 import qualified Shpadoinkle.Html                  as H
 import           Shpadoinkle.Router
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
@@ -176,12 +177,12 @@ data Roster = Roster
   }
 
 
-deriving instance Eq   Roster
-deriving instance Ord  Roster
-deriving instance Show Roster
+deriving instance Eq      Roster
+deriving instance Ord     Roster
+deriving instance Show    Roster
 deriving instance Generic Roster
-instance (ToJSON   (TableColumn [SpaceCraft])) => ToJSON   Roster
-instance (FromJSON (TableColumn [SpaceCraft])) => FromJSON Roster
+instance (ToJSON   (Table.Column [SpaceCraft])) => ToJSON   Roster
+instance (FromJSON (Table.Column [SpaceCraft])) => FromJSON Roster
 
 
 makeFieldsNoPrefix ''Roster
@@ -217,8 +218,8 @@ data Frontend
   deriving (Eq, Ord, Show, Generic)
 
 
-instance (ToJSON   (TableColumn [SpaceCraft])) => ToJSON   Frontend
-instance (FromJSON (TableColumn [SpaceCraft])) => FromJSON Frontend
+instance (ToJSON   (Column [SpaceCraft])) => ToJSON   Frontend
+instance (FromJSON (Column [SpaceCraft])) => FromJSON Frontend
 
 
 makeLenses ''Frontend
@@ -285,7 +286,7 @@ instance (MonadTrans t, Monad m, CRUDSpaceCraft m) => CRUDSpaceCraft (t m) where
   deleteSpaceCraft   = lift . deleteSpaceCraft
 
 
-instance Humanize (TableColumn [SpaceCraft]) where
+instance Humanize (Column [SpaceCraft]) where
   humanize = \case
     SKUT          -> "SKU"
     DescriptionT  -> "Desc"
@@ -295,17 +296,22 @@ instance Humanize (TableColumn [SpaceCraft]) where
     ToolsT        -> ""
 
 
-instance TableTerritory [SpaceCraft] where
-  data TableColumn [SpaceCraft] =
+data instance Column [SpaceCraft] =
     SKUT | DescriptionT | SerialNumberT | SquadronT | OperableT | ToolsT
     deriving (Eq, Ord, Show, Enum, Bounded, Generic, ToJSON, FromJSON)
 
-  newtype TableRow [SpaceCraft] = Row { unRow :: SpaceCraft }
+
+newtype instance Row [SpaceCraft] = SpaceCraftRow { unRow :: SpaceCraft }
     deriving (Eq, Ord, Show)
 
-  toRows = fmap Row
 
-  toCell (Row SpaceCraft {..}) = \case
+instance Tabular [SpaceCraft] where
+
+  type Effect [SpaceCraft] m = (MonadJSM m, CRUDSpaceCraft m)
+
+  toRows = fmap SpaceCraftRow
+
+  toCell (SpaceCraftRow SpaceCraft {..}) = \case
     SKUT          -> present _sku
     DescriptionT  -> present _description
     SerialNumberT -> present _serial
@@ -313,6 +319,7 @@ instance TableTerritory [SpaceCraft] where
     OperableT     -> present _operable
     ToolsT        ->
       [ H.a [ H.onClick' (navigate @ SPA (RExisting _identity)) ] [ "Edit" ]
+      , H.a [ H.onClick' (deleteSpaceCraft _identity) ] [ "Delete" ]
       ]
 
   sortTable (SortCol c d) = f $ case c of
