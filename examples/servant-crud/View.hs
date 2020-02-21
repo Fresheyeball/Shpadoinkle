@@ -19,6 +19,7 @@ module View where
 
 
 import           Control.Lens                      hiding (view)
+import           Control.Lens.Unsound              (lensProduct)
 import           Data.Text                         as T
 import           Shpadoinkle
 import qualified Shpadoinkle.Html                  as H
@@ -57,23 +58,23 @@ editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> EditForm -> 
 editForm mid ef = H.form_
 
   [ H.label [ H.for' "sku" ] [ "SKU" ]
-  , ef <+ sku . mapping (_Wrapped . rounding)
+  , ef <% sku . mapping (_Wrapped . rounding)
   $ Input.number [ H.name' "sku" ]
 
   , H.label [ H.for' "description" ] [ "Description" ]
-  , ef <+ description . mapping (defaulting "")
+  , ef <% description . mapping (defaulting "")
   $ Input.text [ H.name' "description" ]
 
   , H.label [ H.for' "serial" ] [ "Serial Number" ]
-  , ef <+ serial . mapping (_Wrapped . rounding)
+  , ef <% serial . mapping (_Wrapped . rounding)
   $ Input.number [ H.name' "serial" ]
 
   , H.label [ H.for' "squadron" ] [ "Squadron" ]
-  , ef <+ squadron
+  , ef <% squadron
   $ dropdown bootstrap defConfig
 
   , H.label [ H.for' "operable" ] [ "Operable" ]
-  , ef <+ operable
+  , ef <% operable
   $ dropdown bootstrap defConfig
 
   , H.a
@@ -120,11 +121,11 @@ view fe = case fe of
    [ H.div "flex justify-content-between"
      [ H.h2_ [ "Space Craft Roster" ]
      , H.div [ H.class' "input-group flex-nowrap", H.textProperty "style" ("width:200px" :: Text) ]
-       [ r <+ search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
+       [ r <% search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
        ]
      , H.a [ H.onClick' (r <$ navigate @SPA RNew), H.class' "btn btn-primary" ] [ "Register" ]
      ]
-   , r <+ sort $ Table.viewWith tableCfg $ r ^. table . to (fuzzySearch fuzzy $ r ^. search . value)
+   , r <+ lensProduct table sort $ Table.viewWith tableCfg (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value)) (r ^. sort)
    , H.a [ H.onClick' (r <$ navigate @SPA (REcho $ Just "plex")) ] [ text "Go to Echo" ]
    ]
   MDetail sid form -> MDetail sid <$> H.div "container-fluid"

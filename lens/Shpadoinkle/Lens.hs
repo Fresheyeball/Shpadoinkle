@@ -14,15 +14,16 @@ import           Shpadoinkle
 --embed = (%%~)
 
 
-embed :: Functor m => s -> ASetter' s a -> Html m a -> Html m s
-embed big len = fmap $ \s -> big & len .~ s
+(<+) :: Functor m => s -> ASetter' s a -> Html m a -> Html m s
+(<+) big len = fmap $ \s -> big & len .~ s
 
 
-(<+) :: Functor m => s -> Lens' s a -> (a -> Html m a) -> Html m s
-(<+) big len comp = (\s -> big & len .~ s) <$> comp (big ^. len)
+(<%) :: Functor m => s -> Lens' s a -> (a -> Html m a) -> Html m s
+(<%) big len comp = (\s -> big & len .~ s) <$> comp (big ^. len)
 
 
 infixl 8 <+
+infixl 8 <%
 
 
 fracIntegral :: forall s a. Integral a => RealFrac s => Prism' s a

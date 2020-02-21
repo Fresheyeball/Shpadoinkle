@@ -311,15 +311,16 @@ instance Tabular [SpaceCraft] where
 
   toRows = fmap SpaceCraftRow
 
-  toCell (SpaceCraftRow SpaceCraft {..}) = \case
+  toCell xs (SpaceCraftRow SpaceCraft {..}) = \case
     SKUT          -> present _sku
     DescriptionT  -> present _description
     SerialNumberT -> present _serial
     SquadronT     -> present _squadron
     OperableT     -> present _operable
     ToolsT        ->
-      [ H.a [ H.onClick' (navigate @ SPA (RExisting _identity)) ] [ "Edit" ]
-      , H.a [ H.onClick' (deleteSpaceCraft _identity) ] [ "Delete" ]
+      [ H.a [ H.onClick' (xs <$ navigate @ SPA (RExisting _identity)) ] [ "Edit" ]
+      , H.a [ H.onClick' (Prelude.filter (\x -> x ^. identity /= _identity) xs
+                        <$ deleteSpaceCraft _identity) ] [ "Delete" ]
       ]
 
   sortTable (SortCol c d) = f $ case c of

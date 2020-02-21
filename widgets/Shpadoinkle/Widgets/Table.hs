@@ -11,6 +11,7 @@
 {-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
@@ -88,7 +89,7 @@ class Tabular a where
   type Effect a (m :: Type -> Type) :: Constraint
   type Effect a m = Applicative m
   toRows    :: a -> [Row a]
-  toCell    :: Effect a m => Row a -> Column a -> b -> [Html m b]
+  toCell    :: Effect a m => a -> Row a -> Column a -> [Html m a]
   sortTable :: SortCol a -> Row a -> Row a -> Ordering
 
 
@@ -97,15 +98,15 @@ toggleSort c (SortCol c' s) = if c == c' then SortCol c $ negateSort s else Sort
 
 
 data Config m a = Config
-  { tableProps :: [(Text, Prop m (SortCol a))]
-  , headProps  :: [(Text, Prop m (SortCol a))]
-  , bodyProps  :: [(Text, Prop m (SortCol a))]
+  { tableProps :: [(Text, Prop m (a ,SortCol a))]
+  , headProps  :: [(Text, Prop m (a, SortCol a))]
+  , bodyProps  :: [(Text, Prop m (a, SortCol a))]
   } deriving Generic
 
 
-deriving instance Eq   (Prop m (SortCol a)) => Eq   (Config m a)
-deriving instance Ord  (Prop m (SortCol a)) => Ord  (Config m a)
-deriving instance Show (Prop m (SortCol a)) => Show (Config m a)
+deriving instance Eq   (Prop m (a, SortCol a)) => Eq   (Config m a)
+deriving instance Ord  (Prop m (a, SortCol a)) => Ord  (Config m a)
+deriving instance Show (Prop m (a, SortCol a)) => Show (Config m a)
 instance Semigroup (Config m a) where
   Config x y z <> Config x' y' z' =
     Config (x <> x') (y <> y') (z <> z')
@@ -122,7 +123,7 @@ view :: forall m a.
   , Bounded  (Column a)
   , Ord      (Column a)
   , Enum     (Column a) )
-  => a -> SortCol a -> Html m (SortCol a)
+  => a -> SortCol a -> Html m (a, SortCol a)
 view = viewWith mempty
 
 
@@ -134,18 +135,18 @@ viewWith :: forall m a.
   , Bounded  (Column a)
   , Ord      (Column a)
   , Enum     (Column a) )
-  => Config m a -> a -> SortCol a -> Html m (SortCol a)
+  => Config m a -> a -> SortCol a -> Html m (a, SortCol a)
 viewWith Config {..} xs s@(SortCol sorton sortorder) =
   table tableProps
-  [ thead headProps [ tr_ $ cth_ <$> [minBound..maxBound] ]
-  , tbody bodyProps $ do
-      row <- sortBy (sortTable s) (toRows xs)
-      return . (s <$) . tr_ $ td_ . toCell row <$> [minBound..maxBound]
-  ]
+    [ thead headProps [ tr_ $ cth_ <$> [minBound..maxBound] ]
+    , tbody bodyProps $ do
+        row <- sortBy (sortTable s) (toRows xs)
+        return . (fmap (, s)) . tr_ $ td_ . toCell xs row <$> [minBound..maxBound]
+    ]
 
   where
 
-  cth_ c = th [] . pure . Html.a [ onClick (toggleSort c s) ]
+  cth_ c = th [] . pure . Html.a [ onClick (xs, toggleSort c s) ]
          . mappend [ text (humanize c) ] . pure . text $
           if c == sorton then
             case sortorder of ASC -> "↑"; DESC -> "↓"
