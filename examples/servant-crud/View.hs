@@ -43,14 +43,14 @@ toEditForm sc = EditForm
   }
 
 
-fromEditForm :: EditForm -> SpaceCraftUpdate
-fromEditForm ef = SpaceCraftUpdate
-  { _sku         = ef ^? sku . value
-  , _description = ef ^. description . Form.value
-  , _serial      = ef ^? serial . value
-  , _squadron    = ef ^. squadron . to selected
-  , _operable    = ef ^? operable . to selected
-  }
+fromEditForm :: EditForm -> Maybe SpaceCraftUpdate
+fromEditForm ef = do
+  _sku         <- ef ^? sku . value
+  _description <- ef ^? description . Form.value
+  _serial      <- ef ^? serial . value
+  _squadron    <- ef ^. squadron . to selected
+  _operable    <- ef ^? operable . to selected
+  return SpaceCraftUpdate {..}
 
 
 editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> EditForm -> Html m EditForm
@@ -77,9 +77,10 @@ editForm mid ef = H.form_
   $ dropdown bootstrap defConfig
 
   , H.a
-    [ H.onClick' $ case mid of
-      Nothing  -> ef <$ createSpaceCraft (fromEditForm ef)
-      Just sid -> ef <$ updateSpaceCraft sid (fromEditForm ef)
+    [ H.onClick' $ case (mid, fromEditForm ef) of
+      (Nothing,  Just up) -> ef <$ createSpaceCraft up
+      (Just sid, Just up) -> ef <$ updateSpaceCraft sid up
+      _                   -> return ef
     , H.class' "btn btn-primary"
     ] [ "Save" ]
 

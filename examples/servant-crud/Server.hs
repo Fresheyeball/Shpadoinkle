@@ -27,6 +27,8 @@ import           Options.Applicative
 import           Servant.API
 import           Servant.Server
 
+import           GHC.IO.Exception          (IOException)
+
 import           Shpadoinkle
 import           Shpadoinkle.Router.Server
 
@@ -41,7 +43,7 @@ data Options = Options
 
 
 newtype App a = App { runApp :: ReaderT Connection IO a }
-  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader Connection)
+  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader Connection, MonadError IOException)
 
 
 toHandler :: MonadIO m => Connection -> App ~> m
@@ -86,7 +88,7 @@ instance CRUDSpaceCraft App where
       [ SpaceCraft default_ (val_ _sku) (val_ _description) (val_ _serial) (val_ _squadron) (val_ _operable) ]
     case xs of
       [x] -> return $ _identity x
-      _   -> throwE "failed to insert"
+      _   -> throwError $ userError "Failed to insert"
 
 
 app :: Connection -> FilePath -> Application

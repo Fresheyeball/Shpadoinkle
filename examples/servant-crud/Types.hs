@@ -54,7 +54,7 @@ newtype SKU = SKU { unSKU :: Int  }
   deriving newtype (Eq, Ord, Show, Read, Num, ToJSON, FromJSON)
   deriving anyclass (Humanize, Present)
 #ifndef ghcjs_HOST_OS
-  deriving newtype (FromBackendRow Sqlite)
+  deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
 #endif
 instance Wrapped SKU
 instance Rewrapped SKU SKU
@@ -65,21 +65,23 @@ newtype Description = Description { unDescription  :: Text }
   deriving newtype (Eq, Ord, Show, Read, IsString, ToJSON, FromJSON, Humanize, Semigroup, Monoid)
   deriving anyclass (Present)
 #ifndef ghcjs_HOST_OS
-  deriving newtype (FromBackendRow Sqlite)
+  deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
 #endif
 
 instance Humanize (Maybe Description) where
   humanize = maybe "N/A" humanize
 
-newtype SerialNumber = SerialNumber { unSerialNumber :: Integer  }
+
+newtype SerialNumber = SerialNumber { unSerialNumber :: Int  }
   deriving stock Generic
   deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON)
   deriving anyclass (Humanize, Present)
 #ifndef ghcjs_HOST_OS
-  deriving newtype (FromBackendRow Sqlite)
+  deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
 #endif
 instance Wrapped SerialNumber
 instance Rewrapped SerialNumber SerialNumber
+
 
 newtype SpaceCraftId = SpaceCraftId { unSpaceCraftId :: Int }
   deriving newtype ( Eq, Ord, Show, Num, ToJSON, FromJSON, FromHttpApiData, ToHttpApiData)
@@ -92,7 +94,8 @@ newtype SpaceCraftId = SpaceCraftId { unSpaceCraftId :: Int }
 data Operable = Inoperable | Operational
   deriving (Eq, Ord, Enum, Bounded, Read, Show, Humanize, Present, Generic, ToJSON, FromJSON)
 #ifndef ghcjs_HOST_OS
-  deriving (FromBackendRow Sqlite)
+  deriving (FromBackendRow Sqlite, HasSqlEqualityCheck Sqlite)
+instance HasSqlValueSyntax be String => HasSqlValueSyntax be Operable where sqlValueSyntax = autoSqlValueSyntax
 #endif
 
 
@@ -100,6 +103,7 @@ data Squadron = AwayTeam | StrikeForce | Scout
   deriving (Eq, Ord, Enum, Bounded, Read, Show, Present, Generic, ToJSON, FromJSON)
 #ifndef ghcjs_HOST_OS
   deriving (FromBackendRow Sqlite)
+instance HasSqlValueSyntax be String => HasSqlValueSyntax be Squadron where sqlValueSyntax = autoSqlValueSyntax
 #endif
 
 
@@ -155,7 +159,7 @@ db = defaultDbSettings
 
 data SpaceCraftUpdate = SpaceCraftUpdate
   { _sku         :: SKU
-  , _description :: Description
+  , _description :: Maybe Description
   , _serial      :: SerialNumber
   , _squadron    :: Squadron
   , _operable    :: Operable
