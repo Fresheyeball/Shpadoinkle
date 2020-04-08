@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP                   #-}
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE ExtendedDefaultRules  #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE ImpredicativeTypes    #-}
 {-# LANGUAGE InstanceSigs          #-}
@@ -11,6 +13,7 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -20,6 +23,8 @@ module View where
 
 import           Control.Lens                      hiding (view)
 import           Control.Lens.Unsound              (lensProduct)
+import           Data.Coerce
+import           Data.String
 import           Data.Text                         as T
 import           Shpadoinkle
 import qualified Shpadoinkle.Html                  as H
@@ -32,6 +37,9 @@ import           Shpadoinkle.Widgets.Types
 import           Shpadoinkle.Widgets.Types.Form    as Form
 
 import           Types
+
+
+default (Text)
 
 
 toEditForm :: SpaceCraft -> EditForm
@@ -54,34 +62,60 @@ fromEditForm ef = do
   return SpaceCraftUpdate {..}
 
 
+formGroup :: [Html m a] -> Html m a
+formGroup = H.div "form-group row"
+
+
+textControl
+  :: IsString t => Coercible Text t => MonadJSM m
+  => Lens' a (Input (Maybe t)) -> Text -> a -> Html m a
+textControl l msg ef = formGroup
+  [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
+  , H.div "col-sm-10" [ ef <% l . mapping (defaulting "") $ Input.text [ H.name' hName, H.class' "form-control" ] ]
+  ] where hName = toHtmlName msg
+
+
+intControl
+  :: forall m n a
+   . MonadJSM m => Integral n
+  => Lens' a (Input n) -> Text -> a -> Html m a
+intControl l msg ef = formGroup
+  [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
+  , H.div "col-sm-10" [ ef <% l . mapping rounding $ Input.number @m @Double [ H.name' hName, H.step "1", H.min "0", H.class' "form-control" ] ]
+  ] where hName = toHtmlName msg
+
+
+selectControl
+  :: MonadJSM m
+  => Considered p ~ Maybe => Consideration ConsideredChoice p
+  => Present (Selected p x) => Present x => Ord x
+  => Lens' a (Dropdown p x) -> Text -> a -> Html m a
+selectControl l msg ef = formGroup
+  [ H.label [ H.for' (toHtmlName msg), H.class' "col-sm-2 col-form-label" ] [ text msg ]
+  , H.div "col-sm-10" [ ef <% l $ dropdown bootstrap defConfig ]
+  ]
+
+
+toHtmlName :: Text -> Text
+toHtmlName = toLower . replace " " "-"
+
+
 editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> EditForm -> Html m EditForm
-editForm mid ef = H.form_
+editForm mid ef = H.div_
 
-  [ H.label [ H.for' "sku" ] [ "SKU" ]
-  , ef <% sku . mapping (_Wrapped . rounding)
-  $ Input.number [ H.name' "sku" ]
+  [ intControl    sku         "SKU"           ef
+  , textControl   description "Description"   ef
+  , intControl    serial      "Serial Number" ef
+  , selectControl squadron    "Squadron"      ef
+  , selectControl operable    "Operable"      ef
 
-  , H.label [ H.for' "description" ] [ "Description" ]
-  , ef <% description . mapping (defaulting "")
-  $ Input.text [ H.name' "description" ]
-
-  , H.label [ H.for' "serial" ] [ "Serial Number" ]
-  , ef <% serial . mapping (_Wrapped . rounding)
-  $ Input.number [ H.name' "serial" ]
-
-  , H.label [ H.for' "squadron" ] [ "Squadron" ]
-  , ef <% squadron
-  $ dropdown bootstrap defConfig
-
-  , H.label [ H.for' "operable" ] [ "Operable" ]
-  , ef <% operable
-  $ dropdown bootstrap defConfig
-
-  , H.a
-    [ H.onClick' $ case (mid, fromEditForm ef) of
-      (Nothing,  Just up) -> ef <$ createSpaceCraft up
-      (Just sid, Just up) -> ef <$ updateSpaceCraft sid up
-      _                   -> return ef
+  , H.button
+    [ H.onClick' $ case fromEditForm ef of
+       Nothing -> return ef
+       Just up -> do
+         case mid of Nothing  -> () <$ createSpaceCraft up
+                     Just sid -> updateSpaceCraft sid up
+         ef <$ navigate @SPA (RList mempty)
     , H.class' "btn btn-primary"
     ] [ "Save" ]
 
@@ -117,27 +151,33 @@ fuzzy = flip (^.) <$>
 
 view :: (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
 view fe = case fe of
+
   MList r -> MList <$> H.div "container-fluid"
-   [ H.div "flex justify-content-between"
+   [ H.div "row justify-content-between"
      [ H.h2_ [ "Space Craft Roster" ]
-     , H.div [ H.class' "input-group flex-nowrap", H.textProperty "style" ("width:200px" :: Text) ]
+     , H.div [ H.class' "input-group flex-nowrap"
+             , H.textProperty "style" ("width:200px" :: Text)
+             ]
        [ r <% search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
+       , H.a [ H.onClick' (r <$ navigate @SPA RNew), H.class' "btn btn-primary" ] [ "Register" ]
        ]
-     , H.a [ H.onClick' (r <$ navigate @SPA RNew), H.class' "btn btn-primary" ] [ "Register" ]
      ]
    , r <+ lensProduct table sort $ Table.viewWith tableCfg (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value)) (r ^. sort)
    , H.a [ H.onClick' (r <$ navigate @SPA (REcho $ Just "plex")) ] [ text "Go to Echo" ]
    ]
-  MDetail sid form -> MDetail sid <$> H.div "container-fluid"
-    [ H.div "d-flex justify-content-between"
+
+  MDetail sid form -> MDetail sid <$> H.div "row"
+    [ H.div "col-sm-8 offset-sm-2"
       [ H.h2_ [ text $ maybe "Register New Space Craft" (\i -> "Edit Space Craft: " <> pack (show i)) sid ]
       , editForm sid form
       ]
     ]
+
   MEcho t -> H.div_
     [ maybe (text "Erie silence") text t
     , H.a [ H.onClick' (fe <$ navigate @SPA (RList $ Input Clean "")) ] [ "Go To Space Craft Roster" ]
     ]
+
   M404 -> text "404"
 
 

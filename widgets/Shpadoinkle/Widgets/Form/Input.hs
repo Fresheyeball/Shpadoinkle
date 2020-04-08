@@ -28,16 +28,16 @@ mkInput t to from attrs inp = Html.input
   : attrs ) []
 
 
-number :: (MonadJSM m, Fractional n, Show n) => Config m n -> Input n -> Html m (Input n)
-number = mkInput "number" to $ pack . show where
+number :: MonadJSM m => Fractional n => Show n => Config m n -> Input n -> Html m (Input n)
+number cfg inp = mkInput "number" to (pack . show) cfg inp where
   to t = case double t of
     Right (d,"") -> realToFrac d
-    _            -> error "browser number enforcement failed"
+    _            -> _value inp
 
 
 search :: MonadJSM m => Config m Search -> Input Search -> Html m (Input Search)
 search = mkInput "search" coerce coerce
 
 
-text :: (MonadJSM m, Coercible Text t) => Config m t -> Input t -> Html m (Input t)
+text :: forall m t. (MonadJSM m, Coercible Text t) => Config m t -> Input t -> Html m (Input t)
 text = mkInput "text" coerce coerce

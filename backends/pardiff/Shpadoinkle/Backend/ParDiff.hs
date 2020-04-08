@@ -224,6 +224,7 @@ managePropertyState i obj' old new' = void $
     This _                 -> case k of
       "className" -> voidJSM $ obj' ^. js1 "removeAttribute" "class"
       "htmlFor"   -> voidJSM $ obj' ^. js1 "removeAttribute" "for"
+      "style"     -> voidJSM $ obj' ^. js1 "removeAttribute" "style"
       "checked"   -> voidJSM $ setProp' obj' k =<< toJSVal False
       _           -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
     -- new text prop, set

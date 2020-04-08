@@ -52,7 +52,7 @@ import           Shpadoinkle.Widgets.Types
 
 newtype SKU = SKU { unSKU :: Int  }
   deriving stock Generic
-  deriving newtype (Eq, Ord, Show, Read, Num, ToJSON, FromJSON)
+  deriving newtype (Real, Enum, Integral, Eq, Ord, Show, Read, Num, ToJSON, FromJSON)
   deriving anyclass (Humanize, Present)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
@@ -75,7 +75,7 @@ instance Humanize (Maybe Description) where
 
 newtype SerialNumber = SerialNumber { unSerialNumber :: Int  }
   deriving stock Generic
-  deriving newtype (Eq, Ord, Show, Num, ToJSON, FromJSON)
+  deriving newtype (Enum, Real, Integral, Eq, Ord, Show, Num, ToJSON, FromJSON)
   deriving anyclass (Humanize, Present)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)

@@ -131,7 +131,7 @@ bootstrap Dropdown {..} = Theme
     [ className [ ("dropdown-menu", True)
                 , ("show", _toggle == Open) ]
     ]
-  , _item    = a [ className "dropdown-item" ]
+  , _item    = a [ className "dropdown-item", textProperty "style" "cursor:pointer" ]
   }
 
 

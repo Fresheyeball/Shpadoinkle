@@ -155,6 +155,7 @@ injectProps ps html = case html of
 -- | JSX style @h@ constructor
 h :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
 h = Node
+{-# INLINE h #-}
 
 -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'
 baked :: JSM RawNode -> Html m o
@@ -183,6 +184,7 @@ listen k = listenRaw k . const . const
 -- | Construct a 'PListener' from it's 'Text' name and an ouput value.
 listen' :: Applicative m => Text -> o -> (Text, Prop m o)
 listen' k f = listen k $ pure f
+
 
 -- | @(Html m)@ is not a 'Monad', and not even 'Applicative', by design.
 deriving instance Functor m => Functor (Html m)
@@ -319,7 +321,9 @@ instance Territory TVar where
           if new' == old then retry else new' <$ writeTVar p new'
         y <- sun x a
         go y p
+
   createTerritory = newTVarIO
+  {-# INLINE createTerritory #-}
 
 
 -- | The core view instantiation function.
