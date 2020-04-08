@@ -28,10 +28,17 @@ mkInput t to from attrs inp = Html.input
   : attrs ) []
 
 
-number :: MonadJSM m => Fractional n => Show n => Config m n -> Input n -> Html m (Input n)
-number cfg inp = mkInput "number" to (pack . show) cfg inp where
+fractional :: MonadJSM m => Fractional n => Show n => Config m n -> Input n -> Html m (Input n)
+fractional cfg inp = mkInput "number" to (pack . show) cfg inp where
   to t = case double t of
     Right (d,"") -> realToFrac d
+    _            -> _value inp
+
+
+integral :: MonadJSM m => Integral n => Show n => Config m n -> Input n -> Html m (Input n)
+integral cfg inp = mkInput "number" to (pack . show) cfg inp where
+  to t = case double t of
+    Right (d,"") -> round d
     _            -> _value inp
 
 

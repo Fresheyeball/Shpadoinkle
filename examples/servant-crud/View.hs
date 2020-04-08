@@ -77,11 +77,11 @@ textControl l msg ef = formGroup
 
 intControl
   :: forall m n a
-   . MonadJSM m => Integral n
+   . MonadJSM m => Integral n => Show n
   => Lens' a (Input n) -> Text -> a -> Html m a
 intControl l msg ef = formGroup
   [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
-  , H.div "col-sm-10" [ ef <% l . mapping rounding $ Input.number @m @Double [ H.name' hName, H.step "1", H.min "0", H.class' "form-control" ] ]
+  , H.div "col-sm-10" [ ef <% l $ Input.integral @m [ H.name' hName, H.step "1", H.min "0", H.class' "form-control" ] ]
   ] where hName = toHtmlName msg
 
 
