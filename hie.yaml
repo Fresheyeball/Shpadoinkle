@@ -1,0 +1,56 @@
+cradle:
+  multi:
+
+    - path: "./widgets/tests/Test.hs"
+      config:
+        cradle:
+          cabal:
+            component: "test:unit"
+
+    - path: "./widgets/"
+      config:
+        cradle:
+          cabal:
+            component: "widgets"
+
+    - path: "./core/"
+      config:
+        cradle:
+          cabal:
+            component: "core"
+
+    - path: "./lens/"
+      config:
+        cradle:
+          cabal:
+            component: "lens"
+
+    - path: "./router/"
+      config:
+        cradle:
+          cabal:
+            component: "router"
+
+    - path: "./html/"
+      config:
+        cradle:
+          cabal:
+            component: "html"
+
+    - path: "./examples/servant-crud/Server.hs"
+      config:
+        cradle:
+          cabal:
+            component: "servant-crud-server"
+
+    - path: "./examples/servant-crud"
+      config:
+        cradle:
+          cabal:
+            component: "servant-crud-client"
+
+    - path: "./examples/Counter.hs"
+      config:
+        cradle:
+          cabal:
+            component: "counter"

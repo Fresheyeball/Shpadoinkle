@@ -98,21 +98,19 @@ toggleSort c (SortCol c' s) = if c == c' then SortCol c $ negateSort s else Sort
 
 
 data Config m a = Config
-  { tableProps :: [(Text, Prop m (a ,SortCol a))]
-  , headProps  :: [(Text, Prop m (a, SortCol a))]
-  , bodyProps  :: [(Text, Prop m (a, SortCol a))]
+  { tableProps ::             [(Text, Prop m (a, SortCol a))]
+  , headProps  ::             [(Text, Prop m (a, SortCol a))]
+  , thProps    :: Column a -> [(Text, Prop m (a, SortCol a))]
+  , bodyProps  ::             [(Text, Prop m (a, SortCol a))]
+  , tdProps    :: Column a -> [(Text, Prop m a)]
   } deriving Generic
 
 
-deriving instance Eq   (Prop m (a, SortCol a)) => Eq   (Config m a)
-deriving instance Ord  (Prop m (a, SortCol a)) => Ord  (Config m a)
-deriving instance Show (Prop m (a, SortCol a)) => Show (Config m a)
 instance Semigroup (Config m a) where
-  Config x y z <> Config x' y' z' =
-    Config (x <> x') (y <> y') (z <> z')
+  Config v w x y z <> Config v' w' x' y' z' =
+    Config (v <> v') (w <> w') (x <> x') (y <> y') (z <> z')
 instance Monoid (Config m a) where
-  mempty = Config mempty mempty mempty
-deriving instance (Functor Column, Functor m) => Functor (Config m)
+  mempty = Config mempty mempty mempty mempty mempty
 
 
 view :: forall m a.
@@ -141,12 +139,12 @@ viewWith Config {..} xs s@(SortCol sorton sortorder) =
     [ thead headProps [ tr_ $ cth_ <$> [minBound..maxBound] ]
     , tbody bodyProps $ do
         row <- sortBy (sortTable s) (toRows xs)
-        return . (fmap (, s)) . tr_ $ td_ . toCell xs row <$> [minBound..maxBound]
+        return . (fmap (, s)) . tr_ $ (\c -> td (tdProps c) $ toCell xs row c) <$> [minBound..maxBound]
     ]
 
   where
 
-  cth_ c = th [] . pure . Html.a [ onClick (xs, toggleSort c s) ]
+  cth_ c = th (thProps c) . pure . Html.a [ onClick (xs, toggleSort c s) ]
          . mappend [ text (humanize c) ] . pure . text $
           if c == sorton then
             case sortorder of ASC -> "↑"; DESC -> "↓"

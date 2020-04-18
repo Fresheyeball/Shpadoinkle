@@ -1,9 +1,7 @@
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
-{-# LANGUAGE DerivingVia                #-}
 {-# LANGUAGE DuplicateRecordFields      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -22,25 +20,19 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
-module Types where
+module Types (module Types, module Types.Prim) where
 
 
-import           Control.Lens                      as Lens
+import           Control.Lens                      as Lens hiding (Context)
 import           Control.Lens.TH                   ()
 import           Control.Monad.Trans
 import           Data.Aeson
 import           Data.Function
 import           Data.Maybe
 import           Data.Proxy
-import           Data.String
 import           Data.Text
 import           Database.Beam
-#ifndef ghcjs_HOST_OS
-import           Database.Beam.Backend.SQL.SQL92
-import           Database.Beam.Sqlite
-import           Database.Beam.Sqlite.Syntax
-import           Database.SQLite.Simple.FromField
-#endif
+
 import           Servant.API                       hiding (Description)
 import           Shpadoinkle
 import qualified Shpadoinkle.Html                  as H
@@ -48,81 +40,7 @@ import           Shpadoinkle.Router
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
 import           Shpadoinkle.Widgets.Table         as Table
 import           Shpadoinkle.Widgets.Types
-
-
-newtype SKU = SKU { unSKU :: Int  }
-  deriving stock Generic
-  deriving newtype (Real, Enum, Integral, Eq, Ord, Show, Read, Num, ToJSON, FromJSON)
-  deriving anyclass (Humanize, Present)
-#ifndef ghcjs_HOST_OS
-  deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
-#endif
-instance Wrapped SKU
-instance Rewrapped SKU SKU
-
-
-newtype Description = Description { unDescription  :: Text }
-  deriving stock (Generic)
-  deriving newtype (Eq, Ord, Show, Read, IsString, ToJSON, FromJSON, Humanize, Semigroup, Monoid)
-  deriving anyclass (Present)
-#ifndef ghcjs_HOST_OS
-  deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
-#endif
-
-instance Humanize (Maybe Description) where
-  humanize = maybe "N/A" humanize
-
-
-newtype SerialNumber = SerialNumber { unSerialNumber :: Int  }
-  deriving stock Generic
-  deriving newtype (Enum, Real, Integral, Eq, Ord, Show, Num, ToJSON, FromJSON)
-  deriving anyclass (Humanize, Present)
-#ifndef ghcjs_HOST_OS
-  deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
-#endif
-instance Wrapped SerialNumber
-instance Rewrapped SerialNumber SerialNumber
-
-
-newtype SpaceCraftId = SpaceCraftId { unSpaceCraftId :: Int }
-  deriving newtype ( Eq, Ord, Show, Num, ToJSON, FromJSON, FromHttpApiData, ToHttpApiData)
-  deriving anyclass (Humanize, Present)
-#ifndef ghcjs_HOST_OS
-  deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
-#endif
-
-
-data Operable = Inoperable | Operational
-  deriving (Eq, Ord, Enum, Bounded, Read, Show, Humanize, Present, Generic, ToJSON, FromJSON)
-#ifndef ghcjs_HOST_OS
-  deriving (FromBackendRow Sqlite, HasSqlEqualityCheck Sqlite)
-instance HasSqlValueSyntax be String => HasSqlValueSyntax be Operable where sqlValueSyntax = autoSqlValueSyntax
-#endif
-
-
-data Squadron = AwayTeam | StrikeForce | Scout
-  deriving (Eq, Ord, Enum, Bounded, Read, Show, Present, Generic, ToJSON, FromJSON)
-#ifndef ghcjs_HOST_OS
-  deriving (FromBackendRow Sqlite)
-instance HasSqlValueSyntax be String => HasSqlValueSyntax be Squadron where sqlValueSyntax = autoSqlValueSyntax
-#endif
-
-
-#ifndef ghcjs_HOST_OS
-instance FromField Operable where fromField = fmap read <$> fromField
-instance FromField Squadron where fromField = fmap read <$> fromField
-#endif
-
-
-instance Humanize Squadron where
-  humanize = \case
-    AwayTeam    -> "Away Team"
-    StrikeForce -> "Strike Force"
-    Scout       -> "Scouting"
-
-
-instance Humanize (Maybe Squadron) where
-  humanize = maybe "N/A" humanize
+import           Types.Prim
 
 
 data SpaceCraftT f = SpaceCraft
@@ -158,13 +76,26 @@ db :: DatabaseSettings be DB
 db = defaultDbSettings
 
 
-data SpaceCraftUpdate = SpaceCraftUpdate
-  { _sku         :: SKU
-  , _description :: Maybe Description
-  , _serial      :: SerialNumber
-  , _squadron    :: Squadron
-  , _operable    :: Operable
-  } deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
+data SpaceCraftUpdate s = SpaceCraftUpdate
+  { _sku         :: Field s Input SKU
+  , _description :: Field s Input (Maybe Description)
+  , _serial      :: Field s Input SerialNumber
+  , _squadron    :: Field s (Dropdown 'One) Squadron
+  , _operable    :: Field s (Dropdown 'AtleastOne) Operable
+  } deriving Generic
+
+
+deriving instance Eq       (SpaceCraftUpdate 'Valid)
+deriving instance Ord      (SpaceCraftUpdate 'Valid)
+deriving instance Show     (SpaceCraftUpdate 'Valid)
+deriving instance ToJSON   (SpaceCraftUpdate 'Valid)
+deriving instance FromJSON (SpaceCraftUpdate 'Valid)
+
+deriving instance Eq       (SpaceCraftUpdate 'Edit)
+deriving instance Ord      (SpaceCraftUpdate 'Edit)
+deriving instance Show     (SpaceCraftUpdate 'Edit)
+deriving instance ToJSON   (SpaceCraftUpdate 'Edit)
+deriving instance FromJSON (SpaceCraftUpdate 'Edit)
 
 
 makeFieldsNoPrefix ''SpaceCraftUpdate
@@ -188,20 +119,8 @@ instance (FromJSON (Table.Column [SpaceCraft])) => FromJSON Roster
 makeFieldsNoPrefix ''Roster
 
 
-data EditForm = EditForm
-  { _sku         :: Input SKU
-  , _description :: Input (Maybe Description)
-  , _serial      :: Input SerialNumber
-  , _squadron    :: Dropdown 'One Squadron
-  , _operable    :: Dropdown 'AtleastOne Operable
-  } deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
-
-
-makeFieldsNoPrefix ''EditForm
-
-
-emptyEditForm :: EditForm
-emptyEditForm = EditForm
+emptyEditForm :: SpaceCraftUpdate 'Edit
+emptyEditForm = SpaceCraftUpdate
   { _sku         = Input Clean 0
   , _description = Input Clean Nothing
   , _serial      = Input Clean 0
@@ -213,7 +132,7 @@ emptyEditForm = EditForm
 data Frontend
   = MEcho (Maybe Text)
   | MList Roster
-  | MDetail (Maybe SpaceCraftId) EditForm
+  | MDetail (Maybe SpaceCraftId) (SpaceCraftUpdate 'Edit)
   | M404
   deriving (Eq, Ord, Show, Generic)
 
@@ -238,8 +157,8 @@ makeLenses ''Route
 
 type API = "api" :> "space-craft" :> Get '[JSON] [SpaceCraft]
       :<|> "api" :> "space-craft" :> Capture "id" SpaceCraftId :> Get '[JSON] (Maybe SpaceCraft)
-      :<|> "api" :> "space-craft" :> Capture "id" SpaceCraftId :> ReqBody '[JSON] SpaceCraftUpdate :> Post '[JSON] ()
-      :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftUpdate :> Put '[JSON] SpaceCraftId
+      :<|> "api" :> "space-craft" :> Capture "id" SpaceCraftId :> ReqBody '[JSON] (SpaceCraftUpdate 'Valid) :> Post '[JSON] ()
+      :<|> "api" :> "space-craft" :> ReqBody '[JSON] (SpaceCraftUpdate 'Valid) :> Put '[JSON] SpaceCraftId
       :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftId :> Delete '[JSON] ()
 
 
@@ -273,8 +192,8 @@ instance Routed SPA Route where
 class CRUDSpaceCraft m where
   listSpaceCraft   :: m [SpaceCraft]
   getSpaceCraft    :: SpaceCraftId -> m (Maybe SpaceCraft)
-  updateSpaceCraft :: SpaceCraftId -> SpaceCraftUpdate -> m ()
-  createSpaceCraft :: SpaceCraftUpdate -> m SpaceCraftId
+  updateSpaceCraft :: SpaceCraftId -> SpaceCraftUpdate 'Valid -> m ()
+  createSpaceCraft :: SpaceCraftUpdate 'Valid -> m SpaceCraftId
   deleteSpaceCraft :: SpaceCraftId -> m ()
 
 
@@ -292,7 +211,7 @@ instance Humanize (Column [SpaceCraft]) where
     DescriptionT  -> "Desc"
     SerialNumberT -> "Serial #"
     SquadronT     -> "Squadron"
-    OperableT     -> "Operable"
+    OperableT     -> "Status"
     ToolsT        -> ""
 
 
@@ -318,18 +237,21 @@ instance Tabular [SpaceCraft] where
     SquadronT     -> present _squadron
     OperableT     -> present _operable
     ToolsT        ->
-      [ H.a [ H.onClick' (xs <$ navigate @ SPA (RExisting _identity)) ] [ "Edit" ]
-      , H.a [ H.onClick' (Prelude.filter (\x -> x ^. identity /= _identity) xs
-                        <$ deleteSpaceCraft _identity) ] [ "Delete" ]
+      [ H.div "btn-group"
+        [ H.button [ H.class' "btn btn-sm btn-secondary", H.onClick' (xs <$ navigate @ SPA (RExisting _identity)) ] [ "Edit" ]
+        , H.button [ H.class' "btn btn-sm btn-secondary", H.onClick' (Prelude.filter (\x -> x ^. identity /= _identity) xs
+                          <$ deleteSpaceCraft _identity) ] [ "Delete" ]
+        ]
       ]
 
   sortTable (SortCol c d) = f $ case c of
-    SKUT          -> compare `on` Lens.view sku         . unRow
-    DescriptionT  -> compare `on` Lens.view description . unRow
-    SerialNumberT -> compare `on` Lens.view serial      . unRow
-    SquadronT     -> compare `on` Lens.view squadron    . unRow
-    OperableT     -> compare `on` Lens.view operable    . unRow
+    SKUT          -> g sku
+    DescriptionT  -> g description
+    SerialNumberT -> g serial
+    SquadronT     -> g squadron
+    OperableT     -> g operable
     ToolsT        -> \_ _ -> EQ
     where f = case d of ASC -> id; DESC -> flip
+          g l = compare `on` Lens.view l . unRow
 
 

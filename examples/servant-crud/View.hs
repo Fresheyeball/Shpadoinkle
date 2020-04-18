@@ -42,24 +42,14 @@ import           Types
 default (Text)
 
 
-toEditForm :: SpaceCraft -> EditForm
-toEditForm sc = EditForm
+toEditForm :: SpaceCraft -> SpaceCraftUpdate 'Edit
+toEditForm sc = SpaceCraftUpdate
   { _sku         = Input Clean $ sc ^. sku
   , _description = Input Clean $ sc ^. description
   , _serial      = Input Clean $ sc ^. serial
   , _squadron    = (sc ^. squadron) `withOptions'` fullset
   , _operable    = (sc ^. operable) `withOptions'` fullset
   }
-
-
-fromEditForm :: EditForm -> Maybe SpaceCraftUpdate
-fromEditForm ef = do
-  _sku         <- ef ^? sku . value
-  _description <- ef ^? description . Form.value
-  _serial      <- ef ^? serial . value
-  _squadron    <- ef ^. squadron . to selected
-  _operable    <- ef ^? operable . to selected
-  return SpaceCraftUpdate {..}
 
 
 formGroup :: [Html m a] -> Html m a
@@ -100,7 +90,7 @@ toHtmlName :: Text -> Text
 toHtmlName = toLower . replace " " "-"
 
 
-editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> EditForm -> Html m EditForm
+editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> SpaceCraftUpdate 'Edit -> Html m (SpaceCraftUpdate 'Edit)
 editForm mid ef = H.div_
 
   [ intControl    sku         "SKU"           ef
@@ -110,7 +100,7 @@ editForm mid ef = H.div_
   , selectControl operable    "Operable"      ef
 
   , H.button
-    [ H.onClick' $ case fromEditForm ef of
+    [ H.onClick' $ case validate ef of
        Nothing -> return ef
        Just up -> do
          case mid of Nothing  -> () <$ createSpaceCraft up
@@ -134,36 +124,41 @@ start = \case
      _          -> M404
 
 
-tableCfg :: Table.Config m a
-tableCfg = Table.Config
-  [ H.class' "table table-striped table-bordered" ] [] []
+tableCfg :: Table.Config m [SpaceCraft]
+tableCfg = mempty
+  { tableProps = [ H.class' "table table-striped table-bordered" ]
+  , tdProps    = \case
+      ToolsT -> [ H.width 1 ]
+      _ -> "align-middle"
+  }
 
 
 fuzzy :: [SpaceCraft -> Text]
 fuzzy = flip (^.) <$>
-    [ sku         . to humanize
-    , description . to humanize
-    , serial      . to humanize
-    , squadron    . to humanize
-    , operable    . to humanize
-    ]
+  [ sku         . to humanize
+  , description . to humanize
+  , serial      . to humanize
+  , squadron    . to humanize
+  , operable    . to humanize
+  ]
 
 
 view :: (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
 view fe = case fe of
 
   MList r -> MList <$> H.div "container-fluid"
-   [ H.div "row justify-content-between"
+   [ H.div "row justify-content-between align-items-center"
      [ H.h2_ [ "Space Craft Roster" ]
-     , H.div [ H.class' "input-group flex-nowrap"
-             , H.textProperty "style" ("width:200px" :: Text)
+     , H.div [ H.class' "input-group"
+             , H.textProperty "style" ("width:300px" :: Text)
              ]
        [ r <% search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
-       , H.a [ H.onClick' (r <$ navigate @SPA RNew), H.class' "btn btn-primary" ] [ "Register" ]
+       , H.div "input-group-append mr-3"
+         [ H.button [ H.onClick' (r <$ navigate @SPA RNew), H.class' "btn btn-primary" ] [ "Register" ]
+         ]
        ]
      ]
    , r <+ lensProduct table sort $ Table.viewWith tableCfg (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value)) (r ^. sort)
-   , H.a [ H.onClick' (r <$ navigate @SPA (REcho $ Just "plex")) ] [ text "Go to Echo" ]
    ]
 
   MDetail sid form -> MDetail sid <$> H.div "row"

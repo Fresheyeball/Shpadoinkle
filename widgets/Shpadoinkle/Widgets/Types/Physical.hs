@@ -64,4 +64,4 @@ instance IsToggle Toggle where
 
 
 data Visbility = Visible | Hidden
-  deriving (Eq, Ord, Show, Enum, Bounded)
+  deriving (Eq, Ord, Show, Enum, Bounded, Generic)

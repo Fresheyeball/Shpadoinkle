@@ -94,6 +94,7 @@ executables:
     source-dirs: ./servant-crud
     other-modules:
       - Types
+      - Types.Prim
       - View
     dependencies:
       - aeson
@@ -135,6 +136,7 @@ executables:
     main: Server.hs
     source-dirs: ./servant-crud
     other-modules:
+      - Types.Prim
       - Types
       - View
     dependencies:

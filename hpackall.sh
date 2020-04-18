@@ -14,6 +14,14 @@ cd html
 hpack
 cd ..
 
+cd router
+hpack
+cd ..
+
+cd lens
+hpack
+cd ..
+
 cd widgets
 hpack
 cd ..
