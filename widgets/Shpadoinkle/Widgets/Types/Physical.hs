@@ -16,6 +16,12 @@ data Toggle = Closed Hygiene | Open
   deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON)
 
 
+togHygiene :: Toggle -> Hygiene
+togHygiene = \case
+  Closed x -> x
+  _ -> Dirty
+
+
 instance Enum Toggle where
   fromEnum (Closed Clean) = 0
   fromEnum Open           = 1

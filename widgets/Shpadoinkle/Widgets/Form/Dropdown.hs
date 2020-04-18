@@ -9,6 +9,7 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE RecordWildCards           #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE StandaloneDeriving        #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE UndecidableInstances      #-}
@@ -47,6 +48,16 @@ deriving instance (Ord  (Selected p a), Ord  (Considered p a), Ord a)         =>
 deriving instance Generic (Dropdown p a)
 instance (ToJSON a,   ToJSON (Selected p a),   ToJSON (Considered p a))          => ToJSON   (Dropdown p a)
 instance (FromJSON a, FromJSON (Selected p a), FromJSON (Considered p a), Ord a) => FromJSON (Dropdown p a)
+
+
+instance Control (Dropdown 'One) where
+  type Val (Dropdown 'One) a = Maybe a
+  hygiene f d = (\x -> d {_toggle = Closed x }) <$> f (togHygiene $ _toggle d)
+  value   f d = maybe d (select' d) <$> f (selected d)
+
+instance Control (Dropdown 'AtleastOne) where
+  hygiene f d = (\x -> d {_toggle = Closed x }) <$> f (togHygiene $ _toggle d)
+  value f d = select' d <$> f (selected d)
 
 
 instance (Consideration ConsideredChoice p, Ord a)

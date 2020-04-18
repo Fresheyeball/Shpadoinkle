@@ -9,7 +9,6 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PartialTypeSignatures      #-}
@@ -42,11 +41,13 @@ data Input a = Input
 
 
 class Control g where
+  type Val g a :: Type
+  type Val g a = a
   hygiene :: Applicative f => (Hygiene -> f Hygiene) -> g a -> f (g a)
-  value   :: Applicative f => (a -> f a) -> g a -> f (g a)
+  value   :: (Applicative f, Ord a) => (Val g a -> f (g a)) -> g a -> f (g (Val g a))
 
 
-getValue :: (Monoid a, Control g) => g a -> a
+getValue :: (Ord a, Monoid a, Control g) => g a -> a
 getValue = getConst . value Const
 
 

@@ -69,7 +69,7 @@ deriving instance FromJSON SpaceCraft
 makeFieldsNoPrefix ''SpaceCraftT
 
 
-data DB f = DB { _roster :: f (TableEntity SpaceCraftT) } deriving (Generic, Database be)
+newtype DB f = DB { _roster :: f (TableEntity SpaceCraftT) } deriving (Generic) deriving anyclass (Database be)
 
 
 db :: DatabaseSettings be DB
@@ -96,6 +96,16 @@ deriving instance Ord      (SpaceCraftUpdate 'Edit)
 deriving instance Show     (SpaceCraftUpdate 'Edit)
 deriving instance ToJSON   (SpaceCraftUpdate 'Edit)
 deriving instance FromJSON (SpaceCraftUpdate 'Edit)
+
+
+instance Validate SpaceCraftUpdate where
+  rules = SpaceCraftUpdate
+    { _sku         = Right
+    , _description = Right
+    , _serial      = Right
+    , _squadron    = Right
+    , _operable    = Right
+    }
 
 
 makeFieldsNoPrefix ''SpaceCraftUpdate

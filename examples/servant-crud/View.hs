@@ -100,7 +100,7 @@ editForm mid ef = H.div_
   , selectControl operable    "Operable"      ef
 
   , H.button
-    [ H.onClick' $ case validate ef of
+    [ H.onClick' $ case getValid $ validate ef of
        Nothing -> return ef
        Just up -> do
          case mid of Nothing  -> () <$ createSpaceCraft up
