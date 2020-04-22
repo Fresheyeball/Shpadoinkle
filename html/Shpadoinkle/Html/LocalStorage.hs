@@ -1,45 +1,54 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+
+
+-- | Local storage IO operations
+-- Get and set localstorage values from some 'LocalStorageKey'
 
 
 module Shpadoinkle.Html.LocalStorage where
 
 
-import           Control.Concurrent.STM      (retry)
 import           Control.Monad
 import           Data.Maybe
-import           Data.Monoid                 ((<>))
 import           Data.String
 import           Data.Text
-import           Language.Javascript.JSaddle
+import           GHC.Generics
+import           GHCJS.DOM
+import           GHCJS.DOM.Storage
+import           GHCJS.DOM.Window
 import           Text.Read
 import           UnliftIO
-import           UnliftIO.Concurrent         (forkIO)
+import           UnliftIO.Concurrent (forkIO)
+
+import           Shpadoinkle         (MonadJSM, Territory (..), liftJSM)
 
 
-newtype LocalStorageKey = LocalStorageKey { unLocalStorageKey :: Text }
-  deriving (Semigroup, Monoid, IsString, Eq, Ord, Show, Read)
+-- | The key for a specific state kept in local storage
+newtype LocalStorageKey a = LocalStorageKey { unLocalStorageKey :: Text }
+  deriving (Semigroup, Monoid, IsString, Eq, Ord, Show, Read, Generic)
 
 
-setStorage :: MonadJSM m => Show a => LocalStorageKey -> a -> m ()
-setStorage (LocalStorageKey k) m =
-  liftJSM . void . eval $ "localStorage.setItem('" <> k <> "', " <> pack (show (show m)) <> ")"
+setStorage :: MonadJSM m => Show a => LocalStorageKey a -> a -> m ()
+setStorage (LocalStorageKey k) m = do
+  s <- getLocalStorage =<< currentWindowUnchecked
+  setItem s k $ show m
 
 
-getStorage :: MonadJSM m => Read a => LocalStorageKey -> m (Maybe a)
-getStorage (LocalStorageKey k) =
-  liftJSM $ fmap (readMaybe =<<) . fromJSVal =<< eval ("localStorage.getItem('" <> k <> "')")
+getStorage :: MonadJSM m => Read a => LocalStorageKey a -> m (Maybe a)
+getStorage (LocalStorageKey k) = do
+  s <- getLocalStorage =<< currentWindowUnchecked
+  (>>= readMaybe) <$> getItem s k
 
 
-saveOnChange :: MonadJSM m => Show a => Eq a => LocalStorageKey -> TVar a -> TVar a -> m ()
-saveOnChange k old new' = do
-  n <- liftIO . atomically $ do
-    o <- readTVar old; n <- readTVar new'
-    if o == n then retry else n <$ writeTVar old n
-  setStorage k n
-  saveOnChange k old new'
+-- Whe we should update we save
+saveOnChange :: MonadJSM m => Territory t => Show a => Eq a
+             => LocalStorageKey a -> t a -> m ()
+saveOnChange k = liftJSM . shouldUpdate (const $ setStorage k) ()
 
 
 manageLocalStorage
@@ -50,9 +59,8 @@ manageLocalStorage
   => Show a
   => Read a
   => Eq a
-  => LocalStorageKey -> a -> m (TVar a)
+  => LocalStorageKey a -> a -> m (TVar a)
 manageLocalStorage k initial = do
   model <- liftIO . newTVarIO . fromMaybe initial =<< getStorage k
-  old   <- liftIO $ newTVarIO =<< readTVarIO model
-  void . forkIO $ saveOnChange k old model
+  void . forkIO $ saveOnChange k model
   return model

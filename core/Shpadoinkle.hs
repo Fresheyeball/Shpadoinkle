@@ -1,8 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE BangPatterns           #-}
+{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE ExplicitNamespaces     #-}
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
@@ -22,51 +24,56 @@
 
    A frontend abstraction motivated by simplicity, performance, and egonomics.
    This core module provides core abstractions and types with no implimentation details of any kind. IE no batteries included.
-   You may use this model a la carte, build ontop of it, or include more Shpadoinkle packages for additional batteries.
+   You may use this model a la carte, build ontop of it, or include more Backend packages for additional batteries.
 
-   Shpadoinkle is focused on letting you build your frontend the way you want to. And so is as unopinionated as possible, beyond providing a concrete programming model.
+   Backend is focused on letting you build your frontend the way you want to. And so is as unopinionated as possible, beyond providing a concrete programming model.
 -}
 
 module Shpadoinkle
   ( Html (..), Prop (..), Props
   , mapHtml, mapProp, mapProps, mapChildren
-  , Shpadoinkle (..)
-  , shpadoinkle
+  , Backend (..)
+  , shpadoinkle, fullPage, fullPageJSM
   , Territory (..)
-  , type (~>)
+  , type (~>), Html'
   , RawNode (..), RawEvent (..)
-  , h, text, flag, listener, baked
+  , h, text, flag
+  , listener, listen, listenRaw, listen'
+  , baked
   , props, children, name, textContent, injectProps
-  , MonadJSM, JSM
+  , MonadJSM, JSM, liftJSM
   , newTVarIO
+  , runJSorWarp
+  , runJSM, askJSM
   ) where
 
 
-
-import           Control.Monad.IO.Class
 import           Data.Kind
 import           Data.String
 import           Data.Text
-import           GHC.Conc                    hiding (forkIO)
-import           GHC.Conc                    (retry)
+import           GHC.Conc                         (retry)
 import           Language.Javascript.JSaddle
+#ifndef ghcjs_HOST_OS
+import           Language.Javascript.JSaddle.Warp
+#endif
 import           UnliftIO.Concurrent
+import           UnliftIO.STM
 
 
--- | This is the core type in Shpadoinkle.
+-- | This is the core type in Backend.
 -- The (Html m) 'Functor' is used to describe Html documents.
--- Please note, this is NOT a the Virtual Dom used by Shpadoinkle
+-- Please note, this is NOT a the Virtual Dom used by Backend
 -- this type backs a DSL that is then /interpreted/ into Virual Dom
 -- by the backend of your choosing. Html comments are not supported.
 data Html :: (Type -> Type) -> Type -> Type where
   -- | A standard node in the dom tree
   Node :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
   -- | If you can bake an element into a 'RawNode' you can embed it as a baked potato.
-  -- Shpadoinkle does not provide any state management or abstraction to deal with
+  -- Backend does not provide any state management or abstraction to deal with
   -- custom embeded content. It's own you to decide how and when this 'RawNode' will
   -- be updated. For example, if you wanted to embed a google map as a baked potato,
-  -- and you are driving your Shpadoinkle view with a 'TVar', you would need to build
-  -- the 'RawNode' for this map /outside/ of your Shpadoinkle view, and pass it in
+  -- and you are driving your Backend view with a 'TVar', you would need to build
+  -- the 'RawNode' for this map /outside/ of your Backend view, and pass it in
   -- as an argument. The 'RawNode' is a reference you control.
   Potato :: JSM RawNode -> Html m o
   -- | The humble text node
@@ -75,6 +82,7 @@ data Html :: (Type -> Type) -> Type -> Type where
 
 -- | Natural Transformation
 type m ~> n = forall a. m a -> n a
+type Html' a = forall m. Applicative m => Html m a
 
 
 -- | If you can provide a Natural Transformation from one Monad to another
@@ -147,25 +155,42 @@ injectProps ps html = case html of
 -- | JSX style @h@ constructor
 h :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
 h = Node
+{-# INLINE h #-}
+
 -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'
 baked :: JSM RawNode -> Html m o
 baked = Potato
+
 -- | Construct a 'TextNode'
 text :: Text -> Html m o
 text = TextNode
+
 -- | Construct a 'PFlag'
 flag :: Bool -> Prop m o
 flag = PFlag
--- | Construct a simple `PListener` that will perform an action independent of the event target or event object.
+
+-- | Construct a simple 'PListener` that will perform an action.
 listener :: m o -> Prop m o
 listener = PListener . const . const
+
+-- | Construct a 'PListener' from it's 'Text' name a raw listener.
+listenRaw :: Text -> (RawNode -> RawEvent -> m o) -> (Text, Prop m o)
+listenRaw k = (,) k . PListener
+
+-- | Construct a 'PListener' from it's 'Text' name and a Monad action.
+listen :: Text -> m o -> (Text, Prop m o)
+listen k = listenRaw k . const . const
+
+-- | Construct a 'PListener' from it's 'Text' name and an ouput value.
+listen' :: Applicative m => Text -> o -> (Text, Prop m o)
+listen' k f = listen k $ pure f
 
 
 -- | @(Html m)@ is not a 'Monad', and not even 'Applicative', by design.
 deriving instance Functor m => Functor (Html m)
 
 
--- | Properties of a Dom node, Shpadoinkle does not use attributes directly,
+-- | Properties of a Dom node, Backend does not use attributes directly,
 -- but rather is focued on the more capable properties that may be set on a dom
 -- node in JavaScript. If you wish to add attributes, you may do so
 -- by setting its corrosponding property.
@@ -216,7 +241,7 @@ instance {-# OVERLAPPING #-} IsString [(Text, Prop m o)] where
 
 
 -- | A dom node reference.
--- Useful for building baked potatoes, and binding a Shpadoinkle view to the page
+-- Useful for building baked potatoes, and binding a Backend view to the page
 newtype RawNode  = RawNode  { unRawNode  :: JSVal }
 -- | A raw event object reference
 newtype RawEvent = RawEvent { unRawEvent :: JSVal }
@@ -224,18 +249,21 @@ instance ToJSVal   RawNode where toJSVal   = return . unRawNode
 instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
 
 
--- | The Shpadoinkle class describes a backend that can render 'Html'.
+-- |
+-- patch raw Nothing >=> patch raw Nothing = patch raw Nothing
+
+-- | The Backend class describes a backend that can render 'Html'.
 -- Backends are generally Monad Transformers @b@ over some Monad @m@.
-class Shpadoinkle b m a | b m -> a where
+class Backend b m a | b m -> a where
   -- | VNode type family allows backends to have their own Virtual Dom.
-  -- As such we can change out the rendering of our Shpadoinkle view
+  -- As such we can change out the rendering of our Backend view
   -- with new backends without updating our view logic.
   type VNode b m
   -- | A backend must be able to interpret 'Html' into its own internal Virtual Dom
   interpret
     :: (m ~> JSM)
     -- ^ Natural transformation for some @m@ to 'JSM'.
-    -- This is how Shpadoinkle get access to 'JSM' to perform the rendering side effect
+    -- This is how Backend get access to 'JSM' to perform the rendering side effect
     -> Html (b m) a
     -- ^ 'Html' to interpret
     -> b m (VNode b m)
@@ -245,7 +273,7 @@ class Shpadoinkle b m a | b m -> a where
   -- new view if the Virtual Dom changed.
   patch
     :: RawNode
-    -- ^ The container for rendering the Shpadoinkle view.
+    -- ^ The container for rendering the Backend view.
     -> Maybe (VNode b m)
     -- ^ Perhaps there is a previous Virtual Dom for use to diff. Will be 'Nothing' on the first run.
     -> VNode b m
@@ -264,37 +292,46 @@ class Shpadoinkle b m a | b m -> a where
 -- type you wish where this semantic can be implimented.
 class Territory s where
   -- | How do we update the state?
-  writeUpdate :: s a -> a -> JSM ()
+  writeUpdate :: s a -> (a -> JSM a) -> JSM ()
   -- | When should consider a state updated? This is akin to React's component should update thing.
   -- The idea is to provide a semantic for when we consider the model to have changed.
   shouldUpdate :: Eq a => (b -> a -> JSM b) -> b -> s a -> JSM ()
+  -- | Create a new territory
+  createTerritory :: a -> JSM (s a)
 
 
 -- | Cannoncal default implimentation of 'Territory' is just a 'TVar'.
 -- However there is nothing stopping your from writing your own alternative
 -- for a @Dynamic t@ from Reflex Dom, or some JavaScript based container.
 instance Territory TVar where
-  writeUpdate x = liftIO . atomically . writeTVar x
-  shouldUpdate potato prev model = do
-    i' <- liftIO $ readTVarIO model
-    p  <- liftIO $ newTVarIO i'
+  writeUpdate x f = do
+    a <- f =<< readTVarIO x
+    atomically $ writeTVar x a
+  {-# INLINE writeUpdate #-}
+
+  shouldUpdate sun prev model = do
+    i' <- readTVarIO model
+    p  <- createTerritory i'
     () <$ forkIO (go prev p)
     where
       go x p = do
-        a <- liftIO . atomically $ do
+        a <- atomically $ do
           new' <- readTVar model
           old  <- readTVar p
           if new' == old then retry else new' <$ writeTVar p new'
-        y <- potato x a
+        y <- sun x a
         go y p
+
+  createTerritory = newTVarIO
+  {-# INLINE createTerritory #-}
 
 
 -- | The core view instantiation function.
 -- This combines a backend, a territory, and a model
--- and renders the Shpadoinkle view to the page.
+-- and renders the Backend view to the page.
 shpadoinkle
   :: forall b m a t
-   . Shpadoinkle b m a => Territory t => Eq a
+   . Backend b m a => Territory t => Eq a
   => (m ~> JSM)
   -- ^ how to be get to JSM?
   -> (t a -> b m ~> m)
@@ -324,3 +361,47 @@ shpadoinkle toJSM toM initial model view stage = do
     _ <- shouldUpdate (go c) n model
     _ <- j $ patch c Nothing n :: JSM (VNode b m)
     return ()
+
+
+fullPage
+  :: Backend b m a => Territory t => Eq a
+  => (m ~> JSM)
+  -- ^ how do we get to JSM?
+  -> (t a -> b m ~> m)
+  -- ^ What backend are we running?
+  -> a
+  -- ^ what is the initial state?
+  -> (a -> Html (b m) a)
+  -- ^ how should the html look?
+  -> b m RawNode
+  -- ^ where do we render?
+  -> JSM ()
+fullPage g f i view getStage = do
+  model <- createTerritory i
+  shpadoinkle g f i model view getStage
+{-# INLINE fullPage #-}
+
+
+fullPageJSM
+  :: Backend b JSM a => Territory t => Eq a
+  => (t a -> b JSM ~> JSM)
+  -- ^ What backend are we running?
+  -> a
+  -- ^ what is the initial state?
+  -> (a -> Html (b JSM) a)
+  -- ^ how should the html look?
+  -> b JSM RawNode
+  -- ^ where do we render?
+  -> JSM ()
+fullPageJSM = fullPage id
+{-# INLINE fullPageJSM #-}
+
+
+runJSorWarp :: Int -> JSM () -> IO ()
+#ifdef ghcjs_HOST_OS
+runJSorWarp _ = id
+{-# INLINE runJSorWarp #-}
+#else
+runJSorWarp = run
+{-# INLINE runJSorWarp #-}
+#endif

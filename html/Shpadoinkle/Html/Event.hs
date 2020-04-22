@@ -4,6 +4,32 @@
 {-# LANGUAGE TemplateHaskell     #-}
 
 
+-- | This module provides a DSL of Events found on HTML elements.
+-- This DSL is entirely optional. You may use the 'Prop's 'PListener' constructor
+-- provided by Shpadoinkle core and completely ignore this module.
+-- You can use the 'listener', 'listen', 'listenRaw', 'listen'' convenience
+-- functions as well, without using this module. But for those who like a typed
+-- DSL with named function, and overloading, this is for you.
+--
+-- All listners come in 2 flavors. Unctuous flavors. Plain (IE 'onInput'), and prime (IE 'onInput'').
+-- The following should hold
+--
+-- @
+--   onX (pure x) = onX' x
+-- @
+--
+-- A flavor providing access to the 'RawNode' and the 'RawEvent' are not provided
+-- here. If you want access to these try the 'listenRaw' constructor. The intent
+-- of this DSL is to provide a simple named functions.
+--
+-- Right now this module features limited specialization. But ideally we specialize
+-- all of these listeners. For example the 'onInput' listener takes a function
+-- @(Text -> m a)@ where 'Text' is the current value of the input, and 'onKeyup' takes
+-- a function of type @(KeyCode -> m a)@ from 'Shpadoinkle.Keyboard'. Mouse move
+-- listeners for example, should take a function of @((Float, Float) -> m a)@ but
+-- this work is not yet done. See https://gitlab.com/fresheyeball/Shpadoinkle/issues/5
+
+
 module Shpadoinkle.Html.Event where
 
 
@@ -16,43 +42,35 @@ import           Shpadoinkle.Html.TH
 import           Shpadoinkle.Keyboard
 
 
-listenRaw :: Text -> (RawNode -> RawEvent -> m o) -> (Text, Prop m o)
-listenRaw k = (,) k . PListener
-listen :: Text -> m o -> (Text, Prop m o)
-listen k = listenRaw k . const . const
-listen' :: Applicative m => Text -> o -> (Text, Prop m o)
-listen' k f = listen k $ pure f
-
-
-onInput' :: MonadJSM m => (Text -> m o) -> (Text, Prop m o)
+onInput' :: MonadJSM m => (Text -> m a) -> (Text, Prop m a)
 onInput' f = listenRaw "input" $ \(RawNode n) _ ->
   f =<< liftJSM (valToText =<< unsafeGetProp "value" =<< valToObject n)
-onInput :: MonadJSM m => (Text -> o) -> (Text, Prop m o)
+onInput :: MonadJSM m => (Text -> a) -> (Text, Prop m a)
 onInput f = onInput' (pure . f)
 
 
-mkOnKey :: MonadJSM m => Text -> (KeyCode -> m o) -> (Text, Prop m o)
+mkOnKey :: MonadJSM m => Text -> (KeyCode -> m a) -> (Text, Prop m a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
   f =<< liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
-onKeyup, onKeydown, onKeypress :: MonadJSM m => (KeyCode -> m o) -> (Text, Prop m o)
+onKeyup, onKeydown, onKeypress :: MonadJSM m => (KeyCode -> m a) -> (Text, Prop m a)
 onKeyup    = mkOnKey "keyup"
 onKeydown  = mkOnKey "keydown"
 onKeypress = mkOnKey "keypress"
-onKeyup', onKeydown', onKeypress' :: MonadJSM m => (KeyCode -> o) -> (Text, Prop m o)
+onKeyup', onKeydown', onKeypress' :: MonadJSM m => (KeyCode -> a) -> (Text, Prop m a)
 onKeyup'    f = onKeyup    (pure . f)
 onKeydown'  f = onKeydown  (pure . f)
 onKeypress' f = onKeypress (pure . f)
 
-onCheck' :: MonadJSM m => (Bool -> m o) -> (Text, Prop m o)
+onCheck' :: MonadJSM m => (Bool -> m a) -> (Text, Prop m a)
 onCheck' f = listenRaw "update" $ \(RawNode n) _ ->
   f =<< liftJSM (valToBool =<< unsafeGetProp "checked" =<< valToObject n)
-onCheck :: MonadJSM m => (Bool -> o) -> (Text, Prop m o)
+onCheck :: MonadJSM m => (Bool -> a) -> (Text, Prop m a)
 onCheck f = onCheck' (pure . f)
 
-onSubmit' :: MonadJSM m => m o -> (Text, Prop m o)
+onSubmit' :: MonadJSM m => m a -> (Text, Prop m a)
 onSubmit' m = listenRaw "submit" $ \_ (RawEvent e) ->
   liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> m
-onSubmit :: MonadJSM m => o -> (Text, Prop m o)
+onSubmit :: MonadJSM m => a -> (Text, Prop m a)
 onSubmit = onSubmit' . pure
 
 
@@ -64,6 +82,7 @@ mkGlobalKey n t = do
       fmap round (valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
     _ -> return ()
   unsafeSetProp (toJSString $ "on" <> n) f d
+
 
 globalKeyDown, globalKeyUp, globalKeyPress :: (KeyCode -> JSM ()) -> JSM ()
 globalKeyDown = mkGlobalKey "keydown"

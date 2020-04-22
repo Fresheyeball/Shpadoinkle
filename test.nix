@@ -1,20 +1,21 @@
-let pkgs = import ./pkgs.nix; in with pkgs; with lib; let
+{ compiler ? "ghc864", chan ? "e1843646b04fb564abf6330a9432a76df3269d2f", isJS ? true }:
+let pkgs = import ./pkgs.nix compiler isJS chan; in with pkgs; with lib; let
 
-  chrome-rev = "9619debe3d8b99bc56342ec4e0ee818aaa5eb985";
-  chrome = (import (builtins.fetchTarball {
-      url = "https://github.com/NixOS/nixpkgs/archive/${chrome-rev}.tar.gz";
-    }) {}).google-chrome;
 
-  test = compiler: packages: runCommand "${compiler}-test" {
+  packages = import ./default.nix { inherit compiler isJS chan; };
+  util     = import ./util.nix    { inherit compiler isJS; };
+
+
+in runCommand "${util.compilerjs}-test" {
 
     # chrome needs fonts to live
     FONTCONFIG_FILE = makeFontsConf {
       inherit fontconfig;
       fontDirectories = [ "${corefonts}" ];
     };
-    COMPILER = compiler;
+    COMPILER = util.compilerjs;
     EXAMPLES = "${packages.Shpadoinkle-examples}";
-    CHROME = "${chrome}/bin/google-chrome-stable";
+    CHROME = "${google-chrome}/bin/google-chrome-stable";
     HEADLESS = true;
     buildInputs =
     [
@@ -22,7 +23,7 @@ let pkgs = import ./pkgs.nix; in with pkgs; with lib; let
       socat
       selenium-server-standalone
       chromedriver
-      chrome
+      google-chrome
     ];
 
   } ''
@@ -51,23 +52,8 @@ let pkgs = import ./pkgs.nix; in with pkgs; with lib; let
     export DATADIR=$out/userDataDir
 
     # run the end to end tests
-    ${packages.Shpadoinkle-tests}/bin/tests
+    ${packages.Shpadoinkle-tests}/bin/tests --fail-fast
     rm -r $out
     echo SUCCESS > $out
 
-  '';
-
-
-  constituents = foldl (xs: compiler: xs ++
-    (let built = import ./default.nix { inherit compiler; };
-    in [ (attrValues built) (test compiler built) ])) []
-    [
-      "ghc843"
-      "ghcjs84"
-    ];
-
-in releaseTools.aggregate {
-  name = "shapdoinkle_release";
-  constituents = constituents;
-}
-
+  ''

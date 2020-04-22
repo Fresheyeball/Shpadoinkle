@@ -27,20 +27,27 @@ library:
   exposed-modules:
     - Shpadoinkle.Widgets.Form.Input
     - Shpadoinkle.Widgets.Form.Dropdown
+    - Shpadoinkle.Widgets.Table
     - Shpadoinkle.Widgets.Types
     - Shpadoinkle.Widgets.Types.Choice
     - Shpadoinkle.Widgets.Types.Core
     - Shpadoinkle.Widgets.Types.Form
     - Shpadoinkle.Widgets.Types.Physical
     - Shpadoinkle.Widgets.Types.Remote
+    - Shpadoinkle.Widgets.Types.Search
+    - Shpadoinkle.Widgets.Validation
   source-dirs: .
   dependencies:
+    - aeson
     - compactable
+    - containers
+    - edit-distance
+    - email-validate
     - jsaddle
+    - mtl
+    - stm
     - text
     - template-haskell
-    - containers
-    - stm
     - unliftio
 
     - Shpadoinkle

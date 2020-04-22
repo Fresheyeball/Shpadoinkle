@@ -35,6 +35,7 @@ library:
     - uuid
     - neat-interpolation
     - containers
+    - semialign
     - these
     - lens
     - random
@@ -44,3 +45,13 @@ library:
     - file-embed
 
     - Shpadoinkle
+
+when:
+
+  - condition: impl(ghcjs)
+    then:
+      dependencies: []
+    else:
+      dependencies:
+        - jsaddle-warp
+

@@ -1,0 +1,57 @@
+name:         Shpadoinkle-router
+license:      BSD3
+license-file: LICENSE
+version:      0.0.0.1
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+
+
+ghc-options:
+    - -Wall
+    - -Werror
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+when:
+  - condition: impl(ghcjs)
+    then:
+      dependencies:
+        - servant-client-ghcjs
+    else:
+      dependencies:
+        - bytestring
+        - servant-server
+        - servant-client
+        - wai
+        - wai-app-static
+        - warp
+        - Shpadoinkle-backend-static
+
+
+dependencies:
+    - base
+
+    - aeson
+    - compactable
+    - exceptions
+    - servant
+    - http-api-data
+    - network-uri
+    - lens
+    - jsaddle
+    - ghcjs-dom
+    - jsaddle-dom
+    - text
+    - bytestring
+    - unliftio
+
+    - Shpadoinkle
+
+library:
+  source-dirs: .

@@ -4,11 +4,13 @@
 {-# LANGUAGE ExtendedDefaultRules      #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE InstanceSigs              #-}
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE RecordWildCards           #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE StandaloneDeriving        #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE UndecidableInstances      #-}
@@ -19,10 +21,13 @@ module Shpadoinkle.Widgets.Form.Dropdown where
 
 
 import           Control.Compactable
+import           Data.Aeson
 import           Data.Text
 import           GHC.Generics
 import           Prelude                   hiding (div)
 
+
+import           Shpadoinkle
 import           Shpadoinkle.Html          hiding (p, s, s', selected)
 import           Shpadoinkle.Keyboard
 import           Shpadoinkle.Widgets.Types
@@ -42,6 +47,20 @@ deriving instance (Read (Selected p a), Read (Considered p a), Read a, Ord a) =>
 deriving instance (Eq   (Selected p a), Eq   (Considered p a), Eq a)          => Eq   (Dropdown p a)
 deriving instance (Ord  (Selected p a), Ord  (Considered p a), Ord a)         => Ord  (Dropdown p a)
 deriving instance Generic (Dropdown p a)
+instance (ToJSON a,   ToJSON (Selected p a),   ToJSON (Considered p a))          => ToJSON   (Dropdown p a)
+instance (FromJSON a, FromJSON (Selected p a), FromJSON (Considered p a), Ord a) => FromJSON (Dropdown p a)
+
+
+instance Control (Dropdown 'One) where
+  type Val (Dropdown 'One) a = Maybe a
+  hygiene  :: Applicative f          => (Hygiene -> f Hygiene)   -> Dropdown 'One a -> f (Dropdown 'One a)
+  hygiene f d = (\x -> d {_toggle = Closed x }) <$> f (togHygiene $ _toggle d)
+  value    :: (Applicative f, Ord a) => (Maybe a -> f (Maybe a)) -> Dropdown 'One a -> f (Dropdown 'One a)
+  value   f d = maybe d (select' d) <$> f (selected d)
+
+instance Control (Dropdown 'AtleastOne) where
+  hygiene f d = (\x -> d {_toggle = Closed x }) <$> f (togHygiene $ _toggle d)
+  value f d = select' d <$> f (selected d)
 
 
 instance (Consideration ConsideredChoice p, Ord a)
@@ -51,14 +70,12 @@ instance (Consideration ConsideredChoice p, Ord a)
   open   p = shrug $ p { _toggle = open   (_toggle p) }
 
 
-data Config m = Config
-  { _placeholder :: Placeholder
-  , _attrs       :: forall a. [(Text, Prop m a)]
-  }
+newtype Config m = Config
+  { _attrs :: forall a. [(Text, Prop m a)] }
 
 
 defConfig :: Config m
-defConfig = Config "Search" []
+defConfig = Config []
 
 
 instance (Compactable (ConsideredChoice p)) => Compactable (Dropdown p) where
@@ -114,24 +131,6 @@ data Theme m = Theme
   }
 
 
-bootstrap :: Dropdown p b -> Theme m
-bootstrap Dropdown {..} = Theme
-  { _wrapper = div
-    [ className [ ("dropdown", True)
-                , ("show", _toggle == Open) ]
-    ]
-  , _header  = pure . button
-    [ className [ "btn", "btn-secondary", "dropdown-toggle" ]
-    , type' "button"
-    ]
-  , _list    = div
-    [ className [ ("dropdown-menu", True)
-                , ("show", _toggle == Open) ]
-    ]
-  , _item    = a [ className "dropdown-item", href "#" ]
-  }
-
-
 semantic :: Dropdown p b -> Theme m
 semantic Dropdown {..} = Theme
   { _wrapper = div
@@ -160,7 +159,7 @@ act x | _toggle x == Open =
   close $ case considered x of
     Just _ -> choose x
     _      -> x
-act x | otherwise = open x
+act x = open x
 
 
 dropdown ::

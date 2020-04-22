@@ -13,7 +13,8 @@ import           Util
 spec :: Spec
 spec = around_ (serve "counter") .
   itWD "increments and decrements" $ do
-    [dec, inc] <- findElems (ByTag "button")
+    di <- findElems (ByTag "button")
+    let (dec, inc) = case di of [dec, inc] -> (dec, inc); _ -> error "bad pattern"
     out <- findElem (ById "out")
     expectText out "0"
 

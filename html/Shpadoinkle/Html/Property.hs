@@ -8,6 +8,20 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
+-- | This module prives a DSL for HTML properties
+-- This DSL is entirely optional. You may use the 'Prop' constructors
+-- provided by Shpadoinkle core and completely ignore this module.
+-- But for those who like a typed DSL with named functions for
+-- different properties, and nice overloading, this is for you.
+--
+-- Unlike Events and Elements, Properties come in one flavor. Vanilla.
+--
+-- Each named function documents the type of property it constructs
+-- whether it be 'Text' or 'Bool'. We also support other types
+-- such as `Int`, and `Float`, but via converting them to 'Text' and
+-- letting JavaScript weirdness cast them to the correct underlying type.
+
+
 module Shpadoinkle.Html.Property where
 
 
@@ -22,9 +36,11 @@ import           Shpadoinkle
 import           Shpadoinkle.Html.TH
 
 
-type TextProperty a = forall m o. ToPropText a => a -> (Text, Prop m o)
+type TextProperty t = forall m a. ToPropText t => t -> (Text, Prop m a)
 
 
+-- | How do we take a non-textual value, and make it text JavaScript will
+-- cast appropriately
 class ToPropText a where toPropText :: a -> Text
 instance ToPropText Text where toPropText = id
 instance ToPropText Int where toPropText = pack . show
@@ -46,19 +62,19 @@ instance ClassListRep (Text, Bool) where asClass = asClass . (:[])
 instance IsString ClassList where fromString = ClassList . Set.singleton . pack
 
 
-flagProperty :: Text -> Bool -> (Text, Prop m o)
+flagProperty :: Text -> Bool -> (Text, Prop m a)
 flagProperty t = (,) t . flag
 
 
-className :: ClassListRep cl => cl -> (Text, Prop m o)
+className :: ClassListRep cl => cl -> (Text, Prop m a)
 className = textProperty "className" . unwords . Set.toList . unClassList . asClass
 
 
-class' :: ClassList -> (Text, Prop m o)
+class' :: ClassList -> (Text, Prop m a)
 class' = className
 
 
-for' :: Text -> (Text, Prop m o)
+for' :: Text -> (Text, Prop m a)
 for' = textProperty "htmlFor"
 
 
@@ -73,7 +89,7 @@ $(msum <$> mapM mkTextProp
   , "max", "min", "step", "wrap", "target", "download", "hreflang", "media", "ping", "shape", "coords"
   , "alt", "preload", "poster", "name'", "kind'", "srclang", "sandbox", "srcdoc", "align"
   , "headers", "scope", "datetime", "pubdate", "manifest", "contextmenu", "draggable"
-  , "dropzone", "itemprop"
+  , "dropzone", "itemprop", "charset"
   ])
 
 $(msum <$> mapM mkIntProp

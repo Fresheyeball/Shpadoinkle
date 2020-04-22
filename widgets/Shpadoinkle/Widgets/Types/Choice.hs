@@ -20,6 +20,7 @@ module Shpadoinkle.Widgets.Types.Choice where
 
 import           Control.Applicative
 import           Control.Compactable
+import           Data.Aeson
 import qualified Data.Foldable       as F
 import           Data.Kind
 import qualified Data.List.NonEmpty  as NE
@@ -48,6 +49,8 @@ deriving instance (Read (Selected p a), Read a, Ord a) => Read (Choice p a)
 deriving instance (Eq   (Selected p a), Eq a)          => Eq   (Choice p a)
 deriving instance (Ord  (Selected p a), Ord a)         => Ord  (Choice p a)
 deriving instance Generic (Choice p a)
+instance (ToJSON   (Selected p a), ToJSON   a)        => ToJSON   (Choice p a)
+instance (FromJSON (Selected p a), FromJSON a, Ord a) => FromJSON (Choice p a)
 
 
 instance (Bounded a, Enum a) => Bounded (Choice 'AtleastOne a) where
@@ -205,6 +208,14 @@ fullOptions :: (Deselection f p, Bounded a, Enum a, Ord a) => f p a
 fullOptions = noselection fullset
 
 
+fullOptionsMin :: (Selection f p, Bounded a, Enum a, Ord a) => f p a
+fullOptionsMin = fromNonEmpty $ minBound NE.:| [succ minBound..maxBound]
+
+
+fullOptionsMax :: (Selection f p, Bounded a, Enum a, Ord a) => f p a
+fullOptionsMax = fromNonEmpty $ maxBound NE.:| [minBound..pred maxBound]
+
+
 fromNonEmpty :: (Selection f p, Ord a) => NE.NonEmpty a -> f p a
 fromNonEmpty xs' = let (x NE.:| xs) = NE.sort xs' in x `withOptions'` Set.fromList xs
 
@@ -280,6 +291,8 @@ deriving instance (Read (Selected p a), Read (Considered p a), Read a, Ord a) =>
 deriving instance (Eq   (Selected p a), Eq   (Considered p a), Eq a)          => Eq   (ConsideredChoice p a)
 deriving instance (Ord  (Selected p a), Ord  (Considered p a), Ord a)         => Ord  (ConsideredChoice p a)
 deriving instance Generic (ConsideredChoice p a)
+instance (FromJSON a, FromJSON (Considered p a), FromJSON (Selected p a), Ord a) => FromJSON (ConsideredChoice p a)
+instance (ToJSON a,   ToJSON (Considered p a),   ToJSON (Selected p a))          => ToJSON   (ConsideredChoice p a)
 
 instance (Compactable (Choice p), Compactable (Considered p)) => Compactable (ConsideredChoice p) where
   compact (ConsideredChoice x xs) = ConsideredChoice (compact x) (compact xs)

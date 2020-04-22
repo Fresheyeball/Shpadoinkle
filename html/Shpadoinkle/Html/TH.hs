@@ -28,13 +28,13 @@ mkEventDSL evt = let
     l  = mkName "listen"
     l' = mkName "listen'"
     m  = VarT $ mkName "m"
-    o  = VarT $ mkName "o"
+    a  = VarT $ mkName "a"
 
   in return
 
     [ SigD name (ForallT [] []
-      (AppT (AppT ArrowT (AppT m o)) (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) o))))
+      (AppT (AppT ArrowT (AppT m a)) (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
+      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
 
     , FunD name  [Clause [] (NormalB $ AppE (VarE l)  (LitE $ StringL evt)) []]
 
@@ -42,8 +42,8 @@ mkEventDSL evt = let
     , SigD name'
       (ForallT []
         [AppT (ConT ''GHC.Base.Applicative) m]
-        (AppT (AppT ArrowT o) (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-          (AppT (AppT (ConT ''Shpadoinkle.Prop) m) o))))
+        (AppT (AppT ArrowT a) (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
+          (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
 
     , FunD name' [Clause [] (NormalB $ AppE (VarE l') (LitE $ StringL evt)) []]
     ]
@@ -56,7 +56,7 @@ mkProp type' l' name' = let
              '\'':rs -> rs
              rs      -> rs
     m = VarT $ mkName "m"
-    o = VarT $ mkName "o"
+    a = VarT $ mkName "a"
     l = mkName l'
     n = mkName name'
 
@@ -65,7 +65,7 @@ mkProp type' l' name' = let
     [ SigD n (ForallT [] []
       (AppT (AppT ArrowT (ConT type'))
       (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) o))))
+      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
 
     , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
     ]
@@ -86,44 +86,44 @@ mkIntProp = mkProp ''Int "textProperty"
 mkElement :: String -> Q [Dec]
 mkElement name = let
 
-    n = mkName name
-    n' = mkName $ name ++ "'"
-    n_ = mkName $ name ++ "_"
-    n_' = mkName $ name ++ "_'"
-    m = VarT $ mkName "m"
-    o = VarT $ mkName "o"
-    l = mkName "h"
+    n   = mkName name
+    n'  = mkName $ name ++ "'"
+    n_  = mkName $ name ++  "_"
+    n'_ = mkName $ name ++ "'_"
+    m   = VarT $ mkName "m"
+    a   = VarT $ mkName "a"
+    l   = mkName "h"
 
   in return
 
     [ SigD n (ForallT [] []
       (AppT (AppT ArrowT (AppT ListT (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) o))))
-      (AppT (AppT ArrowT (AppT ListT (AppT (AppT (ConT ''Shpadoinkle.Html) m) o)))
-      (AppT (AppT (ConT ''Shpadoinkle.Html) m) o))))
+      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
+      (AppT (AppT ArrowT (AppT ListT (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
+      (AppT (AppT (ConT ''Shpadoinkle.Html) m) a))))
 
     , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
 
 
     , SigD n_ (ForallT [] []
-      (AppT (AppT ArrowT (AppT ListT (AppT (AppT (ConT ''Shpadoinkle.Html) m) o)))
-      (AppT (AppT (ConT ''Shpadoinkle.Html) m) o)))
+      (AppT (AppT ArrowT (AppT ListT (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
+      (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
 
     , ValD (VarP n_) (NormalB (AppE (VarE n) (ListE []))) []
 
 
     , SigD n' (ForallT [] []
       (AppT (AppT ArrowT (AppT ListT (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) o))))
-      (AppT (AppT (ConT ''Shpadoinkle.Html) m) o)))
+      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
+      (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
 
     , ValD (VarP n') (NormalB (AppE (AppE (VarE (mkName "flip")) (VarE n)) (ListE []))) []
 
 
-    , SigD n_' (ForallT [] []
-      (AppT (AppT (ConT ''Shpadoinkle.Html) m) o))
+    , SigD n'_ (ForallT [] []
+      (AppT (AppT (ConT ''Shpadoinkle.Html) m) a))
 
-    , ValD (VarP n_')
+    , ValD (VarP n'_)
       (NormalB (AppE (AppE (VarE n) (ListE [])) (ListE []))) []
 
     ]

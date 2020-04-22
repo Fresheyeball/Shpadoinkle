@@ -82,8 +82,9 @@ spec = around_ (serve "todomvc") $ do
     equals 2 =<< countItems
     equals 2 =<< countTodos
 
-    [ _, check ] <- findElems $ ByClass "toggle"
-    [ all, active, completed ] <- findElems $ ByCSS ".filters a"
+    check <- (!! 1) <$> findElems (ByClass "toggle")
+    aac <- findElems $ ByCSS ".filters a"
+    let (all, active, completed) = case aac of [a,a',c] -> (a,a',c); _ -> error "bad pattern"
 
     click check
     delay
@@ -102,12 +103,11 @@ spec = around_ (serve "todomvc") $ do
     equals 1 =<< countItems
     a <- findElem $ ById "1"
     expectText a "a"
-
     click all
     delay
     equals 2 =<< countItems
-    [ check', _ ] <- findElems $ ByClass "toggle"
+    check' <- (!! 1) <$> findElems (ByClass "toggle")
     click check'
     delay
     equals 2 =<< countItems
-    equals 0 =<< countTodos
+    equals 2 =<< countTodos

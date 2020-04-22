@@ -57,7 +57,7 @@ spec = around_ (serve "widgets") $ do
 
       click one >> delay
       expectClass one "dropdown show"
-      item:_ <- one `findElemsFrom` ByClass "dropdown-item"
+      item <- head <$> one `findElemsFrom` ByClass "dropdown-item"
       option <- getText item
       click item >> delay
       expectText oneHeader option

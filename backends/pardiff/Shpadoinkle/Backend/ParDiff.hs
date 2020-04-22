@@ -23,6 +23,23 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 #endif
 
+
+{-|
+   This backend is to serve as a cannonical representation of a well
+   behaved backend. Defining well behaved in the context of web development
+   is rather difficult, and complex.
+
+   The rules of a backend are informal. Roughly, if we give the backend
+   some Html, we expect it to update the dom at runtime in the way we expect.
+
+   Since this is cannonical, all other backends are expected to behave
+   identically to this one. If differences exist they should be patched,
+   so that we retain renderer polymorphism. Such that we can change out
+   the renderer of our application, without updating the application logic
+   with confidence it will behave as expected.
+-}
+
+
 module Shpadoinkle.Backend.ParDiff
   ( ParDiffT (..)
   , runParDiff
@@ -141,7 +158,7 @@ setListener :: Territory s => s a -> (RawNode -> RawEvent -> JSM a) -> Object ->
 setListener i m o k = do
   elm <- RawNode <$> toJSVal o
   setProp' o ("on" <> k) . fun $ \_ _ -> \case
-    e:_ -> writeUpdate i =<< m elm (RawEvent e)
+    e:_ -> writeUpdate i . const $ m elm (RawEvent e)
     _ -> return ()
 
 
@@ -196,8 +213,9 @@ setFlag :: MonadJSM m => Object -> Text -> Bool -> m ()
 setFlag obj' k b = if b then
     voidJSM $ setProp' obj' k =<< toJSVal True
   else case k of
-    "checked" -> voidJSM $ setProp' obj' k =<< toJSVal False
-    _         -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
+    "checked"  -> voidJSM $ setProp' obj' k =<< toJSVal False
+    "disabled" -> voidJSM $ obj' ^. js1 "removeAttribute" "disabled"
+    _          -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
 
 
 managePropertyState :: Territory s => MonadJSM m => s a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
@@ -207,7 +225,9 @@ managePropertyState i obj' old new' = void $
     This _                 -> case k of
       "className" -> voidJSM $ obj' ^. js1 "removeAttribute" "class"
       "htmlFor"   -> voidJSM $ obj' ^. js1 "removeAttribute" "for"
+      "style"     -> voidJSM $ obj' ^. js1 "removeAttribute" "style"
       "checked"   -> voidJSM $ setProp' obj' k =<< toJSVal False
+      "disabled"  -> voidJSM $ obj' ^. js1 "removeAttribute" "disabled"
       _           -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
     -- new text prop, set
     That  (ParVText t)     -> voidJSM $ setProp' obj' k =<< toJSVal t
@@ -359,7 +379,7 @@ instance
   , MonadJSM m
   , Eq a
   , Show a
-  , Territory t ) => Shpadoinkle (ParDiffT t a) m a where
+  , Territory t ) => Backend (ParDiffT t a) m a where
   type VNode (ParDiffT t a) m = ParVNode a
   interpret = interpret'
   setup = setup'

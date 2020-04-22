@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS roster(
+  identity INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  sku INT NOT NULL,
+  description TEXT,
+  serial INT NOT NULL,
+  squadron TEXT NOT NULL,
+  operable TEXT NOT NULL
+);

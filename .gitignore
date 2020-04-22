@@ -3,3 +3,6 @@
 *.ghc*
 *result*
 *project.local
+server
+client
+roster.db
