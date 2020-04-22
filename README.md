@@ -26,3 +26,11 @@ nix-build
 ```bash
 nix-build --argstr compiler ghc843
 ```
+
+### running the todomvc example
+
+```
+nix-build --argstr compiler ghc843
+./result/bin/todomvc
+open http://localhost:8080
+```
