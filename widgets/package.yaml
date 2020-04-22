@@ -35,18 +35,20 @@ library:
     - Shpadoinkle.Widgets.Types.Physical
     - Shpadoinkle.Widgets.Types.Remote
     - Shpadoinkle.Widgets.Types.Search
+    - Shpadoinkle.Widgets.Validation
   source-dirs: .
   dependencies:
     - aeson
     - compactable
-    - jsaddle
-    - text
-    - edit-distance
-    - template-haskell
     - containers
-    - stm
-    - unliftio
+    - edit-distance
+    - email-validate
+    - jsaddle
     - mtl
+    - stm
+    - text
+    - template-haskell
+    - unliftio
 
     - Shpadoinkle
     - Shpadoinkle-html

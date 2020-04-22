@@ -25,7 +25,7 @@ module Types (module Types, module Types.Prim) where
 
 import           Control.Lens                      as Lens hiding (Context)
 import           Control.Lens.TH                   ()
-import           Control.Monad.Trans
+import           Control.Monad.Except
 import           Data.Aeson
 import           Data.Function
 import           Data.Maybe
@@ -40,6 +40,8 @@ import           Shpadoinkle.Router
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
 import           Shpadoinkle.Widgets.Table         as Table
 import           Shpadoinkle.Widgets.Types
+import           Shpadoinkle.Widgets.Validation
+
 import           Types.Prim
 
 
@@ -77,11 +79,11 @@ db = defaultDbSettings
 
 
 data SpaceCraftUpdate s = SpaceCraftUpdate
-  { _sku         :: Field s Input SKU
-  , _description :: Field s Input (Maybe Description)
-  , _serial      :: Field s Input SerialNumber
-  , _squadron    :: Field s (Dropdown 'One) Squadron
-  , _operable    :: Field s (Dropdown 'AtleastOne) Operable
+  { _sku         :: Field s Text Input SKU
+  , _description :: Field s Text Input (Maybe Description)
+  , _serial      :: Field s Text Input SerialNumber
+  , _squadron    :: Field s Text (Dropdown 'One) Squadron
+  , _operable    :: Field s Text (Dropdown 'AtleastOne) Operable
   } deriving Generic
 
 
@@ -97,14 +99,16 @@ deriving instance Show     (SpaceCraftUpdate 'Edit)
 deriving instance ToJSON   (SpaceCraftUpdate 'Edit)
 deriving instance FromJSON (SpaceCraftUpdate 'Edit)
 
+deriving instance Show     (SpaceCraftUpdate 'Errors)
+
 
 instance Validate SpaceCraftUpdate where
   rules = SpaceCraftUpdate
-    { _sku         = Right
-    , _description = Right
-    , _serial      = Right
-    , _squadron    = Right
-    , _operable    = Right
+    { _sku         = positive <> nonZero
+    , _description = nonMEmpty
+    , _serial      = between (30, maxBound)
+    , _squadron    = maybe (throwError "Cannot be empty") pure
+    , _operable    = pure
     }
 
 

@@ -25,6 +25,7 @@ module Shpadoinkle.Widgets.Types.Form
 
 
 import           Control.Applicative
+import           Control.Monad.Except
 import           Data.Aeson
 import           Data.Kind
 import           Data.String
@@ -44,10 +45,10 @@ class Control g where
   type Val g a :: Type
   type Val g a = a
   hygiene :: Applicative f => (Hygiene -> f Hygiene) -> g a -> f (g a)
-  value   :: (Applicative f, Ord a) => (Val g a -> f (g a)) -> g a -> f (g (Val g a))
+  value   :: (Applicative f, Ord a) => (Val g a -> f (Val g a)) -> g a -> f (g a)
 
 
-getValue :: (Ord a, Monoid a, Control g) => g a -> a
+getValue :: (Ord a, Monoid (Val g a), Control g) => g a -> Val g a
 getValue = getConst . value Const
 
 
@@ -82,33 +83,61 @@ newtype Placeholder = Placeholder { unPlaceholder :: Text }
   deriving stock Generic
 
 
+data Validated e a = Validated a | Invalid e [e]
+  deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON, Functor, Foldable, Traversable)
+
+instance Semigroup (Validated e a) where
+  Validated a <> Validated _ = Validated a
+  Validated _ <> x = x
+  x <> Validated _ = x
+  Invalid x xs <> Invalid y ys = Invalid x (xs <> (y:ys))
+
+
+instance Applicative (Validated e) where
+  Validated f <*> Validated a = Validated (f a)
+  Invalid x xs <*> _ = Invalid x xs
+  _ <*> Invalid x xs = Invalid x xs
+  pure = Validated
+
+
+instance Monad (Validated e) where
+  Validated a >>= f = f a
+  Invalid x xs >>= _ = Invalid x xs
+
+
+instance MonadError e (Validated e) where
+  throwError e = Invalid e []
+  catchError (Invalid x _) f = f x
+  catchError v _             = v
+
+
 data Status = Edit | Rules | Valid | Errors
 
 
-type family Field (s :: Status) (f :: Type -> Type) (x :: Type) :: Type where
-  Field 'Valid      _ a = a
-  Field 'Errors     _ a = Either Text a
-  Field 'Edit       f a = f a
-  Field 'Rules      _ a = a -> Either Text a
-
-
-nonMEmpty :: (Monoid a, Eq a) => a -> Either Text a
-nonMEmpty x = if x == mempty then fail "Cannot be empty" else pure x
+type family Field (s :: Status) (e :: Type) (f :: Type -> Type) (x :: Type) :: Type where
+  Field 'Valid    _ _ a = a
+  Field 'Errors   e _ a = Validated e a
+  Field 'Edit     _ f a = f a
+  Field 'Rules    e f a = Val f a -> Validated e a
 
 
 class ValidateG rules edit errs where
   validateg :: rules a -> edit a -> errs a
 instance ValidateG U1 U1 U1 where
   validateg _ _ = U1
-instance (ValidateG a b c, ValidateG d e f) => ValidateG (a :*: d) (b :*: e) (c :*: f) where
+instance (ValidateG a b c, ValidateG d e f)
+  => ValidateG (a :*: d) (b :*: e) (c :*: f) where
   validateg (a :*: b) (c :*: d) = validateg a c :*: validateg b d
-instance (ValidateG a b c, ValidateG d e f, Alternative (c :+: f)) => ValidateG (a :+: d) (b :+: e) (c :+: f) where
+instance (ValidateG a b c, ValidateG d e f, Alternative (c :+: f))
+  => ValidateG (a :+: d) (b :+: e) (c :+: f) where
   validateg (L1 a) (L1 b) = L1 $ validateg a b
   validateg (R1 a) (R1 b) = R1 $ validateg a b
   validateg _ _           = empty
-instance ValidateG a b c => ValidateG (M1 i x a) (M1 i' x' b) (M1 i'' x'' c) where
+instance ValidateG a b c
+  => ValidateG (M1 i x a) (M1 i' x' b) (M1 i'' x'' c) where
   validateg (M1 a) (M1 b) = M1 $ validateg a b
-instance (Control c, Monoid a) => ValidateG (K1 i (a -> b)) (K1 i' (c a)) (K1 i'' b) where
+instance (Control c, Monoid v, Val c a ~ v, Ord a)
+  => ValidateG (K1 i (v -> b)) (K1 i' (c a)) (K1 i'' b) where
   validateg (K1 f) (K1 x) = K1 (f $ getValue x)
 
 
@@ -123,9 +152,9 @@ instance (ValidG a c, ValidG b d) => ValidG (a :+: b) (c :+: d) where
   validg (R1 a) = R1 <$> validg a
 instance (ValidG a b) => ValidG (M1 i c a) (M1 i' c' b) where
   validg (M1 a) = M1 <$> validg a
-instance ValidG (K1 i (Either t a)) (K1 i' a) where
-  validg (K1 (Right a)) = Just $ K1 a
-  validg _              = Nothing
+instance ValidG (K1 i (Validated t a)) (K1 i' a) where
+  validg (K1 (Validated a)) = Just $ K1 a
+  validg _                  = Nothing
 
 
 class Validate (f :: Status -> Type) where

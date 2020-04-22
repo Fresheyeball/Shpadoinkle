@@ -42,6 +42,7 @@ in {
           cryptohash-sha1      = dontJS hsuper.cryptohash-sha1;
           cryptohash-md5       = dontJS hsuper.cryptohash-md5;
           extra                = dontJS hsuper.extra;
+          email-validate       = dontJS hsuper.email-validate;
           SHA                  = dontJS hsuper.SHA;
           pureMD5              = dontJS hsuper.pureMD5;
           hex                  = dontJS hsuper.hex;

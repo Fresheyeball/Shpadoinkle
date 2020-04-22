@@ -213,8 +213,9 @@ setFlag :: MonadJSM m => Object -> Text -> Bool -> m ()
 setFlag obj' k b = if b then
     voidJSM $ setProp' obj' k =<< toJSVal True
   else case k of
-    "checked" -> voidJSM $ setProp' obj' k =<< toJSVal False
-    _         -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
+    "checked"  -> voidJSM $ setProp' obj' k =<< toJSVal False
+    "disabled" -> voidJSM $ obj' ^. js1 "removeAttribute" "disabled"
+    _          -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
 
 
 managePropertyState :: Territory s => MonadJSM m => s a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
@@ -226,6 +227,7 @@ managePropertyState i obj' old new' = void $
       "htmlFor"   -> voidJSM $ obj' ^. js1 "removeAttribute" "for"
       "style"     -> voidJSM $ obj' ^. js1 "removeAttribute" "style"
       "checked"   -> voidJSM $ setProp' obj' k =<< toJSVal False
+      "disabled"  -> voidJSM $ obj' ^. js1 "removeAttribute" "disabled"
       _           -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
     -- new text prop, set
     That  (ParVText t)     -> voidJSM $ setProp' obj' k =<< toJSVal t

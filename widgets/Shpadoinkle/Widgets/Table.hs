@@ -23,7 +23,7 @@ module Shpadoinkle.Widgets.Table
   , negateSort
   , Tabular (..)
   , Column, Row
-  , Config (..)
+  , Theme (..)
   , toggleSort
   , view
   , viewWith
@@ -97,7 +97,7 @@ toggleSort :: Eq (Column a) => Column a -> SortCol a -> SortCol a
 toggleSort c (SortCol c' s) = if c == c' then SortCol c $ negateSort s else SortCol c mempty
 
 
-data Config m a = Config
+data Theme m a = Theme
   { tableProps ::             [(Text, Prop m (a, SortCol a))]
   , headProps  ::             [(Text, Prop m (a, SortCol a))]
   , thProps    :: Column a -> [(Text, Prop m (a, SortCol a))]
@@ -106,11 +106,11 @@ data Config m a = Config
   } deriving Generic
 
 
-instance Semigroup (Config m a) where
-  Config v w x y z <> Config v' w' x' y' z' =
-    Config (v <> v') (w <> w') (x <> x') (y <> y') (z <> z')
-instance Monoid (Config m a) where
-  mempty = Config mempty mempty mempty mempty mempty
+instance Semigroup (Theme m a) where
+  Theme v w x y z <> Theme v' w' x' y' z' =
+    Theme (v <> v') (w <> w') (x <> x') (y <> y') (z <> z')
+instance Monoid (Theme m a) where
+  mempty = Theme mempty mempty mempty mempty mempty
 
 
 view :: forall m a.
@@ -133,8 +133,8 @@ viewWith :: forall m a.
   , Bounded  (Column a)
   , Ord      (Column a)
   , Enum     (Column a) )
-  => Config m a -> a -> SortCol a -> Html m (a, SortCol a)
-viewWith Config {..} xs s@(SortCol sorton sortorder) =
+  => Theme m a -> a -> SortCol a -> Html m (a, SortCol a)
+viewWith Theme {..} xs s@(SortCol sorton sortorder) =
   table tableProps
     [ thead headProps [ tr_ $ cth_ <$> [minBound..maxBound] ]
     , tbody bodyProps $ do

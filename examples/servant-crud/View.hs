@@ -1,5 +1,7 @@
+{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ExtendedDefaultRules  #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -7,9 +9,8 @@
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLists       #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
@@ -23,30 +24,45 @@ module View where
 
 import           Control.Lens                      hiding (view)
 import           Control.Lens.Unsound              (lensProduct)
-import           Data.Coerce
-import           Data.String
+import           Data.Coerce                       (Coercible)
+import           Data.Maybe                        (fromMaybe, isNothing)
+import           Data.String                       (IsString)
 import           Data.Text                         as T
-import           Shpadoinkle
+import           Prelude                           hiding (div)
+import           Shpadoinkle                       (Html, MonadJSM, text)
 import qualified Shpadoinkle.Html                  as H
-import           Shpadoinkle.Lens
+import           Shpadoinkle.Lens                  ((<%), (<+))
 import           Shpadoinkle.Router                (navigate, toHydration)
-import           Shpadoinkle.Widgets.Form.Dropdown
+import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown (Dropdown (..),
+                                                                Theme (..),
+                                                                defConfig,
+                                                                dropdown)
 import qualified Shpadoinkle.Widgets.Form.Input    as Input
 import           Shpadoinkle.Widgets.Table         as Table
-import           Shpadoinkle.Widgets.Types
-import           Shpadoinkle.Widgets.Types.Form    as Form
+import           Shpadoinkle.Widgets.Types         (Consideration, Considered,
+                                                    ConsideredChoice,
+                                                    Control (..), Field,
+                                                    Hygiene (..), Input (..),
+                                                    Pick (..), Present,
+                                                    Selected, Status (..),
+                                                    Toggle (..), Validated (..),
+                                                    fullset, fuzzySearch,
+                                                    getValid, humanize,
+                                                    validate, withOptions')
 
 import           Types
 
+import           Debug.Trace
 
-default (Text)
+
+default (Text, [])
 
 
 toEditForm :: SpaceCraft -> SpaceCraftUpdate 'Edit
 toEditForm sc = SpaceCraftUpdate
-  { _sku         = Input Clean $ sc ^. sku
-  , _description = Input Clean $ sc ^. description
-  , _serial      = Input Clean $ sc ^. serial
+  { _sku         = pure $ sc ^. sku
+  , _description = pure $ sc ^. description
+  , _serial      = pure $ sc ^. serial
   , _squadron    = (sc ^. squadron) `withOptions'` fullset
   , _operable    = (sc ^. operable) `withOptions'` fullset
   }
@@ -57,33 +73,83 @@ formGroup = H.div "form-group row"
 
 
 textControl
-  :: IsString t => Coercible Text t => MonadJSM m
-  => Lens' a (Input (Maybe t)) -> Text -> a -> Html m a
-textControl l msg ef = formGroup
+  :: forall t m a
+   . Eq t => IsString t => Coercible Text t => MonadJSM m
+  => (forall v. Lens' (a v) (Field v Text Input (Maybe t)))
+  -> Text -> a 'Errors -> a 'Edit -> Html m (a 'Edit)
+textControl l msg errs ef = formGroup
   [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
-  , H.div "col-sm-10" [ ef <% l . mapping (defaulting "") $ Input.text [ H.name' hName, H.class' "form-control" ] ]
+  , H.div "col-sm-10" $
+    [ ef <% l . mapping (fromMaybe "" `iso` noEmpty) $ Input.text
+      [ H.name' hName
+      , H.className ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
+      ]
+    ]
+    <> invalid (errs ^. l) (ef ^. l . hygiene)
   ] where hName = toHtmlName msg
+          noEmpty "" = Nothing
+          noEmpty x  = Just x
 
 
 intControl
-  :: forall m n a
+  :: forall n m a
    . MonadJSM m => Integral n => Show n
-  => Lens' a (Input n) -> Text -> a -> Html m a
-intControl l msg ef = formGroup
+  => (forall v. Lens' (a v) (Field v Text Input n))
+  -> Text -> a 'Errors -> a 'Edit -> Html m (a 'Edit)
+intControl l msg errs ef = formGroup
   [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
-  , H.div "col-sm-10" [ ef <% l $ Input.integral @m [ H.name' hName, H.step "1", H.min "0", H.class' "form-control" ] ]
+  , H.div "col-sm-10" $
+    [ ef <% l $ Input.integral @m
+      $ [ H.name' hName, H.step "1", H.min "0"
+        , H.className ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
+        ]
+    ]
+    <> invalid (errs ^. l) (ef ^. l . hygiene)
   ] where hName = toHtmlName msg
 
 
 selectControl
-  :: MonadJSM m
+  :: forall p x m a
+   . MonadJSM m => Control (Dropdown p)
   => Considered p ~ Maybe => Consideration ConsideredChoice p
   => Present (Selected p x) => Present x => Ord x
-  => Lens' a (Dropdown p x) -> Text -> a -> Html m a
-selectControl l msg ef = formGroup
-  [ H.label [ H.for' (toHtmlName msg), H.class' "col-sm-2 col-form-label" ] [ text msg ]
-  , H.div "col-sm-10" [ ef <% l $ dropdown bootstrap defConfig ]
+  => (forall v. Lens' (a v) (Field v Text (Dropdown p) x))
+  -> Text -> a 'Errors -> a 'Edit -> Html m (a 'Edit)
+selectControl l msg errs ef = formGroup
+  [ H.label [ H.for' (toHtmlName msg)
+            , H.class' "col-sm-2 col-form-label" ] [ text msg ]
+  , H.div "col-sm-10" $
+    [ ef <% l $ dropdown bootstrap defConfig ]
+    <> invalid (errs ^. l) (ef ^. l . hygiene)
   ]
+  where
+  bootstrap Dropdown {..} = Dropdown.Theme
+    { _wrapper = H.div
+      [ H.className [ ("dropdown", True)
+                    , ("show", _toggle == Open) ]
+      ]
+    , _header  = pure . H.button
+      [ H.className ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
+      , H.type' "button"
+      ]
+    , _list    = H.div
+      [ H.className [ ("dropdown-menu", True)
+                    , ("show", _toggle == Open) ]
+      ]
+    , _item    = H.a [ H.className "dropdown-item"
+                     , H.textProperty "style" "cursor:pointer" ]
+    }
+
+
+controlClass :: Validated e a -> Hygiene -> [Text]
+controlClass (Invalid _ _) Dirty = ["is-invalid"]
+controlClass (Validated _) Dirty = ["is-valid"]
+controlClass _ Clean             = []
+
+
+invalid :: Validated Text a -> Hygiene -> [ Html m b ]
+invalid (Invalid err errs) Dirty = (\e -> H.div "invalid-feedback" [ text e ]) <$> err:errs
+invalid _                  _     = []
 
 
 toHtmlName :: Text -> Text
@@ -93,30 +159,38 @@ toHtmlName = toLower . replace " " "-"
 editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> SpaceCraftUpdate 'Edit -> Html m (SpaceCraftUpdate 'Edit)
 editForm mid ef = H.div_
 
-  [ intControl    sku         "SKU"           ef
-  , textControl   description "Description"   ef
-  , intControl    serial      "Serial Number" ef
-  , selectControl squadron    "Squadron"      ef
-  , selectControl operable    "Operable"      ef
+  [ intControl    @SKU                   sku         "SKU"           errs ef
+  , textControl   @Description           description "Description"   errs ef
+  , intControl    @SerialNumber          serial      "Serial Number" errs ef
+  , selectControl @'One @Squadron        squadron    "Squadron"      errs ef
+  , selectControl @'AtleastOne @Operable operable    "Operable"      errs ef
+  , H.div "d-flex flex-row justify-content-end"
 
-  , H.button
-    [ H.onClick' $ case getValid $ validate ef of
-       Nothing -> return ef
-       Just up -> do
-         case mid of Nothing  -> () <$ createSpaceCraft up
-                     Just sid -> updateSpaceCraft sid up
-         ef <$ navigate @SPA (RList mempty)
-    , H.class' "btn btn-primary"
-    ] [ "Save" ]
+    [ H.button
+      [ H.onClick' (ef <$ navigate @SPA (RList mempty))
+      , H.class' "btn btn-secondary"
+      ] [ "Cancel" ]
 
-  ]
+    , H.button
+      [ H.onClick' $ case isValid of
+         Nothing -> return ef
+         Just up -> do
+           case mid of Nothing  -> () <$ createSpaceCraft up
+                       Just sid -> updateSpaceCraft sid up
+           ef <$ navigate @SPA (RList mempty)
+      , H.class' "btn btn-primary"
+      , H.disabled $ isNothing isValid
+      ] [ "Save" ]
+    ]
+  ] where errs = trace (show $ validate ef) $ validate $ trace (show ef) ef
+          isValid = trace (show $ getValid errs) $ getValid errs
 
 
 start :: (Monad m, CRUDSpaceCraft m) => Route -> m Frontend
 start = \case
   RList s     -> MList . Roster (SortCol SKUT ASC) s <$> listSpaceCraft
   REcho t     -> return $ MEcho t
-  RNew        -> return $ MDetail Nothing $ emptyEditForm
+  RNew        -> return $ MDetail Nothing emptyEditForm
   RExisting i -> do
     mcraft <- getSpaceCraft i
     return $ case mcraft of
@@ -124,7 +198,7 @@ start = \case
      _          -> M404
 
 
-tableCfg :: Table.Config m [SpaceCraft]
+tableCfg :: Table.Theme m [SpaceCraft]
 tableCfg = mempty
   { tableProps = [ H.class' "table table-striped table-bordered" ]
   , tdProps    = \case
@@ -158,12 +232,15 @@ view fe = case fe of
          ]
        ]
      ]
-   , r <+ lensProduct table sort $ Table.viewWith tableCfg (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value)) (r ^. sort)
+   , r <+ lensProduct table sort $ Table.viewWith tableCfg
+    (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value))
+    (r ^. sort)
    ]
 
   MDetail sid form -> MDetail sid <$> H.div "row"
     [ H.div "col-sm-8 offset-sm-2"
-      [ H.h2_ [ text $ maybe "Register New Space Craft" (\i -> "Edit Space Craft: " <> pack (show i)) sid ]
+      [ H.h2_ [ text $ maybe "Register New Space Craft" (const "Edit Space Craft") sid
+              ]
       , editForm sid form
       ]
     ]

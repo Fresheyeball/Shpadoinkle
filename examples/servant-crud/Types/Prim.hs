@@ -40,6 +40,8 @@ newtype SKU = SKU { unSKU :: Int  }
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
 #endif
+instance Semigroup SKU where SKU x <> SKU y = SKU $ x + y
+instance Monoid SKU where mempty = SKU 0
 
 
 newtype Description = Description { unDescription  :: Text }
@@ -56,11 +58,13 @@ instance Humanize (Maybe Description) where
 
 newtype SerialNumber = SerialNumber { unSerialNumber :: Int  }
   deriving stock Generic
-  deriving newtype (Enum, Real, Integral, Eq, Ord, Show, Num, ToJSON, FromJSON)
+  deriving newtype (Enum, Bounded, Real, Integral, Eq, Ord, Show, Num, ToJSON, FromJSON)
   deriving anyclass (Humanize, Present)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
 #endif
+instance Semigroup SerialNumber where SerialNumber x <> SerialNumber y = SerialNumber $ x + y
+instance Monoid SerialNumber where mempty = SerialNumber 0
 
 
 newtype SpaceCraftId = SpaceCraftId { unSpaceCraftId :: Int }
@@ -77,6 +81,8 @@ data Operable = Operational | Inoperable
   deriving (FromBackendRow Sqlite, HasSqlEqualityCheck Sqlite)
 instance HasSqlValueSyntax be String => HasSqlValueSyntax be Operable where sqlValueSyntax = autoSqlValueSyntax
 #endif
+instance Semigroup Operable where (<>) = min
+instance Monoid Operable where mempty = maxBound
 
 
 data Squadron = AwayTeam | StrikeForce | Scout
@@ -85,6 +91,7 @@ data Squadron = AwayTeam | StrikeForce | Scout
   deriving (FromBackendRow Sqlite)
 instance HasSqlValueSyntax be String => HasSqlValueSyntax be Squadron where sqlValueSyntax = autoSqlValueSyntax
 #endif
+instance Semigroup Squadron where x <> _ = x
 
 
 #ifndef ghcjs_HOST_OS

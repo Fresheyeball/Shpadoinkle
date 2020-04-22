@@ -4,6 +4,7 @@
 {-# LANGUAGE ExtendedDefaultRules      #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE InstanceSigs              #-}
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE OverloadedStrings         #-}
@@ -52,7 +53,9 @@ instance (FromJSON a, FromJSON (Selected p a), FromJSON (Considered p a), Ord a)
 
 instance Control (Dropdown 'One) where
   type Val (Dropdown 'One) a = Maybe a
+  hygiene  :: Applicative f          => (Hygiene -> f Hygiene)   -> Dropdown 'One a -> f (Dropdown 'One a)
   hygiene f d = (\x -> d {_toggle = Closed x }) <$> f (togHygiene $ _toggle d)
+  value    :: (Applicative f, Ord a) => (Maybe a -> f (Maybe a)) -> Dropdown 'One a -> f (Dropdown 'One a)
   value   f d = maybe d (select' d) <$> f (selected d)
 
 instance Control (Dropdown 'AtleastOne) where
@@ -128,24 +131,6 @@ data Theme m = Theme
   }
 
 
-bootstrap :: Dropdown p b -> Theme m
-bootstrap Dropdown {..} = Theme
-  { _wrapper = div
-    [ className [ ("dropdown", True)
-                , ("show", _toggle == Open) ]
-    ]
-  , _header  = pure . button
-    [ className [ "btn", "btn-secondary", "dropdown-toggle" ]
-    , type' "button"
-    ]
-  , _list    = div
-    [ className [ ("dropdown-menu", True)
-                , ("show", _toggle == Open) ]
-    ]
-  , _item    = a [ className "dropdown-item", textProperty "style" "cursor:pointer" ]
-  }
-
-
 semantic :: Dropdown p b -> Theme m
 semantic Dropdown {..} = Theme
   { _wrapper = div
@@ -174,7 +159,7 @@ act x | _toggle x == Open =
   close $ case considered x of
     Just _ -> choose x
     _      -> x
-act x | otherwise = open x
+act x = open x
 
 
 dropdown ::
