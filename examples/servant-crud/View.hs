@@ -9,7 +9,6 @@
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -28,7 +27,6 @@ import           Data.Coerce                       (Coercible)
 import           Data.Maybe                        (fromMaybe, isNothing)
 import           Data.String                       (IsString)
 import           Data.Text                         as T
-import           Prelude                           hiding (div)
 import           Shpadoinkle                       (Html, MonadJSM, text)
 import qualified Shpadoinkle.Html                  as H
 import           Shpadoinkle.Lens                  ((<%), (<+))
@@ -51,8 +49,6 @@ import           Shpadoinkle.Widgets.Types         (Consideration, Considered,
                                                     validate, withOptions')
 
 import           Types
-
-import           Debug.Trace
 
 
 default (Text, [])
@@ -181,9 +177,10 @@ editForm mid ef = H.div_
       , H.class' "btn btn-primary"
       , H.disabled $ isNothing isValid
       ] [ "Save" ]
+
     ]
-  ] where errs = trace (show $ validate ef) $ validate $ trace (show ef) ef
-          isValid = trace (show $ getValid errs) $ getValid errs
+  ] where errs = validate ef
+          isValid = getValid errs
 
 
 start :: (Monad m, CRUDSpaceCraft m) => Route -> m Frontend

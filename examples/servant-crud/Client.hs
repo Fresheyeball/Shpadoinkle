@@ -3,23 +3,22 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeApplications           #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
 
 module Main where
 
 
-import           Control.Monad.Catch            (MonadThrow)
-import           Control.Monad.Reader           (MonadIO)
-import           Data.Proxy                     (Proxy (..))
-import           Servant.API                    ((:<|>) (..))
+import           Control.Monad.Catch         (MonadThrow)
+import           Control.Monad.Reader        (MonadIO)
+import           Data.Proxy                  (Proxy (..))
+import           Servant.API                 ((:<|>) (..))
 import           Shpadoinkle
-import           Shpadoinkle.Backend.ParDiff    (runParDiff)
-import           Shpadoinkle.Html.Utils         (getBody)
-import           Shpadoinkle.Router             (fullPageSPA, withHydration)
-import           Shpadoinkle.Router.Client      (ClientM, client, runXHR)
-import           Shpadoinkle.Widgets.Types.Form (Status (Valid))
-import           UnliftIO                       (MonadUnliftIO (..),
-                                                 UnliftIO (..))
+import           Shpadoinkle.Backend.ParDiff (runParDiff)
+import           Shpadoinkle.Html.Utils      (getBody)
+import           Shpadoinkle.Router          (fullPageSPA, withHydration)
+import           Shpadoinkle.Router.Client   (client, runXHR)
+import           UnliftIO                    (MonadUnliftIO (..), UnliftIO (..))
 
 import           Types
 import           View
@@ -43,13 +42,6 @@ instance CRUDSpaceCraft App where
   updateSpaceCraft x y = runXHR App $ updateSpaceCraftM x y
   createSpaceCraft     = runXHR App . createSpaceCraftM
   deleteSpaceCraft     = runXHR App . deleteSpaceCraftM
-
-
-listSpaceCraftM   :: ClientM [SpaceCraft]
-getSpaceCraftM    :: SpaceCraftId -> ClientM (Maybe SpaceCraft)
-updateSpaceCraftM :: SpaceCraftId -> SpaceCraftUpdate 'Valid -> ClientM ()
-createSpaceCraftM :: SpaceCraftUpdate 'Valid -> ClientM SpaceCraftId
-deleteSpaceCraftM :: SpaceCraftId -> ClientM ()
 
 
 (listSpaceCraftM :<|> getSpaceCraftM :<|> updateSpaceCraftM :<|> createSpaceCraftM :<|> deleteSpaceCraftM)
