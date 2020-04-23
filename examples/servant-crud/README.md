@@ -1,7 +1,7 @@
 # See the example
 
 ```bash
-./run-crud.sh
+./examples/servant-crud/run-crud.sh
 ```
 
 This is the batteries included example. A Shpadoinkle single page application, exploiting:
