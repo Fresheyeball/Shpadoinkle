@@ -9,19 +9,16 @@
 module Main where
 
 
-import           Control.Lens                     (set, to, (%~), (.~), (?~),
-                                                   (^.), _Wrapped)
-import           Data.Text                        hiding (count, filter, length)
-import           Prelude                          hiding (div, unwords)
+import           Control.Lens                  (set, to, (%~), (.~), (?~), (^.),
+                                                _Wrapped)
+import           Data.Text                     hiding (count, filter, length)
+import           Prelude                       hiding (div, unwords)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.Snabbdom
-import           Shpadoinkle.Html                 hiding (main)
+import           Shpadoinkle.Html              hiding (main)
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Memo
 import           Shpadoinkle.Html.Utils
-#ifndef ghcjs_HOST_OS
-import           Language.Javascript.JSaddle.Warp
-#endif
 
 import           TODOMVCAtomic.Types
 import           TODOMVCAtomic.Update
@@ -137,9 +134,5 @@ app = do
 
 
 main :: IO ()
-#ifdef ghcjs_HOST_OS
-main = app
-#else
-main = run 8080 app
-#endif
+main = runJSorWarp 8080 app
 

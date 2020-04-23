@@ -1,7 +1,9 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE RecordWildCards      #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
 module Main where
@@ -9,16 +11,20 @@ module Main where
 
 import           Control.Monad.IO.Class            (liftIO)
 import           Data.Text
-#ifndef ghcjs_HOST_OS
-import           Language.Javascript.JSaddle.Warp
-#endif
+import           Prelude                           hiding (div)
 
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Html                  (div_, href, id', link', rel)
+import           Shpadoinkle.Html                  as H (a, button, className,
+                                                         div, div_, href, id',
+                                                         link', rel,
+                                                         textProperty, type')
 import           Shpadoinkle.Html.Utils
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
 import           Shpadoinkle.Widgets.Types
+
+
+default (Text)
 
 
 data Cheese = Cheddar | Munster | Mozzeralla
@@ -47,6 +53,24 @@ view m = div_
   , (\x -> m {_pickAtleastOne = x}) <$>
     dropdown bootstrap defConfig { _attrs = [ id' "AtleastOne" ] } (_pickAtleastOne m)
   ]
+  where
+  bootstrap Dropdown {..} = Dropdown.Theme
+    { _wrapper = div
+      [ className [ ("dropdown", True)
+                  , ("show", _toggle == Open) ]
+      ]
+    , _header  = pure . button
+      [ className ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
+      , type' "button"
+      ]
+    , _list    = div
+      [ className [ ("dropdown-menu", True)
+                  , ("show", _toggle == Open) ]
+      ]
+    , _item    = a [ className "dropdown-item"
+                   , textProperty "style" "cursor:pointer" ]
+    }
+
 
 
 initial :: Model
@@ -60,8 +84,4 @@ app = do
 
 
 main :: IO ()
-#ifdef ghcjs_HOST_OS
-main = app
-#else
-main = run 8080 app
-#endif
+main = runJSorWarp 8080 app

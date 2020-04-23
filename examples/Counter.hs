@@ -1,21 +1,17 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
 module Main where
 
 
-import           Control.Monad.IO.Class           (liftIO)
-import           Data.Text                        (pack)
-import           Prelude                          hiding (span)
-#ifndef ghcjs_HOST_OS
-import           Language.Javascript.JSaddle.Warp
-#endif
+import           Control.Monad.IO.Class      (liftIO)
+import           Data.Text                   (pack)
+import           Prelude                     hiding (span)
 
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Html                 (br'_, button, div_, h2_, id',
-                                                   onClick, span)
+import           Shpadoinkle.Html            (br'_, button, div_, h2_, id',
+                                              onClick, span)
 import           Shpadoinkle.Html.Utils
 
 
@@ -37,9 +33,5 @@ app = do
 
 
 main :: IO ()
-#ifdef ghcjs_HOST_OS
-main = app
-#else
-main = run 8080 app
-#endif
+main = runJSorWarp 8080 app
 
