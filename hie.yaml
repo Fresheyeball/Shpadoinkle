@@ -54,3 +54,15 @@ cradle:
         cradle:
           cabal:
             component: "counter"
+
+    - path: "./examples/TODOMVC.hs"
+      config:
+        cradle:
+          cabal:
+            component: "TODOMVC"
+
+    - path: "./examples/TODOMVC"
+      config:
+        cradle:
+          cabal:
+            component: "TODOMVC"

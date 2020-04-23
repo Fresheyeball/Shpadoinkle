@@ -122,5 +122,7 @@ app = do
 
 
 main :: IO ()
-main = runJSorWarp 8080 app
+main = do
+  putStrLn "running app"
+  runJSorWarp 8080 app
 

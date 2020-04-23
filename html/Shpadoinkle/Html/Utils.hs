@@ -26,7 +26,8 @@ addStyle x = do
   link <- createElement doc "link"
   setAttribute link "href" x
   setAttribute link "rel" "stylesheet"
-  () <$ appendChild doc link
+  headRaw <- Doc.getHeadUnsafe doc
+  () <$ appendChild headRaw link
 
 
 setTitle :: MonadJSM m => Text -> m ()
