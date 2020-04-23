@@ -7,7 +7,7 @@
 
 Shpadoinkle is a UI programming model focused on simplicity and performance.
 
-Currently builds and runs with **ghc 8.4.x** and **ghcjs 8.4.x**
+Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
 
 [See the TODOMVC example here.](http://fresheyeball.gitlab.io/Shpadoinkle/)
 
@@ -15,22 +15,25 @@ Currently builds and runs with **ghc 8.4.x** and **ghcjs 8.4.x**
 
 Like most GHCjs projects, this is build with [Nix](https://nixos.org/)
 
+Both builds have `--arg isJS` to chose GHC or GHCjs (defaults to false), and `--argstr compiler ghc864` to select compiler version.
+
 ### build ghcjs version
 
 ```bash
-nix-build
+nix-build --arg isJS true
 ```
 
 ### build ghc version
 
 ```bash
-nix-build --argstr compiler ghc843
+nix-build
 ```
+
 
 ### running the todomvc example
 
 ```
-nix-build --argstr compiler ghc843
+nix-build --argstr compiler ghc864
 ./result/bin/todomvc
 open http://localhost:8080
 ```
