@@ -42,7 +42,7 @@ module Shpadoinkle
   , baked
   , props, children, name, textContent, injectProps
   , MonadJSM, JSM, liftJSM
-  , newTVarIO
+  , newTVarIO, readTVarIO
   , runJSorWarp
   , runJSM, askJSM
   ) where
