@@ -10,8 +10,8 @@
   jsaddle-src = super.fetchFromGitHub
     { owner = "ghcjs";
       repo = "jsaddle";
-      rev = "9b37e9972108f77e773ad0aa65ac2dd394d5f61e";
-      sha256 = "0j1kbmck88drdgjj50si20n7iiyhbddgpwd3siclgpkpqa2gq1j0";
+      rev = "d569be43f92b9b8c01dc3ee4c41401ab406a2076";
+      sha256 = "1m1xxy4l9ii91k1k504qkxh9k1ybprm1m66mkb9dqlwcpyhcccmv";
     };
 
 
@@ -35,8 +35,8 @@ in {
     { packages = super.haskell.packages //
       { "${util.compilerjs}" = with super.haskell.lib;
       let dontJS = if isJS then x: dontHaddock (dontCheck x) else id;
-      in super.haskell.packages.${util.compilerjs}.override {
-        overrides = hself: hsuper: {
+      in super.haskell.packages.${util.compilerjs}.override (old: {
+        overrides = super.lib.composeExtensions (old.overrides or (_:_: {})) (hself: hsuper: {
           hashable             = dontJS hsuper.hashable;
           comonad              = dontJS hsuper.comonad;
           cryptohash-sha1      = dontJS hsuper.cryptohash-sha1;
@@ -66,8 +66,8 @@ in {
           jsaddle              =            hself.callCabal2nix "jsaddle"              "${jsaddle-src}/jsaddle" {};
 
 #          Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
-        };
-      };
+        });
+      });
     };
   };
 }
