@@ -3,6 +3,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
+-- | Helper for querying the server from client side code, using a derived client.
+-- This module exists to save you from having to use CPP yourself.
 
 module Shpadoinkle.Router.Client
   ( runXHR
@@ -25,6 +27,8 @@ import           UnliftIO
 import           Shpadoinkle
 
 
+-- | Run the ClientM from Servant as an XHR request.
+-- Raises an exception if evalued with GHC.
 runXHR :: MonadIO m => MonadThrow m => (JSM a -> m a) -> ClientM a -> m a
 #ifdef ghcjs_HOST_OS
 runXHR f m = f $ either throwM pure =<< runClientM m

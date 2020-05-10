@@ -2,15 +2,18 @@ name:         Shpadoinkle-backend-static
 license:      BSD3
 license-file: LICENSE
 author:       Isaac Shapira
-version:      0.0.0.1
+version:      0.1.0.0
 maintainer:   fresheyeball@protonmail.com
 category:     Web
 build-type:   Simple
+synopsis:     A backend for rendering Shpadoinkle as Text.
+description:
+  Shpadoinkle's static backend, renders Html as Text. Event listeners are ignored.
+  This is useful when rendering on the server, or for static site generation.
 
 
 ghc-options:
     - -Wall
-    - -Werror
     - -Wcompat
     - -fwarn-redundant-constraints
     - -fwarn-incomplete-uni-patterns
@@ -19,8 +22,13 @@ ghc-options:
     - -fwarn-identities
 
 
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+
 dependencies:
-    - base
+    - base >= 4.12.0 && < 4.15
 
 
 library:
@@ -28,18 +36,7 @@ library:
       Shpadoinkle.Backend.Static
   source-dirs: .
   dependencies:
-    - jsaddle
-    - unliftio
-    - compactable
-    - uuid
-    - neat-interpolation
-    - containers
-    - these
-    - lens
-    - random
-    - text
-
-    - mtl
-    - file-embed
+    - compactable >= 0.1.2 && < 0.2
+    - text        >= 1.2.3 && < 1.3
 
     - Shpadoinkle

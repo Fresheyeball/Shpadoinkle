@@ -1,5 +1,12 @@
 # Shpadoinkle Core
 
+[![Goldwater](https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg)](https://gitlab.com/fresheyeball/Shpadoinkle)
+[![BSD-3](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![built with nix](https://img.shields.io/badge/built%20with-nix-41439a)](https://builtwithnix.org)
+[![Hackage](https://img.shields.io/hackage/v/Shpadoinkle.svg)](https://hackage.haskell.org/package/Shpadoinkle)
+[![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle)
+[![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle)
+
 Shpadoinkle is a programming model for UI development, oriented around simplicity,
 performance, and ergonomics.
 

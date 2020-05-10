@@ -1,7 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes       #-}
 {-# LANGUAGE CPP                       #-}
 {-# LANGUAGE DataKinds                 #-}
-{-# LANGUAGE EmptyDataDecls            #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ExtendedDefaultRules      #-}
 {-# LANGUAGE FlexibleInstances         #-}
@@ -17,6 +16,16 @@
 {-# LANGUAGE TypeOperators             #-}
 {-# LANGUAGE UndecidableInstances      #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
+
+-- | This module provides for Servant based routing for Shpadoinkle applications.
+-- The technique in use is standard for Servant. We have a GADT @Router@, and some
+-- type class inductive programming with class @HasRouter@. The @Router@ the term
+-- necissary for the runtime operation of single page application routing.
+--
+-- State changes are tracked by the "popstate" event and an @MVar ()@. Ideally this is
+-- done the browser's native api's only, and not an @MVar@. However that approach is
+-- blocked by a but in GHCjs which is documented here https://stackoverflow.com/questions/59954787/cant-get-dispatchevent-to-fire-in-ghcjs.
 
 
 module Shpadoinkle.Router
@@ -91,8 +100,14 @@ class Routed a r where redirect :: r -> Redirect a
 
 syncRoute :: MVar ()
 syncRoute = unsafePerformIO newEmptyMVar
+{-# NOINLINE syncRoute #-}
 
 
+-- | When using serverside rendering you may benefit from seeding the page with
+-- data. This function get an assumed global variable on the page called "initState"
+-- if it's found, we return that. Otherwise we use the provided (r -> m a) function
+-- to generate the init state for our app, based on the currout route. Typically
+-- this is used on the client side.
 withHydration :: (MonadJSM m, FromJSON a) => (r -> m a) -> r -> m a
 withHydration s r = do
   i <- liftJSM $ fromJSVal =<< jsg "initState"
@@ -100,11 +115,16 @@ withHydration s r = do
     Just fe -> return fe
     _       -> s r
 
+-- | When using serverside rendering you may benefit from seeding the page with
+-- data. This function returns a script tag that makes a global variable "initState"
+-- containing a JSON representation to be used as the initial state of the application
+-- on page load. Typically this is used on the server side.
 toHydration :: ToJSON a => a -> Html m b
 toHydration fe =
   h "script" [] [ text . decodeUtf8 . toStrict $ "window.initState = '" <> encode fe <> "'" ]
 
 
+-- | Change the browser's URL to the canonical URL for a given route `r`.
 navigate :: forall a m r. MonadJSM m => Routed a r => r -> m ()
 navigate r = do
   w <- currentWindowUnchecked
@@ -117,6 +137,10 @@ navigate r = do
       liftIO $ putMVar syncRoute ()
 
 
+-- | This method wraps @shpadoinkle@ providing for a convenient entrypoint
+-- for single page applications. It wires together your normal @shpadoinkle@
+-- app components with a function to respond to route changes, and the route mapping
+-- itself.
 fullPageSPA :: forall layout b a r m
    . HasRouter layout
   => Backend b m a
