@@ -1,16 +1,20 @@
 name:         Shpadoinkle-backend-snabbdom
 license:      BSD3
 license-file: LICENSE
-version:      0.0.0.1
+version:      0.1.0.0
 author:       Isaac Shapira
 maintainer:   fresheyeball@protonmail.com
 category:     Web
 build-type:   Simple
+synopsis:     Use the high-performance Snabbdom virtual dom library written in JavaScript.
+description:
+  Snabbdom is a battle-tested virtual dom library for JavaScript. It's extremely fast, lean, and modular.
+  Snabbdom's design made it a natural choice for a Shpadoinkle rendering backend, as it has a similar core
+  philosophy of "just don't do much" and is friendly to purely functional binding.
 
 
 ghc-options:
     - -Wall
-    - -Werror
     - -Wcompat
     - -fwarn-redundant-constraints
     - -fwarn-incomplete-uni-patterns
@@ -19,8 +23,14 @@ ghc-options:
     - -fwarn-identities
 
 
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+  - Shpadoinkle/Backend/Snabbdom/Setup.js
+
+
 dependencies:
-    - base
+    - base >= 4.12.0 && < 4.15
 
 
 library:
@@ -28,10 +38,13 @@ library:
       Shpadoinkle.Backend.Snabbdom
   source-dirs: .
   dependencies:
-    - jsaddle
-    - text
+    - jsaddle    >= 0.9.7 && < 0.20
+    - text       >= 1.2.3 && < 1.3
 
-    - mtl
-    - file-embed
+    - mtl        >= 2.2.2 && < 2.3
+    - file-embed >= 0.0.11 && < 0.1
 
     - Shpadoinkle
+
+
+git: https://gitlab.com/fresheyeball/Shpadoinkle.git

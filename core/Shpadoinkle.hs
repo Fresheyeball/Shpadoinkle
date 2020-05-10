@@ -20,10 +20,10 @@
 {-# LANGUAGE UndecidableInstances   #-}
 
 {-|
-   I think I know exactly what I mean.
+   I think I know precisely what I mean.
 
    A frontend abstraction motivated by simplicity, performance, and egonomics.
-   This core module provides core abstractions and types with no implimentation details of any kind. IE no batteries included.
+   This module provides core abstractions and types with almost no implimentation details. IE no batteries included.
    You may use this model a la carte, build ontop of it, or include more Backend packages for additional batteries.
 
    Backend is focused on letting you build your frontend the way you want to. And so is as unopinionated as possible, beyond providing a concrete programming model.
@@ -82,6 +82,9 @@ data Html :: (Type -> Type) -> Type -> Type where
 
 -- | Natural Transformation
 type m ~> n = forall a. m a -> n a
+
+-- | A type alias to support scenarios where
+-- the view code event listeners are pure.
 type Html' a = forall m. Applicative m => Html m a
 
 
@@ -145,7 +148,7 @@ textContent inj = \case
   n -> pure n
 
 
--- Inject props into an existing @Node@
+-- | Inject props into an existing @Node@
 injectProps :: [(Text, Prop m o)] -> Html m o -> Html m o
 injectProps ps html = case html of
   Node t ps' cs -> Node t (ps' ++ ps) cs
@@ -168,6 +171,7 @@ text = TextNode
 -- | Construct a 'PFlag'
 flag :: Bool -> Prop m o
 flag = PFlag
+
 
 -- | Construct a simple 'PListener` that will perform an action.
 listener :: m o -> Prop m o
@@ -210,7 +214,7 @@ data Prop m o where
 -- | Props are also merely 'Functor's not 'Monad's and not 'Applicative' by design.
 deriving instance Functor m => Functor (Prop m)
 
-
+-- | Type alias for convenience. Typing out the nested brackets is tiresome.
 type Props m o = [(Text, Prop m o)]
 
 
@@ -362,7 +366,8 @@ shpadoinkle toJSM toM initial model view stage = do
     _ <- j $ patch c Nothing n :: JSM (VNode b m)
     return ()
 
-
+-- | Wrapper around @shpadoinkle@ for full page apps
+-- that do not need outside control of the territory
 fullPage
   :: Backend b m a => Territory t => Eq a
   => (m ~> JSM)
@@ -382,6 +387,12 @@ fullPage g f i view getStage = do
 {-# INLINE fullPage #-}
 
 
+-- | Wrapper around @shpadoinkle@ for full page apps
+-- that do not need outside control of the territory
+-- where actions are performed directly in JSM.
+--
+-- This set of assumptions is extremely common when starting
+-- a new project.
 fullPageJSM
   :: Backend b JSM a => Territory t => Eq a
   => (t a -> b JSM ~> JSM)
@@ -397,6 +408,9 @@ fullPageJSM = fullPage id
 {-# INLINE fullPageJSM #-}
 
 
+-- | Start the program!
+--
+-- For GHC or GHCjs. I saved your from using CPP directly. Your welcome.
 runJSorWarp :: Int -> JSM () -> IO ()
 #ifdef ghcjs_HOST_OS
 runJSorWarp _ = id

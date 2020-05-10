@@ -1,6 +1,9 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+{-|
+  Get your view as plain text, ignoring event listeners.
+-}
 
 module Shpadoinkle.Backend.Static ( renderStatic ) where
 
@@ -12,6 +15,7 @@ import           Data.Text
 import           Shpadoinkle         hiding (name, props, text)
 
 
+-- | Render @Shpadoinkle.Html@ as @Text@
 renderStatic :: Html m a -> Text
 renderStatic = \case
   Node tag props _ | isSelfClosing tag

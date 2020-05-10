@@ -1,1 +1,1 @@
-import ../default.nix { pack = "Shpadoinkle-backend-snabbdom"; }
+import ../../default.nix { pack = "Shpadoinkle-backend-snabbdom"; }

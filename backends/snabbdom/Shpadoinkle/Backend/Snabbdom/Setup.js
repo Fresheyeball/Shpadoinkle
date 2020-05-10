@@ -8,7 +8,7 @@ const addScript = x => {
   head.appendChild(s);
 }
 
-const cdnjs = x => "https://lib.arvancloud.com/ar/snabbdom/0.7.2/" + x;
+const cdnjs = x => "https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.4/" + x;
 
 addScript(cdnjs("snabbdom.min.js"));
 addScript(cdnjs("snabbdom-class.min.js"));

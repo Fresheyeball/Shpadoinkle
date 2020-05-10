@@ -1,16 +1,22 @@
-{-# LANGUAGE AllowAmbiguousTypes    #-}
-{-# LANGUAGE CPP                    #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE InstanceSigs           #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE AllowAmbiguousTypes   #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
+
+
+-- | Since the single page application URIs are specified with Servant, we can automate much
+-- of the process of serving the application with server-side rendering. This module provides
+-- the basic infrastructure for serving rendered HTML using the same code that would be used
+-- to render the same route on the client-side. Ensuring a consistent rendering, whether a
+-- URI is accessed via a client-side popstate event, or via the initial page load.
 
 
 module Shpadoinkle.Router.Server where
@@ -34,6 +40,7 @@ import           Shpadoinkle.Backend.Static
 import           Shpadoinkle.Router
 
 
+-- | Helper to serve a @ByteString@ as a file from the web application interface.
 toFile :: Piece -> ByteString -> File
 toFile p bs = File
   { fileGetSize     = fromIntegral $ BS.length bs
@@ -44,7 +51,13 @@ toFile p bs = File
   }
 
 
-defaultSPAServerSettings :: FilePath -> IO (Html m a) -> StaticSettings
+-- | Serve index.html generated from a Shpadoinkle view, using the static backend, otherwise serve out of a directory.
+defaultSPAServerSettings
+  :: FilePath
+  -- ^ Directory to try files
+  -> IO (Html m a)
+  -- ^ Get the index.html page
+  -> StaticSettings
 defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex, ssMaxAge = MaxAgeSeconds 0 }
   where
 
@@ -55,13 +68,21 @@ defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex, ssMaxAg
     res <- ssLookupFile settings ps
     html <- mhtml
     return $ case (res, toPieces ["index.html"]) of
-      (LRNotFound, Just [ps'])                           -> LRFile $ file ps' html
-      (_,          Just [ps']) | [ps'] == ps || ps == [] -> LRFile $ file ps' html
-      _                                                  -> res
+      (LRNotFound, Just [ps'])                                  -> LRFile $ file ps' html
+      (_,          Just [ps']) | [ps'] == ps || Prelude.null ps -> LRFile $ file ps' html
+      _                                                         -> res
 
 
+-- | Serve the UI by generating a Servant Server from the SPA URIs
 class ServeRouter layout route where
-  serveUI :: FilePath -> (route -> IO (Html m a)) -> layout :>> route -> Server layout
+  serveUI
+    :: FilePath
+    -- ^ Where should we look for static assets?
+    -> (route -> IO (Html m a))
+    -- ^ How shall we get the page based on the requested route?
+    -> layout :>> route
+    -- ^ What is the relationship between URIs and routes?
+    -> Server layout
 
 
 instance (ServeRouter x r, ServeRouter y r)
@@ -103,7 +124,7 @@ instance ServeRouter sub r
   => ServeRouter ((path :: Symbol) :> sub) r where
 
   serveUI :: FilePath -> (r -> IO (Html m a)) -> (path :> sub) :>> r -> Server (path :> sub)
-  serveUI root view = serveUI @sub root view
+  serveUI = serveUI @sub
   {-# INLINABLE serveUI #-}
 
 instance ServeRouter Raw r where
