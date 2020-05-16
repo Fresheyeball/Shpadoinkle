@@ -8,17 +8,17 @@
 
 
   jsaddle-src = super.fetchFromGitHub
-    { owner = "ghcjs";
-      repo = "jsaddle";
-      rev = "d569be43f92b9b8c01dc3ee4c41401ab406a2076";
+    { owner  = "ghcjs";
+      repo   = "jsaddle";
+      rev    = "d569be43f92b9b8c01dc3ee4c41401ab406a2076";
       sha256 = "1m1xxy4l9ii91k1k504qkxh9k1ybprm1m66mkb9dqlwcpyhcccmv";
     };
 
 
   servant-src = super.fetchFromGitHub
-    { owner = "haskell-servant";
-      repo = "servant";
-      rev = "b4e5aa0deff238e117137be68a4345bb02b7a80b";
+    { owner  = "haskell-servant";
+      repo   = "servant";
+      rev    = "b4e5aa0deff238e117137be68a4345bb02b7a80b";
       sha256 = "0x27bgrasbxzp045rqj4ldrfnm2k832ch7vfkl9s7xj0afrcy6pg";
     };
 
@@ -39,6 +39,12 @@ in {
         overrides = super.lib.composeExtensions (old.overrides or (_:_: {})) (hself: hsuper: {
           hashable             = dontJS hsuper.hashable;
           comonad              = dontJS hsuper.comonad;
+
+          compactable          = doJailbreak hsuper.compactable;
+          beam-core            = doJailbreak hsuper.beam-core;
+          beam-migrate         = doJailbreak hsuper.beam-migrate;
+          ghcid                = doJailbreak hsuper.ghcid;
+
           cryptohash-sha1      = dontJS hsuper.cryptohash-sha1;
           cryptohash-md5       = dontJS hsuper.cryptohash-md5;
           extra                = dontJS hsuper.extra;
@@ -65,7 +71,7 @@ in {
           jsaddle-warp         = dontCheck (hself.callCabal2nix "jsaddle-warp"         "${jsaddle-src}/jsaddle-warp" {});
           jsaddle              =            hself.callCabal2nix "jsaddle"              "${jsaddle-src}/jsaddle" {};
 
-#          Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
+          # Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
         });
       });
     };

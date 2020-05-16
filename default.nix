@@ -18,6 +18,8 @@ let
         "*.cabal"
         "*result*"
         "*dist*"
+        "*.nix"
+        "*.md"
       ];
 
 

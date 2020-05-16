@@ -45,7 +45,7 @@ when:
 
 
 dependencies:
-    - base          >= 4.12.0 && < 4.15
+    - base          >= 4.12.0 && < 4.16
 
     - aeson         >= 1.4.4 && < 1.5
     - compactable   >= 0.1.2 && < 0.2

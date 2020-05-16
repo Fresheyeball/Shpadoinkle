@@ -28,7 +28,7 @@ extra-source-files:
 
 
 dependencies:
-    - base >= 4.12.0 && < 4.15
+    - base >= 4.12.0 && < 4.16
 
 
 library:
