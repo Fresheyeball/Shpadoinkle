@@ -8,7 +8,8 @@
 
 ### I think I know precisely what I mean...
 
-Shpadoinkle is a UI programming model focused on simplicity and performance.
+Shpadoinkle is a programming model for user interface development. It supports flexible,
+  simple, declarative code by modeling user interface interactions as Coalgebras.
 
 Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
 
