@@ -34,6 +34,26 @@ Like most GHCjs projects, this is build with [Nix](https://nixos.org/)
 
 Both builds have `--arg isJS` to chose GHC or GHCjs (defaults to false), and `--argstr compiler ghc864` to select compiler version.
 
+# Cachix
+
+This repo uses the optimized build of GHCjs created by [Obsidian Systems](https://obsidian.systems/), which impacts the JS build of every package that depends on `text`.
+There is also an overlay that pins versions of certain packages. These packages are **NOT** cached on `cache.nixos.org`, so settle in for a long
+long initial build. Alternatively you an use [Cachix](https://cachix.org/), which provides free nix cache hosting. The CI for this project keeps Cachix up-to-date with `master`
+
+[https://shpadoinkle.cachix.org](https://shpadoinkle.cachix.org)
+
+
+```bash
+# Install Nix
+bash <(curl -L https://nixos.org/nix/install)
+# Install cachix
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+# Use the cache
+cachix use shpadoinkle
+```
+
+Now builds should pull artifacts from Cachix instead of building them.
+
 ### build ghcjs version
 
 ```bash

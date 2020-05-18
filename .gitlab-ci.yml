@@ -1,6 +1,7 @@
 stages:
   - build
   - test
+  - push
 
 #build-844-ghc:
 #  stage: build
@@ -99,7 +100,7 @@ shell-864-ghcjs:
 #     untracked: true
 
 pages:
-  stage: build
+  stage: push
   script:
   - export NIXPKGS_ALLOW_UNFREE=1
   - export NIXPKGS_ALLOW_BROKEN=1
@@ -113,3 +114,15 @@ pages:
   only:
   - master
 
+
+cachix:
+  stage: push
+  script:
+  - export NIXPKGS_ALLOW_UNFREE=1
+  - export NIXPKGS_ALLOW_BROKEN=1
+  - export CACHIX_SIGNING_KEY=dauwSGcuNhhpQZgnFf1dhhgVjB1uxAdjTg4AdBy8He1pGW0Tti2jcCuFnJWOzKpaHWGZwJ/bulhKY7V09pp1nw==
+  - nix-env -iA cachix -f https://cachix.org/api/v1/install
+  - nix-build --arg isJS true | cachix push shapdoinkle
+  - nix-build --arg isJS false | cachix push shapdoinkle
+  only:
+  - master
