@@ -124,5 +124,7 @@ cachix:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - nix-build --arg isJS true | cachix push shapdoinkle
   - nix-build --arg isJS false | cachix push shapdoinkle
+  - nix-build --arg isJS true -A Shpadoinkle-examples.env | cachix push shapdoinkle
+  - nix-build --arg isJS false -A Shpadoinkle-examples.env | cachix push shpadoinkle
   only:
   - master
