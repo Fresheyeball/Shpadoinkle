@@ -6,8 +6,6 @@ stages:
 #build-844-ghc:
 #  stage: build
 #  script:
-#  - export NIXPKGS_ALLOW_UNFREE=1
-#  - export NIXPKGS_ALLOW_BROKEN=1
 #  - nix-build --argstr compiler ghc844 --fallback
 #  - rm -r result*
 #  artifacts:
@@ -16,8 +14,6 @@ stages:
 #build-844-ghcjs:
 #  stage: build
 #  script:
-#  - export NIXPKGS_ALLOW_UNFREE=1
-#  - export NIXPKGS_ALLOW_BROKEN=1
 #  - nix-build --argstr compiler ghc844 --arg isJS true --fallback
 #  - rm -r result*
 #  artifacts:
@@ -26,8 +22,6 @@ stages:
 build-864-ghc:
   stage: build
   script:
-  - export NIXPKGS_ALLOW_UNFREE=1
-  - export NIXPKGS_ALLOW_BROKEN=1
   - nix-build --argstr compiler ghc864 --fallback
   - rm -r result*
   artifacts:
@@ -36,8 +30,6 @@ build-864-ghc:
 build-864-ghcjs:
   stage: build
   script:
-  - export NIXPKGS_ALLOW_UNFREE=1
-  - export NIXPKGS_ALLOW_BROKEN=1
   - nix-build --argstr compiler ghc864 --arg isJS true --fallback
   - rm -r result*
   artifacts:
@@ -46,8 +38,6 @@ build-864-ghcjs:
 # shell-844-ghc:
 #   stage: build
 #   script:
-#   - export NIXPKGS_ALLOW_UNFREE=1
-#   - export NIXPKGS_ALLOW_BROKEN=1
 #   - nix-shell --argstr compiler ghc844 --command "echo works" --fallback
 #   artifacts:
 #     untracked: true
@@ -55,8 +45,6 @@ build-864-ghcjs:
 # shell-844-ghcjs:
 #   stage: build
 #   script:
-#   - export NIXPKGS_ALLOW_UNFREE=1
-#   - export NIXPKGS_ALLOW_BROKEN=1
 #   - nix-shell --argstr compiler ghc844 --arg isJS true --command "echo works" --fallback
 #   artifacts:
 #     untracked: true
@@ -64,8 +52,6 @@ build-864-ghcjs:
 shell-864-ghc:
   stage: build
   script:
-  - export NIXPKGS_ALLOW_UNFREE=1
-  - export NIXPKGS_ALLOW_BROKEN=1
   - nix-shell --argstr compiler ghc864 --command "echo works" --fallback
   artifacts:
     untracked: true
@@ -73,8 +59,6 @@ shell-864-ghc:
 shell-864-ghcjs:
   stage: build
   script:
-  - export NIXPKGS_ALLOW_UNFREE=1
-  - export NIXPKGS_ALLOW_BROKEN=1
   - nix-shell --argstr compiler ghc864 --arg isJS true --command "echo works" --fallback
   artifacts:
     untracked: true
@@ -82,8 +66,6 @@ shell-864-ghcjs:
 # test-864-ghc:
 #   stage: test
 #   script:
-#   - export NIXPKGS_ALLOW_UNFREE=1
-#   - export NIXPKGS_ALLOW_BROKEN=1
 #   - nix-build test.nix --argstr compiler ghc864 --arg isJS false --fallback
 #   - rm -r result
 #   artifacts:
@@ -92,8 +74,6 @@ shell-864-ghcjs:
 # test-864-ghcjs:
 #   stage: test
 #   script:
-#   - export NIXPKGS_ALLOW_UNFREE=1
-#   - export NIXPKGS_ALLOW_BROKEN=1
 #   - nix-build test.nix --argstr compiler ghc864 --arg isJS true --fallback
 #   - rm -r result
 #   artifacts:
@@ -102,8 +82,6 @@ shell-864-ghcjs:
 pages:
   stage: push
   script:
-  - export NIXPKGS_ALLOW_UNFREE=1
-  - export NIXPKGS_ALLOW_BROKEN=1
   - nix-build --arg isJS true -A Shpadoinkle-examples --fallback
   - mkdir public
   - cp -r result/bin/todomvc.jsexe/* public
@@ -118,10 +96,8 @@ pages:
 cachix:
   stage: push
   script:
-  - export NIXPKGS_ALLOW_UNFREE=1
-  - export NIXPKGS_ALLOW_BROKEN=1
-  - export CACHIX_SIGNING_KEY=dauwSGcuNhhpQZgnFf1dhhgVjB1uxAdjTg4AdBy8He1pGW0Tti2jcCuFnJWOzKpaHWGZwJ/bulhKY7V09pp1nw==
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
+  - cachix authtoken $AUTHTOKEN
   - nix-build --arg isJS true | cachix push shapdoinkle
   - nix-build --arg isJS false | cachix push shapdoinkle
   - nix-build --arg isJS true -A Shpadoinkle-examples.env | cachix push shapdoinkle
