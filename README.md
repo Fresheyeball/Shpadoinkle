@@ -1,6 +1,6 @@
 # Shpadoinkle
 
-[![ZERO](http://fresheyeball.com/doinkle.svg)](https://www.youtube.com/watch?v=0CizU8aB3c8)
+[![ZERO](http://fresheyeball.com/doinkle.svg?bust=1)](https://www.youtube.com/watch?v=0CizU8aB3c8)
 
 [![pipeline status](https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg)](https://gitlab.com/fresheyeball/Shpadoinkle/commits/master)
 [![BSD-3](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
