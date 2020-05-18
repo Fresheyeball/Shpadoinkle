@@ -98,9 +98,9 @@ cachix:
   script:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - cachix authtoken $AUTHTOKEN
-  - nix-build --arg isJS true | cachix push shapdoinkle
-  - nix-build --arg isJS false | cachix push shapdoinkle
-  - nix-build --arg isJS true -A Shpadoinkle-examples.env | cachix push shapdoinkle
+  - nix-build --arg isJS true | cachix push shpadoinkle
+  - nix-build --arg isJS false | cachix push shpadoinkle
+  - nix-build --arg isJS true -A Shpadoinkle-examples.env | cachix push shpadoinkle
   - nix-build --arg isJS false -A Shpadoinkle-examples.env | cachix push shpadoinkle
   only:
   - master
