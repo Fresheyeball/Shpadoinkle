@@ -1,7 +1,5 @@
 stages:
   - build
-  - test
-  - push
 
 #build-844-ghc:
 #  stage: build
@@ -80,7 +78,7 @@ shell-864-ghcjs:
 #     untracked: true
 
 pages:
-  stage: push
+  stage: build
   script:
   - nix-build --arg isJS true -A Shpadoinkle-examples --fallback
   - mkdir public
@@ -94,7 +92,7 @@ pages:
 
 
 cachix:
-  stage: push
+  stage: build
   script:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - cachix authtoken $AUTHTOKEN
