@@ -1,0 +1,75 @@
+name:         Shpadoinkle-experiments
+license:      BSD3
+license-file: LICENSE
+version:      0.0.0.1
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+synopsis:     Example usages of Shpadoinkle
+description:  A collection of illustrative applications to show various Shpadoinkle utilities.
+
+
+ghc-options:
+    - -Wall
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+ghcjs-options:
+    - -Wall
+    - -Wcompat
+    - -fno-warn-missing-home-modules
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+    - -dedupe
+
+
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+
+dependencies:
+    - base >= 4.12.0 && < 4.16
+
+
+executables:
+  todomvcatomic:
+    main: TODOMVCAtomic.hs
+    other-modules:
+      - TODOMVCAtomic.Types
+      - TODOMVCAtomic.Update
+    source-dirs: .
+    dependencies:
+      - text
+      - containers
+      - lens
+
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-backend-snabbdom
+
+  todomvcdata:
+    main: TODOMVCData.hs
+    other-modules: []
+    source-dirs: .
+    dependencies:
+      - text
+      - containers
+      - lens
+
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-backend-snabbdom
+
+
+
+git: https://gitlab.com/fresheyeball/Shpadoinkle.git

@@ -42,21 +42,6 @@ dependencies:
 
 
 executables:
-  todomvcatomic:
-    main: TODOMVCAtomic.hs
-    other-modules:
-      - TODOMVCAtomic.Types
-      - TODOMVCAtomic.Update
-    source-dirs: .
-    dependencies:
-      - text
-      - containers
-      - lens
-
-      - Shpadoinkle
-      - Shpadoinkle-html
-      - Shpadoinkle-backend-snabbdom
-
   todomvc:
     main: TODOMVC.hs
     other-modules:

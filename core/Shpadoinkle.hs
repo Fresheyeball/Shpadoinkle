@@ -37,7 +37,7 @@ module Shpadoinkle
   , Territory (..)
   , type (~>), Html'
   , RawNode (..), RawEvent (..)
-  , h, text, flag
+  , h, text, flag, textProp
   , listener, listen, listenRaw, listen'
   , baked
   , props, children, name, textContent, injectProps
@@ -160,30 +160,48 @@ h :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
 h = Node
 {-# INLINE h #-}
 
+
 -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'
 baked :: JSM RawNode -> Html m o
 baked = Potato
+{-# INLINE baked #-}
+
 
 -- | Construct a 'TextNode'
 text :: Text -> Html m o
 text = TextNode
+{-# INLINE text #-}
+
 
 -- | Construct a 'PFlag'
 flag :: Bool -> Prop m o
 flag = PFlag
+{-# INLINE flag #-}
+
+
+-- | Construct a `PText`
+textProp :: Text -> Prop m o
+textProp = PText
+{-# INLINE textProp #-}
 
 
 -- | Construct a simple 'PListener` that will perform an action.
 listener :: m o -> Prop m o
 listener = PListener . const . const
+{-# INLINE listener #-}
+
 
 -- | Construct a 'PListener' from it's 'Text' name a raw listener.
 listenRaw :: Text -> (RawNode -> RawEvent -> m o) -> (Text, Prop m o)
 listenRaw k = (,) k . PListener
+{-# INLINE listenRaw #-}
+
 
 -- | Construct a 'PListener' from it's 'Text' name and a Monad action.
 listen :: Text -> m o -> (Text, Prop m o)
 listen k = listenRaw k . const . const
+{-# INLINE listen #-}
+
 
 -- | Construct a 'PListener' from it's 'Text' name and an ouput value.
 listen' :: Applicative m => Text -> o -> (Text, Prop m o)
