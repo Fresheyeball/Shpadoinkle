@@ -34,6 +34,7 @@ let
     Shpadoinkle-router           = gitignore ./router;
     Shpadoinkle-widgets          = gitignore ./widgets;
     Shpadoinkle-examples         = gitignore ./examples;
+    Shpadoinkle-experiments      = gitignore ./experiments;
   };
 
 
