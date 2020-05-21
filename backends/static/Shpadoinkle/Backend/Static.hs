@@ -52,7 +52,12 @@ renderProps = Data.Text.unwords . fmapMaybe (uncurry renderProp)
 renderProp :: Text -> Prop m a -> Maybe Text
 renderProp name = \case
   PListener _ -> Nothing
-  PText t     -> Just $ name <> "=\"" <> t <> "\""
+  PText t     -> Just $ lice name <> "=\"" <> t <> "\""
   PFlag True  -> Just name
   PFlag False -> Nothing
+  where
+  lice = \case
+    "className" -> "class"
+    x -> x
+
 
