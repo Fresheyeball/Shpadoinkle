@@ -8,6 +8,8 @@
 
 ### I think I know precisely what I mean...
 
+ 🤠 -> 🥔 🤠
+
 Shpadoinkle is a programming model for user interface development. It supports flexible,
   simple, declarative code by modeling user interface interactions as Coalgebras.
 
