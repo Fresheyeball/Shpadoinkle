@@ -45,7 +45,7 @@ pkgs = import
 
 [WARNING]
 ====
-This does **NOT** add any specific Shpadoinkle modules to your nix package set.
+This does **NOT** add any specific Shpadoinkle modules to your Nix package set.
 You will still need to fold them, with your project's Nix Overlay.
 ====
 
@@ -55,13 +55,13 @@ Extending the Haskell package sets in Nix has some pitfalls.
 
 === No Implicit GHC Version
 
-These overlays target a specific compiler version, and so are applied to targets such as `pkgs.haskell.packages.ghc863` and **not** applied to targets like `pkgs.haskellPackages`. If you modify `haskellPackages` in your overlay, it will be orthoganal to the ones provided.
+These overlays target a specific compiler version, and so are applied to targets such as `pkgs.haskell.packages.ghc863` and **not** applied to targets like `pkgs.haskellPackages`. If you modify `haskellPackages` in your overlay, it will be orthogonal to the ones provided.
 
-You might expect that if the compiler version targeted, is the same as the implicit version in `haskellPackages`, modifications would be kept in sync, this is not the case.
+You might expect that if the compiler version targeted is the same as the implicit version in `haskellPackages`, modifications would be kept in sync; this is not the case.
 
 === Compose Extensions
 
-If overlays modifying Haskell package sets do not use `composeExtensions` new overlays will simply replace previous ones, instead of composing together. Follow this pattern and everything will be ok:
+If overlays modifying Haskell package sets do not use `composeExtensions`, new overlays will simply replace previous ones instead of composing together. Follow this pattern and everything will be OK:
 
 [source,nix]
 ----
@@ -89,6 +89,6 @@ haskell = super.haskell //
 ----
 
 <1> Here for illustrative reasons
-<2> Add packages in your applications Haskell overlay
+<2> Add packages in your application's Haskell overlay
 <3> Override a specific compiler version, not `haskellPackages`
 <4> Use `composeExtensions` to preserve work done in earlier overlays

@@ -4,7 +4,7 @@ Shpadoinkle is built with https://nixos.org/[Nix]. While it is possible to use S
 
 == Get Nix
 
-Nix works on all Linux distrobutions, as well as Darwin based operating systems such as MacOS. To install Nix simply run
+Nix works on all Linux distributions, as well as Darwin-based operating systems such as MacOS. To install Nix simply run
 
 [source,bash]
 ----
