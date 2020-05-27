@@ -7,7 +7,7 @@ let
 in
 stdenv.mkDerivation {
 
-name         = "make-docs";
+name         = "documentation";
 buildInputs  = [ antora ];
 src          = gitignore [
   "*.md"
@@ -48,7 +48,6 @@ buildCommand = ''
   echo Building docs...
 
   antora antora-playbook.yml
-  chmod -R 777 public
   cp -r public/* $out
 '';
 
