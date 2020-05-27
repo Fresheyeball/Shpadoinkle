@@ -48,6 +48,7 @@ buildCommand = ''
   echo Building docs...
 
   antora antora-playbook.yml
+  chmod -R 777 public
   cp -r public/* $out
 '';
 
