@@ -13,14 +13,14 @@
 Shpadoinkle is a programming model for user interface development. It supports flexible,
   simple, declarative code by modeling user interface interactions as Coalgebras.
 
-#### [TODOMVC example](http://fresheyeball.gitlab.io/Shpadoinkle/todomvc)
-
 Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
 
 ## [WIP Documentation](http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html)
 
 * [Getting Started](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html)
 * [Extending an Example](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html)
+
+#### [TODOMVC example](http://fresheyeball.gitlab.io/Shpadoinkle/todomvc)
 
 ## Hackage Package Matrix
 
