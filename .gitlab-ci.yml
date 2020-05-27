@@ -89,13 +89,14 @@ pages:
   - nix-build docs --fallback
 
   - cp -r result/* public
+  - chmod -R 755 public/*
   - rm result
   artifacts:
     paths:
     - public
 
   only:
-  - master
+    - master
 
 
 cachix:
