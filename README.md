@@ -24,7 +24,7 @@ Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
 
 ## Hackage Package Matrix
 
-| Name | Version | Deps | Build |
+| Package | Version | Dependencies | Availablity |
 |---|---|---|---|
 | Core | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle.svg)](https://hackage.haskell.org/package/Shpadoinkle) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle) |
 | Html | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-html.svg)](https://hackage.haskell.org/package/Shpadoinkle-html) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-html.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-html) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-html/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-html) |
