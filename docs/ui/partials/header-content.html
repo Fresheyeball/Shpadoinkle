@@ -1,0 +1,28 @@
+<header class="header" role="banner">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="navbar-item">
+        <a href="{{site.url}}">{{site.title}}</a>
+      </div>
+      {{#if env.ALGOLIA_API_KEY}}
+      <div class="navbar-item hide-for-print">
+        <input id="search-input" type="text" placeholder="Search docs">
+      </div>
+      {{/if}}
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://gitlab.com/fresheyeball/Shpadoinkle">
+          <span class="icon">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/1/18/GitLab_Logo.svg" style="width: 1rem; height: 1rem;" />
+          </span>
+        </a>
+      </div>
+    </div>
+  </nav>
+</header>

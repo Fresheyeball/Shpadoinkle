@@ -1,4 +1,10 @@
-{ isJS ? false, compiler ? "ghc864", pack ? "all", chan ? "e1843646b04fb564abf6330a9432a76df3269d2f", withHoogle ? false }:
+{ isJS ? false
+, compiler ? "ghc864"
+, pack ? "all"
+, chan ? "e1843646b04fb564abf6330a9432a76df3269d2f"
+, withHoogle ? false
+, extra ? (_: b: b)
+}:
 
 let pkgs = import ./pkgs.nix compiler isJS chan; in with pkgs; with lib;
 let
@@ -7,12 +13,7 @@ let
   util = import ./util.nix { inherit compiler isJS; };
 
 
-  gitignore = (callPackage (fetchFromGitHub
-    { owner = "siers";
-      repo = "nix-gitignore";
-      rev = "4f2d85f2f1aa4c6bff2d9fcfd3caad443f35476e";
-      sha256 = "1vzfi3i3fpl8wqs1yq95jzdi6cpaby80n8xwnwa8h2jvcw3j7kdz";
-    }) {}).gitignoreSource
+  gitignore = pkgs.gitignore
       [ ".git"
         "*.ghc*"
         "*.cabal"
@@ -45,23 +46,25 @@ let
     }));
 
 
-  ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ];
+  ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ] ++
+    []; # (if isJS then [ haskell.compiler.ghcjs86 ] else []);
   packages = map (t: haskellPackages.${t}) (attrNames targets ++ [ "Shpadoinkle-tests" ]);
+
+
+  shellBase = {
+    inherit withHoogle;
+    packages    = _: if pack == "all" then packages else [ haskellPackages.${pack} ];
+    COMPILER    = util.compilerjs;
+    buildInputs = ghcTools;
+    shellHook   = ''
+      cat ${./etc/figlet}
+    '';
+  };
 
 
 in
 
 
   if inNixShell
-  then haskellPackages.shellFor {
-    packages = _: if pack == "all" then packages else [ haskellPackages.${pack} ];
-    COMPILER = util.compilerjs;
-    EXAMPLES = "../result";
-    CHROME   = "${google-chrome}/bin/google-chrome-stable";
-    HEADLESS = false;
-    buildInputs = [ selenium-server-standalone chromedriver google-chrome ] ++ ghcTools;
-    inherit withHoogle;
-    shellHook = ''
-      hpack
-    '';
-  } else foldl (ps: p: ps // { ${p.pname} = p; }) {} packages
+  then haskellPackages.shellFor (extra pkgs shellBase)
+  else foldl (ps: p: ps // { ${p.pname} = p; }) {} packages

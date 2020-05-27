@@ -6,8 +6,7 @@ author:       Isaac Shapira
 maintainer:   fresheyeball@protonmail.com
 category:     Web
 build-type:   Simple
-synopsis:     Example usages of Shpadoinkle
-description:  A collection of illustrative applications to show various Shpadoinkle utilities.
+synopsis:     Exploration of the territory
 
 
 ghc-options:

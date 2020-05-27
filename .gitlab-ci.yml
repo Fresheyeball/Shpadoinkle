@@ -81,8 +81,15 @@ pages:
   stage: build
   script:
   - nix-build --arg isJS true -A Shpadoinkle-examples --fallback
-  - mkdir public
-  - cp -r result/bin/todomvc.jsexe/* public
+  - mkdir -p public/todomvc
+
+  - cp -r result/bin/todomvc.jsexe/* public/todomvc
+  - rm -r result
+
+  - nix-build docs --fallback
+
+  - cp -r result/* public
+  - rm -r result
   artifacts:
     paths:
     - public
@@ -96,9 +103,12 @@ cachix:
   script:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - cachix authtoken $AUTHTOKEN
-  - nix-build --arg isJS true | cachix push shpadoinkle
-  - nix-build --arg isJS false | cachix push shpadoinkle
-  - nix-build --arg isJS true -A Shpadoinkle-examples.env | cachix push shpadoinkle
+  - nix-build --arg isJS true                              | cachix push shpadoinkle
+  - nix-build --arg isJS false                             | cachix push shpadoinkle
+  - nix-build --arg isJS true  -A Shpadoinkle-examples.env | cachix push shpadoinkle
   - nix-build --arg isJS false -A Shpadoinkle-examples.env | cachix push shpadoinkle
+  - nix-build --arg isJS true  -A Shpadoinkle-tests.env    | cachix push shpadoinkle
+  - nix-build --arg isJS false -A Shpadoinkle-tests.env    | cachix push shpadoinkle
+  - nix-build docs.env                                     | cachix push shpadoinkle
   only:
   - master

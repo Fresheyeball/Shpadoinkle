@@ -30,6 +30,10 @@ cd examples
 hpack
 cd ..
 
+cd experiments
+hpack
+cd ..
+
 cd tests
 hpack
 cd ..

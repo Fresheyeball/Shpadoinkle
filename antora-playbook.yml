@@ -1,0 +1,22 @@
+site:
+  title: Shpadoinkle Documentation
+  url: https://dev.fresheyeball.com
+  start_page: docs::index.adoc
+content:
+  sources:
+    - url: .
+      start_path: ./docs
+      branches: HEAD
+      edit_url: 'https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/{refname}/docs/{path}'
+ui:
+  bundle:
+    url: ./theme
+  supplemental_files: ./docs/ui
+asciidoc:
+  attributes:
+    experimental: ''
+    sectlinks: ''
+    sectanchors: ''
+    hide-uri-scheme: ''
+output:
+  dir: ./public

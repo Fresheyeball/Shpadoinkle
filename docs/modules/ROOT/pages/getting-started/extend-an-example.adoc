@@ -1,0 +1,106 @@
+= Extend an example
+
+The easiest way to try out Shpadoinkle is to extend one of the examples.
+
+[source,bash]
+----
+git clone https://gitlab.com/fresheyeball/Shpadoinkle.git
+cd Shpadoinkle
+----
+
+== Building Examples
+
+Shpadoinkle works with both https://gitlab.haskell.org/ghc/ghc[GHC] and https://github.com/ghcjs/ghcjs[GHCjs].
+
+=== GHCjs
+
+When built with GHCjs, Shpadoinkle Haskell code is compiled to JavaScript. This is the recommended path for run code in production, for the majority of use-cases.
+
+[source,bash]
+----
+nix-build --arg isJS true -A Shpadoinkle-examples
+----
+
+this will generate a folder called `result`. This contains the output of GHCjs. You can now serve an example. Here we use `warp` which is a static file server written in Haskell. However you can serve `result/bin/counter.jsexe` in any way you like.
+
+[source,bash]
+----
+nix-shell -p haskellPackages.wai-app-static --command "warp -d result/bin/counter.jsexe -p 8080"
+----
+
+open `localhost:8080` in your browser.
+
+=== GHC
+
+When built with GHC, Shpadoinkle runs via https://hackage.haskell.org/package/jsaddle-warp[JSaddle Warp]. This allows frontend Haskell code to be compiled and executed as a backend binary. IO effects are sent to the browser over a websocket, where they are executed by a minimal client written in JavaScript.
+
+[source,bash]
+----
+nix-build --arg isJS false -A Shpadoinkle-examples
+----
+
+this will generate a folder called `result`. This contains the output of GHC. You can now serve an example.
+
+[source,bash]
+----
+./result/bin/counter
+----
+
+open `localhost:8080` in your browser.
+
+== Live development
+
+For live development building a fully optimized build from scratch with `nix-build` can be too slow. When writing code, we need rapid feedback to be productive.
+
+=== GHCID
+
+[quote, ndmitchell]
+Either "GHCi as a daemon" or "GHC + a bit of an IDE". To a first approximation, it opens ghci and runs :reload whenever your source code changes, formatting the output to fit a fixed height console.
+
+https://github.com/ndmitchell/ghcid[GHCID] is supplied by the `nix-shell` in Shpadoinkle. You can use GHCID to get rapid feedback as follows:
+
+[source,bash]
+----
+nix-shell examples
+ghcid --command "cabal repl examples:counter
+----
+
+you can also get this with a one liner
+
+[source,bash]
+----
+nix-shell examples --command "ghcid --command 'cabal repl examples:counter'"
+----
+
+=== Repl Serving
+
+The easiest way to get changes into your browser as fast as possible is to reload main in a repl.
+
+[source,bash]
+----
+nix-shell examples
+cabal repl examples:counter
+----
+
+You can then run the application with `main`. This will serve the application on `localhost:8080`. When you make changes to the code, simply press `[Ctrl+C]` then reload and run `main` once again.
+
+[source,haskell]
+----
+:reload
+main
+----
+
+Refresh your browser to view updates. Live reloading is also possible with JSaddle Warp, but has not yet been implimented.
+
+
+=== Incremental Builds
+
+Right now incremental builds only work with GHC.
+
+[source,bash]
+----
+nix-shell examples
+cabal build examples:counter
+----
+
+using `cabal build` directly will use the standard Haskell incremental builds. Results can be found in the `dist` folder as you would expect.
