@@ -1,19 +1,13 @@
-# Shpadoinkle
+# 🤠 ⟶ 🥔 🤠
 
-[![ZERO](http://fresheyeball.com/doinkle.svg?bust=1)](https://www.youtube.com/watch?v=0CizU8aB3c8)
+### I think I know precisely what I mean...
+
 
 [![pipeline status](https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg)](https://gitlab.com/fresheyeball/Shpadoinkle/commits/master)
 [![BSD-3](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![built with nix](https://img.shields.io/badge/built%20with-nix-41439a)](https://builtwithnix.org)
 
-### I think I know precisely what I mean...
-
- 🤠 -> 🥔 🤠
-
-Shpadoinkle is a programming model for user interface development. It supports flexible,
-  simple, declarative code by modeling user interface interactions as Coalgebras.
-
-Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
+[Shpadoinkle](https://www.youtube.com/watch?v=0CizU8aB3c8) is a programming model for user interface development. It supports flexible, simple, declarative code by modeling user interface interactions as Coalgebras. Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
 
 ## [WIP Documentation](http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html)
 
