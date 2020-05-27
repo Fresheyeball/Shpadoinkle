@@ -11,9 +11,14 @@
 Shpadoinkle is a programming model for user interface development. It supports flexible,
   simple, declarative code by modeling user interface interactions as Coalgebras.
 
+#### [TODOMVC example](http://fresheyeball.gitlab.io/Shpadoinkle/todomvc)
+
 Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
 
-#### [See the TODOMVC example here.](http://fresheyeball.gitlab.io/Shpadoinkle/todomvc)
+## [WIP Documentation](http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html)
+
+* [Getting Started](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html)
+* [Extending an Example](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html)
 
 ## Hackage Package Matrix
 
@@ -28,7 +33,3 @@ Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
 | Widgets | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-widgets.svg)](https://hackage.haskell.org/package/Shpadoinkle-widgets) [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-widgets.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-widgets) [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets) |
 | Examples | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-examples.svg)](https://hackage.haskell.org/package/Shpadoinkle-examples) [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-examples.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-examples) [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets) |
 
-
-## Getting Started
-
-#### [See WIP Documentation](http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html)

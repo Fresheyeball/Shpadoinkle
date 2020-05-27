@@ -109,6 +109,5 @@ cachix:
   - nix-build --arg isJS false -A Shpadoinkle-examples.env | cachix push shpadoinkle
   - nix-build --arg isJS true  -A Shpadoinkle-tests.env    | cachix push shpadoinkle
   - nix-build --arg isJS false -A Shpadoinkle-tests.env    | cachix push shpadoinkle
-  - nix-build docs.env                                     | cachix push shpadoinkle
   only:
   - master
