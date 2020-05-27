@@ -13,7 +13,7 @@ Shpadoinkle is a programming model for user interface development. It supports f
 
 Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
 
-#### [See the TODOMVC example here.](http://fresheyeball.gitlab.io/Shpadoinkle/)
+#### [See the TODOMVC example here.](http://fresheyeball.gitlab.io/Shpadoinkle/todomvc)
 
 ## Hackage Package Matrix
 
@@ -28,101 +28,7 @@ Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
 | Widgets | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-widgets.svg)](https://hackage.haskell.org/package/Shpadoinkle-widgets) [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-widgets.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-widgets) [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets) |
 | Examples | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-examples.svg)](https://hackage.haskell.org/package/Shpadoinkle-examples) [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-examples.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-examples) [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets) |
 
-## Building the project
 
-Like most GHCjs projects, this is build with [Nix](https://nixos.org/)
+## Getting Started
 
-Both builds have `--arg isJS` to chose GHC or GHCjs (defaults to false), and `--argstr compiler ghc864` to select compiler version.
-
-# Cachix
-
-This repo uses the optimized build of GHCjs created by [Obsidian Systems](https://obsidian.systems/), which impacts the JS build of every package that depends on `text`.
-There is also an overlay that pins versions of certain packages. These packages are **NOT** cached on `cache.nixos.org`, so settle in for a long
-long initial build. Alternatively you an use [Cachix](https://cachix.org/), which provides free nix cache hosting. The CI for this project keeps Cachix up-to-date with `master`
-
-[https://shpadoinkle.cachix.org](https://shpadoinkle.cachix.org)
-
-
-```bash
-# Install Nix
-bash <(curl -L https://nixos.org/nix/install)
-# Install cachix
-nix-env -iA cachix -f https://cachix.org/api/v1/install
-# Use the cache
-cachix use shpadoinkle
-```
-
-Now builds should pull artifacts from Cachix instead of building them.
-
-### build ghcjs version
-
-```bash
-nix-build --arg isJS true
-```
-
-### build ghc version
-
-```bash
-nix-build
-```
-
-
-### running the todomvc example
-
-```
-nix-build --argstr compiler ghc864
-./result/bin/todomvc
-open http://localhost:8080
-```
-
-### Developing with GHCID
-
-This is a multi-package mutli-target project. Each of the top level directories is it's own package,
-so to run ghcid we need to be in specify which package and which target we want to compile.
-
-**TLDR one liner:**
-
-```bash
-cd examples && nix-shell --command "cd .. && ghcid --command 'cabal repl examples:counter'" || cd ..
-```
-
-
-**Here is the current best path to getting ghcid up an running:**
-
-Let's say we wanted to run ghcid for the counter example...
-
-```bash
-cd examples
-# sets up dependencies for the examples package
-nix-shell
-# gets us back to cabal.project root
-cd ..
-# run the counter target of the examples package
-ghcid --command "cabal repl examples:counter"
-```
-
-If you wanted to run ghcid for core...
-
-```bash
-cd core
-# sets up dependencies for the core package
-nix-shell
-# gets us back to cabal.project root
-cd ..
-# run the library target of the core package
-ghcid --command "cabal repl core"
-```
-
-Protip:
-The `examples` package's dependencies are a superset of the other packages. So you can easily switch targets like so
-
-```bash
-cd examples
-nix-shell
-cd ..
-ghcid --command "cabal repl examples:counter"
-# run against core next
-ghcid --command "cabal repl core"
-# run against html as well
-ghcid --command "cabal repl html"
-```
+#### [See WIP Documentation](http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html)

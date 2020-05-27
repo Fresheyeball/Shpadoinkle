@@ -1,0 +1,27 @@
+= Getting Started
+
+Shpadoinkle is built with https://nixos.org/[Nix]. While it is possible to use Shpadoinkle without Nix, this project makes Nix the first class citizen. Nix allows us to make builds of Shpadoinkle as reproducible and deterministic as possible, by pinning every aspect of the system.
+
+== Get Nix
+
+Nix works on all Linux distrobutions, as well as Darwin based operating systems such as MacOS. To install Nix simply run
+
+[source,bash]
+----
+curl -L https://nixos.org/nix/install | sh
+----
+
+**Make sure to follow the instructions output by the script.**
+
+== Cachix
+
+Some of the work done with Nix includes deviations for the official Nix package set. As such some dependencies are not cached on https://cache.nixos.org. Building these dependencies from source can be very slow. If you would like to avoid this wait, you can pull from our https://cachix.org/[Cachix] cache of pre-built dependencies.
+
+[source,bash]
+----
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+cachix use shpadoinkle
+----
+
+Now builds of Shpadoinkle will used cached dependencies from https://shpadoinkle.cachix.org/[shpadoinkle.cachix.org], which are kept up to date with `master` via Gitlab CI.
+
