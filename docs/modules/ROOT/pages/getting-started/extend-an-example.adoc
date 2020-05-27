@@ -14,21 +14,21 @@ Shpadoinkle works with both https://gitlab.haskell.org/ghc/ghc[GHC] and https://
 
 === GHCjs
 
-When built with GHCjs, Shpadoinkle Haskell code is compiled to JavaScript. This is the recommended path for run code in production, for the majority of use-cases.
+When built with GHCjs, Shpadoinkle Haskell code is compiled to JavaScript. This is the recommended path for run code in production, for the majority of use cases.
 
 [source,bash]
 ----
 nix-build --arg isJS true -A Shpadoinkle-examples
 ----
 
-this will generate a folder called `result`. This contains the output of GHCjs. You can now serve an example. Here we use `warp` which is a static file server written in Haskell. However you can serve `result/bin/counter.jsexe` in any way you like.
+This will generate a folder called `result`. This contains the output of GHCjs. You can now serve an example. Here we use `warp`, which is a static file server written in Haskell, however you can serve `result/bin/counter.jsexe` in any way you'd like.
 
 [source,bash]
 ----
 nix-shell -p haskellPackages.wai-app-static --command "warp -d result/bin/counter.jsexe -p 8080"
 ----
 
-open `localhost:8080` in your browser.
+Open `localhost:8080` in your browser.
 
 === GHC
 
@@ -39,14 +39,14 @@ When built with GHC, Shpadoinkle runs via https://hackage.haskell.org/package/js
 nix-build --arg isJS false -A Shpadoinkle-examples
 ----
 
-this will generate a folder called `result`. This contains the output of GHC. You can now serve an example.
+This will generate a folder called `result`. This contains the output of GHC. You can now serve an example.
 
 [source,bash]
 ----
 ./result/bin/counter
 ----
 
-open `localhost:8080` in your browser.
+Open `localhost:8080` in your browser.
 
 == Live development
 
@@ -55,17 +55,17 @@ For live development building a fully optimized build from scratch with `nix-bui
 === GHCID
 
 [quote, ndmitchell]
-Either "GHCi as a daemon" or "GHC + a bit of an IDE". To a first approximation, it opens ghci and runs :reload whenever your source code changes, formatting the output to fit a fixed height console.
+Either "GHCi as a daemon" or "GHC + a bit of an IDE". To a first approximation, it opens GHCi and runs :reload whenever your source code changes, formatting the output to fit a fixed-height console.
 
 https://github.com/ndmitchell/ghcid[GHCID] is supplied by the `nix-shell` in Shpadoinkle. You can use GHCID to get rapid feedback as follows:
 
 [source,bash]
 ----
 nix-shell examples
-ghcid --command "cabal repl examples:counter
+ghcid --command "cabal repl examples:counter"
 ----
 
-you can also get this with a one liner
+You can also get this with a one liner
 
 [source,bash]
 ----
@@ -74,7 +74,7 @@ nix-shell examples --command "ghcid --command 'cabal repl examples:counter'"
 
 === Repl Serving
 
-The easiest way to get changes into your browser as fast as possible is to reload main in a repl.
+The easiest way to get changes into your browser as fast as possible is to reload main in a REPL.
 
 [source,bash]
 ----
@@ -90,7 +90,7 @@ You can then run the application with `main`. This will serve the application on
 main
 ----
 
-Refresh your browser to view updates. Live reloading is also possible with JSaddle Warp, but has not yet been implimented.
+Refresh your browser to view updates. Live reloading is also possible with JSaddle Warp, but has not yet been implemented.
 
 
 === Incremental Builds
@@ -103,4 +103,4 @@ nix-shell examples
 cabal build examples:counter
 ----
 
-using `cabal build` directly will use the standard Haskell incremental builds. Results can be found in the `dist` folder as you would expect.
+Using `cabal build` directly will use the standard Haskell incremental builds. Results can be found in the `dist` folder as you would expect.

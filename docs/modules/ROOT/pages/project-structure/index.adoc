@@ -1,9 +1,9 @@
 = Project Structure
 
-Shpadoinkle is broken up into several modules that compose together, or can be used seperately.
+Shpadoinkle is broken up into several modules that compose together or can be used separately.
 
 xref:project-structure/core.adoc[Core] (https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/core[Gitlab], https://hackage.haskell.org/package/Shpadoinkle[Hackage])::
-This stores the core types, and logic for Shpadoinkle. At minimum you need to have core and a backend to run an application.
+This stores the core types and logic for Shpadoinkle. At minimum you need to have core and a backend to run an application.
 
 xref:project-structure/html.adoc[Html] (https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/html[Gitlab], https://hackage.haskell.org/package/Shpadoinkle-html[Hackage])::
 A Template generated DSL defining HTML tags, Properties, and Events. It includes some related Utilities like Keyboard support.
@@ -21,10 +21,10 @@ xref:project-structure/router.adoc[Router] (https://gitlab.com/fresheyeball/Shpa
 SPA (Single Page Application) router based on https://docs.servant.dev/en/stable/[Servant].
 
 xref:project-structure/widgets.adoc[Widgets] (https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/widgets[Gitlab], https://hackage.haskell.org/package/Shpadoinkle-widgets[Hackage])::
-Logical types and structures for common UI components, along with batteries included implimentations.
+Logical types and structures for common UI components, along with batteries included implementations.
 
 Lens (https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/lens[Gitlab])::
-Lens combinators for erognomic composing of heterogenious components, and after-the-fact modification of views.
+Lens combinators for ergonomic composing of heterogeneous components, and after-the-fact modification of views.
 
 Examples (https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/examples[Gitlab])::
 Small applications of Shpadoinkle to illustrate programming patterns.

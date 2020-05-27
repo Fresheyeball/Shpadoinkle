@@ -1,6 +1,6 @@
 = Howdy
 
-Shpadoinkle is a purely functional user interface library, focused on simplicity, performance, and erognomics.
+Shpadoinkle is a purely functional user interface library, focused on simplicity, performance, and ergonomics.
 
 * xref:getting-started/index.adoc[Getting Started]
 * xref:project-structure/index.adoc[Project Structure]
@@ -42,7 +42,7 @@ view model = -- <1>
   ]
 ----
 
-<1> The function recieves the current application state (which is just an `Int`)
+<1> The function receives the current application state (which is just an `Int`)
 <2> Show the current state to the user in a text node
 <3> When the user click the `<button>` we add one to the model
 
@@ -53,13 +53,13 @@ In fact the only part of Shpadoinkle that actually performs work is only about h
 == Features
 
 High Performance::
-By not doing much work, Shpadoinkle is quite fast. The rendering backend is modular, so we can always take advantage of the latest work done on virtual dom rendering, when faster techniques are available you can adopt them easily.
+By not doing much work, Shpadoinkle is quite fast. The rendering backend is modular, so we can always take advantage of the latest work done on virtual DOM rendering. When faster techniques are available, you can adopt them easily.
 
 Declarative::
-Shpadoinkle code is high level, and rarely mentions low level details. Developers don't have to worry about causality, or when dom nodes get replaced.
+Shpadoinkle code is high level, and rarely mentions low-level details. Developers don't have to worry about causality or when DOM nodes get replaced.
 
 Composable::
-There is no need to wire model updates to locations in the dom by elaborate passing of messages and payloads. Components are highly composable. Impediances in types for sub components are resolved with nothing more than `fmap` (typically with some lenses).
+There is no need to wire model updates to locations in the DOM by elaborate passing of messages and payloads. Components are highly composable. Impedances in types for subcomponents are resolved with nothing more than `fmap` (typically with some lenses).
 
 Reliable::
 By keeping UI composition pure, runtime errors don't occur in practice. Code is easy to test as model updates are typically pure functions, and html output is transparent.
