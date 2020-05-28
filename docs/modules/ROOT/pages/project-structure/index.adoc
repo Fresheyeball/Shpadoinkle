@@ -2,8 +2,10 @@
 
 Shpadoinkle is broken up into several modules that compose together or can be used separately.
 
+**Core and a Backend are all that is needed to run a application.**
+
 xref:project-structure/core.adoc[Core] (https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/core[Gitlab], https://hackage.haskell.org/package/Shpadoinkle[Hackage])::
-This stores the core types and logic for Shpadoinkle. At minimum you need to have core and a backend to run an application.
+This stores the core types and logic for Shpadoinkle.
 
 xref:project-structure/html.adoc[Html] (https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/html[Gitlab], https://hackage.haskell.org/package/Shpadoinkle-html[Hackage])::
 A Template generated DSL defining HTML tags, Properties, and Events. It includes some related Utilities like Keyboard support.

@@ -1,0 +1,2 @@
+
+If we introduce Applicative here, we immediately have to start considering when components render, and when values are recieved. We also have to have a mechanism for pausing UI rendering, as we might have to wait for other Html bits to produce a value before preceeding to render the next bit. By _constraining_ `(Html m)` to Functor, we are free to ignore such concerns.

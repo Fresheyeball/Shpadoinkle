@@ -17,7 +17,7 @@ This allows us to describe the view as a pure function predicated on the current
 [NOTE]
 .Category Theory Note
 ====
-We are modelling the user interface as https://en.wikipedia.org/wiki/F-coalgebra[Coalgebras] which is the dual of https://en.wikipedia.org/wiki/F-algebra[Alegbras]. In programming, both of these ideas are just functions with the following shapes:
+We are modelling the user interface as https://en.wikipedia.org/wiki/F-coalgebra[Coalgebras]. In programming, these ideas are just functions with the following shapes:
 
 [source,haskell]
 ----
@@ -25,7 +25,7 @@ algebra :: F A -> A
 coalgebra :: A -> F A
 ----
 
-Where `A` is a concrete type and `F` is a Functor. In our case we are operating in the `Html` Functor. This should provide an intuition for how user interfaces can be composed.
+Where `A` is a concrete type and `F` is a concrete Functor. In our case we are operating in the `Html'` Functor. This should provide an intuition for how user interfaces can be composed.
 ====
 
 Here is a simple example, which displays a counter:
