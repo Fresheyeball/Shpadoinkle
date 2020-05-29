@@ -58,4 +58,16 @@ div' [ onClick (model + 1) ]
 
 Instead of orienting around attributes, we orient around _properties_ in Shpadoinkle. This is because, largely you can set any attribute by properties, but not vice versa. Credit due to https://kriszyp.github.io/alkali/[alkali] which introduced me to this observation.
 
+In most cases the named function will have the same name it would have in JavaScript. For example the following are morally equivalent.
+
+[source,javascript]
+----
+const div = document.createElement("div");
+div.className = "foo";
+----
+
+[source,haskell]
+----
+div' [ className "foo" ]
+----
 
