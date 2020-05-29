@@ -71,4 +71,31 @@ div.className = "foo";
 div' [ className "foo" ]
 ----
 
-Not all properties have the same type.
+Not all properties have the same type. While we endeavor to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impediances, or would like to suggest a function.
+
+
+=== ClassName
+
+This is by **far** the most common property to set. And so extra affordances are offered here. These are provide in **outlaw** fashion with typeclasses.
+
+[source,haskell]
+----
+div' "foo bar"
+
+div' [ className "foo bar" ]
+
+div' [ className ("foo bar", True) ]
+
+div' [ className ["foo", "bar"] ]
+
+div' [ className [("foo", True), ("bar", True), ("baz", False)] ]
+----
+
+will all render as
+
+[source,html]
+----
+<div class="foo bar" ></div>
+----
+
+You can also use the https://hackage.haskell.org/package/Shpadoinkle-html/docs/Shpadoinkle-Html-Property.html#t:ClassList[`ClassList` newtype], to build up classes for an element.
