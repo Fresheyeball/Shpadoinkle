@@ -15,7 +15,7 @@
 -- The following should hold
 --
 -- @
---   onX (pure x) = onX' x
+--   onX' (pure x) = onX x
 -- @
 --
 -- A flavor providing access to the 'RawNode' and the 'RawEvent' are not provided
