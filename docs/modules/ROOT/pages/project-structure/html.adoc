@@ -71,3 +71,4 @@ div.className = "foo";
 div' [ className "foo" ]
 ----
 
+Not all properties have the same type.
