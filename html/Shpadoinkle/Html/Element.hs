@@ -139,7 +139,7 @@ $(msum <$> mapM mkElement
   , "span"
   , "header"
   , "footer"
-  , "main"
+  , "main'"
   , "section"
   , "article"
   , "aside"

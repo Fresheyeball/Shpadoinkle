@@ -55,6 +55,12 @@ cradle:
           cabal:
             component: "counter"
 
+    - path: "./examples/Calculator.hs"
+      config:
+        cradle:
+          cabal:
+            component: "calculator"
+
     - path: "./examples/TODOMVC.hs"
       config:
         cradle:

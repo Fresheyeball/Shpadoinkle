@@ -30,7 +30,7 @@ shellHook    = ''
     echo "Serving on port 8080..."
     ${haskellPackages.wai-app-static}/bin/warp -d public -p 8080 &
     echo "Watching for changes..."
-    while inotifywait -e modify -r .; do antora antora-playbook; done
+    while inotifywait -e modify -r docs; do antora antora-playbook; done
   }
   echo ""
   echo "Build and serve docs by running"

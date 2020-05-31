@@ -1,2 +1,29 @@
+= Tutorial
 
-If we introduce Applicative here, we immediately have to start considering when components render, and when values are recieved. We also have to have a mechanism for pausing UI rendering, as we might have to wait for other Html bits to produce a value before preceeding to render the next bit. By _constraining_ `(Html m)` to Functor, we are free to ignore such concerns.
+Here we will build a simple calculator, following two pioneers of the space http://weblog.luite.com/wordpress/?p=127[Luite Stegemann] and https://reflex-frp.org/tutorial[Ryan Trinkle].
+
+== Hello World
+
+Let's get a basic Hello World app up. Luckily that is not too hard (but not too easy either).
+
+[source,haskell]
+----
+main :: IO ()
+main = runJSorWarp 8080 $ -- <1>
+  simple -- <2>
+    runParDiff -- <3>
+    () -- <4>
+    (const "hello world") -- <5>
+    getBody -- <6>
+----
+
+<1> This is a little function to abstract over starting the application with GHC or GHCjs. If built with GHC it will run a server on port `8080`, if built with GHCjs it will just start the application as a normal JavaScript file.
+<2> This is the highest level wrapper around the `shpadoinkle` function provided in core. It prevents you from doing the work of choosing a `Monad` to run event handlers (defaulting to `JSM`), and creating a territory (defaulting to a `TVar`).
+<3> We are using the ParDiff backend. No matter how simple the app, you must still choose a backend explicitly.
+<4> The initial state. Since this is a "hello world" example, it's just `()`.
+<5> This is our view. Since we don't care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
+<6> This is what DOM node on the page will hold our application. We use `getBody` to get the `document.body` for the page.
+
+== Addition
+
+Now that we have our hello world, let's add some interactivity, and perform addition on the part of the user.

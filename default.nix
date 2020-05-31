@@ -46,7 +46,7 @@ let
     }));
 
 
-  ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ] ++
+  ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack doctest ] ++
     []; # (if isJS then [ haskell.compiler.ghcjs86 ] else []);
   packages = map (t: haskellPackages.${t}) (attrNames targets ++ [ "Shpadoinkle-tests" ]);
 
