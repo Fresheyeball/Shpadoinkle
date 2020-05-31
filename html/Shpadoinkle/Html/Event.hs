@@ -49,6 +49,13 @@ onInput :: MonadJSM m => (Text -> a) -> (Text, Prop m a)
 onInput f = onInput' (pure . f)
 
 
+onChange' :: MonadJSM m => (Text -> m a) -> (Text, Prop m a)
+onChange' f = listenRaw "change" $ \(RawNode n) _ ->
+  f =<< liftJSM (valToText =<< unsafeGetProp "value" =<< valToObject n)
+onChange :: MonadJSM m => (Text -> a) -> (Text, Prop m a)
+onChange f = onChange' (pure . f)
+
+
 mkOnKey :: MonadJSM m => Text -> (KeyCode -> m a) -> (Text, Prop m a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
   f =<< liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
@@ -110,7 +117,6 @@ $(msum <$> mapM mkEventDSL
   , "scroll"
   , "unload"
   , "blur"
-  , "change"
   , "focus"
   , "focusin"
   , "focusout"

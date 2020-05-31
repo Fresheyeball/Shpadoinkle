@@ -28,7 +28,8 @@ import           Prelude                   hiding (div)
 
 
 import           Shpadoinkle
-import           Shpadoinkle.Html          hiding (p, s, s', selected)
+import           Shpadoinkle.Html          hiding (p, s, s', select, select',
+                                            selected)
 import           Shpadoinkle.Keyboard
 import           Shpadoinkle.Widgets.Types
 
@@ -37,9 +38,9 @@ default (Text)
 
 
 data Dropdown p a = Dropdown
-  { _considered :: ConsideredChoice p a
-  , _toggle     :: Toggle
-  }
+    { _considered :: ConsideredChoice p a
+    , _toggle     :: Toggle
+    }
 
 
 deriving instance (Show (Selected p a), Show (Considered p a), Show a)        => Show (Dropdown p a)
@@ -124,11 +125,11 @@ instance Consideration ConsideredChoice p => Consideration Dropdown p where
 
 
 data Theme m = Theme
-  { _wrapper :: forall a. [Html m a] -> Html m a
-  , _header  :: forall a. [Html m a] -> [Html m a]
-  , _list    :: forall a. [Html m a] -> Html m a
-  , _item    :: forall a. [Html m a] -> Html m a
-  }
+    { _wrapper :: forall a . [Html m a] -> Html m a
+    , _header  :: forall a . [Html m a] -> [Html m a]
+    , _list    :: forall a . [Html m a] -> Html m a
+    , _item    :: forall a . [Html m a] -> Html m a
+    }
 
 
 semantic :: Dropdown p b -> Theme m

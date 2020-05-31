@@ -74,10 +74,12 @@ executables:
     source-dirs: .
     dependencies:
       - text
+      - safe
 
       - Shpadoinkle
       - Shpadoinkle-html
       - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-widgets
 
   widgets:
     main: Widgets.hs

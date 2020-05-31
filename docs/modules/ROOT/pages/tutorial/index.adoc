@@ -27,3 +27,80 @@ main = runJSorWarp 8080 $ -- <1>
 == Addition
 
 Now that we have our hello world, let's add some interactivity, and perform addition on the part of the user.
+
+To start we will need a simple single number input.
+
+[source,haskell]
+----
+num :: MonadJSM m => Int -> Html m Int
+num x = input'
+ [ value . pack $ show x -- <1>
+ , onInput (fromMaybe 0 . readMay . unpack) -- <2>
+ ]
+----
+
+Because we have our first handler, we need `MonadJSM` since allocation of the listener requires IO.
+
+<1> Set the value of the input to the current state of the application.
+<2> When an `"input"` event occurs update the state with the provided function.
+
+Now we can use our single number input in our view to add up two numbers for our user.
+
+[source,haskell]
+----
+view :: MonadJSM m => (Int, Int) -> Html m (Int, Int)
+view (l,r) = -- <1>
+  div_
+    [ (,r) <$> num l -- <2>
+    , " + "
+    , (l,) <$> num r -- <3>
+    , text $ " = " <> pack (show $ l + r) -- <4>
+    ]
+----
+
+<1> For now we can just use a tuple to house our two numbers.
+<2> We use the `num` component, rendering it with `l`.
+<3> We use the `num` component, rendering it with `r`.
+<4> We display the result of `l + r` to the user.
+
+[NOTE]
+.Heterogenious Composition
+We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html m Int` and `Html m (Int, Int)` obviously do not unify. Since `(Html m)` is merely a Functor, fmap is the only means provided to resolve impediences and compose herogeneous components (as we do here).
+
+== Selectable Operations
+
+Now that we have some inputs that can perform addition, let's allow the user to select common operations. We start by making a new ADT.
+
+[source,haskell]
+----
+data Operation
+ = Addition
+ | Subtraction
+ | Multiplication
+ | Division
+
+
+opText :: Operation -> Text
+opText = \case
+  Addition       -> "+"
+  Subtraction    -> "-"
+  Multiplication -> "x"
+  Division       -> "/"
+
+
+opFunction :: Operation -> (Int -> Int)
+opFunction = \case
+  Addition       -> (+)
+  Subtraction    -> (-)
+  Multiplication -> (x)
+  Division       -> (/)
+
+
+textOp :: Text -> Maybe Operation
+textOp = \case
+  "+" -> Just Addition
+  "-" -> Just Subtraction
+  "x" -> Just Multiplication
+  "/" -> Just Division
+  _   -> Nothing
+----
