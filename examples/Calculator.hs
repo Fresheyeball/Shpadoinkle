@@ -47,7 +47,7 @@ opText = \case
 
 
 opSelect :: MonadJSM m => Html m Operation
-opSelect = select [ onChange $ read . unpack ]
+opSelect = select [ onOption $ read . unpack ]
   $ opOption <$> [minBound..maxBound]
   where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 

@@ -54,6 +54,23 @@ div.addEventListener("click", () => model++);
 div' [ onClick (model + 1) ]
 ----
 
+[NOTE]
+.Sneeky MonadJSM
+====
+Most pure handlers are constrained by `Applicative`
+[source,haskell]
+----
+:: Applicative m => a -> Html m a
+----
+but others have baked in effects, like reading the value off of a target element, or calling `stopPropagation()`. This difference gets documented in the type
+[source,haskell]
+----
+:: MonadJSM m => (Text -> a) -> Html m a
+----
+for example, `Text` here is needs `MonadJSM` to be obtained.
+====
+
+
 == Properties
 
 Instead of orienting around attributes, we orient around _properties_ in Shpadoinkle. This is because, largely you can set any attribute by properties, but not vice versa. Credit due to https://kriszyp.github.io/alkali/[alkali] which introduced me to this observation.

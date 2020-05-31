@@ -107,7 +107,7 @@ And we will use a traditional html `<select>` element to let user's pick the ope
 [source,haskell]
 ----
 opSelect :: MonadJSM m => Html m Operation
-opSelect = select [ onChange $ read . unpack ] -- <1>
+opSelect = select [ onOption $ read . unpack ] -- <1>
   $ opOption <$> [minBound..maxBound]
   where opOption o = option
     [ value . pack $ show o ] -- <2>
@@ -143,3 +143,5 @@ view model = div_
 ----
 
 That's it! The user can select an operation, enter 2 numbers and see a result rendered.
+
+Now if you are looking at the above code, and starting to twitch, because you are a optics fiend; that is the right instinct.
