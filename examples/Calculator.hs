@@ -15,7 +15,7 @@ import           Shpadoinkle.Html
 
 
 data Model = Model
-    { operation :: () -- Operation
+    { operation :: Operation
     , left      :: Int
     , right     :: Int
     }
@@ -26,7 +26,7 @@ data Operation = Addition
     | Subtraction
     | Multiplication
     | Division
-    deriving (Eq, Show, Enum, Bounded)
+    deriving (Eq, Show, Read, Enum, Bounded)
 
 
 opFunction :: Operation -> (Int -> Int -> Int)
@@ -38,15 +38,6 @@ opFunction = \case
     if y == 0 then 0 else Prelude.div x y
 
 
-textOp :: Text -> Maybe Operation
-textOp = \case
-  "+" -> Just Addition
-  "-" -> Just Subtraction
-  "×" -> Just Multiplication
-  "÷" -> Just Division
-  _   -> Nothing
-
-
 opText :: Operation -> Text
 opText = \case
   Addition       -> "+"
@@ -55,9 +46,10 @@ opText = \case
   Division       -> "÷"
 
 
-opSelect :: MonadJSM m => Operation -> Html m Operation
-opSelect op = select [ onChange (fromMaybe op . textOp) ] $ opOption <$> [minBound..maxBound]
-  where opOption o = option [ value $ opText o ] [ text $ opText o ]
+opSelect :: MonadJSM m => Html m Operation
+opSelect = select [ onChange $ read . unpack ]
+  $ opOption <$> [minBound..maxBound]
+  where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 
 
 num :: MonadJSM m => Int -> Html m Int
@@ -70,7 +62,7 @@ num x = input'
 view :: MonadJSM m => Model -> Html m Model
 view model = div_
  [ (\l -> model { left      = l }) <$> num (left model)
- , (\o -> model { operation = o }) <$> opSelect (operation model)
+ , (\o -> model { operation = o }) <$> opSelect
  , (\r -> model { right     = r }) <$> num (right model)
  , text $ " = " <> pack (show $ opFunction
      (operation model) (left model) (right model))

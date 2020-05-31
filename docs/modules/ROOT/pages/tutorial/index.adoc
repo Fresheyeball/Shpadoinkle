@@ -74,33 +74,72 @@ Now that we have some inputs that can perform addition, let's allow the user to 
 [source,haskell]
 ----
 data Operation
- = Addition
- | Subtraction
- | Multiplication
- | Division
+    = Addition
+    | Subtraction
+    | Multiplication
+    | Division
+    deriving (Eq, Show, Read, Enum, Bounded)
+----
+
+And we will need some functions to get human readable display, as well as mapping to functions.
+
+[source,haskell]
+----
+opFunction :: Operation -> (Int -> Int -> Int)
+opFunction = \case
+  Addition       -> (+)
+  Subtraction    -> (-)
+  Multiplication -> (*)
+  Division       -> \x y ->
+    if y == 0 then 0 else Prelude.div x y
 
 
 opText :: Operation -> Text
 opText = \case
   Addition       -> "+"
   Subtraction    -> "-"
-  Multiplication -> "x"
-  Division       -> "/"
-
-
-opFunction :: Operation -> (Int -> Int)
-opFunction = \case
-  Addition       -> (+)
-  Subtraction    -> (-)
-  Multiplication -> (x)
-  Division       -> (/)
-
-
-textOp :: Text -> Maybe Operation
-textOp = \case
-  "+" -> Just Addition
-  "-" -> Just Subtraction
-  "x" -> Just Multiplication
-  "/" -> Just Division
-  _   -> Nothing
+  Multiplication -> "×"
+  Division       -> "÷"
 ----
+
+And we will use a traditional html `<select>` element to let user's pick the operation.
+
+[source,haskell]
+----
+opSelect :: MonadJSM m => Html m Operation
+opSelect = select [ onChange $ read . unpack ] -- <1>
+  $ opOption <$> [minBound..maxBound]
+  where opOption o = option
+    [ value . pack $ show o ] -- <2>
+    [ text $ opText o ]
+----
+
+<1> When the select element changes, we `read` the value and use that as the model.
+<2> Values are just the operation applied to `show`, so it matches when we `read`.
+
+Great! Now we have 3 members of our model, and so it's time for an actual data type.
+
+[source,haskell]
+----
+data Model = Model
+  { operation :: Operation
+  , left      :: Int
+  , right     :: Int
+  } deriving (Eq, Show)
+----
+
+And we will use the same technique with `<$>` to compose these components together.
+
+[source,haskell]
+----
+view :: MonadJSM m => Model -> Html m Model
+view model = div_
+ [ (\l -> model { left      = l }) <$> num (left model)
+ , (\o -> model { operation = o }) <$> opSelect
+ , (\r -> model { right     = r }) <$> num (right model)
+ , text $ " = " <> pack (show $ opFunction
+     (operation model) (left model) (right model))
+ ]
+----
+
+That's it! The user can select an operation, enter 2 numbers and see a result rendered.
