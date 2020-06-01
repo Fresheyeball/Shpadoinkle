@@ -22,11 +22,11 @@
 {-|
    I think I know precisely what I mean.
 
-   A frontend abstraction motivated by simplicity, performance, and egonomics.
-   This module provides core abstractions and types with almost no implimentation details. IE no batteries included.
-   You may use this model a la carte, build ontop of it, or include more Backend packages for additional batteries.
+   A frontend abstraction motivated by simplicity, performance, and ergonomics.
+   This module provides core abstractions and types with almost no implementation details. I.e., no batteries included.
+   You may use this model a la carte, build on top of it, or include more Backend packages for additional batteries.
 
-   Backend is focused on letting you build your frontend the way you want to. And so is as unopinionated as possible, beyond providing a concrete programming model.
+   Backend is focused on letting you build your frontend the way you want to. It's as unopinionated as possible, beyond providing a concrete programming model.
 -}
 
 module Shpadoinkle
@@ -61,16 +61,16 @@ import           UnliftIO.STM
 
 
 -- | This is the core type in Backend.
--- The (Html m) 'Functor' is used to describe Html documents.
--- Please note, this is NOT a the Virtual Dom used by Backend
--- this type backs a DSL that is then /interpreted/ into Virual Dom
--- by the backend of your choosing. Html comments are not supported.
+-- The (Html m) 'Functor' is used to describe HTML documents.
+-- Please note, this is NOT the Virtual DOM used by Backend.
+-- This type backs a DSL that is then /interpreted/ into Virtual DOM
+-- by the backend of your choosing. HTML comments are not supported.
 data Html :: (Type -> Type) -> Type -> Type where
   -- | A standard node in the dom tree
   Node :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
-  -- | If you can bake an element into a 'RawNode' you can embed it as a baked potato.
+  -- | If you can bake an element into a 'RawNode' then you can embed it as a baked potato.
   -- Backend does not provide any state management or abstraction to deal with
-  -- custom embeded content. It's own you to decide how and when this 'RawNode' will
+  -- custom embedded content. It's on you to decide how and when this 'RawNode' will
   -- be updated. For example, if you wanted to embed a google map as a baked potato,
   -- and you are driving your Backend view with a 'TVar', you would need to build
   -- the 'RawNode' for this map /outside/ of your Backend view, and pass it in
@@ -89,7 +89,7 @@ type Html' a = forall m. Applicative m => Html m a
 
 
 -- | If you can provide a Natural Transformation from one Monad to another
--- you may change the action of @Html@
+-- then you may change the action of @Html@
 mapHtml :: Functor m => (m ~> n) -> Html m o -> Html n o
 mapHtml f = \case
   Node t ps cs -> Node t (fmap (mapProp f) <$> ps) (mapHtml f <$> cs)
@@ -98,7 +98,7 @@ mapHtml f = \case
 
 
 -- | If you can provide a Natural Transformation from one Monad to another
--- you may change the action of @Prop@
+-- then you may change the action of @Prop@
 mapProp :: (m ~> n) -> Prop m o -> Prop n o
 mapProp f = \case
   PListener g -> PListener (\x y -> f (g x y))
@@ -106,7 +106,7 @@ mapProp f = \case
   PFlag b     -> PFlag b
 
 
--- | Transform the properites of some Node. This has no effect on @TextNode@s or @Potato@s
+-- | Transform the properties of some Node. This has no effect on @TextNode@s or @Potato@s
 mapProps :: ([(Text, Prop m o)] -> [(Text, Prop m o)]) -> Html m o -> Html m o
 mapProps f = \case
   Node t ps cs -> Node t (f ps) cs
@@ -212,16 +212,16 @@ listen' k f = listen k $ pure f
 deriving instance Functor m => Functor (Html m)
 
 
--- | Properties of a Dom node, Backend does not use attributes directly,
--- but rather is focued on the more capable properties that may be set on a dom
+-- | Properties of a DOM node. Backend does not use attributes directly,
+-- but rather is focused on the more capable properties that may be set on a dom
 -- node in JavaScript. If you wish to add attributes, you may do so
--- by setting its corrosponding property.
+-- by setting its corresponding property.
 data Prop m o where
   -- | A text property
   PText :: Text -> Prop m o
   -- | Event listeners are provided with the 'RawNode' target, and the 'RawEvent', and may perform
-  -- a Monadic action such as a side effect. This is the one and only place where you may
-  -- introduce a custom Monadic action.
+  -- a monadic action such as a side effect. This is the one and only place where you may
+  -- introduce a custom monadic action.
   PListener :: (RawNode -> RawEvent -> m o) -> Prop m o
   -- | A boolean property, works as a flag
   -- for example @("disabled", PFlag False)@ has no effect
@@ -229,14 +229,14 @@ data Prop m o where
   PFlag :: Bool -> Prop m o
 
 
--- | Props are also merely 'Functor's not 'Monad's and not 'Applicative' by design.
+-- | Like @(Html m), @(Prop m) is merely a 'Functor', not a 'Monad' and not 'Applicative' by design.
 deriving instance Functor m => Functor (Prop m)
 
 -- | Type alias for convenience. Typing out the nested brackets is tiresome.
 type Props m o = [(Text, Prop m o)]
 
 
--- | Strings are overload to html text nodes
+-- | Strings are overloaded as HTML text nodes
 -- @
 --   "hiya" = TextNode "hiya"
 -- @
@@ -245,7 +245,7 @@ instance IsString (Html m o) where
   {-# INLINE fromString #-}
 
 
--- | Strings are overload as text props
+-- | Strings are overloaded as text props
 -- @
 --   ("id", "foo") = ("id", PText "foo")
 -- @
@@ -253,7 +253,7 @@ instance IsString (Prop m o) where
   fromString = PText . pack
   {-# INLINE fromString #-}
 
--- | Strings are overload as the class property
+-- | Strings are overloaded as the class property
 -- @
 --   "active" = ("className", PText "active")
 -- @
@@ -262,7 +262,7 @@ instance {-# OVERLAPPING #-} IsString [(Text, Prop m o)] where
   {-# INLINE fromString #-}
 
 
--- | A dom node reference.
+-- | A DOM node reference.
 -- Useful for building baked potatoes, and binding a Backend view to the page
 newtype RawNode  = RawNode  { unRawNode  :: JSVal }
 -- | A raw event object reference
@@ -277,54 +277,57 @@ instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
 -- | The Backend class describes a backend that can render 'Html'.
 -- Backends are generally Monad Transformers @b@ over some Monad @m@.
 class Backend b m a | b m -> a where
-  -- | VNode type family allows backends to have their own Virtual Dom.
+  -- | VNode type family allows backends to have their own Virtual DOM.
   -- As such we can change out the rendering of our Backend view
   -- with new backends without updating our view logic.
   type VNode b m
-  -- | A backend must be able to interpret 'Html' into its own internal Virtual Dom
+  -- | A backend must be able to interpret 'Html' into its own internal Virtual DOM
   interpret
     :: (m ~> JSM)
     -- ^ Natural transformation for some @m@ to 'JSM'.
-    -- This is how Backend get access to 'JSM' to perform the rendering side effect
+    -- This is how a Backend gets access to 'JSM' to perform the rendering side effects.
     -> Html (b m) a
     -- ^ 'Html' to interpret
     -> b m (VNode b m)
-    -- ^ Effect producing the Virtual Dom representation
+    -- ^ Effect producing the Virtual DOM representation
 
   -- | A backend must be able to patch the 'RawNode' containing the view, with a
-  -- new view if the Virtual Dom changed.
+  -- new view if the Virtual DOM changed.
   patch
     :: RawNode
     -- ^ The container for rendering the Backend view.
     -> Maybe (VNode b m)
-    -- ^ Perhaps there is a previous Virtual Dom for use to diff. Will be 'Nothing' on the first run.
+    -- ^ Perhaps there is a previous Virtual DOM to diff against. Will be 'Nothing' on the first run.
     -> VNode b m
-    -- ^ New Virtual Dom to render.
+    -- ^ New Virtual DOM to render.
     -> b m (VNode b m)
-    -- ^ Effect producing and updated virtual dom. This is not needed by all backends.
-    -- Some JavaScript based backends need to do this for the next tick. Regardless whatever
-    -- 'VNode' the effect produces will be passed as the previous Virtual Dom on the next render.
+    -- ^ Effect producing an updated Virtual DOM. This is not needed by all backends.
+    -- Some JavaScript based backends need to do this for the next tick. Regardless, whatever
+    -- 'VNode' the effect produces will be passed as the previous Virtual DOM on the next render.
 
-  -- | A backend may perform some inperative setup steps
+  -- | A backend may perform some imperative setup steps
   setup :: JSM () -> b m ()
 
 
 -- | Shpadoinkling requires a Territory, such as Colorado Territory.
--- This class provides for the state container. As such you may use any
--- type you wish where this semantic can be implimented.
+-- The Territory provides for the state container. As such you may use any
+-- type you wish where this semantic can be implemented.
 class Territory s where
   -- | How do we update the state?
   writeUpdate :: s a -> (a -> JSM a) -> JSM ()
-  -- | When should consider a state updated? This is akin to React's component should update thing.
+  -- | How do we observe state updates? This is akin to React's component should update thing.
   -- The idea is to provide a semantic for when we consider the model to have changed.
+  -- The callback function provided to shouldUpdate gets called with each state in the sequence
+  -- of updated states, along with an accumulator of type b which it may update,
+  -- similar to a fold over the sequence of states.
   shouldUpdate :: Eq a => (b -> a -> JSM b) -> b -> s a -> JSM ()
-  -- | Create a new territory
+  -- | Create a new Territory
   createTerritory :: a -> JSM (s a)
 
 
--- | Cannoncal default implimentation of 'Territory' is just a 'TVar'.
--- However there is nothing stopping your from writing your own alternative
--- for a @Dynamic t@ from Reflex Dom, or some JavaScript based container.
+-- | Canonical default implementation of 'Territory' is just a 'TVar'.
+-- However there is nothing stopping you from writing your own alternative
+-- for a @Dynamic t@ from Reflex DOM, or some JavaScript based container.
 instance Territory TVar where
   writeUpdate x f = do
     a <- f =<< readTVarIO x
@@ -355,17 +358,17 @@ shpadoinkle
   :: forall b m a t
    . Backend b m a => Territory t => Eq a
   => (m ~> JSM)
-  -- ^ how to be get to JSM?
+  -- ^ How to get to JSM?
   -> (t a -> b m ~> m)
   -- ^ What backend are we running?
   -> a
-  -- ^ what is the initial state?
+  -- ^ What is the initial state?
   -> t a
-  -- ^ how can we know when to update?
+  -- ^ How can we know when to update?
   -> (a -> Html (b m) a)
-  -- ^ how should the html look?
+  -- ^ How should the HTML look?
   -> b m RawNode
-  -- ^ where do we render?
+  -- ^ Where do we render?
   -> JSM ()
 shpadoinkle toJSM toM initial model view stage = do
   let
@@ -389,15 +392,15 @@ shpadoinkle toJSM toM initial model view stage = do
 fullPage
   :: Backend b m a => Territory t => Eq a
   => (m ~> JSM)
-  -- ^ how do we get to JSM?
+  -- ^ How do we get to JSM?
   -> (t a -> b m ~> m)
   -- ^ What backend are we running?
   -> a
-  -- ^ what is the initial state?
+  -- ^ What is the initial state?
   -> (a -> Html (b m) a)
-  -- ^ how should the html look?
+  -- ^ How should the html look?
   -> b m RawNode
-  -- ^ where do we render?
+  -- ^ Where do we render?
   -> JSM ()
 fullPage g f i view getStage = do
   model <- createTerritory i
@@ -416,11 +419,11 @@ fullPageJSM
   => (t a -> b JSM ~> JSM)
   -- ^ What backend are we running?
   -> a
-  -- ^ what is the initial state?
+  -- ^ What is the initial state?
   -> (a -> Html (b JSM) a)
-  -- ^ how should the html look?
+  -- ^ How should the html look?
   -> b JSM RawNode
-  -- ^ where do we render?
+  -- ^ Where do we render?
   -> JSM ()
 fullPageJSM = fullPage id
 {-# INLINE fullPageJSM #-}
@@ -428,7 +431,7 @@ fullPageJSM = fullPage id
 
 -- | Start the program!
 --
--- For GHC or GHCjs. I saved your from using CPP directly. Your welcome.
+-- For GHC or GHCjs. I saved you from using CPP directly. You're welcome.
 runJSorWarp :: Int -> JSM () -> IO ()
 #ifdef ghcjs_HOST_OS
 runJSorWarp _ = id
