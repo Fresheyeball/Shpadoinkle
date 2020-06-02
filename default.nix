@@ -41,7 +41,6 @@ let
 
   haskellPackages = with haskell.lib; haskell.packages.${util.compilerjs}.extend
     (composeExtensions (packageSourceOverrides targets) (self: super: {
-      hpack                = haskell.packages.${compiler}.hpack;
       Shpadoinkle-tests    = haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ./tests) {};
     }));
 

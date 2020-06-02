@@ -15,10 +15,9 @@ import           Data.Text                     hiding (count, filter, length)
 import           Prelude                       hiding (div, unwords)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.Snabbdom
-import           Shpadoinkle.Html              hiding (main)
+import           Shpadoinkle.Html
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Memo
-import           Shpadoinkle.Html.Utils
 
 import           TODOMVCAtomic.Types
 import           TODOMVCAtomic.Update

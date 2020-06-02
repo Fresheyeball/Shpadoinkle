@@ -94,9 +94,9 @@ pages:
   artifacts:
     paths:
     - public
-
   only:
-    - master
+  - master
+  - docs
 
 
 cachix:

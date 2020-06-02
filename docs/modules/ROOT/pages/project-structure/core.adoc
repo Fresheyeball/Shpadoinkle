@@ -1,1 +1,184 @@
 = Core
+
+This module is for core types and logic.
+
+== The Html Type
+
+This is the core type used to represent a view in Shpadoinkle.
+
+[source,haskell]
+----
+data Html m a
+  = TextNode Text
+  | Node Text [(Text, Prop m a)] [Html m a]
+  | Potato (JSM RawNode)
+----
+
+`Html` has 2 type variables.
+
+* `m` is a effect to run your event handlers.
+* `a` is what your event handlers produce.
+
+These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrainted. If your event listeners are not Monadic (and they shouldn't be in most cases), `m` need only be `Applicative` as we need `pure` under the hood for construction.
+
+[NOTE]
+.Not Virtual DOM
+We do not diff `Html`, instead we marshall this structure into one for a given xref:project-structure/backends.adoc#selecting[backend]. This seperation allows the same code the run on any backend.
+
+This structure is our DOM Tree. We have Nodes which contain lists of Html, and which is a leaf where we can store `Text`, and Potato where we can store a component built outside of the Shpadoinkle view (for example wrapping a JavaScript component).
+
+[NOTE]
+.Category Theory Note
+`(Html m)` is the Functor in our Coalgebra. It is a Functor, not Applicative, or Monadic. This is by design. By being merely functorial, we do not need to reason about when components will render.
+
+== The Prop Type
+
+Nodes (and only Nodes) in Html may have properties. These properties are represented as the follwowing type, paired with `Text` giving the property a field key.
+
+[source,haskell]
+----
+data Prop m a
+  = PText Text
+  | PListener (RawNode -> RawEvent -> m a)
+  | PFlag Bool
+----
+
+As you will recall `Html` has a constructor
+
+[source,haskell]
+----
+Node :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
+----
+
+Where a list of this pair is passed. The `Text` should match the property key in standard JavaScript. For example we can set the following are morally equivalent.
+
+[source,javascript]
+----
+const div = document.createElement("div");
+div.className = "foo";
+----
+
+[source,haskell]
+----
+Node "div" [("className", PText "foo")] []
+----
+
+[WARNING]
+.Don't use constructors directly
+====
+It is recommended you do **not** use these constructors, but rather use the exported named functions.
+
+[source,haskell]
+----
+h "div" [("className",  textProp "foo")] []
+----
+====
+
+=== Listeners
+
+The listener constuctor is `PListener`, which has the following type
+
+[source,haskell]
+----
+PListener :: (RawNode -> RawEvent -> m a) -> Prop m a
+----
+
+The raw listener will always recieve the https://developer.mozilla.org/en-US/docs/Web/API/Node[`RawNode`] which is the target of the event. And the https://developer.mozilla.org/en-US/docs/Web/API/Event[`RawEvent`] which the event object itselt. Both of these are `newtypes` of https://hackage.haskell.org/package/jsaddle-0.9.7.0/docs/GHCJS-Types.html#t:JSVal[JSVal]. This is needed so that we can still do low level work. However in practice it's expected you would use functions that allow you to ignore these raw components.
+
+== Backend Class
+
+This is an interface for renders of `Html`.
+
+[source,haskell]
+----
+class Backend b m a | b m -> a where
+  type VNode b m
+  interpret :: (m ~> JSM) -> Html (b m) a -> b m (VNode b m)
+  patch     :: RawNode -> Maybe (VNode b m) -> VNode b m -> b m (VNode b m)
+  setup     :: JSM () -> b m ()
+----
+
+This interface allows us to plug into various rendering systems. So long as we can provide implimentations of these 3 functions, we can use `shpadoinkle` to get an application out of our `Html`.
+
+They `VNode` type family is of special importance. `interpret` takes in our `Html` and builds up the `VNode` for this specific rendering backend.
+
+This packages does **not** come with a backend implimentation, and an implimentation **is** required to run the `shpadoinkle` function.
+
+== Territory Class
+
+This is an interface for whatever state container is **driving** the view.
+
+[source,haskell]
+----
+class Territory s where
+  writeUpdate     :: s a -> (a -> JSM a) -> JSM ()
+  shouldUpdate    :: Eq a => (b -> a -> JSM b) -> b -> s a -> JSM ()
+  createTerritory :: a -> JSM (s a)
+----
+
+The Haskell ecosystem has many many many many many many options for concurrent data structures. In addition to allowing you to specify how things are rendered, you can also specify what structure is used under the hood. Theoretically we could write instances for containers such as: https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM-TVar.html#t:TVar[TVar], https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-IORef.html#t:IORef[IORef], https://hackage.haskell.org/package/reflex-0.7.1.0/docs/Reflex-Class.html#t:Event[Event t], https://hackage.haskell.org/package/auto-0.4.3.1/docs/Control-Auto.html#t:Auto[Auto m]
+
+as well as structures built upon these. Included in this package is a default implimentation with `TVar`.
+
+[source,haskell]
+----
+instance Territory TVar
+----
+
+The territory is part of ensureing Shpadoinkle applications compose with one another, as well as surrounding code. Consider a scenario where we have an existing piece of code that taps into a data stream and logs it.
+
+[source,haskell]
+----
+territory <- newTVarIO mempty -- <1>
+
+_ <- forkIO . runConduit -- <2>
+            $ readLogFile
+           .| takeC 200
+           .| mapMC (\s -> atomically $ modifyTVar territory $ currentLog .~ s) -- <3>
+           .| mapM_C processFurther
+
+shpadoinkle id runSnabbdom territory mempty view getBody -- <4>
+----
+
+<1> We create a TVar of our frontend model
+<2> Some existing code uses Conduit to read a log file.
+<3> Now we want to show each Log as it passes through. So we simply write it to the TVar setting it with a Lens.
+<4> Start the application. Changes to the territory will be reflected in the view.
+
+This makes integrating the frontend state machine into existing work fairly easy, since often existing locations in the code can be used to update the `territory`. We can also listen for state changes originating from inside the shpadoinkle application, using existing machinery such as `retry` from https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Monad-STM.html#v:retry[STM].
+
+
+== Shpadoinkle
+
+There is one application primative the `shpadoinkle` function. It is where these different components come together, adn describes how they interrelate. Here it is
+
+[source,haskell]
+----
+shpadoinkle
+  :: forall b m a t. Backend b m a => Territory t => Eq a
+  => (m ~> JSM) -> (t a -> b m ~> m) -> a -> t a -> (a -> Html (b m) a) -> b m RawNode -> JSM ()
+shpadoinkle toJSM toM initial model view stage = do
+  let
+    j :: b m ~> JSM
+    j = toJSM . toM model
+
+    go :: RawNode -> VNode b m -> a -> JSM (VNode b m)
+    go c n a = do
+      !m  <- j $ interpret toJSM (view a)
+      j $ patch c (Just n) m
+
+  j . setup $ do -- <1>
+    c <- j stage -- <2>
+    n <- j $ interpret toJSM (view initial) -- <3>
+    _ <- shouldUpdate (go c) n model -- <4>
+    _ <- j $ patch c Nothing n :: JSM (VNode b m) -- <5>
+    return ()
+----
+
+<1> Run the `setup` for the backend
+<2> Get the DOM Node on which to append our view
+<3> Pass our initial model to the view function, then convert the `Html m` to `VNode b m`
+<4> Set up `go` to run whenever we `shouldUpdate`. `go` renders subsequent states.
+<5> Render our initial `VNode b m`
+
+Everything else is built on top of this to simplify different setups.

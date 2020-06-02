@@ -15,7 +15,7 @@
 -- The following should hold
 --
 -- @
---   onX (pure x) = onX' x
+--   onX' (pure x) = onX x
 -- @
 --
 -- A flavor providing access to the 'RawNode' and the 'RawEvent' are not provided
@@ -42,16 +42,32 @@ import           Shpadoinkle.Html.TH
 import           Shpadoinkle.Keyboard
 
 
+mkWithFormVal :: MonadJSM m => (JSVal -> JSM v) -> Text -> JSString -> (v -> m a) -> (Text, Prop m a)
+mkWithFormVal valTo evt from f = listenRaw evt $ \(RawNode n) _ ->
+  f =<< liftJSM (valTo =<< unsafeGetProp from =<< valToObject n)
+
+
 onInput' :: MonadJSM m => (Text -> m a) -> (Text, Prop m a)
-onInput' f = listenRaw "input" $ \(RawNode n) _ ->
-  f =<< liftJSM (valToText =<< unsafeGetProp "value" =<< valToObject n)
+onInput' = mkWithFormVal valToText "input" "value"
+
+
 onInput :: MonadJSM m => (Text -> a) -> (Text, Prop m a)
 onInput f = onInput' (pure . f)
+
+
+onOption' :: MonadJSM m => (Text -> m a) -> (Text, Prop m a)
+onOption' = mkWithFormVal valToText "change" "value"
+
+
+onOption :: MonadJSM m => (Text -> a) -> (Text, Prop m a)
+onOption f = onOption' (pure . f)
 
 
 mkOnKey :: MonadJSM m => Text -> (KeyCode -> m a) -> (Text, Prop m a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
   f =<< liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
+
+
 onKeyup, onKeydown, onKeypress :: MonadJSM m => (KeyCode -> m a) -> (Text, Prop m a)
 onKeyup    = mkOnKey "keyup"
 onKeydown  = mkOnKey "keydown"
@@ -61,15 +77,20 @@ onKeyup'    f = onKeyup    (pure . f)
 onKeydown'  f = onKeydown  (pure . f)
 onKeypress' f = onKeypress (pure . f)
 
+
 onCheck' :: MonadJSM m => (Bool -> m a) -> (Text, Prop m a)
-onCheck' f = listenRaw "update" $ \(RawNode n) _ ->
-  f =<< liftJSM (valToBool =<< unsafeGetProp "checked" =<< valToObject n)
+onCheck' = mkWithFormVal valToBool "change" "checked"
+
+
 onCheck :: MonadJSM m => (Bool -> a) -> (Text, Prop m a)
 onCheck f = onCheck' (pure . f)
+
 
 onSubmit' :: MonadJSM m => m a -> (Text, Prop m a)
 onSubmit' m = listenRaw "submit" $ \_ (RawEvent e) ->
   liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> m
+
+
 onSubmit :: MonadJSM m => a -> (Text, Prop m a)
 onSubmit = onSubmit' . pure
 
@@ -85,13 +106,14 @@ mkGlobalKey n t = do
 
 
 globalKeyDown, globalKeyUp, globalKeyPress :: (KeyCode -> JSM ()) -> JSM ()
-globalKeyDown = mkGlobalKey "keydown"
-globalKeyUp = mkGlobalKey "keyup"
+globalKeyDown  = mkGlobalKey "keydown"
+globalKeyUp    = mkGlobalKey "keyup"
 globalKeyPress = mkGlobalKey "keypress"
 
 
 $(msum <$> mapM mkEventDSL
   [ "click"
+  , "change"
   , "contextmenu"
   , "dblclick"
   , "mousedown"
@@ -110,7 +132,6 @@ $(msum <$> mapM mkEventDSL
   , "scroll"
   , "unload"
   , "blur"
-  , "change"
   , "focus"
   , "focusin"
   , "focusout"
