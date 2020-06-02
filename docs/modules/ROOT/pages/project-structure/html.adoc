@@ -1,1 +1,132 @@
 = Html
+
+This package exposes a template haskell generated DSL of HTML tags, as well as properties. While not complete, this package is intended to eventually house utilities for web apis.
+
+== Named Tags
+
+HTML tags each get **4** named functions, with the following semantic
+
+[%header]
+|===
+| Variant | Properties Required | Children Required
+| Plain | icon:check[] | icon:check[]
+| Prime | icon:check[] | icon:times[]
+| Underscore | icon:times[] | icon:check[]
+| Prime + Underscore | icon:times[] | icon:times[]
+|===
+
+or we can see the semantic as follows
+
+[source,haskell]
+----
+x [] = x'
+flip x [] = x_
+x [] [] = x'_
+h "x" = x
+----
+
+We also supply some overload strings for convenience.
+
+[source,haskell]
+----
+div "foo" [ "hiya" ]
+> <div class="foo">hiya</div>
+----
+
+== Event Listeners
+
+Event listeners each get **2** named functions. A plain one, for pure event handlers, and a prime version for Monadic handlers.
+
+[source,haskell]
+----
+onX' (pure x) = onX x
+----
+
+Each of these functions is named the same way they are in JavaScript (sans Camel-case). IE the following are morally equivalent:
+
+[source,javascript]
+----
+div.addEventListener("click", () => model++);
+----
+
+[source,haskell]
+----
+div' [ onClick (model + 1) ]
+----
+
+[NOTE]
+.Sneeky MonadJSM
+====
+Most pure handlers are constrained by `Applicative`
+[source,haskell]
+----
+:: Applicative m => a -> Html m a
+----
+but others have baked in effects, like reading the value off of a target element, or calling `stopPropagation()`. This difference gets documented in the type
+[source,haskell]
+----
+:: MonadJSM m => (Text -> a) -> Html m a
+----
+for example, `Text` here is needs `MonadJSM` to be obtained.
+====
+
+
+== Properties
+
+Instead of orienting around attributes, we orient around _properties_ in Shpadoinkle. This is because, largely you can set any attribute by properties, but not vice versa. Credit due to https://kriszyp.github.io/alkali/[alkali] which introduced me to this observation.
+
+In most cases the named function will have the same name it would have in JavaScript. For example the following are morally equivalent.
+
+[source,javascript]
+----
+const div = document.createElement("div");
+div.className = "foo";
+----
+
+[source,haskell]
+----
+div' [ className "foo" ]
+----
+
+Not all properties have the same type. While we endeavor to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impediances, or would like to suggest a function.
+
+
+=== ClassName
+
+This is by **far** the most common property to set. And so extra affordances are offered here. These are provide in **outlaw** fashion with typeclasses.
+
+[source,haskell]
+----
+div' "foo bar"
+div' [ className "foo bar" ]
+div' [ className ("foo bar", True) ]
+div' [ className ["foo", "bar"] ]
+div' [ className [("foo", True), ("bar", True), ("baz", False)] ]
+----
+
+will all render as
+
+[source,html]
+----
+<div class="foo bar" ></div>
+----
+
+You can also use the https://hackage.haskell.org/package/Shpadoinkle-html/docs/Shpadoinkle-Html-Property.html#t:ClassList[`ClassList` newtype], to build up classes for an element.
+
+== Memo
+
+The memo function remebers the last arguement passed, and the last result. When a new value is passed, it compares it with the previous value, if they match, the previous result is returned from memory. This is useful when computing `Html` is expensive and benefits from memoization.
+
+[source,haskell]
+----
+memo = id
+----
+
+Think of `memo` as a way of changing the evaluation stradegy.
+
+[source,haskell]
+----
+view :: Text -> Html' a
+view = memo $ \t ->
+  div_ . take (length t) . repeat . text $ expensiveFilter t
+----

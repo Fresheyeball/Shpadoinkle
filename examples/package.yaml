@@ -68,6 +68,19 @@ executables:
       - Shpadoinkle-html
       - Shpadoinkle-backend-pardiff
 
+  calculator:
+    main: Calculator.hs
+    other-modules: []
+    source-dirs: .
+    dependencies:
+      - text
+      - safe
+
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-widgets
+
   widgets:
     main: Widgets.hs
     source-dirs: ./widgets

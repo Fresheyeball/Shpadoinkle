@@ -7,7 +7,6 @@ content:
     - url: .
       start_path: ./docs
       branches: HEAD
-      edit_url: 'https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/{refname}/docs/{path}'
 ui:
   bundle:
     url: ./theme

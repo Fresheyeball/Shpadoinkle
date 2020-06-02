@@ -33,7 +33,7 @@ module Shpadoinkle
   ( Html (..), Prop (..), Props
   , mapHtml, mapProp, mapProps, mapChildren
   , Backend (..)
-  , shpadoinkle, fullPage, fullPageJSM
+  , shpadoinkle, fullPage, fullPageJSM, simple
   , Territory (..)
   , type (~>), Html'
   , RawNode (..), RawEvent (..)
@@ -440,3 +440,20 @@ runJSorWarp _ = id
 runJSorWarp = run
 {-# INLINE runJSorWarp #-}
 #endif
+
+
+-- | Simple app
+--
+-- A good starting place
+simple
+  :: Backend b JSM a => Eq a
+  => (TVar a -> b JSM ~> JSM)
+  -- ^ What backend are we running?
+  -> a
+  -- ^ what is the initial state?
+  -> (a -> Html (b JSM) a)
+  -- ^ how should the html look?
+  -> b JSM RawNode
+  -- ^ where do we render?
+  -> JSM ()
+simple = fullPageJSM

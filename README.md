@@ -13,6 +13,7 @@
 ## [WIP Documentation](http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html)
 
 * [Getting Started](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html)
+* [Tutorial](https://fresheyeball.gitlab.io/Shpadoinkle/docs/tutorial/index.html)
 * [Extending an Example](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html)
 * [WIP Seed Project](https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman)
 
