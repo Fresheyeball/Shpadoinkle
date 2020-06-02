@@ -63,6 +63,7 @@ in {
           semigroupoids        = dontJS hsuper.semigroupoids;
           megaparsec           = dontJS hsuper.megaparsec;
           lens                 = dontJS hsuper.lens;
+          hpack                = super.haskell.packages.${compiler}.hpack;
           http-types           = dontJS hsuper.http-types;
           silently             = dontJS hsuper.silently;
           QuickCheck           = dontJS hsuper.QuickCheck;

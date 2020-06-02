@@ -41,12 +41,11 @@ let
 
   haskellPackages = with haskell.lib; haskell.packages.${util.compilerjs}.extend
     (composeExtensions (packageSourceOverrides targets) (self: super: {
-      hpack                = haskell.packages.${compiler}.hpack;
       Shpadoinkle-tests    = haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ./tests) {};
     }));
 
 
-  ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack doctest ] ++
+  ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ] ++
     []; # (if isJS then [ haskell.compiler.ghcjs86 ] else []);
   packages = map (t: haskellPackages.${t}) (attrNames targets ++ [ "Shpadoinkle-tests" ]);
 
