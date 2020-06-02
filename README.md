@@ -14,6 +14,7 @@
 
 * [Getting Started](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html)
 * [Extending an Example](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html)
+* [WIP Seed Project](https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman)
 
 #### [TODOMVC example](http://fresheyeball.gitlab.io/Shpadoinkle/todomvc)
 
