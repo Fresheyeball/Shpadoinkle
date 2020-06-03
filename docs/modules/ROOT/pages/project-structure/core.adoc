@@ -100,9 +100,77 @@ class Backend b m a | b m -> a where
 
 This interface allows us to plug into various rendering systems. So long as we can provide implimentations of these 3 functions, we can use `shpadoinkle` to get an application out of our `Html`.
 
-They `VNode` type family is of special importance. `interpret` takes in our `Html` and builds up the `VNode` for this specific rendering backend.
-
 This packages does **not** come with a backend implimentation, and an implimentation **is** required to run the `shpadoinkle` function.
+
+[NOTE]
+.Monad Transformer
+====
+`b` is expected to be a Monad Transformer, though this is not required. However in practice, `(b m)` must have in instance of `MonadJSM`.
+====
+
+=== VNode
+
+This type family points maps to the underly representation native to the backend.
+
+[source,haskell]
+----
+type VNode b m
+----
+
+In the case of binding to a JavaScript library this would most likely be a `newtype` of `JSVal`. When binding to a typed implimentation, this should just be set to the library type.
+
+=== Interpret
+
+This function describes how to marshall between `Html` and the native representation (IE `VNode`).
+
+[source,haskell]
+----
+interpret
+  :: (m ~> JSM) -- <1>
+  -> Html (b m) a -- <2>
+  -> b m (VNode b m) -- <3>
+----
+
+The interpret function may be Monadic, as it's likely going to require IO to obtain the native representation.
+
+<1> Interpret is provided with a mechanism for getting from the end user provided Monad to JSM directly.
+<2> The `Html` shpadoinkle view that needs to be marshalled to the native representation for this backend.
+<3> A Monadic action that generates `VNode`.
+
+=== Patch
+
+This function describes how updates are handled.
+
+[source,haskell]
+----
+patch
+  :: RawNode -- <1>
+  -> Maybe (VNode b m) -- <2>
+  -> VNode b m -- <3>
+  -> b m (VNode b m) -- <4>
+----
+
+The interpret function may be Monadic, as it's likely going to require IO to apply the new `VNode` to the view.
+
+<1> This is the parent DOM Node that contains our application. `RawNode` is a `newtype` of `JSVal`.
+<2> The previously rendered `VNode`. On the first rendering of our application this will be `Nothing`.
+<3> The `VNode` the user would like to render.
+<4> A Monadic action that **actually renders in the browser** and returns a new `VNode`. The returned (`v :: VNode`) will be (`Just v`) for **2** in the next render.
+
+=== Setup
+
+This is an optional IO action to perform any initial setup steps a given backend might require.
+
+[source,haskell]
+----
+setup
+  :: JSM () -- <1>
+  -> b m ()
+----
+
+<1> This is a callback you are responsible for executing once the setup process is complete. The callback is the entire application. If you do not evaluate the `JSM ()` nothing will happen.
+
+In the case of JavaScript based backends, it will likely include steps like, adding the library to the `<head>` of the page, or instantiating a JavaScript class.
 
 == Territory Class
 

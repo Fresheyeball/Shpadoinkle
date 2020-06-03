@@ -6,7 +6,7 @@ Render backends are pluggable in Shpadoinkle. This project currently comes with 
 * https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/snabbdom#shpadoinkle-backend-snabbdom[Snabbdom]
 * https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/static#shpadoinkle-backend-static[Static]
 
-We do not need to change our application to use any of these. Our view code will work without alteration with any backend.
+We do not need to change our application to use any of these. Our view code will work without alteration with any backend. The application should still build and run with both GHC and GHCjs.
 
 == Using a Backend
 
@@ -34,7 +34,7 @@ import Shpadoinkle.Backend.Snabbdom
 shpadoinkle id runSnabbdom 0 territory view getBody
 ----
 
-Will now use the high performance https://github.com/snabbdom/snabbdom[Snabbdom] Virtual DOM backend written in JavaScript to render instead! That's it. No other changes are needed, and the application should still build and run with both GHC and GHCjs.
+Now the application will render with https://github.com/snabbdom/snabbdom[Snabbdom] Virtual DOM backend written in JavaScript to render instead.
 
 [NOTE]
 ====
@@ -50,5 +50,5 @@ renderStatic :: Html m a -> Text
 
 Adding your own backend is a matter of writing an instance of the `Backend` type class located in core.
 
-* See the https://hackage.haskell.org/package/Shpadoinkle/docs/Shpadoinkle.html#t:Backend[Haddock].
 * See the long form xref:project-structure/core.adoc#_backend_class[documentation.]
+* See the https://hackage.haskell.org/package/Shpadoinkle/docs/Shpadoinkle.html#t:Backend[Haddock].
