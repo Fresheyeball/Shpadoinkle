@@ -2,9 +2,9 @@
 
 Render backends are pluggable in Shpadoinkle. This project currently comes with 3 backends.
 
-* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/pardiff#shpadoinkle-backend-pardiff[ParDiff]
-* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/snabbdom#shpadoinkle-backend-snabbdom[Snabbdom]
-* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/static#shpadoinkle-backend-static[Static]
+* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/pardiff#shpadoinkle-backend-pardiff[icon:gitlab[] ParDiff]
+* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/snabbdom#shpadoinkle-backend-snabbdom[icon:gitlab[] Snabbdom]
+* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/static#shpadoinkle-backend-static[icon:gitlab[] Static]
 
 We do not need to change our application to use any of these. Our view code will work without alteration with any backend. The application should still build and run with both GHC and GHCjs.
 
@@ -36,7 +36,7 @@ shpadoinkle id runSnabbdom 0 territory view getBody
 
 Now the application will render with https://github.com/snabbdom/snabbdom[Snabbdom] Virtual DOM backend written in JavaScript to render instead.
 
-[NOTE]
+[TIP]
 ====
 The Static backend is a bit different as it does not work with the `shpadoinkle` primative. Instead it exposes a single function.
 
