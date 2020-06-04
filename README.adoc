@@ -2,35 +2,89 @@
 
 🤠 ⟶ 🥔 🤠
 
-====
-I think I know precisely what I mean...
-====
+==== I think I know precisely what I mean… ====
 
-[![pipeline status](https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg)](https://gitlab.com/fresheyeball/Shpadoinkle/commits/master)
-[![BSD-3](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![built with nix](https://img.shields.io/badge/built%20with-nix-41439a)](https://builtwithnix.org)
+https://gitlab.com/fresheyeball/Shpadoinkle/commits/master[image:https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg[pipeline
+status]]
+https://opensource.org/licenses/BSD-3-Clause[image:https://img.shields.io/badge/License-BSD%203--Clause-blue.svg[BSD-3]]
+https://builtwithnix.org[image:https://img.shields.io/badge/built%20with-nix-41439a[built
+with nix]]
 
-[Shpadoinkle](https://www.youtube.com/watch?v=0CizU8aB3c8) is a programming model for user interface development. It supports flexible, simple, declarative code by modeling user interface interactions as Coalgebras. Currently builds and runs with **ghc 8.6.x** and **ghcjs 8.6.x**
+https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a
+programming model for user interface development. It supports flexible,
+simple, declarative code by modeling user interface interactions as
+Coalgebras. Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*
 
-## [WIP Documentation](http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html)
+== http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html[WIP Documentation]
 
-* [Getting Started](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html)
-* [Tutorial](https://fresheyeball.gitlab.io/Shpadoinkle/docs/tutorial/index.html)
-* [Extending an Example](https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html)
-* [WIP Seed Project](https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman)
+* https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html[Getting
+Started]
+* https://fresheyeball.gitlab.io/Shpadoinkle/docs/tutorial/index.html[Tutorial]
+* https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html[Extending
+an Example]
+* https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[WIP
+Seed Project]
 
-#### [TODOMVC example](http://fresheyeball.gitlab.io/Shpadoinkle/todomvc)
+=== http://fresheyeball.gitlab.io/Shpadoinkle/todomvc[TODOMVC example]
 
-## Hackage Package Matrix
+== Hackage Package Matrix
 
-| Package | Version | Dependencies | Availablity |
-|---|---|---|---|
-| Core | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle.svg)](https://hackage.haskell.org/package/Shpadoinkle) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle) |
-| Html | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-html.svg)](https://hackage.haskell.org/package/Shpadoinkle-html) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-html.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-html) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-html/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-html) |
-| Static | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-backend-static.svg)](https://hackage.haskell.org/package/Shpadoinkle-backend-static) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-static.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-backend-static) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-static/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-static) |
-| ParDiff | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-backend-pardiff.svg)](https://hackage.haskell.org/package/Shpadoinkle-backend-pardiff) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-pardiff.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-backend-pardiff) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-pardiff/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-pardiff) |
-| Snabbdom | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-backend-snabbdom.svg)](https://hackage.haskell.org/package/Shpadoinkle-backend-snabbdom) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-snabbdom.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-backend-snabbdom) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-snabbdom/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-snabbdom) |
-| Router | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-router.svg)](https://hackage.haskell.org/package/Shpadoinkle-router) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-router.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-router) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-snabbdom/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-snabbdom) |
-| Widgets | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-widgets.svg)](https://hackage.haskell.org/package/Shpadoinkle-widgets) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-widgets.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-widgets) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets) |
-| Examples | [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-examples.svg)](https://hackage.haskell.org/package/Shpadoinkle-examples) | [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-examples.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-examples) | [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets) |
+[cols=",,,",options="header",]
+|===
+|Package |Version |Dependencies |Availablity
+|Core
+|https://hackage.haskell.org/package/Shpadoinkle[image:https://img.shields.io/hackage/v/Shpadoinkle.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle[image:https://img.shields.io/hackage-deps/v/Shpadoinkle.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle/badge[Hackage
+CI]]
 
+|Html
+|https://hackage.haskell.org/package/Shpadoinkle-html[image:https://img.shields.io/hackage/v/Shpadoinkle-html.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-html[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-html.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-html[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-html/badge[Hackage
+CI]]
+
+|Static
+|https://hackage.haskell.org/package/Shpadoinkle-backend-static[image:https://img.shields.io/hackage/v/Shpadoinkle-backend-static.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-backend-static[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-static.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-static[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-static/badge[Hackage
+CI]]
+
+|ParDiff
+|https://hackage.haskell.org/package/Shpadoinkle-backend-pardiff[image:https://img.shields.io/hackage/v/Shpadoinkle-backend-pardiff.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-backend-pardiff[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-pardiff.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-pardiff[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-pardiff/badge[Hackage
+CI]]
+
+|Snabbdom
+|https://hackage.haskell.org/package/Shpadoinkle-backend-snabbdom[image:https://img.shields.io/hackage/v/Shpadoinkle-backend-snabbdom.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-backend-snabbdom[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-snabbdom.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-snabbdom[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-snabbdom/badge[Hackage
+CI]]
+
+|Router
+|https://hackage.haskell.org/package/Shpadoinkle-router[image:https://img.shields.io/hackage/v/Shpadoinkle-router.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-router[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-router.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-snabbdom[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-snabbdom/badge[Hackage
+CI]]
+
+|Widgets
+|https://hackage.haskell.org/package/Shpadoinkle-widgets[image:https://img.shields.io/hackage/v/Shpadoinkle-widgets.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-widgets[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-widgets.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge[Hackage
+CI]]
+
+|Examples
+|https://hackage.haskell.org/package/Shpadoinkle-examples[image:https://img.shields.io/hackage/v/Shpadoinkle-examples.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-examples[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-examples.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge[Hackage
+CI]]
+|===
