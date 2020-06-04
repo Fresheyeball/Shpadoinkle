@@ -61,6 +61,14 @@ shell-864-ghcjs:
   artifacts:
     untracked: true
 
+
+antora:
+  stage: build
+  script:
+  - nix-build docs --fallback
+  artifacts:
+    untracked: true
+
 # test-864-ghc:
 #   stage: test
 #   script:
