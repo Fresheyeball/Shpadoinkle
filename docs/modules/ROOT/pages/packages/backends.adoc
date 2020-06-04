@@ -2,9 +2,9 @@
 
 Render backends are pluggable in Shpadoinkle. This project currently comes with 3 backends.
 
-* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/pardiff#shpadoinkle-backend-pardiff[icon:gitlab[] ParDiff]
-* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/snabbdom#shpadoinkle-backend-snabbdom[icon:gitlab[] Snabbdom]
-* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/static#shpadoinkle-backend-static[icon:gitlab[] Static]
+* {gitlab}/backends/pardiff#shpadoinkle-backend-pardiff[icon:gitlab[] ParDiff]
+* {gitlab}/backends/snabbdom#shpadoinkle-backend-snabbdom[icon:gitlab[] Snabbdom]
+* {gitlab}/backends/static#shpadoinkle-backend-static[icon:gitlab[] Static]
 
 We do not need to change our application to use any of these. Our view code will work without alteration with any backend. The application should still build and run with both GHC and GHCjs.
 

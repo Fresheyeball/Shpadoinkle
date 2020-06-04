@@ -16,7 +16,7 @@ view :: Model -> Html' Model
 This allows us to describe the view as a pure function predicated on the current application state. It also suggests that changes to application state are dictated by the view.
 
 [NOTE]
-.Category Theory Note
+.Coalgebras
 ====
 We are modelling the user interface as https://en.wikipedia.org/wiki/F-coalgebra[Coalgebras]. In programming, these ideas are just functions with the following shapes:
 
@@ -49,7 +49,7 @@ view model = -- <1>
 
 That's it. If you can understand what is going on in the above example, you understand Shpadoinkle, it's that simple. There is no dispatch, no payloads, no event types, no giant update function, no networks of state managers, no templating, no special html syntax, no magic attributes, no digest cycle, and nothing fancy going on.
 
-In fact the only part of Shpadoinkle that actually performs work is only about {hackage}/docs/src/Shpadoinkle.html#shpadoinkle[10 lines of code].
+In fact the only part of Shpadoinkle that actually performs work is only about xref:packages/core.adoc#_shpadoinkle[10 lines of code].
 
 == Features
 

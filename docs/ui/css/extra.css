@@ -58,3 +58,8 @@ i.fa.icon-caution::before {
 .doc pre.highlight code, .doc pre:not(.highlight){
   border: 1px solid #fafafa;
 }
+
+.conum[data-value]{
+  background: rgb(51, 51, 88);
+  color: white;
+}
