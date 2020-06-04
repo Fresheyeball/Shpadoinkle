@@ -1,8 +1,10 @@
-# Shpadoinkle
+= Shpadoinkle
 
 🤠 ⟶ 🥔 🤠
 
-### I think I know precisely what I mean...
+====
+I think I know precisely what I mean...
+====
 
 [![pipeline status](https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg)](https://gitlab.com/fresheyeball/Shpadoinkle/commits/master)
 [![BSD-3](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
