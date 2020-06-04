@@ -94,7 +94,23 @@ The above mapping is type safe, and urls not present in the `SPA` type will not 
 
 To use the router, it's expected you use an function to start your application (such as https://hackage.haskell.org/package/Shpadoinkle-router/docs/Shpadoinkle-Router.html#v:fullPageSPA[fullPageSPA]) where there is a `(r -> m a)` argument, where you can describe how to obtain an application state based on a given route. This is useful both for pure frontend applications, as well as apps that use isomorphic rendering with the static renderer.
 
-We can use the `m` in `(r -> m a)` to perform IO and populate our model with data.
+This is typically a relationship between Routes and a sum type of page data. We can use the `m` in `(r -> m a)` to perform IO and populate our model with data.
+
+[source,haskell]
+----
+data Model
+  = HomePage
+  | AboutPage AboutPage
+
+data AboutPage = AboutPage Search [BlogPost]
+
+initial :: MonadJSM m => Route -> m Model
+initial = \case
+  Home -> return HomePage
+  About search -> do
+    posts <- getBlogPosts
+    AboutPage search $ searchFilter search posts
+----
 
 For an example that takes advantage of server side rendering, isomorphic `Servant` route sharing see the https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/examples/servant-crud[Servant CRUD Example].
 
