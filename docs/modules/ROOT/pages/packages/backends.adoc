@@ -50,5 +50,5 @@ renderStatic :: Html m a -> Text
 
 Adding your own backend is a matter of writing an instance of the `Backend` type class located in core.
 
-* See the long form xref:project-structure/core.adoc#_backend_class[documentation.]
+* See the long form xref:packages/core.adoc#_backend_class[documentation.]
 * See the https://hackage.haskell.org/package/Shpadoinkle/docs/Shpadoinkle.html#t:Backend[Haddock].
