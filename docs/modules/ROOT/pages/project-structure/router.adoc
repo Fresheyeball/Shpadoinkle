@@ -42,7 +42,7 @@ These functions abstractly would have the following relationship.
 
 However these functions not directly representable in Haskell so long as we intend on using `Servant` to describe our urls. Since url descriptors are types and routes are terms.
 
-== Example Usage
+=== Example Types
 
 Lets use the above example. Below we describe our types. Note again that url descriptors are types, yet routes are terms.
 
@@ -61,7 +61,7 @@ type SPA = "v2" :> "about" :> QueryParam "search" Search :> Raw
 You must consider the order of the urls separated by `:<|>`. Servant works like a pattern match. But since the match is type level, unreachable routes are entirely possible (GHC doesn't support checking for unreachable type level patterns). So think carefully about order and specificity
 ====
 
-=== To Route
+== To Route
 
 To map urls to routes we use a servant combinator exposed by this package `:>>`.
 
@@ -76,7 +76,7 @@ routes = About <1>
 
 <1> Since we use `QueryParam "search" Search` in the first route, at this location in the mapping we must provide a function of type `Maybe Search -> Route`. The burden is on the developer to put the right constructor at each location in the Servant specification; which while type safe is not fool proof.
 
-=== From Route
+== From Route
 
 The mapping of routes to urls is a bit ugly at the moment. But should be possible to eliminate in future releases with the use of `GHC.Generics`.
 
