@@ -1,1 +1,54 @@
 = Backends
+
+Render backends are pluggable in Shpadoinkle. This project currently comes with 3 backends.
+
+* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/pardiff#shpadoinkle-backend-pardiff[icon:gitlab[] ParDiff]
+* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/snabbdom#shpadoinkle-backend-snabbdom[icon:gitlab[] Snabbdom]
+* https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/backends/static#shpadoinkle-backend-static[icon:gitlab[] Static]
+
+We do not need to change our application to use any of these. Our view code will work without alteration with any backend. The application should still build and run with both GHC and GHCjs.
+
+== Using a Backend
+
+Lets take a quick look at the `shpadoinkle` primitive
+
+[source,haskell]
+----
+shpadoinkle :: Backend b m a => Territory t => Eq a
+  => (m ~> JSM) -> (t a -> b m ~> m) -> a -> t a -> (a -> Html (b m) a) -> b m RawNode -> JSM ()
+----
+
+The second argument `(t a -> b m ~> m)` is how we choose our backend. For example
+
+[source,haskell]
+----
+import Shpadoinkle.Backend.ParDiff
+shpadoinkle id runParDiff 0 territory view getBody
+----
+
+Will use the ParDiff Virtual DOM backend written in Haskell. But simply changing it to
+
+[source,haskell]
+----
+import Shpadoinkle.Backend.Snabbdom
+shpadoinkle id runSnabbdom 0 territory view getBody
+----
+
+Now the application will render with https://github.com/snabbdom/snabbdom[Snabbdom] Virtual DOM backend written in JavaScript to render instead.
+
+[TIP]
+====
+The Static backend is a bit different as it does not work with the `shpadoinkle` primative. Instead it exposes a single function.
+
+[source,haskell]
+----
+renderStatic :: Html m a -> Text
+----
+====
+
+== Writing a Backend
+
+Adding your own backend is a matter of writing an instance of the `Backend` type class located in core.
+
+* See the long form xref:project-structure/core.adoc#_backend_class[documentation.]
+* See the https://hackage.haskell.org/package/Shpadoinkle/docs/Shpadoinkle.html#t:Backend[Haddock].

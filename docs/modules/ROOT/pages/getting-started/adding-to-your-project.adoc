@@ -2,7 +2,7 @@
 
 Adding Shpadoinkle to a project should be easy.
 
-You can add packages from https://hackage.haskell.org/[Hackage] and standard Haskell toolchain.
+See an example of this working by examining https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[default.nix] in the https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[Seed Project]. You can add packages from https://hackage.haskell.org/[Hackage] and standard Haskell toolchain.
 
 == GHCjs Challenges
 
@@ -43,7 +43,7 @@ pkgs = import
 <3> This overlay adds in optimizations to GHCjs from Reflex Platform
 <4> Compose the overlays onto your package set
 
-[WARNING]
+[TIP]
 ====
 This does **NOT** add any specific Shpadoinkle modules to your Nix package set.
 You will still need to fold them, with your project's Nix Overlay.
