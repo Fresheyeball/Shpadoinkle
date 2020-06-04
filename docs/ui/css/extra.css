@@ -47,6 +47,10 @@ i.fa.icon-caution::before {
   border-color: #41af46;
 }
 
+.admonitionblock.caution{
+  border-color: #a0439c;
+}
+
 .doc .admonitionblock td.content{
   background: none;
 }

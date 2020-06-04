@@ -17,5 +17,10 @@ asciidoc:
     sectlinks: ''
     sectanchors: ''
     hide-uri-scheme: ''
+    stem: true
+    icons: font
+    gitlab: https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master
+    snowman: https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman
+    hackage: https://hackage.haskell.org/package/Shpadoinkle
 output:
   dir: ./public
