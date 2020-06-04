@@ -2,9 +2,8 @@
 
 🤠 ⟶ 🥔 🤠
 
-====
-I think I know precisely what I mean...
-====
+
+==== I think I know precisely what I mean...
 
 https://gitlab.com/fresheyeball/Shpadoinkle/commits/master[image:https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg[pipeline
 status]]
@@ -17,16 +16,22 @@ programming model for user interface development. It supports flexible,
 simple, declarative code by modeling user interface interactions as
 Coalgebras. Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*
 
-== http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html[WIP Documentation]
+== Documentation
 
+* http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html[Home Page]
 * https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html[Getting Started]
 * https://fresheyeball.gitlab.io/Shpadoinkle/docs/tutorial/index.html[Tutorial]
 * https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html[Extending an Example]
-* https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[WIP Seed Project]
 
-=== http://fresheyeball.gitlab.io/Shpadoinkle/todomvc[TODOMVC example]
+== Snowman
 
-== Hackage Package Matrix
+The easiest way to start a new Shpadoinkle project is to build a https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[Snowman].
+
+== TODOMVC
+
+You can see an example of Shpadoinkle in the popular http://todomvc.com/[TODOMVC] running http://fresheyeball.gitlab.io/Shpadoinkle/todomvc[here], compiled from the code located https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/TODOMVC.hs[here].
+
+== Hackage Matrix
 
 [options="header"]
 |===
