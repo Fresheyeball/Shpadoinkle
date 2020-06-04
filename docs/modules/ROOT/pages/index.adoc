@@ -3,8 +3,8 @@
 Shpadoinkle is a purely functional user interface library, focused on simplicity, performance, and ergonomics.
 
 * xref:getting-started/index.adoc[Getting Started]
+* xref:packages/index.adoc[Packages]
 * xref:tutorial/index.adoc[Tutorial]
-* xref:project-structure/index.adoc[Project Structure]
 
 The core idea here is to model user interfaces as functions with type
 
