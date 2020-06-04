@@ -1,1 +1,100 @@
 = Router
+
+This package contains a SPA (Single Page Application) router based on https://www.servant.dev[Servant] combinators.
+
+The routing schema is a surjection between urls and routes. That is more than one url may result in the same route.
+
+[source,haskell]
+----
+data Route = Home | About Search
+----
+
+We may have a url mapping as follows
+
+* `https://example.com/` => `Home`
+* `https://example.com/home` => `Home`
+* `https://example.com/about` => `About Nothing`
+* `https://example.com/about?search=foo` => `About (Just "foo")`
+* `https://example.com/v2/about?search=foo` => `About (Just "foo")`
+
+[TIP]
+====
+You can take advantage of this property to support legacy urls and evolve a routing schema over time.
+====
+
+Let's call this mapping `toRoute : URL -> Route`
+
+The opposite direction an injection. To programatically navigate the app, we need a mapping from routes to urls. This mapping documents the cannonical url for a given route.
+
+* `Home` => `https://example.com/home`
+* `About Nothing` => `https://example.com/v2/about`
+* `About (Just "foo")` => `https://example.com/v2/about?search=foo`
+
+Let's call this mapping `fromRoute : Route -> URL`
+
+These functions abstractly would have the following relationship.
+
+[source,haskell]
+----
+∀route. toRoute (fromRoute route) = route
+∃!url. fromRoute (toRoute url) = url
+----
+
+However these functions not directly representable in Haskell so long as we intend on using `Servant` to describe our urls. Since url descriptors are types and routes are terms.
+
+== Example Usage
+
+Lets use the above example. Below we describe our types. Note again that url descriptors are types, yet routes are terms.
+
+[source,haskell]
+----
+type Search = Text
+data Route = Home | About Search
+type SPA = "v2" :> "about" :> QueryParam "search" Search :> Raw
+      :<|> "about" :> QueryParam "search" Search :> Raw
+      :<|> "home" :> Raw
+      :<|> Raw
+----
+
+[WARNING]
+====
+You must consider the order of the urls separated by `:<|>`. Servant works like a pattern match. But since the match is type level, unreachable routes are entirely possible (GHC doesn't support checking for unreachable type level patterns). So think carefully about order and specificity
+====
+
+=== To Route
+
+To map urls to routes we use a servant combinator exposed by this package `:>>`.
+
+[source,haskell]
+----
+routes :: SPA :>> Route
+routes = About <1>
+    :<|> About
+    :<|> Home
+    :<|> Home
+----
+
+<1> Since we use `QueryParam "search" Search` in the first route, at this location in the mapping we must provide a function of type `Maybe Search -> Route`. The burden is on the developer to put the right constructor at each location in the Servant specification; which while type safe is not fool proof.
+
+=== From Route
+
+The mapping of routes to urls is a bit ugly at the moment. But should be possible to eliminate in future releases with the use of `GHC.Generics`.
+
+[source,haskell]
+----
+instance Routed SPA Route where
+  redirect = \case
+    Home         -> Redirect (Proxy @("home" :> Raw)) id
+    About search -> Redirect (Proxy @("v2" :> "about" :> QueryParam "search" Search :> Raw)) ($ search)
+----
+
+The above mapping is type safe, and urls not present in the `SPA` type will not compile. Any terms that can be captured in the pattern matching must be used for this instance to be lawful.
+
+== Running the router
+
+To use the router, it's expected you use an function to start your application (such as https://hackage.haskell.org/package/Shpadoinkle-router/docs/Shpadoinkle-Router.html#v:fullPageSPA[fullPageSPA]) where there is a `(r -> m a)` argument, where you can describe how to obtain an application state based on a given route. This is useful both for pure frontend applications, as well as apps that use isomorphic rendering with the static renderer.
+
+We can use the `m` in `(r -> m a)` to perform IO and populate our model with data.
+
+For an example that takes advantage of server side rendering, isomorphic `Servant` route sharing see the https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master/examples/servant-crud[Servant CRUD Example].
+
