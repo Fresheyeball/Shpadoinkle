@@ -63,7 +63,7 @@ div.className = "foo";
 Node "div" [("className", PText "foo")] []
 ----
 
-[WARNING]
+[TIP]
 .Don't use constructors directly
 ====
 It is recommended you do **not** use these constructors, but rather use the exported named functions.
