@@ -30,3 +30,27 @@ i.fa.icon-warning::before {
 i.fa.icon-caution::before {
   background: no-repeat url("../img/caution.svg");
 }
+
+.admonitionblock{
+  border: 1px dashed;
+}
+
+.admonitionblock.note{
+  border-color: #217ee7;
+}
+
+.admonitionblock.warning{
+  border-color: #e18114;
+}
+
+.admonitionblock.tip{
+  border-color: #41af46;
+}
+
+.doc .admonitionblock td.content{
+  background: none;
+}
+
+.doc pre.highlight code, .doc pre:not(.highlight){
+  border: 1px solid #fafafa;
+}
