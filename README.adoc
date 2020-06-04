@@ -2,7 +2,9 @@
 
 🤠 ⟶ 🥔 🤠
 
-==== I think I know precisely what I mean… ====
+====
+I think I know precisely what I mean...
+====
 
 https://gitlab.com/fresheyeball/Shpadoinkle/commits/master[image:https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg[pipeline
 status]]
@@ -17,19 +19,16 @@ Coalgebras. Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*
 
 == http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html[WIP Documentation]
 
-* https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html[Getting
-Started]
+* https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html[Getting Started]
 * https://fresheyeball.gitlab.io/Shpadoinkle/docs/tutorial/index.html[Tutorial]
-* https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html[Extending
-an Example]
-* https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[WIP
-Seed Project]
+* https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html[Extending an Example]
+* https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[WIP Seed Project]
 
 === http://fresheyeball.gitlab.io/Shpadoinkle/todomvc[TODOMVC example]
 
 == Hackage Package Matrix
 
-[cols=",,,",options="header",]
+[options="header"]
 |===
 |Package |Version |Dependencies |Availablity
 |Core
