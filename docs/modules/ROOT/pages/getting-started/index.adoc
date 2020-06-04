@@ -16,7 +16,8 @@ Nix works on all Linux distributions, as well as Darwin-based operating systems 
 curl -L https://nixos.org/nix/install | sh
 ----
 
-**Make sure to follow the instructions output by the script.**
+[CAUTION]
+Make sure to follow the instructions output by the script.
 
 == Cachix
 
