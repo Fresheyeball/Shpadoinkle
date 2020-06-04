@@ -21,7 +21,7 @@ build-864-ghc:
   stage: build
   script:
   - nix-build --argstr compiler ghc864 --fallback
-  - rm result
+  - rm result*
   artifacts:
     untracked: true
 
@@ -29,7 +29,7 @@ build-864-ghcjs:
   stage: build
   script:
   - nix-build --argstr compiler ghc864 --arg isJS true --fallback
-  - rm result
+  - rm result*
   artifacts:
     untracked: true
 
@@ -61,12 +61,11 @@ shell-864-ghcjs:
   artifacts:
     untracked: true
 
-
 antora:
   stage: build
   script:
   - nix-build docs --fallback
-  - rm result
+  - rm result*
   artifacts:
     untracked: true
 
@@ -93,13 +92,13 @@ pages:
   - mkdir -p public/todomvc
 
   - cp -r result/bin/todomvc.jsexe/* public/todomvc
-  - rm result
+  - rm result*
 
   - nix-build docs --fallback
 
   - cp -r result/* public
   - chmod -R 755 public/*
-  - rm result
+  - rm result*
   artifacts:
     paths:
     - public
@@ -113,11 +112,12 @@ cachix:
   script:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - cachix authtoken $AUTHTOKEN
-  - nix-build --arg isJS true                              --no-out-link | cachix push shpadoinkle
-  - nix-build --arg isJS false                             --no-out-link | cachix push shpadoinkle
-  - nix-build --arg isJS true  -A Shpadoinkle-examples.env --no-out-link | cachix push shpadoinkle
-  - nix-build --arg isJS false -A Shpadoinkle-examples.env --no-out-link | cachix push shpadoinkle
-  - nix-build --arg isJS true  -A Shpadoinkle-tests.env    --no-out-link | cachix push shpadoinkle
-  - nix-build --arg isJS false -A Shpadoinkle-tests.env    --no-out-link | cachix push shpadoinkle
+  - nix-build --arg isJS true                              | cachix push shpadoinkle
+  - nix-build --arg isJS false                             | cachix push shpadoinkle
+  - nix-build --arg isJS true  -A Shpadoinkle-examples.env | cachix push shpadoinkle
+  - nix-build --arg isJS false -A Shpadoinkle-examples.env | cachix push shpadoinkle
+  - nix-build --arg isJS true  -A Shpadoinkle-tests.env    | cachix push shpadoinkle
+  - nix-build --arg isJS false -A Shpadoinkle-tests.env    | cachix push shpadoinkle
+  - rm result*
   only:
   - master
