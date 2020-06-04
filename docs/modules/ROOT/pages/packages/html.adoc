@@ -9,10 +9,10 @@ HTML tags each get **4** named functions, with the following semantic
 [%header]
 |===
 | Variant | Properties Required | Children Required
-| Plain | icon:check[] | icon:check[]
-| Prime | icon:check[] | icon:times[]
-| Underscore | icon:times[] | icon:check[]
-| Prime + Underscore | icon:times[] | icon:times[]
+| Plain | icon:check[] Yes | icon:check[] Yes
+| Prime | icon:check[] Yes | icon:times[] No
+| Underscore | icon:times[] No | icon:check[] Yes
+| Prime + Underscore | icon:times[] No | icon:times[] No
 |===
 
 or we can see the semantic as follows
@@ -111,7 +111,7 @@ will all render as
 <div class="foo bar" ></div>
 ----
 
-You can also use the https://hackage.haskell.org/package/Shpadoinkle-html/docs/Shpadoinkle-Html-Property.html#t:ClassList[`ClassList` newtype], to build up classes for an element.
+You can also use the {hackage}-html/docs/Shpadoinkle-Html-Property.html#t:ClassList[`ClassList` newtype], to build up classes for an element.
 
 == Memo
 

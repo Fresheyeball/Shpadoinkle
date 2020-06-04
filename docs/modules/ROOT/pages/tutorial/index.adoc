@@ -4,7 +4,7 @@ Here we will build a simple calculator, following pioneers of the space http://w
 
 If you would like to follow along, it's advised you either:
 
-* https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[Use the Seed Project]
+* {snowman}[Use the Seed Project]
 * xref:getting-started/extend-an-example.adoc[Extend an Example]
 
 == Hello World
