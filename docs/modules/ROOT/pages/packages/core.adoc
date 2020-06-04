@@ -28,7 +28,7 @@ We do not diff `Html`, instead we marshall this structure into one for a given x
 This structure is our DOM Tree. We have Nodes which contain lists of Html, and which is a leaf where we can store `Text`, and Potato where we can store a component built outside of the Shpadoinkle view (for example wrapping a JavaScript component).
 
 [NOTE]
-.Category Theory Note
+.Coalgebra
 `(Html m)` is the Functor in our Coalgebra. It is a Functor, not Applicative, or Monadic. This is by design. By being merely functorial, we do not need to reason about when components will render.
 
 == The Prop Type
@@ -63,7 +63,7 @@ div.className = "foo";
 Node "div" [("className", PText "foo")] []
 ----
 
-[WARNING]
+[TIP]
 .Don't use constructors directly
 ====
 It is recommended you do **not** use these constructors, but rather use the exported named functions.
@@ -86,9 +86,9 @@ PListener :: (RawNode -> RawEvent -> m a) -> Prop m a
 The raw listener will always recieve the https://developer.mozilla.org/en-US/docs/Web/API/Node[`RawNode`] which is the target of the event. And the https://developer.mozilla.org/en-US/docs/Web/API/Event[`RawEvent`] which the event object itselt. Both of these are `newtypes` of https://hackage.haskell.org/package/jsaddle-0.9.7.0/docs/GHCJS-Types.html#t:JSVal[JSVal]. This is needed so that we can still do low level work. However in practice it's expected you would use functions that allow you to ignore these raw components.
 
 == Backend Class
-
 This is an interface for renders of `Html`.
 
+// tag::backend[]
 [source,haskell]
 ----
 class Backend b m a | b m -> a where
@@ -171,6 +171,7 @@ setup
 <1> This is a callback you are responsible for executing once the setup process is complete. The callback is the entire application. If you do not evaluate the `JSM ()` nothing will happen.
 
 In the case of JavaScript based backends, it will likely include steps like, adding the library to the `<head>` of the page, or instantiating a JavaScript class.
+// end::backend[]
 
 == Territory Class
 
