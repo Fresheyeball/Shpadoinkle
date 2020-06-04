@@ -1,7 +1,7 @@
 * xref:getting-started/index.adoc[Getting Started]
 ** xref:getting-started/extend-an-example.adoc[Extend an Example]
 ** xref:getting-started/adding-to-your-project.adoc[Adding to a Project]
-* xref:packages/index.adoc[Project Structure]
+* xref:packages/index.adoc[Packages]
 ** xref:packages/core.adoc[Core]
 ** xref:packages/backends.adoc[Backends]
 ** xref:packages/html.adoc[Html]
