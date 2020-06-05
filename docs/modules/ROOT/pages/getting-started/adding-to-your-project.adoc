@@ -21,33 +21,23 @@ By exposing overlays we allow you to compose in needed changes into the Nix pkgs
 
 [source,nix]
 ----
-shpadoinkle = fetchgit { # <1>
+shpadoinkle = builtins.fetchGit { # <1>
   url    = https://gitlab.com/fresheyeball/Shpadoinkle.git;
-  rev    = "243b89a00c29cdce6768be1b743e846a0bc22fea";
-  sha256 = "06v4mgni4nq7asxy96761hgrdzhlva36vzak0l4yxc727zfwrffr";
+  rev    = "f4a90d2621aeb981bc0b5b1aaf6d86e19f6d0166";
 };
 
 shpadoinkle-overlay = # <2>
-  import (shpadoinkle + "/overlay.nix") { compiler = "ghc863"; isJS = false; };
-
-reflex-overlay = # <3>
-  import (shpadoinkle + "/overlay-reflex.nix") { compiler = "ghc863"; isJS = false; };
+  import (shpadoinkle + "/nix/overlay.nix") { compiler = "ghc863"; isJS = false; };
 
 pkgs = import
   (builtins.fetchTarball { url = "https://github.com/${fork}/nixpkgs/archive/${rev}.tar.gz"; })
-  { overlays = [ shpadoinkle-overlay reflex-overlay ]; }; # <4>
+  { overlays = [ shpadoinkle-overlay my-overlay ]; }; # <3>
 ----
 
 <1> Get the Shpadoinkle source code
-<2> This overlay makes dependencies compatible with Shpadoinkle targets
-<3> This overlay adds in optimizations to GHCjs from Reflex Platform
-<4> Compose the overlays onto your package set
+<2> This overlay makes dependencies compatible with Shpadoinkle targets, as well as adds in optimizations of GHCjs from Reflex Platform
+<3> Compose the overlays onto your package set
 
-[TIP]
-====
-This does **NOT** add any specific Shpadoinkle modules to your Nix package set.
-You will still need to fold them, with your project's Nix Overlay.
-====
 
 == Extending Nix Haskell
 
