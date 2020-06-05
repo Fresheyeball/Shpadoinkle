@@ -10,6 +10,10 @@ cd backends/pardiff
 hpack
 cd ../..
 
+cd backends/static
+hpack
+cd ../..
+
 cd html
 hpack
 cd ..
