@@ -23,16 +23,19 @@
     };
 
 
-  gitignore = (super.callPackage (super.fetchFromGitHub
-    { owner = "siers";
-      repo = "nix-gitignore";
-      rev = "4f2d85f2f1aa4c6bff2d9fcfd3caad443f35476e";
-      sha256 = "1vzfi3i3fpl8wqs1yq95jzdi6cpaby80n8xwnwa8h2jvcw3j7kdz";
-    }) {}).gitignoreSource;
+  gitignore = util.gitignore
+      [ ".git"
+        "*.ghc*"
+        "*.cabal"
+        "*result*"
+        "*dist*"
+        "*.nix"
+        "*.md"
+        ".*.yml"
+      ];
 
 in {
 
-  inherit gitignore;
 
   google-chrome = (import (builtins.fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/${chrome-rev}.tar.gz";
@@ -44,6 +47,19 @@ in {
       let dontJS = if isJS then x: dontHaddock (dontCheck x) else id;
       in super.haskell.packages.${util.compilerjs}.override (old: {
         overrides = super.lib.composeExtensions (old.overrides or (_:_: {})) (hself: hsuper: {
+
+          Shpadoinkle                  = hself.callCabal2nix "Shpadoinkle"                  (gitignore ../core)              {};
+          Shpadoinkle-backend-snabbdom = hself.callCabal2nix "Shpadoinkle-backend-snabbdom" (gitignore ../backends/snabbdom) {};
+          Shpadoinkle-backend-static   = hself.callCabal2nix "Shpadoinkle-backend-static"   (gitignore ../backends/static)   {};
+          Shpadoinkle-backend-pardiff  = hself.callCabal2nix "Shpadoinkle-backend-pardiff"  (gitignore ../backends/pardiff)  {};
+          Shpadoinkle-lens             = hself.callCabal2nix "Shpadoinkle-lens"             (gitignore ../lens)              {};
+          Shpadoinkle-html             = hself.callCabal2nix "Shpadoinkle-html"             (gitignore ../html)              {};
+          Shpadoinkle-router           = hself.callCabal2nix "Shpadoinkle-router"           (gitignore ../router)            {};
+          Shpadoinkle-widgets          = hself.callCabal2nix "Shpadoinkle-widgets"          (gitignore ../widgets)           {};
+          Shpadoinkle-examples         = hself.callCabal2nix "Shpadoinkle-examples"         (gitignore ../examples)          {};
+          Shpadoinkle-experiments      = hself.callCabal2nix "Shpadoinkle-experiments"      (gitignore ../experiments)       {};
+          Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests)             {};
+
           hashable             = dontJS hsuper.hashable;
           comonad              = dontJS hsuper.comonad;
 
@@ -63,7 +79,7 @@ in {
           semigroupoids        = dontJS hsuper.semigroupoids;
           megaparsec           = dontJS hsuper.megaparsec;
           lens                 = dontJS hsuper.lens;
-          hpack                = super.haskell.packages.${compiler}.hpack;
+          hpack                = if isJS then super.haskell.packages.${compiler}.hpack else hsuper.hpack;
           http-types           = dontJS hsuper.http-types;
           silently             = dontJS hsuper.silently;
           QuickCheck           = dontJS hsuper.QuickCheck;

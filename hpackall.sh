@@ -2,15 +2,15 @@ cd core
 hpack
 cd ..
 
+cd backends/static
+hpack
+cd ../..
+
 cd backends/snabbdom
 hpack
 cd ../..
 
 cd backends/pardiff
-hpack
-cd ../..
-
-cd backends/static
 hpack
 cd ../..
 

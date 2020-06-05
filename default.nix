@@ -6,57 +6,46 @@
 , extra ? (_: b: b)
 }:
 
-let pkgs = import ./pkgs.nix compiler isJS chan; in with pkgs; with lib;
+let pkgs = import ./nix/pkgs.nix { inherit compiler isJS chan; }; in with pkgs; with lib;
 let
 
 
-  util = import ./util.nix { inherit compiler isJS; };
+  util = import ./nix/util.nix { inherit compiler isJS; };
 
 
-  gitignore = pkgs.gitignore
-      [ ".git"
-        "*.ghc*"
-        "*.cabal"
-        "*result*"
-        "*dist*"
-        "*.nix"
-        "*.md"
-        ".*.yml"
-      ];
+  ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ];
 
 
-  targets = {
-    Shpadoinkle                  = gitignore ./core;
-    Shpadoinkle-backend-snabbdom = gitignore ./backends/snabbdom;
-    Shpadoinkle-backend-static   = gitignore ./backends/static;
-    Shpadoinkle-backend-pardiff  = gitignore ./backends/pardiff;
-    Shpadoinkle-lens             = gitignore ./lens;
-    Shpadoinkle-html             = gitignore ./html;
-    Shpadoinkle-router           = gitignore ./router;
-    Shpadoinkle-widgets          = gitignore ./widgets;
-    Shpadoinkle-examples         = gitignore ./examples;
-    Shpadoinkle-experiments      = gitignore ./experiments;
+  packages = {
+    inherit (haskell.packages.${util.compilerjs})
+    Shpadoinkle
+    Shpadoinkle-backend-snabbdom
+    Shpadoinkle-backend-static
+    Shpadoinkle-backend-pardiff
+    Shpadoinkle-lens
+    Shpadoinkle-html
+    Shpadoinkle-router
+    Shpadoinkle-widgets
+    Shpadoinkle-examples
+    Shpadoinkle-experiments
+    Shpadoinkle-tests;
   };
-
-
-  haskellPackages = with haskell.lib; haskell.packages.${util.compilerjs}.extend
-    (composeExtensions (packageSourceOverrides targets) (self: super: {
-      Shpadoinkle-tests    = haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ./tests) {};
-    }));
-
-
-  ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ] ++
-    []; # (if isJS then [ haskell.compiler.ghcjs86 ] else []);
-  packages = map (t: haskellPackages.${t}) (attrNames targets ++ [ "Shpadoinkle-tests" ]);
 
 
   shellBase = {
     inherit withHoogle;
-    packages    = _: if pack == "all" then packages else [ haskellPackages.${pack} ];
+    packages    = _: if pack == "all" then attrValues packages else [ packages.${pack} ];
     COMPILER    = util.compilerjs;
     buildInputs = ghcTools;
     shellHook   = ''
       cat ${./etc/figlet}
+      ./hpackall.sh &> /dev/null
+      ${if pack == "all" then ''
+        echo ""
+        echo " | ⚠ WARNING, a bug in the shellFor Nix function, prevents some things from working."
+        echo " | Please run nix-shell with a specific package target to get around this."
+        echo " | IE: nix-shell examples"
+        '' else ""}
     '';
   };
 
@@ -65,5 +54,5 @@ in
 
 
   if inNixShell
-  then haskellPackages.shellFor (extra pkgs shellBase)
-  else foldl (ps: p: ps // { ${p.pname} = p; }) {} packages
+  then haskell.packages.${util.compilerjs}.shellFor (extra pkgs shellBase)
+  else packages
