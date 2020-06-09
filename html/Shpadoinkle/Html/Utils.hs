@@ -12,7 +12,7 @@ import           GHCJS.DOM
 import           GHCJS.DOM.Document as Doc
 import           GHCJS.DOM.Element
 import           GHCJS.DOM.Node
-import           GHCJS.DOM.Types    (toJSVal)
+import           GHCJS.DOM.Types    (toJSVal, ToJSString)
 
 import           Shpadoinkle
 
@@ -28,6 +28,15 @@ addStyle x = do
   setAttribute link "rel" "stylesheet"
   headRaw <- Doc.getHeadUnsafe doc
   () <$ appendChild headRaw link
+
+
+addInlineStyle :: ToJSString css => MonadJSM m => css -> m ()
+addInlineStyle bs = do
+  doc <- currentDocumentUnchecked
+  style <- createElement doc "style"
+  setInnerHTML style bs
+  headRaw <- Doc.getHeadUnsafe doc
+  () <$ appendChild headRaw style
 
 
 setTitle :: MonadJSM m => Text -> m ()

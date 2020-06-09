@@ -36,10 +36,10 @@ let
     inherit withHoogle;
     packages    = _: if pack == "all" then attrValues packages else [ packages.${pack} ];
     COMPILER    = util.compilerjs;
-    buildInputs = ghcTools;
+    buildInputs = ghcTools ++ [ ack ];
     shellHook   = ''
       cat ${./etc/figlet}
-      ./hpackall.sh &> /dev/null
+      ./hpackall.sh | grep generated
       ${if pack == "all" then ''
         echo ""
         echo " | ⚠ WARNING, a bug in the shellFor Nix function, prevents some things from working."

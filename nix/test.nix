@@ -1,9 +1,9 @@
 { compiler ? "ghc864", chan ? "e1843646b04fb564abf6330a9432a76df3269d2f", isJS ? true }:
-let pkgs = import ./pkgs.nix compiler isJS chan; in with pkgs; with lib; let
+let pkgs = import ./pkgs.nix { inherit compiler isJS chan; }; in with pkgs; with lib; let
 
 
-  packages = import ./default.nix { inherit compiler isJS chan; };
-  util     = import ./util.nix    { inherit compiler isJS; };
+  packages = import ../default.nix { inherit compiler isJS chan; };
+  util     = import ./util.nix     { inherit compiler isJS; };
 
 
 in runCommand "${util.compilerjs}-test" {
