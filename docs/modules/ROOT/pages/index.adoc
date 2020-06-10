@@ -18,7 +18,7 @@ This allows us to describe the view as a pure function predicated on the current
 [NOTE]
 .Category Theory Note
 ====
-We are modelling the user interface as https://en.wikipedia.org/wiki/F-coalgebra[Coalgebras]. In programming, these ideas are just functions with the following shapes:
+We are modeling the user interface as https://en.wikipedia.org/wiki/F-coalgebra[Coalgebras]. In programming, these ideas are just functions with the following shapes:
 
 [source,haskell]
 ----
@@ -26,7 +26,7 @@ algebra :: F A -> A
 coalgebra :: A -> F A
 ----
 
-Where `A` is a concrete type and `F` is a concrete Functor. In our case we are operating in the `Html'` Functor. This should provide an intuition for how user interfaces can be composed.
+Where `A` is a concrete type and `F` is a concrete Functor. In this case, we are operating in the `Html'` Functor. This should provide an intuitive example for how user interfaces can be composed.
 ====
 
 Here is a simple example, which displays a counter:
@@ -49,7 +49,7 @@ view model = -- <1>
 
 That's it. If you can understand what is going on in the above example, you understand Shpadoinkle, it's that simple. There is no dispatch, no payloads, no event types, no giant update function, no networks of state managers, no templating, no special html syntax, no magic attributes, no digest cycle, and nothing fancy going on.
 
-In fact the only part of Shpadoinkle that actually performs work is only about {hackage}/docs/src/Shpadoinkle.html#shpadoinkle[10 lines of code].
+In fact, the only part of Shpadoinkle that actually performs work is only about {hackage}/docs/src/Shpadoinkle.html#shpadoinkle[10 lines of code].
 
 == Features
 
