@@ -17,7 +17,7 @@ simple data structure where `Html :: Type`.
 view :: a -> Html
 ```
 
-This might look something like.
+This might look something like:
 
 ```haskell
 view :: Text -> Html
@@ -31,13 +31,13 @@ Which is all well and good, and something we might expect from a static renderer
 like Heist, or Blaze. Shpadoinkle handles this by allowing for `Html` to have two
 type variables associated with events, `Html :: (Type -> Type) -> Type -> Type`.
 
-The first is typically some Monad you wish to use in response to events `m`, and
+The first is typically some Monad you want to use in response to events `m`, and
 the second is the payload of those events, typically the model for your view `a`.
 
 These variables in `Html m a` are strickly about event listeners, so any view
 that doesn't have event listeners should be parametic in both `m` and `a`.
 
-Let's look at a toggle as an example.
+Look at a toggle as an example:
 
 ```haskell
 toggle :: Applicative m => Bool -> Html m Bool
@@ -47,7 +47,7 @@ toggle b = h "div" []
   ]
 ```
 
-That's it, we have a stateful view. When the user click's on
+That's it, we have a stateful view. When the user clicks
 the "Toggle" button the state will switch. Because we do a pure
 state transition in this function, `m` need only be `Applicative`.
 We could put `Identity` here if we wanted to, but keeping `m` general
@@ -93,8 +93,8 @@ toggle b = h "div" []
 
 ## Composing views
 
-In Shpadoinkle we can compose views without impedance if the types match,
-or are parametric. For example.
+In Shpadoinkle, we can compose views without impedance if the types match,
+or are parametric. For example:
 
 ```haskell
 hero :: Html m a
@@ -112,7 +112,7 @@ view s = h "div" []
 ```
 
 If you have nesting, with different types,
-we can resolve the mismatch using 'fmap' like so:
+you can resolve the mismatch using 'fmap' like so:
 
 ```haskell
 input :: Html m Text
@@ -144,43 +144,43 @@ shpadoinkle
 ```
 
 This is the machine that runs a Shpadoinkle view. To run we need
-the following ingredients.
+the following ingredients:
 
 ### `m ~> JSM`
 
-We need a _Natural Transformation_ from our `m` to `JSM`, so that
-we can perform the needed JavaScript effects in JSM from the `m`
+You need a _Natural Transformation_ from our `m` to `JSM`, so that
+you can perform the needed JavaScript effects in JSM from the `m`
 you provide.
 
 ### `t a -> b m ~> m`
 
 This a function that takes a state container of some kind `t`,
 and returns a _Natural Transformation_ from our Shpadoinkle backend `b`,
-to our monad `m`. Backends kind of works like Monad Transformers, where
+to our monad `m`. Backends works like Monad Transformers, where
 `b` wraps our Monad `m`, and needs to be unwrappable.
 
 ### `a`
 
-This is the initial value of our model. This will be passed to our view
+This is the initial value of your model. This will be passed to your view
 for the first render.
 
 ### `t a`
 
 This is the state container `t` that will drive the view. When the state
-changes, we should re-render the view. The semantic behind determing when
-to do this, is upto you via the `Territory` type class. Typically this is
+changes, you should re-render the view. The semantic behind determing when
+to do this, is up to you. using the `Territory` type class. Typically, this is
 just a `TVar` as that is the provided cannonical implimentation.
 
 ### `a -> Html (b m) a`
 
-This is the view function, you actual application to render. It takes
-the model and returns the html to render, such that it's events produce the
+This is the view function, your actual application to render. It takes
+the model and returns the Html to render, such that its events produce the
 same model.
 
 ### `b m RawNode`
 
-This is the raw node we that will wrap our view. If you want the Shpadoinkle view
-to be the entire page, then you want to pass `document.body` as this node.
+This is the raw node that will wrap your view. If you want the Shpadoinkle view
+to be the entire page, then you want to pass `document.body` at this node.
 You could use this to embed a Shpadoinkle application into another application,
 (such a Reflex-dom or Miso).
 
