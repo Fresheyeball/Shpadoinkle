@@ -10,8 +10,8 @@ This is not a new idea in the slightest. Declaratively describing the view in te
 of the model through a data structure is the dominant approach in UI today. And
 for good reason.
 
-If all we need is to render something based on some `a` we can have `Html` be a
-simple data structure where `Html :: Type`.
+If all you need is to render something based on some `a` you can have `Html` be a
+simple data structure where `Html :: Type`:
 
 ```haskell
 view :: a -> Html
@@ -35,7 +35,7 @@ The first is typically some Monad you want to use in response to events `m`, and
 the second is the payload of those events, typically the model for your view `a`.
 
 These variables in `Html m a` are strickly about event listeners, so any view
-that doesn't have event listeners should be parametic in both `m` and `a`.
+that does hot have event listeners should be parametic in both `m` and `a`.
 
 Look at a toggle as an example:
 
@@ -48,13 +48,13 @@ toggle b = h "div" []
 ```
 
 That's it, we have a stateful view. When the user clicks
-the "Toggle" button the state will switch. Because we do a pure
+the "Toggle" button the state will switch. Because you do a pure
 state transition in this function, `m` need only be `Applicative`.
-We could put `Identity` here if we wanted to, but keeping `m` general
+You could put `Identity` here if you wanted to, but keeping `m` general
 helps our views compose.
 
-But what if we need to do _more_? Well we can update our `m` to
-have more functionality. Let's add some logging to the console.
+But what if you need to do _more_? You can update your `m` to
+have more functionality. Add some logging to the console:
 
 ```haskell
 toggle :: Bool -> Html IO Bool
@@ -68,8 +68,8 @@ toggle b = h "div" []
   ]
 ```
 
-What if we want to access some record of capabilities? Or update some
-concurrent memory thing? Let's say we have an enterprise grade Monad,
+What if you want to access some record of capabilities? Or update some
+concurrent memory thing? Let's say we have an enterprise grade Monad:
 
 ```haskell
 newtype App a = App { runApp :: RIO (TVar Metrics) a }
@@ -93,7 +93,7 @@ toggle b = h "div" []
 
 ## Composing views
 
-In Shpadoinkle, we can compose views without impedance if the types match,
+In Shpadoinkle, you can compose views without impedance if the types match,
 or are parametric. For example:
 
 ```haskell
@@ -111,7 +111,7 @@ view s = h "div" []
   ]
 ```
 
-If you have nesting, with different types,
+If you have nesting with different types,
 you can resolve the mismatch using 'fmap' like so:
 
 ```haskell
@@ -132,7 +132,7 @@ view (i,t) = h "div" []
 
 ## The primitive
 
-The Shpadoinkle programming model core primative is the `shpadoinkle` function.
+The Shpadoinkle programming model core primitive is the `shpadoinkle` function:
 
 ```haskell
 shpadoinkle
@@ -148,7 +148,7 @@ the following ingredients:
 
 ### `m ~> JSM`
 
-You need a _Natural Transformation_ from our `m` to `JSM`, so that
+You need a _Natural Transformation_ from your `m` to `JSM`, so that
 you can perform the needed JavaScript effects in JSM from the `m`
 you provide.
 
