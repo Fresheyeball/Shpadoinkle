@@ -18,7 +18,7 @@ shpadoinkle :: Backend b m a => Territory t => Eq a
   => (m ~> JSM) -> (t a -> b m ~> m) -> a -> t a -> (a -> Html (b m) a) -> b m RawNode -> JSM ()
 ----
 
-The second argument `(t a -> b m ~> m)` is how you choose yur backend. For example:
+The second argument `(t a -> b m ~> m)` is how you choose your backend. For example:
 
 [source,haskell]
 ----
