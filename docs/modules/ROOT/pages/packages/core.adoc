@@ -23,17 +23,17 @@ These are only relevant to event handling. If your view has no event listeners, 
 
 [NOTE]
 .Not Virtual DOM
-We do not diff `Html`, instead we marshall this structure into one for a given xref:packages/backends.adoc#selecting[backend]. This seperation allows the same code to run on any backend.
+Do not diff `Html`, instead marshall this structure into one for a given xref:packages/backends.adoc#selecting[backend]. This separation allows the same code to run on any backend.
 
 This structure is the DOM Tree. There are Nodes which contain lists of Html, and which is a leaf where you can store `Text`, and Potato where we can store a component built outside of the Shpadoinkle view (for example wrapping a JavaScript component).
 
 [NOTE]
 .Coalgebra
-`(Html m)` is the Functor in our Coalgebra. It is a Functor, not Applicative, or Monadic. This is by design. By being merely functorial, we do not need to reason about when components will render.
+`(Html m)` is the Functor in our Coalgebra. It is a Functor, not Applicative, or Monadic. This is by design. By being merely functorial, you do not need to reason about when components will render.
 
 == The Prop Type
 
-Nodes (and only Nodes) in Html can have properties. These properties are represented as the follwowing type, paired with `Text` giving the property a field key:
+Nodes (and only Nodes) in Html can have properties. These properties are represented as the following type, paired with `Text` giving the property a field key:
 
 [source,haskell]
 ----
@@ -43,7 +43,7 @@ data Prop m a
   | PFlag Bool
 ----
 
-As you will recall `Html` has a constructor:
+As you will recall, `Html` has a constructor:
 
 [source,haskell]
 ----
@@ -110,7 +110,7 @@ This packages does **not** come with a backend implementation, and an implementa
 
 === VNode
 
-This type family points maps to the underly representation native to the backend:
+This type family points maps to the underlying representation native to the backend:
 
 [source,haskell]
 ----
@@ -121,7 +121,7 @@ In the case of binding to a JavaScript library, this would most likely be a `new
 
 === Interpret
 
-This function describes how to marshall between `Html` and the native representation (IE `VNode`).
+This function describes how to marshall between `Html` and the native representation (IE `VNode`):
 
 [source,haskell]
 ----
@@ -131,7 +131,7 @@ interpret
   -> b m (VNode b m) -- <3>
 ----
 
-The interpret function can be Monadic, as it's likely going to require IO to obtain the native representation.
+The interpret function can be Monadic, as it is likely going to require IO to obtain the native representation.
 
 <1> Interpret is provided with a mechanism for getting from the end user provided Monad to JSM directly.
 <2> The `Html` shpadoinkle view that needs to be marshalled to the native representation for this backend.
