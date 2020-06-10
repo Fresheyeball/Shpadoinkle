@@ -49,7 +49,7 @@ We provide high-level APIs to lower-level browser APIs. Including:
 - Local Storage
 
 I know it's just one right now.
-But this is the place to contribute more. Such as
+But this is the place to contribute more. Such as:
 
 - Scroll Position
 - XHR Requests
