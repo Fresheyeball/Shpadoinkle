@@ -16,7 +16,7 @@ The virtual tree in ParDiff contains a reference to the `RawNode` for each eleme
 unkeyed and keyed virtual dom techniques together. This allows for rendering to be performed
 in a keyed fashion for all nodes, while not requiring additional memory or developer overhead.
 
-The diffing itself is a lawful usage of `alignWith` from the `Data.These` package. By modeling
-Html as an Alignable Functor, we get principled diffing with clear separation of concerns.
+The diffing itself is a legitimate usage of `alignWith` from the `Data.These` package. By modeling
+Html as an Alignable Functor, you get principled diffing with clear separation of concerns.
 
-IO is done via JSaddle and works with both GHC and GHCjs.
+IO is done using JSaddle, and works with both GHC and GHCjs.
