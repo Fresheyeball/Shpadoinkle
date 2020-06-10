@@ -14,7 +14,7 @@ data Html m a
   | Potato (JSM RawNode)
 ----
 
-`Html` has 2 type variables:
+`Html` has two type variables:
 
 * `m` is a effect to run your event handlers.
 * `a` is what your event handlers produce.
