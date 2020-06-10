@@ -1,6 +1,6 @@
 = Packages
 
-Shpadoinkle is broken up into several packages that compose together or can be used separately.
+Shpadoinkle is segregated into several packages that compose together or can be used separately.
 
 [TIP]
 **Core** and a **Backend** are all that is needed to run a application.
