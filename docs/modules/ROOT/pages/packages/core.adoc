@@ -64,7 +64,7 @@ Node "div" [("className", PText "foo")] []
 ----
 
 [TIP]
-.Do Not use constructors directly
+.Do Not use constructors directly!
 ====
 It is recommended you do **not** use these constructors, but rather use the exported named functions:
 
@@ -175,7 +175,7 @@ In the case of JavaScript-based backends, it will likely include steps like addi
 
 == Territory Class
 
-This is an interface for whatever state container is **driving** the view.
+This is an interface for whatever state container is **driving** the view:
 
 [source,haskell]
 ----
