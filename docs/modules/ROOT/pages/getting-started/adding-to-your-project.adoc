@@ -6,13 +6,13 @@ See an example of this working by examining {snowman}[default.nix] in the {snowm
 
 == GHCjs Challenges
 
-Introducing GHCjs brings with it a host of problems, that we solve with Nix. For example, many Haskell packages use a library called https://hackage.haskell.org/package/doctest[doctest]. This is not compatible with GHCjs, and will prevent dependencies from building.
+Introducing GHCjs brings with it a host of problems, that are solved with Nix. For example, many Haskell packages use a library called https://hackage.haskell.org/package/doctest[doctest]. This is not compatible with GHCjs, and will prevent dependencies from building.
 
-Likewise there are other impedances introduced by testing libraries, and other minor odds and ends, that make packages that should work just fine with GHCjs fail to build.
+Likewise, there are other impedances introduced by testing libraries, and other minor odds and ends, that make packages that should work just fine with GHCjs fail to build.
 
-Additionally stock GHCjs and the GHCjs package set is not optimized. It lacks some critical optimization that have their source of truth in https://github.com/reflex-frp/reflex-platform[Reflex Platform]. These optimizations require custom compilation of the GHCjs compiler, as well as many downstream packages this project depends on.
+Additionally, the stock GHCjs and the GHCjs package set is not optimized. It lacks some critical optimization that have their source of truth in https://github.com/reflex-frp/reflex-platform[Reflex Platform]. These optimizations require custom compilation of the GHCjs compiler, as well as many downstream packages this project depends on.
 
-We address these as they come by building up Nix package https://nixos.wiki/wiki/Overlays[overlays].
+This is addressed as they come by building up Nix package https://nixos.wiki/wiki/Overlays[overlays].
 
 [quote]
 Overlays provide a method to extend and change nixpkgs. They replace constructs like packageOverride and overridePackages.
@@ -34,14 +34,14 @@ pkgs = import
   { overlays = [ shpadoinkle-overlay my-overlay ]; }; # <3>
 ----
 
-<1> Get the Shpadoinkle source code
-<2> This overlay makes dependencies compatible with Shpadoinkle targets, as well as adds in optimizations of GHCjs from Reflex Platform
-<3> Compose the overlays onto your package set
+<1> Get the Shpadoinkle source code.
+<2> This overlay makes dependencies compatible with Shpadoinkle targets, as well as adds in optimizations of GHCjs from Reflex Platform.
+<3> Compose the overlays onto your package set.
 
 
 == Extending Nix Haskell
 
-Extending the Haskell package sets in Nix has some pitfalls.
+Extending the Haskell package sets in Nix has some pitfalls, as follows:
 
 === No Implicit GHC Version
 
@@ -51,7 +51,7 @@ You might expect that if the compiler version targeted is the same as the implic
 
 === Compose Extensions
 
-If overlays modifying Haskell package sets do not use `composeExtensions`, new overlays will simply replace previous ones instead of composing together. Follow this pattern and everything will be OK:
+If overlays modifying Haskell package sets do not use `composeExtensions,` new overlays will simply replace previous ones instead of composing together. Follow this pattern and everything will be OK:
 
 [source,nix]
 ----
@@ -79,6 +79,6 @@ haskell = super.haskell //
 ----
 
 <1> Here for illustrative reasons
-<2> Add packages in your application's Haskell overlay
-<3> Override a specific compiler version, not `haskellPackages`
+<2> Add packages into the Haskell overlay in your application.
+<3> Override a specific compiler version, not `haskellPackages.`
 <4> Use `composeExtensions` to preserve work done in earlier overlays
