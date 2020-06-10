@@ -4,7 +4,7 @@ This module is for core types and logic.
 
 == The Html Type
 
-This is the core type used to represent a view in Shpadoinkle.
+This is the core type used to represent a view in Shpadoinkle:
 
 [source,haskell]
 ----
@@ -14,12 +14,12 @@ data Html m a
   | Potato (JSM RawNode)
 ----
 
-`Html` has 2 type variables.
+`Html` has 2 type variables:
 
 * `m` is a effect to run your event handlers.
 * `a` is what your event handlers produce.
 
-These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrainted. If your event listeners are not Monadic (and they shouldn't be in most cases), `m` need only be `Applicative` as we need `pure` under the hood for construction.
+These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrainted. If your event listeners are not Monadic (and they shouldn't be in most cases), `m` need only be `Applicative` because you need `pure` under the hood for construction.
 
 [NOTE]
 .Not Virtual DOM
@@ -33,7 +33,7 @@ This structure is the DOM Tree. There are Nodes which contain lists of Html, and
 
 == The Prop Type
 
-Nodes (and only Nodes) in Html can have properties. These properties are represented as the follwowing type, paired with `Text` giving the property a field key.
+Nodes (and only Nodes) in Html can have properties. These properties are represented as the follwowing type, paired with `Text` giving the property a field key:
 
 [source,haskell]
 ----
@@ -50,7 +50,7 @@ As you will recall `Html` has a constructor:
 Node :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
 ----
 
-Where a list of this pair is passed. The `Text` should match the property key in standard JavaScript. For example, we can see the following are morally equivalent:
+Where a list of this pair is passed. The `Text` should match the property key in standard JavaScript. For example, you can see the following are morally equivalent:
 
 [source,javascript]
 ----
@@ -66,7 +66,7 @@ Node "div" [("className", PText "foo")] []
 [TIP]
 .Do Not use constructors directly
 ====
-It is recommended you do **not** use these constructors, but rather use the exported named functions.
+It is recommended you do **not** use these constructors, but rather use the exported named functions:
 
 [source,haskell]
 ----
@@ -76,17 +76,17 @@ h "div" [("className",  textProp "foo")] []
 
 === Listeners
 
-The listener constuctor is `PListener`, which has the following type
+The listener constuctor is `PListener`, which has the following type:
 
 [source,haskell]
 ----
 PListener :: (RawNode -> RawEvent -> m a) -> Prop m a
 ----
 
-The raw listener will always recieve the https://developer.mozilla.org/en-US/docs/Web/API/Node[`RawNode`] which is the target of the event. And the https://developer.mozilla.org/en-US/docs/Web/API/Event[`RawEvent`] which the event object itselt. Both of these are `newtypes` of https://hackage.haskell.org/package/jsaddle-0.9.7.0/docs/GHCJS-Types.html#t:JSVal[JSVal]. This is needed so that we can still do low level work. However in practice it's expected you would use functions that allow you to ignore these raw components.
+The raw listener will always recieve the https://developer.mozilla.org/en-US/docs/Web/API/Node[`RawNode`], which is the target of the event, and the https://developer.mozilla.org/en-US/docs/Web/API/Event[`RawEvent`] which is the event object itself. Both of these `newtypes` are https://hackage.haskell.org/package/jsaddle-0.9.7.0/docs/GHCJS-Types.html#t:JSVal[JSVal]. This is needed so that you can still do low-level work; however, in practice it is expected you would use functions that allow you to ignore these raw components.
 
 == Backend Class
-This is an interface for renders of `Html`.
+This is an interface for renders of `Html`:
 
 // tag::backend[]
 [source,haskell]
@@ -98,26 +98,26 @@ class Backend b m a | b m -> a where
   setup     :: JSM () -> b m ()
 ----
 
-This interface allows us to plug into various rendering systems. So long as we can provide implimentations of these 3 functions, we can use `shpadoinkle` to get an application out of our `Html`.
+This interface lets you plug into various rendering systems. So long as you can provide implementations of these three functions, you can use `shpadoinkle` to get an application out of `Html`.
 
-This packages does **not** come with a backend implimentation, and an implimentation **is** required to run the `shpadoinkle` function.
+This packages does **not** come with a backend implementation, and an implementation **is** required to run the `shpadoinkle` function.
 
 [NOTE]
 .Monad Transformer
 ====
-`b` is expected to be a Monad Transformer, though this is not required. However in practice, `(b m)` must have in instance of `MonadJSM`.
+`b` is expected to be a Monad Transformer, though this is not required; however in practice, `(b m)` must have in instance of `MonadJSM`.
 ====
 
 === VNode
 
-This type family points maps to the underly representation native to the backend.
+This type family points maps to the underly representation native to the backend:
 
 [source,haskell]
 ----
 type VNode b m
 ----
 
-In the case of binding to a JavaScript library this would most likely be a `newtype` of `JSVal`. When binding to a typed implimentation, this should just be set to the library type.
+In the case of binding to a JavaScript library, this would most likely be a `newtype` of `JSVal`. When binding to a typed implementation, this should just be set to the library type.
 
 === Interpret
 
@@ -131,7 +131,7 @@ interpret
   -> b m (VNode b m) -- <3>
 ----
 
-The interpret function may be Monadic, as it's likely going to require IO to obtain the native representation.
+The interpret function can be Monadic, as it's likely going to require IO to obtain the native representation.
 
 <1> Interpret is provided with a mechanism for getting from the end user provided Monad to JSM directly.
 <2> The `Html` shpadoinkle view that needs to be marshalled to the native representation for this backend.
@@ -139,7 +139,7 @@ The interpret function may be Monadic, as it's likely going to require IO to obt
 
 === Patch
 
-This function describes how updates are handled.
+This function describes how updates are handled:
 
 [source,haskell]
 ----
@@ -150,16 +150,16 @@ patch
   -> b m (VNode b m) -- <4>
 ----
 
-The interpret function may be Monadic, as it's likely going to require IO to apply the new `VNode` to the view.
+The interpret function can be Monadic, as it is likely going to require IO to apply the new `VNode` to the view.
 
-<1> This is the parent DOM Node that contains our application. `RawNode` is a `newtype` of `JSVal`.
-<2> The previously rendered `VNode`. On the first rendering of our application this will be `Nothing`.
+<1> This is the parent DOM Node that contains the application. `RawNode` is a `newtype` of `JSVal`.
+<2> The previously rendered `VNode`. On the first rendering of the application, this will be `Nothing`.
 <3> The `VNode` the user would like to render.
 <4> A Monadic action that **actually renders in the browser** and returns a new `VNode`. The returned (`v :: VNode`) will be (`Just v`) for **2** in the next render.
 
 === Setup
 
-This is an optional IO action to perform any initial setup steps a given backend might require.
+This is an optional IO action to perform any initial setup steps a given backend might require:
 
 [source,haskell]
 ----
@@ -168,9 +168,9 @@ setup
   -> b m ()
 ----
 
-<1> This is a callback you are responsible for executing once the setup process is complete. The callback is the entire application. If you do not evaluate the `JSM ()` nothing will happen.
+<1> This is a callback you are responsible for executing after the setup process is complete. The callback is the entire application. If you do not evaluate the `JSM ()`, then nothing will happen.
 
-In the case of JavaScript based backends, it will likely include steps like, adding the library to the `<head>` of the page, or instantiating a JavaScript class.
+In the case of JavaScript-based backends, it will likely include steps like adding the library to the `<head>` of the page, or instantiating a JavaScript class.
 // end::backend[]
 
 == Territory Class
@@ -185,16 +185,16 @@ class Territory s where
   createTerritory :: a -> JSM (s a)
 ----
 
-The Haskell ecosystem has many many many many many many options for concurrent data structures. In addition to allowing you to specify how things are rendered, you can also specify what structure is used under the hood. Theoretically we could write instances for containers such as: https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM-TVar.html#t:TVar[TVar], https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-IORef.html#t:IORef[IORef], https://hackage.haskell.org/package/reflex-0.7.1.0/docs/Reflex-Class.html#t:Event[Event t], https://hackage.haskell.org/package/auto-0.4.3.1/docs/Control-Auto.html#t:Auto[Auto m]
+The Haskell ecosystem has many options for concurrent data structures. In addition to allowing you to specify how things are rendered, you can also specify what structure is used under the hood. Theoretically. you could write instances for containers such as: https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM-TVar.html#t:TVar[TVar], https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-IORef.html#t:IORef[IORef], https://hackage.haskell.org/package/reflex-0.7.1.0/docs/Reflex-Class.html#t:Event[Event t], https://hackage.haskell.org/package/auto-0.4.3.1/docs/Control-Auto.html#t:Auto[Auto m]
 
-as well as structures built upon these. Included in this package is a default implimentation with `TVar`.
+as well as structures built upon these. Included in this package is a default implementation with `TVar`.
 
 [source,haskell]
 ----
 instance Territory TVar
 ----
 
-The territory is part of ensureing Shpadoinkle applications compose with one another, as well as surrounding code. Consider a scenario where we have an existing piece of code that taps into a data stream and logs it.
+The territory is part of ensuring Shpadoinkle applications compose with one another, as well as surrounding code. Consider a scenario where there is an existing piece of code that taps into a data stream and logs it:
 
 [source,haskell]
 ----
@@ -209,17 +209,17 @@ _ <- forkIO . runConduit -- <2>
 shpadoinkle id runSnabbdom territory mempty view getBody -- <4>
 ----
 
-<1> We create a TVar of our frontend model
+<1> Create a TVar of the frontend model.
 <2> Some existing code uses Conduit to read a log file.
-<3> Now we want to show each Log as it passes through. So we simply write it to the TVar setting it with a Lens.
+<3> Now, to show each Log as it passes through. simply write it to the TVar setting it with a Lens.
 <4> Start the application. Changes to the territory will be reflected in the view.
 
-This makes integrating the frontend state machine into existing work fairly easy, since often existing locations in the code can be used to update the `territory`. We can also listen for state changes originating from inside the shpadoinkle application, using existing machinery such as `retry` from https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Monad-STM.html#v:retry[STM].
+This makes integrating the frontend state machine into existing work fairly easy, because often existing locations in the code can be used to update the `territory`. You can also listen for state changes originating from inside the shpadoinkle application, using existing machinery such as `retry` from https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Monad-STM.html#v:retry[STM].
 
 
 == Shpadoinkle
 
-There is one application primative the `shpadoinkle` function. It is where these different components come together, adn describes how they interrelate. Here it is
+There is one application primitive, the `shpadoinkle` function. It is where these different components come together, and describes how they interrelate:
 
 [source,haskell]
 ----
@@ -244,10 +244,10 @@ shpadoinkle toJSM toM initial model view stage = do
     return ()
 ----
 
-<1> Run the `setup` for the backend
-<2> Get the DOM Node on which to append our view
-<3> Pass our initial model to the view function, then convert the `Html m` to `VNode b m`
-<4> Set up `go` to run whenever we `shouldUpdate`. `go` renders subsequent states.
-<5> Render our initial `VNode b m`
+<1> Run the `setup` for the backend.
+<2> Get the DOM Node on which to append the view.
+<3> Pass the initial model to the view function, then convert the `Html m` to `VNode b m`.
+<4> Set up `go` to run whenever `shouldUpdate`. `go` renders subsequent states.
+<5> Render the initial `VNode b m`.
 
 Everything else is built on top of this to simplify different setups.
