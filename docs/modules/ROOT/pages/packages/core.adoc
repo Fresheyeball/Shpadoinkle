@@ -23,9 +23,9 @@ These are only relevant to event handling. If your view has no event listeners, 
 
 [NOTE]
 .Not Virtual DOM
-We do not diff `Html`, instead we marshall this structure into one for a given xref:packages/backends.adoc#selecting[backend]. This seperation allows the same code the run on any backend.
+We do not diff `Html`, instead we marshall this structure into one for a given xref:packages/backends.adoc#selecting[backend]. This seperation allows the same code to run on any backend.
 
-This structure is our DOM Tree. We have Nodes which contain lists of Html, and which is a leaf where we can store `Text`, and Potato where we can store a component built outside of the Shpadoinkle view (for example wrapping a JavaScript component).
+This structure is the DOM Tree. There are Nodes which contain lists of Html, and which is a leaf where you can store `Text`, and Potato where we can store a component built outside of the Shpadoinkle view (for example wrapping a JavaScript component).
 
 [NOTE]
 .Coalgebra
@@ -33,7 +33,7 @@ This structure is our DOM Tree. We have Nodes which contain lists of Html, and w
 
 == The Prop Type
 
-Nodes (and only Nodes) in Html may have properties. These properties are represented as the follwowing type, paired with `Text` giving the property a field key.
+Nodes (and only Nodes) in Html can have properties. These properties are represented as the follwowing type, paired with `Text` giving the property a field key.
 
 [source,haskell]
 ----
