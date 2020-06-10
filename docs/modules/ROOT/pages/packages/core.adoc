@@ -43,14 +43,14 @@ data Prop m a
   | PFlag Bool
 ----
 
-As you will recall `Html` has a constructor
+As you will recall `Html` has a constructor:
 
 [source,haskell]
 ----
 Node :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
 ----
 
-Where a list of this pair is passed. The `Text` should match the property key in standard JavaScript. For example we can set the following are morally equivalent.
+Where a list of this pair is passed. The `Text` should match the property key in standard JavaScript. For example, we can see the following are morally equivalent:
 
 [source,javascript]
 ----
@@ -64,7 +64,7 @@ Node "div" [("className", PText "foo")] []
 ----
 
 [TIP]
-.Don't use constructors directly
+.Do Not use constructors directly
 ====
 It is recommended you do **not** use these constructors, but rather use the exported named functions.
 
