@@ -19,12 +19,12 @@ We may have a url mapping as follows
 
 [TIP]
 ====
-You can take advantage of this property to support legacy urls and evolve a routing schema over time.
+You can take advantage of this property to support legacy URLs and evolve a routing schema over time.
 ====
 
-Let's call this mapping `toRoute : URL -> Route`
+Call this mapping `toRoute : URL -> Route`
 
-The opposite direction an injection. To programatically navigate the app, we need a mapping from routes to URLs. This mapping documents the cannonical url for a given route.
+The opposite direction an injection. To programatically navigate the application, we need a mapping from routes to URLs. This mapping documents the cannonical URL for a given route.
 
 * `Home` => `https://example.com/home`
 * `About Nothing` => `https://example.com/v2/about`
@@ -38,8 +38,8 @@ These functions abstractly would have the following relationship:
 ∀route. toRoute (fromRoute route) = route
 ∃!url. fromRoute (toRoute url) = url
 ----
-
-However these functions not directly representable in Haskell so long as we intend on using `Servant` to describe our URLs, because URL descriptors are types and routes are terms.
+[NOTE]
+These functions not directly representable in Haskell so long as we intend on using `Servant` to describe our URLs, because URL descriptors are types and routes are terms.
 
 == Example Types
 
@@ -56,7 +56,7 @@ type SPA = "v2" :> "about" :> QueryParam "search" Search :> Raw
 ----
 
 [CAUTION]
-You must consider the order of the URLs separated by `:<|>`. Servant works like a pattern match. But becauses the match is type level, unreachable routes are entirely possible (GHC doesn't support checking for unreachable type level patterns). So think carefully about order and specificity.
+You must consider the order of the URLs separated by `:<|>`. Servant works like a pattern match. But because the match is type level, unreachable routes are entirely possible (GHC does not support checking for unreachable type level patterns). So think carefully about order and specificity.
 
 == To Route
 
