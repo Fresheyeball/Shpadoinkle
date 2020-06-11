@@ -1,0 +1,42 @@
+name:         Shpadoinkle-continuations
+license:      BSD3
+license-file: LICENSE
+version:      0.1.0.0
+author:       Morgan Thomas
+maintainer:   morgan.thomas@platonic.systems
+category:     Web
+build-type:   Simple
+synopsis:     Continuations for atomic updates
+description:
+  The definitions in this package support Shpadoinkle's concurrency strategy by providing
+  a Continuation abstraction representing a computation which may perform multiple steps
+  involving I/O and (re-)reading the state in order to produce a single atomic update to the state.
+
+
+ghc-options:
+    - -Wall
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+
+dependencies:
+    - base >= 4.12.0 && < 4.16
+
+
+library:
+  source-dirs: .
+  dependencies:
+    - unliftio
+    - category >= 0.2 && <0.3
+
+
+git: https://gitlab.com/fresheyeball/Shpadoinkle.git

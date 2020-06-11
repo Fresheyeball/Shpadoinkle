@@ -8,9 +8,11 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE InstanceSigs           #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE PartialTypeSignatures  #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StandaloneDeriving     #-}
@@ -30,11 +32,12 @@
 -}
 
 module Shpadoinkle
-  ( Html (..), Prop (..), Props
+  ( Html (..), Prop (..), Props, MapProps (..)
   , mapHtml, mapProp, mapProps, mapChildren
   , Backend (..)
   , shpadoinkle, fullPage, fullPageJSM, simple
-  , Territory (..)
+  , Continuation (..), pur, impur, MapContinuations (..)
+  , liftC, leftC, rightC, writeUpdate, shouldUpdate
   , type (~>), Html'
   , RawNode (..), RawEvent (..)
   , h, text, flag, textProp
@@ -48,16 +51,21 @@ module Shpadoinkle
   ) where
 
 
+import           Prelude                           hiding ((.))
+import           Control.Arrow
+import           Control.Category                  ((.))
+import qualified Control.Categorical.Functor as F
+import           Control.PseudoInverseCategory
 import           Data.Kind
 import           Data.String
 import           Data.Text
-import           GHC.Conc                         (retry)
 import           Language.Javascript.JSaddle
 #ifndef ghcjs_HOST_OS
 import           Language.Javascript.JSaddle.Warp
 #endif
-import           UnliftIO.Concurrent
 import           UnliftIO.STM
+
+import           Shpadoinkle.Continuation
 
 
 -- | This is the core type in Backend.
@@ -99,9 +107,9 @@ mapHtml f = \case
 
 -- | If you can provide a Natural Transformation from one Monad to another
 -- then you may change the action of @Prop@
-mapProp :: (m ~> n) -> Prop m o -> Prop n o
+mapProp :: Functor m => (m ~> n) -> Prop m o -> Prop n o
 mapProp f = \case
-  PListener g -> PListener (\x y -> f (g x y))
+  PListener g -> PListener (\x y -> f . fmap (convertC f) $ g x y)
   PText t     -> PText t
   PFlag b     -> PFlag b
 
@@ -186,30 +194,40 @@ textProp = PText
 
 
 -- | Construct a simple 'PListener` that will perform an action.
-listener :: m o -> Prop m o
+listener :: m (Continuation m o) -> Prop m o
 listener = PListener . const . const
 {-# INLINE listener #-}
 
 
 -- | Construct a 'PListener' from it's 'Text' name a raw listener.
-listenRaw :: Text -> (RawNode -> RawEvent -> m o) -> (Text, Prop m o)
+listenRaw :: Text -> (RawNode -> RawEvent -> m (Continuation m o)) -> (Text, Prop m o)
 listenRaw k = (,) k . PListener
 {-# INLINE listenRaw #-}
 
 
 -- | Construct a 'PListener' from it's 'Text' name and a Monad action.
-listen :: Text -> m o -> (Text, Prop m o)
+listen :: Text -> m (Continuation m o) -> (Text, Prop m o)
 listen k = listenRaw k . const . const
 {-# INLINE listen #-}
 
 
 -- | Construct a 'PListener' from it's 'Text' name and an ouput value.
-listen' :: Applicative m => Text -> o -> (Text, Prop m o)
+listen' :: Applicative m => Text -> Continuation m o -> (Text, Prop m o)
 listen' k f = listen k $ pure f
 
 
--- | @(Html m)@ is not a 'Monad', and not even 'Applicative', by design.
-deriving instance Functor m => Functor (Html m)
+instance Monad m => F.Functor EndoIso EndoIso (Html m) where
+  map (EndoIso f g i) = EndoIso (mapC . mapply $ map' (mendo f))
+                                (mapC . mapply $ map' (miso g i))
+                                (mapC . mapply $ map' (miso i g))
+    where map' :: EndoIso a b -> EndoIso (Continuation m a) (Continuation m b)
+          map' = F.map
+
+
+instance MapContinuations Html where
+  mapC f (Node t ps es) = Node t (unMapProps . mapC f $ MapProps ps) (mapC f <$> es)
+  mapC _ (Potato p) = Potato p
+  mapC _ (TextNode t) = TextNode t
 
 
 -- | Properties of a DOM node. Backend does not use attributes directly,
@@ -222,18 +240,49 @@ data Prop m o where
   -- | Event listeners are provided with the 'RawNode' target, and the 'RawEvent', and may perform
   -- a monadic action such as a side effect. This is the one and only place where you may
   -- introduce a custom monadic action.
-  PListener :: (RawNode -> RawEvent -> m o) -> Prop m o
+  PListener :: (RawNode -> RawEvent -> m (Continuation m o)) -> Prop m o
   -- | A boolean property, works as a flag
   -- for example @("disabled", PFlag False)@ has no effect
   -- while @("disabled", PFlag True)@ will add the @disabled@ attribute
   PFlag :: Bool -> Prop m o
 
 
--- | Like @(Html m), @(Prop m) is merely a 'Functor', not a 'Monad' and not 'Applicative' by design.
-deriving instance Functor m => Functor (Prop m)
+instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
+  map :: forall a b. EndoIso a b -> EndoIso (Prop m a) (Prop m b)
+  map f = EndoIso id mapFwd mapBack
+    where f' :: EndoIso (Continuation m a) (Continuation m b)
+          f' = F.map f
+
+          mapFwd (PText t) = PText t
+          mapFwd (PListener g) = PListener (\r e -> mapply f' <$> g r e)
+          mapFwd (PFlag b) = PFlag b
+
+          mapBack (PText t) = PText t
+          mapBack (PListener g) = PListener (\r e -> mapply (minverse f') <$> g r e)
+          mapBack (PFlag b) = PFlag b
+
+
+instance MapContinuations Prop where
+  mapC _ (PText t) = PText t
+  mapC f (PListener g) = PListener (\r e -> f <$> g r e)
+  mapC _ (PFlag b) = PFlag b
+
 
 -- | Type alias for convenience. Typing out the nested brackets is tiresome.
 type Props m o = [(Text, Prop m o)]
+
+
+-- | Newtype to deal with the fact that we can't make the typeclass instances
+--   for Endofunctor EndoIso and MapContinuations using the Props type alias.
+newtype MapProps m o = MapProps { unMapProps :: Props m o }
+
+
+instance Monad m => F.Functor EndoIso EndoIso (MapProps m) where
+  map f = miso MapProps unMapProps . fmapA (msecond (F.map f)) . miso unMapProps MapProps
+
+
+instance MapContinuations MapProps where
+  mapC f = MapProps . fmap (second (mapC f)) . unMapProps
 
 
 -- | Strings are overloaded as HTML text nodes
@@ -309,61 +358,19 @@ class Backend b m a | b m -> a where
   setup :: JSM () -> b m ()
 
 
--- | Shpadoinkling requires a Territory, such as Colorado Territory.
--- The Territory provides for the state container. As such you may use any
--- type you wish where this semantic can be implemented.
-class Territory s where
-  -- | How do we update the state?
-  writeUpdate :: s a -> (a -> JSM a) -> JSM ()
-  -- | How do we observe state updates? This is akin to React's component should update thing.
-  -- The idea is to provide a semantic for when we consider the model to have changed.
-  -- The callback function provided to shouldUpdate gets called with each state in the sequence
-  -- of updated states, along with an accumulator of type b which it may update,
-  -- similar to a fold over the sequence of states.
-  shouldUpdate :: Eq a => (b -> a -> JSM b) -> b -> s a -> JSM ()
-  -- | Create a new Territory
-  createTerritory :: a -> JSM (s a)
-
-
--- | Canonical default implementation of 'Territory' is just a 'TVar'.
--- However there is nothing stopping you from writing your own alternative
--- for a @Dynamic t@ from Reflex DOM, or some JavaScript based container.
-instance Territory TVar where
-  writeUpdate x f = do
-    a <- f =<< readTVarIO x
-    atomically $ writeTVar x a
-  {-# INLINE writeUpdate #-}
-
-  shouldUpdate sun prev model = do
-    i' <- readTVarIO model
-    p  <- createTerritory i'
-    () <$ forkIO (go prev p)
-    where
-      go x p = do
-        a <- atomically $ do
-          new' <- readTVar model
-          old  <- readTVar p
-          if new' == old then retry else new' <$ writeTVar p new'
-        y <- sun x a
-        go y p
-
-  createTerritory = newTVarIO
-  {-# INLINE createTerritory #-}
-
-
 -- | The core view instantiation function.
 -- This combines a backend, a territory, and a model
 -- and renders the Backend view to the page.
 shpadoinkle
-  :: forall b m a t
-   . Backend b m a => Territory t => Eq a
+  :: forall b m a
+   . Backend b m a => Eq a
   => (m ~> JSM)
   -- ^ How to get to JSM?
-  -> (t a -> b m ~> m)
+  -> (TVar a -> b m ~> m)
   -- ^ What backend are we running?
   -> a
   -- ^ What is the initial state?
-  -> t a
+  -> TVar a
   -- ^ How can we know when to update?
   -> (a -> Html (b m) a)
   -- ^ How should the HTML look?
@@ -390,10 +397,10 @@ shpadoinkle toJSM toM initial model view stage = do
 -- | Wrapper around @shpadoinkle@ for full page apps
 -- that do not need outside control of the territory
 fullPage
-  :: Backend b m a => Territory t => Eq a
+  :: Backend b m a => Eq a
   => (m ~> JSM)
   -- ^ How do we get to JSM?
-  -> (t a -> b m ~> m)
+  -> (TVar a -> b m ~> m)
   -- ^ What backend are we running?
   -> a
   -- ^ What is the initial state?
@@ -403,7 +410,7 @@ fullPage
   -- ^ Where do we render?
   -> JSM ()
 fullPage g f i view getStage = do
-  model <- createTerritory i
+  model <- newTVarIO i
   shpadoinkle g f i model view getStage
 {-# INLINE fullPage #-}
 
@@ -415,8 +422,8 @@ fullPage g f i view getStage = do
 -- This set of assumptions is extremely common when starting
 -- a new project.
 fullPageJSM
-  :: Backend b JSM a => Territory t => Eq a
-  => (t a -> b JSM ~> JSM)
+  :: Backend b JSM a => Eq a
+  => (TVar a -> b JSM ~> JSM)
   -- ^ What backend are we running?
   -> a
   -- ^ What is the initial state?

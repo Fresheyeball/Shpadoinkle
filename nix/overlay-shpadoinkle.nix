@@ -48,6 +48,7 @@ in {
       in super.haskell.packages.${util.compilerjs}.override (old: {
         overrides = super.lib.composeExtensions (old.overrides or (_:_: {})) (hself: hsuper: {
 
+          Shpadoinkle-continuations    = hself.callCabal2nix "Shpadoinkle-continuations"    (gitignore ../continuations)     {};
           Shpadoinkle                  = hself.callCabal2nix "Shpadoinkle"                  (gitignore ../core)              {};
           Shpadoinkle-backend-snabbdom = hself.callCabal2nix "Shpadoinkle-backend-snabbdom" (gitignore ../backends/snabbdom) {};
           Shpadoinkle-backend-static   = hself.callCabal2nix "Shpadoinkle-backend-static"   (gitignore ../backends/static)   {};
