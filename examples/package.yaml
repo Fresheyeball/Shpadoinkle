@@ -88,6 +88,9 @@ executables:
     dependencies:
       - text
       - safe
+      - lens
+      - split
+      - file-embed
 
       - Shpadoinkle
       - Shpadoinkle-html
