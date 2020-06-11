@@ -1,2 +1,0 @@
-module Shpadoinkle.Continuation ( Continuation (..) ) where
-
