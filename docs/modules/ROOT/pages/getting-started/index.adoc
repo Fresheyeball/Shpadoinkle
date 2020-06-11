@@ -1,13 +1,15 @@
 = Getting Started
 
-**The fastest way to start a new Shpadoinkle project is to build a https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[Snowman].**
 
 * xref:getting-started/extend-an-example.adoc[Extend an Example]
 * xref:getting-started/adding-to-your-project.adoc[Adding to a Project]
 
-== Nix
+Shpadoinkle is built with Nix. While it is possible to use Shpadoinkle without Nix, this project makes Nix the first class citizen. Nix allows us to make builds of Shpadoinkle as reproducible and deterministic as possible, by pinning every aspect of the system.
 
-Shpadoinkle is built with https://nixos.org/[Nix]. While it is possible to use Shpadoinkle without Nix, this project makes Nix the first class citizen. Nix allows us to make builds of Shpadoinkle as reproducible and deterministic as possible, by pinning every aspect of the system.
+[TIP]
+The fastest way to start a new Shpadoinkle project is to build a https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[Snowman].
+
+== Nix
 
 Nix works on all Linux distributions, as well as Darwin-based operating systems such as MacOS. To install Nix simply run
 
@@ -16,7 +18,8 @@ Nix works on all Linux distributions, as well as Darwin-based operating systems 
 curl -L https://nixos.org/nix/install | sh
 ----
 
-**Make sure to follow the instructions output by the script.**
+[CAUTION]
+Make sure to follow the instructions output by the script.
 
 == Cachix
 

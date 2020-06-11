@@ -58,3 +58,12 @@ i.fa.icon-caution::before {
 .doc pre.highlight code, .doc pre:not(.highlight){
   border: 1px solid #fafafa;
 }
+
+.conum[data-value]{
+  background: rgb(51, 51, 88);
+  color: white;
+}
+
+code{
+  font-family: Fira Code, Consolas, Monoid, Hack, Droid Sans, Roboto Mono, monospace !important;
+}

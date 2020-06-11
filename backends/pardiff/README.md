@@ -17,6 +17,6 @@ unkeyed and keyed virtual dom techniques together. This allows for rendering to 
 in a keyed fashion for all nodes, while not requiring additional memory or developer overhead.
 
 The diffing itself is a lawful usage of `alignWith` from the `Data.These` package. By modeling
-Html as an Alignable Functor, we get principled diffing with clear separation of concerns.
+Html as an Alignable Functor, you get principled diffing with clear separation of concerns.
 
-IO is done via JSaddle and works with both GHC and GHCjs.
+IO is done using JSaddle, and works with both GHC and GHCjs.
