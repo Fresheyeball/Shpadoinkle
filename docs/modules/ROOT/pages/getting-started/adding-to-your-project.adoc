@@ -51,7 +51,7 @@ You might expect that if the compiler version targeted is the same as the implic
 
 === Compose Extensions
 
-If overlays modifying Haskell package sets do not use `composeExtensions,` new overlays will simply replace previous ones instead of composing together. Follow this pattern and everything will be OK:
+If overlays modifying Haskell package sets do not use `composeExtensions`, new overlays will simply replace previous ones instead of composing together. Follow this pattern and everything will be OK:
 
 [source,nix]
 ----
@@ -79,6 +79,6 @@ haskell = super.haskell //
 ----
 
 <1> Here for illustrative reasons
-<2> Add packages into the Haskell overlay in your application.
+<2> Add packages in your application's Haskell overlay.
 <3> Override a specific compiler version, not `haskellPackages.`
 <4> Use `composeExtensions` to preserve work done in earlier overlays

@@ -14,7 +14,7 @@ Consuming this router requires that you provide two types:
 - Type alias for the recognized URIs
 - ADT representing views that can be rendered
 
-The relationship between these two types is subjective. meaning more than one URI
+The relationship between these two types is surjective. meaning more than one URI
 may result in the same route. This is important for backward compatibility, so the
 routing schema can evolve while still supporting older schemas.
 
