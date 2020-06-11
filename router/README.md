@@ -8,17 +8,17 @@
 [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-router/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-router)
 
 
-A Servant combinator based router for Shpadoinkle single-page applications.
+A Servant combinator-based router for Shpadoinkle single-page applications.
 Consuming this router requires that you provide two types:
 
 - Type alias for the recognized URIs
 - ADT representing views that can be rendered
 
-The relationship between these two types is surjective. Meaning more than one URI
+The relationship between these two types is subjective. meaning more than one URI
 may result in the same route. This is important for backward compatibility, so the
 routing schema can evolve while still supporting older schemas.
 
-Since interactions are done through the ADT, application code should be type-safe,
+Because interactions are done through the ADT, application code should be type-safe,
 and route canonically.
 
 ```haskell

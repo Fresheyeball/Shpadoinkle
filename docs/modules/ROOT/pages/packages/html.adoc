@@ -1,10 +1,10 @@
 = Html
 
-This package exposes a template haskell generated DSL of HTML tags, as well as properties. While not complete, this package is intended to eventually house utilities for web apis.
+This package exposes a Haskell-generated template Digital Subscriber Line (DSL) of HTML tags, as well as properties. While not complete, this package is intended to eventually house utilities for web APIs.
 
 == Named Tags
 
-HTML tags each get **4** named functions, with the following semantic
+HTML tags each get **four** named functions, with the following semantic:
 
 [%header]
 |===
@@ -15,7 +15,7 @@ HTML tags each get **4** named functions, with the following semantic
 | Prime + Underscore | icon:times[] No | icon:times[] No
 |===
 
-or we can see the semantic as follows
+or you can see the semantic as follows:
 
 [source,haskell]
 ----
@@ -25,7 +25,7 @@ x [] [] = x'_
 h "x" = x
 ----
 
-We also supply some overload strings for convenience.
+You also supply some overload strings for convenience:
 
 [source,haskell]
 ----
@@ -35,14 +35,14 @@ div "foo" [ "hiya" ]
 
 == Event Listeners
 
-Event listeners each get **2** named functions. A plain one, for pure event handlers, and a prime version for Monadic handlers.
+Event listeners each get **two** named functions; a plain one, for pure event handlers, and a prime version for Monadic handlers:
 
 [source,haskell]
 ----
 onX' (pure x) = onX x
 ----
 
-Each of these functions is named the same way they are in JavaScript (sans Camel-case). IE the following are morally equivalent:
+Each of these functions is named the same as in JavaScript (sans Camel-case). See that the following are morally equivalent:
 
 [source,javascript]
 ----
@@ -62,20 +62,20 @@ Most pure handlers are constrained by `Applicative`
 ----
 :: Applicative m => a -> Html m a
 ----
-but others have baked in effects, like reading the value off of a target element, or calling `stopPropagation()`. This difference gets documented in the type
+but others have baked-in effects, like reading the value off of a target element, or calling `stopPropagation()`. This difference gets documented in the type
 [source,haskell]
 ----
 :: MonadJSM m => (Text -> a) -> Html m a
 ----
-for example, `Text` here is needs `MonadJSM` to be obtained.
+For example, `Text` here is needs `MonadJSM` to be obtained.
 ====
 
 
 == Properties
 
-Instead of orienting around attributes, we orient around _properties_ in Shpadoinkle. This is because, largely you can set any attribute by properties, but not vice versa. Credit due to https://kriszyp.github.io/alkali/[alkali] which introduced me to this observation.
+Instead of orienting around attributes, we orient around _properties_ in Shpadoinkle. This is because, largely you can set any attribute by properties, but not vice-versa. Credit due to https://kriszyp.github.io/alkali/[alkali] which introduced the author to this observation.
 
-In most cases the named function will have the same name it would have in JavaScript. For example the following are morally equivalent.
+In most cases the named function will have the same name it would have in JavaScript. For example, the following are morally equivalent:
 
 [source,javascript]
 ----
@@ -88,7 +88,7 @@ div.className = "foo";
 div' [ className "foo" ]
 ----
 
-Not all properties have the same type. While we endeavor to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impediances, or would like to suggest a function.
+Not all properties have the same type. While we endeavor to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impedances, or would like to suggest a function.
 
 
 === ClassName

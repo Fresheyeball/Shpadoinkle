@@ -6,19 +6,19 @@ Shpadoinkle is a purely functional user interface library, focused on simplicity
 * xref:packages/index.adoc[Packages]
 * xref:tutorial/index.adoc[Tutorial]
 
-The core idea here is to model user interfaces as functions with type
+The core idea here is to model user interfaces as functions with type:
 
 [source,haskell]
 ----
 view :: Model -> Html' Model
 ----
 
-This allows us to describe the view as a pure function predicated on the current application state. It also suggests that changes to application state are dictated by the view.
+This lets you describe the view as a pure function predicated on the current application state. It also suggests that changes to application state are dictated by the view.
 
 [NOTE]
 .Coalgebras
 ====
-We are modelling the user interface as https://en.wikipedia.org/wiki/F-coalgebra[Coalgebras]. In programming, these ideas are just functions with the following shapes:
+This is modeling the user interface as https://en.wikipedia.org/wiki/F-coalgebra[Coalgebras]. In programming, these ideas are just functions with the following shapes:
 
 [source,haskell]
 ----
@@ -26,7 +26,7 @@ algebra :: F A -> A
 coalgebra :: A -> F A
 ----
 
-Where `A` is a concrete type and `F` is a concrete Functor. In our case we are operating in the `Html'` Functor. This should provide an intuition for how user interfaces can be composed.
+Where `A` is a concrete type and `F` is a concrete Functor. In this case, we are operating in the `Html'` Functor. This should provide an intuitive example for how user interfaces can be composed.
 ====
 
 Here is a simple example, which displays a counter:
@@ -47,14 +47,14 @@ view model = -- <1>
 <2> Show the current state to the user in a text node
 <3> When the user click the `<button>` we add one to the model
 
-That's it. If you can understand what is going on in the above example, you understand Shpadoinkle, it's that simple. There is no dispatch, no payloads, no event types, no giant update function, no networks of state managers, no templating, no special html syntax, no magic attributes, no digest cycle, and nothing fancy going on.
+That is it. If you can understand the above example, you understand Shpadoinkle, it is that simple. There is no dispatch, no payloads, no event types, no giant update function, no networks of state managers, no templating, no special html syntax, no magic attributes, no digest cycle, and nothing fancy going on.
 
-In fact the only part of Shpadoinkle that actually performs work is only about xref:packages/core.adoc#_shpadoinkle[10 lines of code].
+In fact, the only part of Shpadoinkle that actually performs work is only about {hackage}/docs/src/Shpadoinkle.html#shpadoinkle[10 lines of code].
 
 == Features
 
 High Performance::
-By not doing much work, Shpadoinkle is quite fast. The rendering backend is modular, so we can always take advantage of the latest work done on virtual DOM rendering. When faster techniques are available, you can adopt them easily.
+By not doing much work, Shpadoinkle is quite fast. The rendering backend is modular, so you can always take advantage of the latest work done on virtual DOM rendering. When faster techniques are available, you can adopt them easily.
 
 Declarative::
 Shpadoinkle code is high level, and rarely mentions low-level details. Developers don't have to worry about causality or when DOM nodes get replaced.
@@ -63,4 +63,4 @@ Composable::
 There is no need to wire model updates to locations in the DOM by elaborate passing of messages and payloads. Components are highly composable. Impedances in types for subcomponents are resolved with nothing more than `fmap` (typically with some lenses).
 
 Reliable::
-By keeping UI composition pure, runtime errors don't occur in practice. Code is easy to test as model updates are typically pure functions, and html output is transparent.
+By keeping UI composition pure, runtime errors don't occur in practice. Code is easy to test as model updates are typically pure functions, and Html output is transparent.
