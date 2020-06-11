@@ -9,14 +9,14 @@
 
 This module provides named functions for generating Html, and other browser utilities.
 
-For example, instead of writing
+For example, instead of writing:
 
 ```haskell
 view = h "div" [ ("class", PText "foo") ]
   [ h "span" [] [ text "hi there" ] ]
 ```
 
-we can write
+You can write:
 
 ```haskell
 view = div "foo" [ span_ [ "hi there" ] ]
@@ -44,12 +44,12 @@ identify keys.
 
 ## Browser utilities
 
-We provide high level apis to lower level browser apis. Including
+We provide high-level APIs to lower-level browser APIs. Including:
 
 - Local Storage
 
 I know it's just one right now.
-But this is the place to contribute more. Such as
+But this is the place to contribute more. Such as:
 
 - Scroll Position
 - XHR Requests

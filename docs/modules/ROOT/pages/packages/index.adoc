@@ -1,6 +1,6 @@
 = Packages
 
-Shpadoinkle is broken up into several packages that compose together or can be used separately.
+Shpadoinkle is segregated into several packages that compose together or can be used separately.
 
 [TIP]
 **Core** and a **Backend** are all that is needed to run a application.
@@ -9,19 +9,19 @@ xref:packages/core.adoc[Core] ({gitlab}/core[Gitlab], {hackage}[Hackage])::
 This stores the core types and logic for Shpadoinkle.
 
 xref:packages/html.adoc[Html] ({gitlab}/html[Gitlab], {hackage}-html[Hackage])::
-A Template generated DSL defining HTML tags, Properties, and Events. It includes some related Utilities like Keyboard support.
+A template-generated DSL defining HTML tags, Properties, and Events. It includes some related Utilities like keyboard support.
 
 xref:packages/backends.adoc[Static Backend] ({gitlab}/static[Gitlab], {hackage}-backend-static[Hackage])::
 Takes Shpadoinkle Html and renders it as a static HTML string.
 
 xref:packages/backends.adoc[ParDiff Backend] ({gitlab}/backends/pardiff[Gitlab], {hackage}-backend-pardiff[Hackage])::
-Canonical Virtual DOM written in Haskell based on Alignable Functors.
+Canonical Virtual DOM written in Haskell, and based on Alignable Functors.
 
 xref:packages/backends.adoc[Snabbdom Backend] ({gitlab}/backends/snabbdom[Gitlab], {hackage}-backend-snabbdom[Hackage])::
 Binding to the high performance Snabbdom.js Virtual DOM library written in JavaScript.
 
 xref:packages/router.adoc[Router] ({gitlab}/router[Gitlab], {hackage}-router[Hackage])::
-SPA (Single Page Application) router based on https://docs.servant.dev/en/stable/[Servant].
+ Single Page Application (SPA) router based on https://docs.servant.dev/en/stable/[Servant].
 
 xref:packages/widgets.adoc[Widgets] ({gitlab}/widgets[Gitlab], {hackage}-widgets[Hackage])::
 Logical types and structures for common UI components, along with batteries included implementations.

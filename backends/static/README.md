@@ -9,7 +9,7 @@
 
 This module provides a static rendering backend that translates Shpadoinkle `Html` into `Text`.
 
-For example
+For example:
 
 ```haskell
 page :: Html' a
@@ -19,7 +19,7 @@ page = h "div" [ ("class", PText "header" ) ]
 main = putStrLn $ unpack $ renderStatic page
 ```
 
-will output
+will output:
 
 ```html
 <div class="header"><h1>Trappers!</h1></div>
