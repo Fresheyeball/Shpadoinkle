@@ -54,7 +54,6 @@ import           Data.Proxy
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
 import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
-import           GHC.Conc
 import           GHC.TypeLits
 import           GHCJS.DOM
 import           GHCJS.DOM.EventM              (on)
@@ -145,6 +144,7 @@ fullPageSPA :: forall layout b a r m
    . HasRouter layout
   => Backend b m a
   => Eq a
+  => Functor m
   => (m ~> JSM)
   -- ^ how do we get to JSM?
   -> (TVar a -> b m ~> m)
@@ -155,7 +155,7 @@ fullPageSPA :: forall layout b a r m
   -- ^ how should the html look?
   -> b m RawNode
   -- ^ where do we render?
-  -> (r -> a -> m a)
+  -> (r -> a -> m (Continuation m a))
   -- ^ listen for route changes
   -> layout :>> r
   -- ^ how shall we relate urls to routes?
@@ -167,8 +167,9 @@ fullPageSPA toJSM backend i' view getStage onRoute routes = do
     Nothing -> return ()
     Just r -> do
       i <- toJSM $ i' r
-      model <- createTerritory i
-      _ <- listenStateChange router $ writeUpdate model . (toJSM .) . onRoute
+      model <- newTVarIO i
+      _ <- listenStateChange router $ writeUpdate model
+           . ((fmap (convertC toJSM) . toJSM) .) . onRoute
       shpadoinkle toJSM backend i model view getStage
       syncPoint
 
