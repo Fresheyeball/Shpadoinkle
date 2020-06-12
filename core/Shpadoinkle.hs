@@ -219,17 +219,17 @@ listen' k f = listen k $ pure f
 
 
 instance Monad m => F.Functor EndoIso EndoIso (Html m) where
-  map (EndoIso f g i) = EndoIso (mapC . mapply $ map' (mendo f))
-                                (mapC . mapply $ map' (miso g i))
-                                (mapC . mapply $ map' (miso i g))
+  map (EndoIso f g i) = EndoIso (mapMC . mapply $ map' (mendo f))
+                                (mapMC . mapply $ map' (miso g i))
+                                (mapMC . mapply $ map' (miso i g))
     where map' :: EndoIso a b -> EndoIso (Continuation m a) (Continuation m b)
           map' = F.map
 
 
 instance MapContinuations Html where
-  mapC f (Node t ps es) = Node t (unMapProps . mapC f $ MapProps ps) (mapC f <$> es)
-  mapC _ (Potato p) = Potato p
-  mapC _ (TextNode t) = TextNode t
+  mapMC f (Node t ps es) = Node t (unMapProps . mapMC f $ MapProps ps) (mapMC f <$> es)
+  mapMC _ (Potato p) = Potato p
+  mapMC _ (TextNode t) = TextNode t
 
 
 -- | Properties of a DOM node. Backend does not use attributes directly,
@@ -265,9 +265,9 @@ instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
 
 
 instance MapContinuations Prop where
-  mapC _ (PText t) = PText t
-  mapC f (PListener g) = PListener (\r e -> f <$> g r e)
-  mapC _ (PFlag b) = PFlag b
+  mapMC _ (PText t) = PText t
+  mapMC f (PListener g) = PListener (\r e -> f <$> g r e)
+  mapMC _ (PFlag b) = PFlag b
 
 
 -- | Type alias for convenience. Typing out the nested brackets is tiresome.
@@ -284,7 +284,7 @@ instance Monad m => F.Functor EndoIso EndoIso (MapProps m) where
 
 
 instance MapContinuations MapProps where
-  mapC f = MapProps . fmap (second (mapC f)) . unMapProps
+  mapMC f = MapProps . fmap (second (mapMC f)) . unMapProps
 
 
 -- | Strings are overloaded as HTML text nodes
