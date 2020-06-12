@@ -99,22 +99,22 @@ convertC _ Done = Done
 convertC f (Rollback r) = Rollback (convertC f r)
 convertC f (Continuation (g, h)) = Continuation . (g,) $ \x -> f $ convertC f <$> h x
 
-liftC :: Functor m => (b -> a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
+liftC :: Functor m => (a -> b -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 liftC _ _ Done = Done
 liftC f g (Rollback r) = Rollback (liftC f g r)
-liftC f g (Continuation (h, i)) = Continuation (\x -> f x (h (g x)), \x -> liftC f g <$> i (g x))
+liftC f g (Continuation (h, i)) = Continuation (\x -> f (h (g x)) x, \x -> liftC f g <$> i (g x))
 
-liftMC :: Functor m => MapContinuations f => (b -> a -> b) -> (b -> a) -> f m a -> f m b
+liftMC :: Functor m => MapContinuations f => (a -> b -> b) -> (b -> a) -> f m a -> f m b
 liftMC f g = mapMC (liftC f g)
 
 leftC :: Functor m => Continuation m a -> Continuation m (a,b)
-leftC = liftC (\(_,y) x -> (x,y)) fst
+leftC = liftC (\x (_,y) -> (x,y)) fst
 
 leftMC :: Functor m => MapContinuations f => f m a -> f m (a,b)
 leftMC = mapMC leftC
 
 rightC :: Functor m => Continuation m b -> Continuation m (a,b)
-rightC = liftC (\(x,_) y -> (x,y)) snd
+rightC = liftC (\y (x,_) -> (x,y)) snd
 
 rightMC :: Functor m => MapContinuations f => f m b -> f m (a,b)
 rightMC = mapMC rightC

@@ -40,7 +40,7 @@ module Shpadoinkle
   , convertC, liftC, liftMC, leftC, leftMC, rightC, rightMC
   , maybeC, maybeMC, comaybeC, comaybeMC
   , writeUpdate, shouldUpdate
-  , type (~>), Html'
+  , type (~>)
   , RawNode (..), RawEvent (..)
   , h, text, flag, textProp
   , listener, listen, listenRaw, listen'
@@ -92,10 +92,6 @@ data Html :: (Type -> Type) -> Type -> Type where
 
 -- | Natural Transformation
 type m ~> n = forall a. m a -> n a
-
--- | A type alias to support scenarios where
--- the view code event listeners are pure.
-type Html' a = forall m. Applicative m => Html m a
 
 
 -- | If you can provide a Natural Transformation from one Monad to another

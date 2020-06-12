@@ -44,8 +44,6 @@ when:
 
 
 library:
-  exposed-modules:
-      Shpadoinkle
   source-dirs: .
   dependencies:
     - category  >= 0.2   && <0.3
