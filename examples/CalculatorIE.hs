@@ -189,8 +189,8 @@ view x = H.div "calculator"
     ]
   ]
 
-  where setupDigit = liftMC (\x d -> x & entry %~ applyDigit d)
-                     (const (error "Model -> Digit should be unused"))
+  where setupDigit = generalize entry . liftMC (flip applyDigit) noInverse
+        noInverse = error "This should be unreachable because the digit onClick handler should be const"
 
 
 trapper :: Show a => (a -> Html m a) -> (a -> Html m a)
