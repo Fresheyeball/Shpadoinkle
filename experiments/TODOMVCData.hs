@@ -6,6 +6,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -63,7 +64,7 @@ newTaskForm m = form [ className "todo-form", onSubmit . pur $ \m ->
     & current .~ mempty ]
   [ input' [ className "new-todo"
            , m ^. current . _Wrapped . to value
-           , onInput $ \x -> pur (& current .~ Description x)
+           , onInput $ generalize current . pur . const . Description
            , placeholder "What needs to be done?" ]
   ]
   where insertMax x xs = M.insert k' x xs where k' = maybe minBound (succ . fst) $ M.lookupMax xs
@@ -89,15 +90,16 @@ taskView m = memo $ \tid (Task (Description d) c) ->
                  Incomplete -> Complete))
              , checked $ c == Complete
              ]
-    , label [ onDblclick $ pur (& editing .~ Just tid) ] [ text d ]
+    , label [ onDblclick . generalize editing . pur $ const (Just tid) ] [ text d ]
     , button' [ className "destroy", onClick . pur $ (& tasks %~ M.delete tid) ]
     ]
-  , form [ onSubmit $ pur (& editing .~ Nothing) ]
+  , form [ onSubmit . generalize editing . pur $ const Nothing ]
     [ input' [ className "edit"
              , value d
-             , onInput $ \x -> pur (& tasks . at tid . traverse . description . _Wrapped .~ x)
+             , onInput $ generalize (tasks . at tid) . maybeC . generalize description
+                         . pur . const . Description
              , autofocus True
-             , onBlur $ pur (& editing .~ Nothing)
+             , onBlur . generalize editing . pur $ const Nothing
              ]
     ]
   ]
@@ -112,7 +114,7 @@ listFooter m = footer "footer" $
                                         & fmap (generalize visibility)
   ] ++ (if count Complete (m ^. tasks) == 0 then [] else
   [ button [ className "clear-completed"
-           , onClick $ pur (& tasks %~ M.filter ((== Incomplete) . _completed))
+           , onClick . generalize tasks . pur $ M.filter ((== Incomplete) . _completed)
            ] [ "Clear completed" ]
   ])
   where count c = M.size . M.filter ((== c) . _completed)
@@ -132,9 +134,10 @@ info = footer "info"
 
 toggleAllBtn :: Applicative m => Model -> [Html m Model]
 toggleAllBtn m =
-  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange $ pur
-    (& tasks . mapped . completed .~ if m ^. tasks . to (all $ (== Complete) . _completed)
-                                      then Incomplete else Complete) ]
+  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox",
+             onChange $ generalize tasks . pur $ (& mapped . completed .~
+               if m ^. tasks . to (all $ (== Complete) . _completed)
+               then Incomplete else Complete) ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
