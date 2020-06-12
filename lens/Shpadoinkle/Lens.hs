@@ -14,11 +14,11 @@ import           Shpadoinkle
 --embed = (%%~)
 
 
-generalize :: forall m s a. Functor m => Lens' s a -> Html m a -> Html m s
+generalize :: forall f m s a. Functor m => MapContinuations f => Lens' s a -> f m a -> f m s
 generalize len = liftMC (flip (set len)) (view len)
 
 
-(<%) :: forall m s a. Functor m => s -> Lens' s a -> (a -> Html m a) -> Html m s
+(<%) :: forall f m s a. Functor m => MapContinuations f => s -> Lens' s a -> (a -> f m a) -> f m s
 (<%) big len f = generalize len (f (view len big))
 
 
