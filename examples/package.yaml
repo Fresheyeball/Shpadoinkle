@@ -51,9 +51,11 @@ executables:
     dependencies:
       - text
       - containers
+      - lens
 
       - Shpadoinkle
       - Shpadoinkle-html
+      - Shpadoinkle-lens
       - Shpadoinkle-backend-pardiff
 
   counter:
@@ -75,9 +77,11 @@ executables:
     dependencies:
       - text
       - safe
+      - lens
 
       - Shpadoinkle
       - Shpadoinkle-html
+      - Shpadoinkle-lens
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-widgets
 
@@ -101,12 +105,14 @@ executables:
     main: Widgets.hs
     source-dirs: ./widgets
     dependencies:
+      - lens
       - text
       - stm
 
       - Shpadoinkle
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-html
+      - Shpadoinkle-lens
       - Shpadoinkle-widgets
 
   servant-crud-client:

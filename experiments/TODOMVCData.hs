@@ -19,10 +19,10 @@ import           Data.Text                     hiding (all, count, filter,
 import           Prelude                       hiding (div, unwords)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.Snabbdom
-import           Shpadoinkle.Html              hiding (main)
+import           Shpadoinkle.Html
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Memo
-import           Shpadoinkle.Html.Utils
+import           Shpadoinkle.Lens
 
 default (Text)
 
@@ -57,13 +57,13 @@ data Model = Model
 makeLenses ''Model
 
 newTaskForm :: MonadJSM m => Model -> Html m Model
-newTaskForm m = form [ className "todo-form", onSubmit $
+newTaskForm m = form [ className "todo-form", onSubmit . pur $ \m ->
   if m ^. current . to (== mempty) then m else m
     & tasks %~ insertMax (Task (m ^. current) Incomplete)
     & current .~ mempty ]
   [ input' [ className "new-todo"
            , m ^. current . _Wrapped . to value
-           , onInput $ \x -> m & current .~ Description x
+           , onInput $ \x -> pur (& current .~ Description x)
            , placeholder "What needs to be done?" ]
   ]
   where insertMax x xs = M.insert k' x xs where k' = maybe minBound (succ . fst) $ M.lookupMax xs
@@ -84,20 +84,20 @@ taskView m = memo $ \tid (Task (Description d) c) ->
   [ div "view"
     [ input' [ type' "checkbox"
              , className "toggle"
-             , onChange $ m & tasks . at tid . traverse . completed %~ \case
+             , onChange $ pur (& tasks . at tid . traverse . completed %~ (\case
                  Complete -> Incomplete
-                 Incomplete -> Complete
+                 Incomplete -> Complete))
              , checked $ c == Complete
              ]
-    , label [ onDblclick (m & editing .~ Just tid) ] [ text d ]
-    , button' [ className "destroy", onClick (m & tasks %~ M.delete tid) ]
+    , label [ onDblclick $ pur (& editing .~ Just tid) ] [ text d ]
+    , button' [ className "destroy", onClick . pur $ (& tasks %~ M.delete tid) ]
     ]
-  , form [ onSubmit $ m & editing .~ Nothing ]
+  , form [ onSubmit $ pur (& editing .~ Nothing) ]
     [ input' [ className "edit"
              , value d
-             , onInput $ \x -> m & tasks . at tid . traverse . description . _Wrapped .~ x
+             , onInput $ \x -> pur (& tasks . at tid . traverse . description . _Wrapped .~ x)
              , autofocus True
-             , onBlur $ m & editing .~ Nothing
+             , onBlur $ pur (& editing .~ Nothing)
              ]
     ]
   ]
@@ -109,10 +109,10 @@ listFooter m = footer "footer" $
     , text $ " item" <> (if co == 1 then "" else "s") <> " left"
     ]
   , ul "filters" $ [minBound..maxBound] & mapped %~ filterHtml (m ^. visibility)
-                                        & mapped . mapped %~ (m &) . (visibility .~)
+                                        & fmap (generalize visibility)
   ] ++ (if count Complete (m ^. tasks) == 0 then [] else
   [ button [ className "clear-completed"
-           , onClick $ m & tasks %~ M.filter ((== Incomplete) . _completed)
+           , onClick $ pur (& tasks %~ M.filter ((== Incomplete) . _completed))
            ] [ "Clear completed" ]
   ])
   where count c = M.size . M.filter ((== c) . _completed)
@@ -120,7 +120,7 @@ listFooter m = footer "footer" $
 
 filterHtml :: Visibility -> Visibility -> Html' Visibility
 filterHtml = memo2 $ \cur item -> li_
-  [ a (href "#" : onClick item : [className ("selected", cur == item)]) [ text . pack $ show item ]
+  [ a (href "#" : onClick (pur (const item)) : [className ("selected", cur == item)]) [ text . pack $ show item ]
   ]
 
 info :: Html m a
@@ -132,9 +132,9 @@ info = footer "info"
 
 toggleAllBtn :: Applicative m => Model -> [Html m Model]
 toggleAllBtn m =
-  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange $
-    m & tasks . mapped . completed .~ if m ^. tasks . to (all $ (== Complete) . _completed)
-                                      then Incomplete else Complete ]
+  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange $ pur
+    (& tasks . mapped . completed .~ if m ^. tasks . to (all $ (== Complete) . _completed)
+                                      then Incomplete else Complete) ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 

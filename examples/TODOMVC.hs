@@ -6,6 +6,7 @@
 module Main where
 
 
+import           Control.Lens                  hiding (view)
 import           Data.Text                     hiding (count, filter, length)
 import           Prelude                       hiding (div, unwords)
 import           Shpadoinkle
@@ -13,6 +14,7 @@ import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Html
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Memo
+import           Shpadoinkle.Lens
 
 import           TODOMVC.Types
 import           TODOMVC.Update
@@ -29,14 +31,14 @@ filterHtml = memo2 $ \cur item -> li_
 
 
 htmlIfTasks :: Model -> [Html m a] -> [Html m a]
-htmlIfTasks m h' = if Prelude.null (tasks m) then [] else h'
+htmlIfTasks m h' = if Prelude.null (_tasks m) then [] else h'
 
 
 taskView :: MonadJSM m => Model -> Task -> Html m Model
 taskView m = memo $ \(Task (Description d) c tid) ->
   li [ id' . pack . show $ unTaskId tid
      , className [ ("completed", c == Complete)
-                 , ("editing", Just tid == editing m) ]
+                 , ("editing", Just tid == _editing m) ]
      ]
   [ div "view"
     [ input' [ type' "checkbox"
@@ -60,13 +62,12 @@ taskView m = memo $ \(Task (Description d) c tid) ->
 
 listFooter :: Applicative m => Model -> Html m Model
 listFooter model = footer "footer" $
-  [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ tasks model in
+  [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ _tasks model in
     [ strong_ [ text . pack $ show co ]
     , text $ " item" <> (if co == 1 then "" else "s") <> " left"
     ]
-  , ul "filters" $ (liftMC (\m v -> m { visibility = v }) visibility
-                    . filterHtml (visibility model) <$> [minBound..maxBound])
-  ] ++ (if count Complete (tasks model) == 0 then [] else
+  , ul "filters" $ generalize visibility . filterHtml (_visibility model) <$> [minBound..maxBound]
+  ] ++ (if count Complete (_tasks model) == 0 then [] else
   [ button [ className "clear-completed", onClick (pur clearComplete) ] [ "Clear completed" ]
   ])
 
@@ -83,14 +84,14 @@ info = footer "info"
 newTaskForm :: MonadJSM m => Model -> Html m Model
 newTaskForm model = form [ className "todo-form", onSubmit (pur appendItem) ]
   [ input' [ className "new-todo"
-           , value . unDescription $ current model
-           , onInput $ pur . updateDescription . Description
+           , value . unDescription $ _current model
+           , onInput $ pur . set current . Description
            , placeholder "What needs to be done?" ]
   ]
 
 
 todoList :: MonadJSM m => Model -> Html m Model
-todoList model = ul "todo-list" $ taskView model <$> toVisible (visibility model) (tasks model)
+todoList model = ul "todo-list" $ taskView model <$> toVisible (_visibility model) (_tasks model)
 
 
 toggleAllBtn :: Applicative m => [Html m Model]

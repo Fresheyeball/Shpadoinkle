@@ -1,23 +1,26 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 
 module Main where
 
 
+import           Control.Lens                hiding (simple, view)
 import           Data.Maybe
 import           Data.Text
 import           Safe
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Html
+import           Shpadoinkle.Lens
 
 
 data Model = Model
-    { operation :: Operation
-    , left      :: Int
-    , right     :: Int
+    { _operation :: Operation
+    , _left      :: Int
+    , _right     :: Int
     }
     deriving (Eq, Show)
 
@@ -27,6 +30,9 @@ data Operation = Addition
     | Multiplication
     | Division
     deriving (Eq, Show, Read, Enum, Bounded)
+
+
+makeLenses ''Model
 
 
 opFunction :: Operation -> (Int -> Int -> Int)
@@ -61,11 +67,11 @@ num x = input'
 
 view :: MonadJSM m => Model -> Html m Model
 view model = div_
- [ liftMC (\m l -> m { left      = l }) left      (num (left model))
- , liftMC (\m o -> m { operation = o }) operation opSelect
- , liftMC (\m r -> m { right     = r }) right     (num (right model))
+ [ generalize left (num (_left model))
+ , generalize operation opSelect
+ , generalize right (num (_right model))
  , text $ " = " <> pack (show $ opFunction
-     (operation model) (left model) (right model))
+     (_operation model) (_left model) (_right model))
  ]
 
 

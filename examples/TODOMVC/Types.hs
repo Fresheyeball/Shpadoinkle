@@ -1,10 +1,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 
 module TODOMVC.Types where
 
 
+import           Control.Lens
 import           Data.String
 import           Data.Text
 
@@ -22,18 +24,20 @@ data Visibility = All | Active | Completed
 
 
 data Task = Task
-  { description :: Description
-  , completed   :: Completed
-  , taskId      :: TaskId
+  { _description :: Description
+  , _completed   :: Completed
+  , _taskId      :: TaskId
   } deriving (Show, Read, Eq)
+makeLenses ''Task
 
 
 data Model = Model
-  { tasks      :: [Task]
-  , editing    :: Maybe TaskId
-  , visibility :: Visibility
-  , current    :: Description
+  { _tasks      :: [Task]
+  , _editing    :: Maybe TaskId
+  , _visibility :: Visibility
+  , _current    :: Description
   } deriving (Show, Read, Eq)
+makeLenses ''Model
 
 
 emptyModel :: Model
