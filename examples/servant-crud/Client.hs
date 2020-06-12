@@ -49,7 +49,7 @@ instance CRUDSpaceCraft App where
 
 
 app :: JSM ()
-app = fullPageSPA @ SPA runApp runParDiff (withHydration start) view getBody (const . start) routes
+app = fullPageSPA @ SPA runApp runParDiff (withHydration start) view getBody (fmap (pur . const) . start) routes
 
 
 main :: IO ()

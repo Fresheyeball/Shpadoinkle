@@ -21,8 +21,8 @@ view count = div_
   , "The current count is: "
   , span [ id' "out" ] [ text (pack $ show count) ]
   , br'_, br'_
-  , button [ onClick (count - 1) ] [ "Decrement" ]
-  , button [ onClick (count + 1) ] [ "Increment" ]
+  , button [ onClick . pur $ subtract 1 ] [ "Decrement" ]
+  , button [ onClick . pur $ (+ 1)      ] [ "Increment" ]
   ]
 
 

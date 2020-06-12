@@ -38,6 +38,7 @@ module Shpadoinkle
   , shpadoinkle, fullPage, fullPageJSM, simple
   , Continuation (..), pur, impur, MapContinuations (..)
   , convertC, liftC, liftMC, leftC, leftMC, rightC, rightMC
+  , maybeC, maybeMC
   , writeUpdate, shouldUpdate
   , type (~>), Html'
   , RawNode (..), RawEvent (..)

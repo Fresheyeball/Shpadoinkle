@@ -48,9 +48,9 @@ data Model = Model
 view :: MonadJSM m => Model -> Html m Model
 view m = div_
   [ link' [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ]
-  , (\x -> m {_pickOne = x}) <$>
+  , liftMC (\m x -> m {_pickOne = x}) _pickOne $
     dropdown bootstrap defConfig { _attrs = [ id' "One" ] } (_pickOne m)
-  , (\x -> m {_pickAtleastOne = x}) <$>
+  , liftMC (\m x -> m {_pickAtleastOne = x}) _pickAtleastOne $
     dropdown bootstrap defConfig { _attrs = [ id' "AtleastOne" ] } (_pickAtleastOne m)
   ]
   where

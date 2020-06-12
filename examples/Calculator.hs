@@ -47,7 +47,7 @@ opText = \case
 
 
 opSelect :: MonadJSM m => Html m Operation
-opSelect = select [ onOption $ read . unpack ]
+opSelect = select [ onOption $ pur . const . read . unpack ]
   $ opOption <$> [minBound..maxBound]
   where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 
@@ -55,15 +55,15 @@ opSelect = select [ onOption $ read . unpack ]
 num :: MonadJSM m => Int -> Html m Int
 num x = input'
  [ value . pack $ show x
- , onInput (fromMaybe 0 . readMay . unpack)
+ , onInput $ pur . const . fromMaybe 0 . readMay . unpack
  ]
 
 
 view :: MonadJSM m => Model -> Html m Model
 view model = div_
- [ (\l -> model { left      = l }) <$> num (left model)
- , (\o -> model { operation = o }) <$> opSelect
- , (\r -> model { right     = r }) <$> num (right model)
+ [ liftMC (\m l -> m { left      = l }) left      (num (left model))
+ , liftMC (\m o -> m { operation = o }) operation opSelect
+ , liftMC (\m r -> m { right     = r }) right     (num (right model))
  , text $ " = " <> pack (show $ opFunction
      (operation model) (left model) (right model))
  ]

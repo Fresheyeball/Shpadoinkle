@@ -1,4 +1,5 @@
 {-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -17,6 +18,8 @@ module Shpadoinkle.Continuation
   , leftMC
   , rightC
   , rightMC
+  , maybeC
+  , maybeMC
   , writeUpdate
   , shouldUpdate
   ) where
@@ -110,6 +113,17 @@ rightC = liftC (\(x,_) y -> (x,y)) snd
 
 rightMC :: Functor m => MapContinuations f => f m b -> f m (a,b)
 rightMC = mapC rightC
+
+maybeC :: Applicative m => Continuation m a -> Continuation m (Maybe a)
+maybeC Done = Done
+maybeC (Rollback r) = Rollback (maybeC r)
+maybeC (Continuation (f, g)) = Continuation . (fmap f,) $
+  \case
+    Just x -> maybeC <$> g x
+    Nothing -> pure Done
+
+maybeMC :: Applicative m => MapContinuations f => f m a -> f m (Maybe a)
+maybeMC = mapC maybeC
 
 contIso :: Functor m => (a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 contIso f g (Continuation (h, i)) = Continuation (f.h.g, fmap (contIso f g) . i . g)

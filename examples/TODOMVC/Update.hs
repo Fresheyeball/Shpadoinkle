@@ -15,28 +15,28 @@ appendItem m = if current m /= "" then m
   else m
 
 
-updateDescription :: Model -> Description -> Model
-updateDescription m d = m { current = d }
+updateDescription :: Description -> Model -> Model
+updateDescription d m = m { current = d }
 
 
-toggleCompleted :: Model -> TaskId -> Model
-toggleCompleted m tid = m { tasks =
+toggleCompleted :: TaskId -> Model -> Model
+toggleCompleted tid m = m { tasks =
   (\t -> if taskId t == tid then t { completed = negC (completed t) } else t) <$> tasks m }
   where negC Complete   = Incomplete
         negC Incomplete = Complete
 
 
-toggleEditing :: Model -> Maybe TaskId -> Model
-toggleEditing m t = m { editing = t }
+toggleEditing :: Maybe TaskId -> Model -> Model
+toggleEditing t m = m { editing = t }
 
 
-updateTaskDescription :: Model -> TaskId -> Description -> Model
-updateTaskDescription m tid desc = m { tasks = f <$> tasks m}
+updateTaskDescription :: TaskId -> Description -> Model -> Model
+updateTaskDescription tid desc m = m { tasks = f <$> tasks m}
   where f t = if taskId t == tid then t { description = desc } else t
 
 
-removeTask :: Model -> TaskId -> Model
-removeTask m tid = m { tasks = filter ((/= tid) . taskId) $ tasks m}
+removeTask :: TaskId -> Model -> Model
+removeTask tid m = m { tasks = filter ((/= tid) . taskId) $ tasks m}
 
 
 toggleAll :: Model -> Model

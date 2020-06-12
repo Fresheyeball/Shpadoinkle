@@ -23,7 +23,8 @@ default (Text)
 
 filterHtml :: Applicative m => Visibility -> Visibility -> Html m Visibility
 filterHtml = memo2 $ \cur item -> li_
-  [ a (href "#" : onClick item : [className ("selected", cur == item)]) [ text . pack $ show item ]
+  [ a (href "#" : onClick (pur (const item))
+        : [className ("selected", cur == item)]) [ text . pack $ show item ]
   ]
 
 
@@ -40,18 +41,18 @@ taskView m = memo $ \(Task (Description d) c tid) ->
   [ div "view"
     [ input' [ type' "checkbox"
              , className "toggle"
-             , onChange $ toggleCompleted m tid
+             , onChange . pur $ toggleCompleted tid
              , checked $ c == Complete
              ]
-    , label [ onDblclick (toggleEditing m (Just tid)) ] [ text d ]
-    , button' [ className "destroy", onClick (removeTask m tid) ]
+    , label [ onDblclick . pur . toggleEditing $ Just tid ] [ text d ]
+    , button' [ className "destroy", onClick . pur $ removeTask tid ]
     ]
-  , form [ onSubmit $ toggleEditing m Nothing ]
+  , form [ onSubmit . pur $ toggleEditing Nothing ]
     [ input' [ className "edit"
              , value d
-             , onInput $ updateTaskDescription m tid . Description
+             , onInput $ pur . updateTaskDescription tid . Description
              , autofocus True
-             , onBlur $ toggleEditing m Nothing
+             , onBlur . pur $ toggleEditing Nothing
              ]
     ]
   ]
@@ -63,10 +64,10 @@ listFooter model = footer "footer" $
     [ strong_ [ text . pack $ show co ]
     , text $ " item" <> (if co == 1 then "" else "s") <> " left"
     ]
-  , ul "filters" $ fmap (\v -> model { visibility = v })
-                <$> (filterHtml (visibility model) <$> [minBound..maxBound])
+  , ul "filters" $ (liftMC (\m v -> m { visibility = v }) visibility
+                    . filterHtml (visibility model) <$> [minBound..maxBound])
   ] ++ (if count Complete (tasks model) == 0 then [] else
-  [ button [ className "clear-completed", onClick $ clearComplete model ] [ "Clear completed" ]
+  [ button [ className "clear-completed", onClick (pur clearComplete) ] [ "Clear completed" ]
   ])
 
 
@@ -80,10 +81,10 @@ info = footer "info"
 
 
 newTaskForm :: MonadJSM m => Model -> Html m Model
-newTaskForm model = form [ className "todo-form", onSubmit (appendItem model) ]
+newTaskForm model = form [ className "todo-form", onSubmit (pur appendItem) ]
   [ input' [ className "new-todo"
            , value . unDescription $ current model
-           , onInput $ updateDescription model . Description
+           , onInput $ pur . updateDescription . Description
            , placeholder "What needs to be done?" ]
   ]
 
@@ -92,9 +93,9 @@ todoList :: MonadJSM m => Model -> Html m Model
 todoList model = ul "todo-list" $ taskView model <$> toVisible (visibility model) (tasks model)
 
 
-toggleAllBtn :: Applicative m => Model -> [Html m Model]
-toggleAllBtn model =
-  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange (toggleAll model) ]
+toggleAllBtn :: Applicative m => [Html m Model]
+toggleAllBtn =
+  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange (pur toggleAll) ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
@@ -105,7 +106,7 @@ view model = div_
     header "header"
       [ h1_ [ "todos" ], newTaskForm model ]
     : htmlIfTasks model
-    [ section "main" $ toggleAllBtn model ++ [ todoList model ]
+    [ section "main" $ toggleAllBtn ++ [ todoList model ]
     , listFooter model
     ]
   , info

@@ -27,9 +27,9 @@ import           Data.Coerce                       (Coercible)
 import           Data.Maybe                        (fromMaybe, isNothing)
 import           Data.String                       (IsString)
 import           Data.Text                         as T
-import           Shpadoinkle                       (Html, MonadJSM, text)
+import           Shpadoinkle                       (Html, MonadJSM, text, pur, liftMC)
 import qualified Shpadoinkle.Html                  as H
-import           Shpadoinkle.Lens                  ((<%), (<+))
+import           Shpadoinkle.Lens                  ((<%), generalize)
 import           Shpadoinkle.Router                (navigate, toHydration)
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown (Dropdown (..),
                                                                 Theme (..),
@@ -163,17 +163,20 @@ editForm mid ef = H.div_
   , H.div "d-flex flex-row justify-content-end"
 
     [ H.button
-      [ H.onClick' (ef <$ navigate @SPA (RList mempty))
+      [ H.onClick' $ do
+          navigate @SPA (RList mempty)
+          return (pur id)
       , H.class' "btn btn-secondary"
       ] [ "Cancel" ]
 
     , H.button
       [ H.onClick' $ case isValid of
-         Nothing -> return ef
+         Nothing -> return (pur id)
          Just up -> do
            case mid of Nothing  -> () <$ createSpaceCraft up
                        Just sid -> updateSpaceCraft sid up
-           ef <$ navigate @SPA (RList mempty)
+           navigate @SPA (RList mempty)
+           return (pur id)
       , H.class' "btn btn-primary"
       , H.disabled $ isNothing isValid
       ] [ "Save" ]
@@ -217,7 +220,7 @@ fuzzy = flip (^.) <$>
 view :: (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
 view fe = case fe of
 
-  MList r -> MList <$> H.div "container-fluid"
+  MList r -> liftMC (const MList) (\(MList x) -> x) $ H.div "container-fluid"
    [ H.div "row justify-content-between align-items-center"
      [ H.h2_ [ "Space Craft Roster" ]
      , H.div [ H.class' "input-group"
@@ -225,16 +228,19 @@ view fe = case fe of
              ]
        [ r <% search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
        , H.div "input-group-append mr-3"
-         [ H.button [ H.onClick' (r <$ navigate @SPA RNew), H.class' "btn btn-primary" ] [ "Register" ]
+         [ H.button [ H.onClick' $ do
+                        navigate @SPA RNew
+                        return (pur id)
+                    , H.class' "btn btn-primary" ] [ "Register" ]
          ]
        ]
      ]
-   , r <+ lensProduct table sort $ Table.viewWith tableCfg
-    (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value))
-    (r ^. sort)
+   , generalize (lensProduct table sort) $ Table.viewWith tableCfg
+     (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value))
+     (r ^. sort)
    ]
 
-  MDetail sid form -> MDetail sid <$> H.div "row"
+  MDetail sid form -> liftMC (const (MDetail sid)) (\(MDetail _ x) -> x) $ H.div "row"
     [ H.div "col-sm-8 offset-sm-2"
       [ H.h2_ [ text $ maybe "Register New Space Craft" (const "Edit Space Craft") sid
               ]
@@ -244,7 +250,9 @@ view fe = case fe of
 
   MEcho t -> H.div_
     [ maybe (text "Erie silence") text t
-    , H.a [ H.onClick' (fe <$ navigate @SPA (RList $ Input Clean "")) ] [ "Go To Space Craft Roster" ]
+    , H.a [ H.onClick' $ do
+              navigate @SPA (RList $ Input Clean "")
+              return (pur id) ] [ "Go To Space Craft Roster" ]
     ]
 
   M404 -> text "404"

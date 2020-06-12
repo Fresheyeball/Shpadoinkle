@@ -244,7 +244,7 @@ instance Tabular [SpaceCraft] where
 
   toRows = fmap SpaceCraftRow
 
-  toCell xs (SpaceCraftRow SpaceCraft {..}) = \case
+  toCell _ (SpaceCraftRow SpaceCraft {..}) = \case
     SKUT          -> present _sku
     DescriptionT  -> present _description
     SerialNumberT -> present _serial
@@ -252,9 +252,14 @@ instance Tabular [SpaceCraft] where
     OperableT     -> present _operable
     ToolsT        ->
       [ H.div "btn-group"
-        [ H.button [ H.class' "btn btn-sm btn-secondary", H.onClick' (xs <$ navigate @ SPA (RExisting _identity)) ] [ "Edit" ]
-        , H.button [ H.class' "btn btn-sm btn-secondary", H.onClick' (Prelude.filter (\x -> x ^. identity /= _identity) xs
-                          <$ deleteSpaceCraft _identity) ] [ "Delete" ]
+        [ H.button [ H.class' "btn btn-sm btn-secondary",
+                     H.onClick' $ do
+                       navigate @ SPA (RExisting _identity)
+                       return (pur id) ] [ "Edit" ]
+        , H.button [ H.class' "btn btn-sm btn-secondary",
+                     H.onClick' $ do
+                       deleteSpaceCraft _identity
+                       return (pur (Prelude.filter (\x -> x ^. identity /= _identity))) ] [ "Delete" ]
         ]
       ]
 

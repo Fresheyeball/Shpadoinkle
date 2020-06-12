@@ -155,7 +155,7 @@ fullPageSPA :: forall layout b a r m
   -- ^ how should the html look?
   -> b m RawNode
   -- ^ where do we render?
-  -> (r -> a -> m (Continuation m a))
+  -> (r -> m (Continuation m a))
   -- ^ listen for route changes
   -> layout :>> r
   -- ^ how shall we relate urls to routes?
@@ -169,7 +169,7 @@ fullPageSPA toJSM backend i' view getStage onRoute routes = do
       i <- toJSM $ i' r
       model <- newTVarIO i
       _ <- listenStateChange router $ writeUpdate model
-           . ((fmap (convertC toJSM) . toJSM) .) . onRoute
+           . ((fmap (convertC toJSM) . toJSM) .) . const . onRoute
       shpadoinkle toJSM backend i model view getStage
       syncPoint
 

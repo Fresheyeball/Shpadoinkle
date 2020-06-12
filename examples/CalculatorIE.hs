@@ -117,13 +117,13 @@ initial = Model noEntry Nothing
 
 
 digit :: Applicative m => Digit -> Html m Digit
-digit d = button [ onClick d, className $ "d" <> d' ] [ text d' ]
+digit d = button [ onClick . pur $ const d, className $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
 
 operate :: Applicative m => Maybe Operator -> Operator -> Html m Operator
 operate active o = button
-  [ onClick o, className ("active" :: Text, Just o == active) ]
+  [ onClick . pur $ const o, className ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
 
 
@@ -164,25 +164,34 @@ view x = H.div "calculator"
   [ H.div "readout" [ text . pack . show $ x ^. entry ]
   , ul "buttons"
 
-    [ H.div "operate" $ fmap (\o -> x
-      & state .~ Just (Operation o (x ^. entry))
-      & entry .~ noEntry)
-      . operate (x ^? state . traverse . operator) <$> [minBound .. maxBound]
+    [ H.div "operate" $
+      liftMC (\x -> (\case
+                        Nothing -> x
+                        Just o -> x
+                           & state .~ (Just (Operation o (x ^. entry)))
+                           & entry .~ noEntry))
+             (fmap _operator . _state)
+      . maybeMC . operate (x ^? state . traverse . operator)
+      <$>
+      [minBound .. maxBound]
 
     , H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
-      fmap (\d -> x & entry %~ applyDigit d) . digit <$> [minBound .. pred maxBound]
+      setupDigit . digit <$> [minBound .. pred maxBound]
 
     , H.div "zerodot"
-      [ (\d -> x & entry %~ applyDigit d) <$> digit Zero
-      , button [ onClick $ x & entry %~ addDecimal ] [ "." ]
+      [ setupDigit (digit Zero)
+      , button [ onClick $ pur (& entry %~ addDecimal) ] [ "." ]
       ]
 
 
-    , button [ class' "clear",  onClick initial            ] [ "C"   ]
-    , button [ class' "posNeg", onClick (x & entry %~ neg) ] [ "-/+" ]
-    , button [ class' "equals", onClick (calcResult x)     ] [ "="   ]
+    , button [ class' "clear",  onClick (pur (const initial))  ] [ "C"   ]
+    , button [ class' "posNeg", onClick (pur (& entry %~ neg)) ] [ "-/+" ]
+    , button [ class' "equals", onClick (pur calcResult)       ] [ "="   ]
     ]
   ]
+
+  where setupDigit = liftMC (\x d -> x & entry %~ applyDigit d)
+                     (const (error "Model -> Digit should be unused"))
 
 
 trapper :: Show a => (a -> Html m a) -> (a -> Html m a)
