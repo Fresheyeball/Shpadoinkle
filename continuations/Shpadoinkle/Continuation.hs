@@ -14,7 +14,9 @@ module Shpadoinkle.Continuation
   , liftC
   , liftMC
   , leftC
+  , leftMC
   , rightC
+  , rightMC
   , writeUpdate
   , shouldUpdate
   ) where
@@ -100,8 +102,14 @@ liftMC f g = mapC (liftC f g)
 leftC :: Functor m => Continuation m a -> Continuation m (a,b)
 leftC = liftC (\(_,y) x -> (x,y)) fst
 
+leftMC :: Functor m => MapContinuations f => f m a -> f m (a,b)
+leftMC = mapC leftC
+
 rightC :: Functor m => Continuation m b -> Continuation m (a,b)
 rightC = liftC (\(x,_) y -> (x,y)) snd
+
+rightMC :: Functor m => MapContinuations f => f m b -> f m (a,b)
+rightMC = mapC rightC
 
 contIso :: Functor m => (a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 contIso f g (Continuation (h, i)) = Continuation (f.h.g, fmap (contIso f g) . i . g)
