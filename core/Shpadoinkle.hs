@@ -37,7 +37,7 @@ module Shpadoinkle
   , Backend (..)
   , shpadoinkle, fullPage, fullPageJSM, simple
   , Continuation (..), pur, impur, MapContinuations (..)
-  , convertC, liftC, leftC, rightC, writeUpdate, shouldUpdate
+  , convertC, liftC, liftMC, leftC, rightC, writeUpdate, shouldUpdate
   , type (~>), Html'
   , RawNode (..), RawEvent (..)
   , h, text, flag, textProp
@@ -45,7 +45,7 @@ module Shpadoinkle
   , baked
   , props, children, name, textContent, injectProps
   , MonadJSM, JSM, liftJSM
-  , newTVarIO, readTVarIO
+  , TVar, newTVarIO, readTVarIO
   , runJSorWarp
   , runJSM, askJSM
   ) where
