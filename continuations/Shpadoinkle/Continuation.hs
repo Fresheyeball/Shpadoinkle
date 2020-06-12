@@ -12,6 +12,7 @@ module Shpadoinkle.Continuation
   , MapContinuations (..)
   , convertC
   , liftC
+  , liftMC
   , leftC
   , rightC
   , writeUpdate
@@ -53,8 +54,8 @@ data Continuation m a = Continuation (a -> a, a -> m (Continuation m a))
                       | Done
 
 -- | A pure state updating function can be turned into a Continuation.
-pur :: Monad m => (a -> a) -> Continuation m a
-pur = Continuation . (, const (return Done))
+pur :: Applicative m => (a -> a) -> Continuation m a
+pur = Continuation . (, const (pure Done))
 
 -- | A monadic IO computation of a pure state updating function can be turned into a Continuation.
 impur :: Monad m => m (a -> a) -> Continuation m a
@@ -81,32 +82,35 @@ runContinuation' _ (Rollback f) x = runContinuation' id f x
 runContinuation' f Done _ = return f
 
 class MapContinuations f where
-  mapC :: Monad m => (Continuation m a -> Continuation m b) -> f m a -> f m b
+  mapC :: Functor m => (Continuation m a -> Continuation m b) -> f m a -> f m b
 
 convertC :: Functor m => (forall b. m b -> n b) -> Continuation m a -> Continuation n a
 convertC _ Done = Done
 convertC f (Rollback r) = Rollback (convertC f r)
 convertC f (Continuation (g, h)) = Continuation . (g,) $ \x -> f $ convertC f <$> h x
 
-liftC :: Monad m => (b -> a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
+liftC :: Functor m => (b -> a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 liftC _ _ Done = Done
 liftC f g (Rollback r) = Rollback (liftC f g r)
 liftC f g (Continuation (h, i)) = Continuation (\x -> f x (h (g x)), \x -> liftC f g <$> i (g x))
 
-leftC :: Monad m => Continuation m a -> Continuation m (a,b)
+liftMC :: Functor m => MapContinuations f => (b -> a -> b) -> (b -> a) -> f m a -> f m b
+liftMC f g = mapC (liftC f g)
+
+leftC :: Functor m => Continuation m a -> Continuation m (a,b)
 leftC = liftC (\(_,y) x -> (x,y)) fst
 
-rightC :: Monad m => Continuation m b -> Continuation m (a,b)
+rightC :: Functor m => Continuation m b -> Continuation m (a,b)
 rightC = liftC (\(x,_) y -> (x,y)) snd
 
-contIso :: Monad m => (a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
+contIso :: Functor m => (a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 contIso f g (Continuation (h, i)) = Continuation (f.h.g, fmap (contIso f g) . i . g)
 contIso f g (Rollback h) = Rollback (contIso f g h)
 contIso _ _ Done = Done
 
-instance Monad m => F.Functor EndoIso EndoIso (Continuation m) where
+instance Applicative m => F.Functor EndoIso EndoIso (Continuation m) where
   map (EndoIso f g h) =
-    EndoIso (Continuation . (f,) . const . return) (contIso g h) (contIso h g)
+    EndoIso (Continuation . (f,) . const . pure) (contIso g h) (contIso h g)
 
 instance Monad m => Semigroup (Continuation m a) where
   (Continuation (f, g)) <> (Continuation (h, i)) =
