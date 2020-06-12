@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE TupleSections          #-}
 
 
 module Main where
@@ -18,6 +19,7 @@ import           Data.Text
 import           Data.Text.Encoding
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle.Lens
 import           Shpadoinkle.Html            as H
 
 import           Debug.Trace
@@ -165,13 +167,10 @@ view x = H.div "calculator"
   , ul "buttons"
 
     [ H.div "operate" $
-      liftMC (\x -> (\case
-                        Nothing -> x
-                        Just o -> x
-                           & state .~ (Just (Operation o (x ^. entry)))
-                           & entry .~ noEntry))
-             (fmap _operator . _state)
-      . maybeMC . operate (x ^? state . traverse . operator)
+      mapMC (Continuation . ((\x -> x & state . traverse . entry .~ (x ^. entry)
+                                      & entry .~ noEntry) ,) . const . return)
+      . generalize state . maybeMC . generalize operator
+      . operate (x ^? state . traverse . operator)
       <$>
       [minBound .. maxBound]
 
