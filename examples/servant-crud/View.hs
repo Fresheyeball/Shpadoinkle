@@ -220,7 +220,7 @@ fuzzy = flip (^.) <$>
 view :: (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
 view fe = case fe of
 
-  MList r -> liftMC (const MList) (\(MList x) -> H.div "container-fluid"
+  MList r -> liftMC (const MList) (\(MList x) -> x) $ H.div "container-fluid"
    [ H.div "row justify-content-between align-items-center"
      [ H.h2_ [ "Space Craft Roster" ]
      , H.div [ H.class' "input-group"
