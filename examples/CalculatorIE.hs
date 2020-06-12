@@ -165,15 +165,10 @@ view x = H.div "calculator"
   , ul "buttons"
 
     [ H.div "operate" $
-      liftMC (\x -> (\case
-                        Nothing -> x
-                        Just o -> x
-                           & state .~ (Just (Operation o (x ^. entry)))
-                           & entry .~ noEntry))
-             (fmap _operator . _state)
-      . maybeMC . operate (x ^? state . traverse . operator)
-      <$>
-      [minBound .. maxBound]
+      liftMC (\x o -> x & state .~ (Just (Operation o (x ^. entry)))
+                        & entry .~ noEntry)
+             (error "this should be unreachable because operate onClick is const")
+      . operate (x ^? state . traverse . operator) <$> [minBound .. maxBound]
 
     , H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
       setupDigit . digit <$> [minBound .. pred maxBound]
