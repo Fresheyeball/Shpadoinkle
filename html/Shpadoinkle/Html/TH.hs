@@ -33,7 +33,8 @@ mkEventDSL evt = let
   in return
 
     [ SigD name (ForallT [] []
-      (AppT (AppT ArrowT (AppT m a)) (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
+      (AppT (AppT ArrowT (AppT m (AppT (AppT (ConT ''Shpadoinkle.Continuation) m) a)))
+                         (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
       (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
 
     , FunD name  [Clause [] (NormalB $ AppE (VarE l)  (LitE $ StringL evt)) []]
@@ -42,8 +43,9 @@ mkEventDSL evt = let
     , SigD name'
       (ForallT []
         [AppT (ConT ''GHC.Base.Applicative) m]
-        (AppT (AppT ArrowT a) (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-          (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
+        (AppT (AppT ArrowT (AppT (AppT (ConT ''Shpadoinkle.Continuation) m) a))
+          (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
+           (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
 
     , FunD name' [Clause [] (NormalB $ AppE (VarE l') (LitE $ StringL evt)) []]
     ]
