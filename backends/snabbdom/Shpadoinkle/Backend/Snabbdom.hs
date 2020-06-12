@@ -54,7 +54,7 @@ runSnabbdom :: TVar model -> SnabbdomT model m a -> m a
 runSnabbdom t (Snabbdom r) = runReaderT r t
 
 
-props :: (m ~> JSM) -> TVar a -> [(Text, Prop (SnabbdomT a m) a)] -> JSM Object
+props :: Monad m => (m ~> JSM) -> TVar a -> [(Text, Prop (SnabbdomT a m) a)] -> JSM Object
 props toJSM i xs = do
   o <- create
   a <- create
@@ -72,7 +72,9 @@ props toJSM i xs = do
         [] -> return ()
         ev:_ -> do
           rn <- unsafeGetProp "target" =<< valToObject ev
-          liftIO . atomically . writeTVar i =<< (toJSM . runSnabbdom i) (f (RawNode rn) (RawEvent ev))
+          writeUpdate i
+            =<< (fmap (const . return . convertC (toJSM . runSnabbdom i)) . toJSM . runSnabbdom i)
+                (f (RawNode rn) (RawEvent ev))
       unsafeSetProp (toJSString k) f' e
     PFlag b -> do
       f <- toJSVal b
