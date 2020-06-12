@@ -139,12 +139,12 @@ viewWith Theme {..} xs s@(SortCol sorton sortorder) =
     [ thead headProps [ tr_ $ cth_ <$> [minBound..maxBound] ]
     , tbody bodyProps $ do
         row <- sortBy (sortTable s) (toRows xs)
-        return . (fmap (, s)) . tr_ $ (\c -> td (tdProps c) $ toCell xs row c) <$> [minBound..maxBound]
+        return . leftMC . tr_ $ (\c -> td (tdProps c) $ toCell xs row c) <$> [minBound..maxBound]
     ]
 
   where
 
-  cth_ c = th (thProps c) . pure . Html.a [ onClick (xs, toggleSort c s) ]
+  cth_ c = th (thProps c) . pure . Html.a [ onClick . rightC . pur . const $ toggleSort c s ]
          . mappend [ text (humanize c) ] . pure . text $
           if c == sorton then
             case sortorder of ASC -> "↑"; DESC -> "↓"

@@ -23,7 +23,7 @@ type Config m a = Props m (Input a)
 mkInput :: MonadJSM m => Text -> (Text -> a) -> (a -> Text) -> Config m a -> Input a -> Html m (Input a)
 mkInput t to from attrs inp = Html.input
   ( Html.value (from $ Form._value inp)
-  : Html.onInput (Input Dirty . to)
+  : Html.onInput (pur . const . Input Dirty . to)
   : Html.type' t
   : attrs ) []
 
