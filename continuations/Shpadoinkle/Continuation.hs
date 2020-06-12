@@ -20,6 +20,8 @@ module Shpadoinkle.Continuation
   , rightMC
   , maybeC
   , maybeMC
+  , comaybeC
+  , comaybeMC
   , writeUpdate
   , shouldUpdate
   ) where
@@ -127,6 +129,19 @@ maybeC (Continuation (f, g)) = Continuation . (fmap f,) $
 
 maybeMC :: Applicative m => MapContinuations f => f m a -> f m (Maybe a)
 maybeMC = mapMC maybeC
+
+comaybe :: (Maybe a -> Maybe a) -> (a -> a)
+comaybe f x = case f (Just x) of
+  Nothing -> x
+  Just y -> y
+
+comaybeC :: Functor m => Continuation m (Maybe a) -> Continuation m a
+comaybeC Done = Done
+comaybeC (Rollback r) = Rollback (comaybeC r)
+comaybeC (Continuation (f,g)) = Continuation (comaybe f, fmap comaybeC . g . Just)
+
+comaybeMC :: Functor m => MapContinuations f => f m (Maybe a) -> f m a
+comaybeMC = mapMC comaybeC
 
 contIso :: Functor m => (a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 contIso f g (Continuation (h, i)) = Continuation (f.h.g, fmap (contIso f g) . i . g)
