@@ -87,7 +87,10 @@ runContinuation' _ (Rollback f) x = runContinuation' id f x
 runContinuation' f Done _ = return f
 
 class MapContinuations f where
-  mapC :: Functor m => (Continuation m a -> Continuation m b) -> f m a -> f m b
+  mapMC :: Functor m => (Continuation m a -> Continuation m b) -> f m a -> f m b
+
+instance MapContinuations Continuation where
+  mapMC = id
 
 convertC :: Functor m => (forall b. m b -> n b) -> Continuation m a -> Continuation n a
 convertC _ Done = Done
@@ -100,19 +103,19 @@ liftC f g (Rollback r) = Rollback (liftC f g r)
 liftC f g (Continuation (h, i)) = Continuation (\x -> f x (h (g x)), \x -> liftC f g <$> i (g x))
 
 liftMC :: Functor m => MapContinuations f => (b -> a -> b) -> (b -> a) -> f m a -> f m b
-liftMC f g = mapC (liftC f g)
+liftMC f g = mapMC (liftC f g)
 
 leftC :: Functor m => Continuation m a -> Continuation m (a,b)
 leftC = liftC (\(_,y) x -> (x,y)) fst
 
 leftMC :: Functor m => MapContinuations f => f m a -> f m (a,b)
-leftMC = mapC leftC
+leftMC = mapMC leftC
 
 rightC :: Functor m => Continuation m b -> Continuation m (a,b)
 rightC = liftC (\(x,_) y -> (x,y)) snd
 
 rightMC :: Functor m => MapContinuations f => f m b -> f m (a,b)
-rightMC = mapC rightC
+rightMC = mapMC rightC
 
 maybeC :: Applicative m => Continuation m a -> Continuation m (Maybe a)
 maybeC Done = Done
@@ -123,7 +126,7 @@ maybeC (Continuation (f, g)) = Continuation . (fmap f,) $
     Nothing -> pure Done
 
 maybeMC :: Applicative m => MapContinuations f => f m a -> f m (Maybe a)
-maybeMC = mapC maybeC
+maybeMC = mapMC maybeC
 
 contIso :: Functor m => (a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 contIso f g (Continuation (h, i)) = Continuation (f.h.g, fmap (contIso f g) . i . g)
