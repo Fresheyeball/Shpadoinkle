@@ -1,7 +1,14 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Shpadoinkle.Functor where
+module Shpadoinkle.Functor
+  ( Html' (..)
+  , Prop' (..)
+  , Constly (..)
+  , Propish (..)
+  , EventHandler (..)
+  , Htmlish (..)
+  ) where
 
 import Control.Arrow
 import Data.Functor.Identity (Identity (..))
@@ -55,15 +62,18 @@ instance Functor Prop' where
   fmap f (PListener' g) = PListener' (\r e -> f (g r e))
   fmap _ (PFlag' b) = PFlag' b
 
-constly :: Applicative m => (a -> b -> b) -> Html' a -> Html m b
-constly f (Node' t ps es) = Node t (second (constlyProp f) <$> ps) (fmap (constly f) es)
-constly _ (Potato' p) = Potato p
-constly _ (TextNode' t) = TextNode t
+class Constly f g where
+  constly :: (a -> b -> b) -> f a -> g b
 
-constlyProp :: Applicative m => (a -> b -> b) -> Prop' a -> Prop m b
-constlyProp _ (PText' t) = PText t
-constlyProp f (PListener' g) = PListener (\r e -> pure . pur . f $ g r e)
-constlyProp _ (PFlag' b) = PFlag b
+instance Applicative m => Constly Html' (Html m) where
+  constly f (Node' t ps es) = Node t (second (constly f) <$> ps) (fmap (constly f) es)
+  constly _ (Potato' p) = Potato p
+  constly _ (TextNode' t) = TextNode t
+
+instance Applicative m => Constly Prop' (Prop m) where
+  constly _ (PText' t) = PText t
+  constly f (PListener' g) = PListener (\r e -> pure . pur . f $ g r e)
+  constly _ (PFlag' b) = PFlag b
 
 class Propish p e | p -> e where
   propText :: Text -> p o
