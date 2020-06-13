@@ -36,9 +36,7 @@ module Shpadoinkle.Core
   , mapHtml, mapProp
   , Backend (..)
   , shpadoinkle, fullPage, fullPageJSM, simple
-  , Continuation (..), pur, impur, MapContinuations (..)
-  , convertC, liftC, liftMC, leftC, leftMC, rightC, rightMC
-  , maybeC, maybeMC, comaybeC, comaybeMC
+  , Continuation (..), pur, impur
   , writeUpdate, shouldUpdate
   , type (~>)
   , RawNode (..), RawEvent (..)
