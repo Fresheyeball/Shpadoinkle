@@ -44,7 +44,7 @@ the second is the payload of those events, typically the model for your view `a`
 These variables in `Html m a` are strickly about event listeners, so any view
 that doesn't have event listeners should be parametic in both `m` and `a`.
 
-Let's look at a toggle as an example.
+Let's look at a toggle as an example:
 
 ```haskell
 toggle :: Applicative m => Bool -> Html m Bool
@@ -61,7 +61,7 @@ We could put `Identity` here if we wanted to, but keeping `m` general
 helps our views compose.
 
 But what if we need to do _more_? Well we can update our `m` to
-have more functionality. Let's add some logging to the console.
+have more functionality. Let us add some logging to the console:
 
 ```haskell
 toggle :: Bool -> Html IO Bool
@@ -76,7 +76,7 @@ toggle b = h "div" []
 ```
 
 What if we want to access some record of capabilities? Or update some
-concurrent memory thing? Let's say we have an enterprise grade Monad,
+concurrent memory thing? Consider that we have an enterprise grade Monad:
 
 ```haskell
 newtype App a = App { runApp :: RIO (TVar Metrics) a }
@@ -101,7 +101,7 @@ toggle b = h "div" []
 ## Composing views
 
 In Shpadoinkle we can compose views without impedance if the types match,
-or are parametric. For example.
+or are parametric. For example:
 
 ```haskell
 hero :: Html m a
@@ -139,7 +139,7 @@ view (i,t) = h "div" []
 
 ## The primitive
 
-The Shpadoinkle programming model core primative is the `shpadoinkle` function.
+The Shpadoinkle programming model core primitive is the `shpadoinkle` function.
 
 ```haskell
 shpadoinkle
@@ -150,8 +150,8 @@ shpadoinkle
   -> b m RawNode -> JSM ()           -- Actually render
 ```
 
-This is the machine that runs a Shpadoinkle view. To run we need
-the following ingredients.
+This is the machine that runs a Shpadoinkle view. To run, we need
+the following ingredients:
 
 ### `m ~> JSM`
 
@@ -163,7 +163,7 @@ you provide.
 
 This a function that takes a state container of some kind `t`,
 and returns a _Natural Transformation_ from our Shpadoinkle backend `b`,
-to our monad `m`. Backends kind of works like Monad Transformers, where
+to our monad `m`. Backends works like Monad Transformers, where
 `b` wraps our Monad `m`, and needs to be unwrappable.
 
 ### `a`
@@ -175,13 +175,13 @@ for the first render.
 
 This is the state container `t` that will drive the view. When the state
 changes, we should re-render the view. The semantic behind determing when
-to do this, is upto you via the `Territory` type class. Typically this is
-just a `TVar` as that is the provided cannonical implimentation.
+to do this, is upto you via the `Territory` type class. Typically, this is
+just a `TVar` as that is the provided cannonical implementation.
 
 ### `a -> Html (b m) a`
 
 This is the view function, you actual application to render. It takes
-the model and returns the html to render, such that it's events produce the
+the model and returns the Html to render, such that its events produce the
 same model.
 
 ### `b m RawNode`
