@@ -121,9 +121,9 @@ digit d = button [ onClick . pur $ const d, className $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
 
-operate :: Applicative m => Maybe Operator -> Operator -> Html m Operator
+operate :: Applicative m => Maybe Operator -> Operator -> Html' Operator
 operate active o = button
-  [ onClick . pur $ const o, className ("active" :: Text, Just o == active) ]
+  [ onClick o, className ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
 
 
@@ -165,9 +165,8 @@ view x = H.div "calculator"
   , ul "buttons"
 
     [ H.div "operate" $
-      liftMC (\x o -> x & state .~ (Just (Operation o (x ^. entry)))
-                        & entry .~ noEntry)
-             (error "this should be unreachable because operate onClick is const")
+      constly (\o x -> x & state .~ (Just (Operation o (x ^. entry)))
+                         & entry .~ noEntry)
       . operate (x ^? state . traverse . operator) <$> [minBound .. maxBound]
 
     , H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $

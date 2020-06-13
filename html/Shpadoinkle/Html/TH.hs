@@ -12,6 +12,7 @@ import           Language.Haskell.TH
 
 
 import           Shpadoinkle         hiding (name)
+import           Shpadoinkle.Functor
 
 
 capitalized :: String -> String
@@ -29,23 +30,25 @@ mkEventDSL evt = let
     l' = mkName "listen'"
     m  = VarT $ mkName "m"
     a  = VarT $ mkName "a"
+    e  = VarT $ mkName "e"
 
   in return
 
-    [ SigD name (ForallT [] []
-      (AppT (AppT ArrowT (AppT m (AppT (AppT (ConT ''Shpadoinkle.Continuation) m) a)))
-                         (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
+    [ SigD name (ForallT [] [ AppT (AppT (ConT ''Shpadoinkle.Propish) p) e ]
+      (AppT (AppT ArrowT (AppT e a))
+        (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
+          (AppT p a))))
 
     , FunD name  [Clause [] (NormalB $ AppE (VarE l)  (LitE $ StringL evt)) []]
 
 
     , SigD name'
       (ForallT []
-        [AppT (ConT ''GHC.Base.Applicative) m]
-        (AppT (AppT ArrowT (AppT (AppT (ConT ''Shpadoinkle.Continuation) m) a))
+        [ AppT (ConT ''GHC.Base.Applicative) m
+        , AppT (AppT (ConT ''Shpadoinkle.Propish) p) e ]
+        (AppT (AppT ArrowT (AppT e a))
           (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-           (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
+           (AppT p a))))
 
     , FunD name' [Clause [] (NormalB $ AppE (VarE l') (LitE $ StringL evt)) []]
     ]
@@ -57,17 +60,18 @@ mkProp type' l' name' = let
     name = reverse $ case reverse name' of
              '\'':rs -> rs
              rs      -> rs
-    m = VarT $ mkName "m"
     a = VarT $ mkName "a"
+    p = VarT $ mkName "p"
+    e = VarT $ mkName "e"
     l = mkName l'
     n = mkName name'
 
   in return
 
-    [ SigD n (ForallT [] []
+    [ SigD n (ForallT [] [AppT (AppT (ConT ''Shpadoinkle.Propish) p) e]
       (AppT (AppT ArrowT (ConT type'))
-      (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
+       (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
+        (AppT p a))))
 
     , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
     ]
@@ -92,38 +96,40 @@ mkElement name = let
     n'  = mkName $ name ++ "'"
     n_  = mkName $ name ++  "_"
     n'_ = mkName $ name ++ "'_"
-    m   = VarT $ mkName "m"
+    h   = VarT $ mkName "h"
+    p   = VarT $ mkName "p"
+    e   = VarT $ mkName "e"
     a   = VarT $ mkName "a"
-    l   = mkName "h"
+    l   = mkName "htmlNode"
 
   in return
 
-    [ SigD n (ForallT [] []
+    [ SigD n (ForallT [] [ AppT (ConT ''Shpadoinkle.Htmlish) h
+                         , AppT (ConT ''Shpadoinkle.Propish) p e ]
       (AppT (AppT ArrowT (AppT ListT (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
-      (AppT (AppT ArrowT (AppT ListT (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
-      (AppT (AppT (ConT ''Shpadoinkle.Html) m) a))))
+                                      (AppT p a))))
+        (AppT (AppT ArrowT (AppT ListT (AppT h a))
+                (AppT h a))))
 
     , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
 
 
-    , SigD n_ (ForallT [] []
-      (AppT (AppT ArrowT (AppT ListT (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
-      (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
+    , SigD n_ (ForallT [] [AppT (ConT ''Shpadoinkle.Htmlish) h]
+               (AppT (AppT ArrowT (AppT ListT (AppT h a)))
+                (AppT h a)))
 
     , ValD (VarP n_) (NormalB (AppE (VarE n) (ListE []))) []
 
 
-    , SigD n' (ForallT [] []
-      (AppT (AppT ArrowT (AppT ListT (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
-      (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
-      (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
+    , SigD n' (ForallT [] [ AppT (ConT ''Shpadoinkle.Htmlish) h
+                          , AppT (AppT (ConT ''Shpadoinkle.Propish) p) e ]
+      (AppT (AppT ArrowT (AppT ListT (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text)) (AppT p a))))
+       (AppT h a)))
 
     , ValD (VarP n') (NormalB (AppE (AppE (VarE (mkName "flip")) (VarE n)) (ListE []))) []
 
 
-    , SigD n'_ (ForallT [] []
-      (AppT (AppT (ConT ''Shpadoinkle.Html) m) a))
+    , SigD n'_ (ForallT [] [AppT (ConT ''Shpadoinkle.Html h)]] (AppT h a))
 
     , ValD (VarP n'_)
       (NormalB (AppE (AppE (VarE n) (ListE [])) (ListE []))) []

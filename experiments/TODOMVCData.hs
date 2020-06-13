@@ -20,6 +20,7 @@ import           Data.Text                     hiding (all, count, filter,
 import           Prelude                       hiding (div, unwords)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.Snabbdom
+import           Shpadoinkle.Functor
 import           Shpadoinkle.Html
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Memo
@@ -111,7 +112,7 @@ listFooter m = footer "footer" $
     , text $ " item" <> (if co == 1 then "" else "s") <> " left"
     ]
   , ul "filters" $ [minBound..maxBound] & mapped %~ filterHtml (m ^. visibility)
-                                        & fmap (generalize visibility)
+                                        & fmap (constly (set visibility))
   ] ++ (if count Complete (m ^. tasks) == 0 then [] else
   [ button [ className "clear-completed"
            , onClick . generalize tasks . pur $ M.filter ((== Incomplete) . _completed)
@@ -122,8 +123,7 @@ listFooter m = footer "footer" $
 
 filterHtml :: Visibility -> Visibility -> Html' Visibility
 filterHtml = memo2 $ \cur item -> li_
-  [ a (href "#" : onClick (pur (const item)) : [className ("selected", cur == item)]) [ text . pack $ show item ]
-  ]
+  [ a (href "#" : onClick item : [className ("selected", cur == item)]) [ text . pack $ show item ] ]
 
 info :: Html m a
 info = footer "info"

@@ -15,7 +15,7 @@ import           Shpadoinkle
 
 
 generalize :: forall f m s a. Functor m => MapContinuations f => Lens' s a -> f m a -> f m s
-generalize len = liftMC (flip (set len)) (view len)
+generalize len = liftMC (set len) (view len)
 
 
 (<%) :: forall f m s a. Functor m => MapContinuations f => s -> Lens' s a -> (a -> f m a) -> f m s

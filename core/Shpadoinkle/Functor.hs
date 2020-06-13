@@ -1,19 +1,19 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE FlexibleContexts       #-}
 
 module Shpadoinkle.Functor
-  ( Html' (..)
-  , Prop' (..)
-  , Constly (..)
-  , Propish (..)
-  , EventHandler (..)
-  , Htmlish (..)
+  ( Html' (..), Prop' (..), Constly (..)
+  , Propish (..), EventHandler (..), Htmlish (..)
+  , listener, listenRaw, listen, listen'
+  , mapProps, mapChildren, injectProps
   ) where
 
 import Control.Arrow
 import Data.Functor.Identity (Identity (..))
 import Data.Text (Text)
-import Shpadoinkle
+import Shpadoinkle.Core
 
 -- | `Html m` and `Prop m` are not Functors because Continuation is
 --   not a Functor. Continuation is not a Functor fundamentally because
@@ -47,62 +47,148 @@ data Html' o =
   | Potato' (JSM RawNode)
   | TextNode' Text
 
+
 instance Functor Html' where
   fmap f (Node' t ps es) = Node' t (second (fmap f) <$> ps) (fmap f <$> es)
   fmap _ (Potato' p) = Potato' p
   fmap _ (TextNode' t) = TextNode' t
+
 
 data Prop' o =
     PText' Text
   | PListener' (RawNode -> RawEvent -> o)
   | PFlag' Bool
 
+
 instance Functor Prop' where
   fmap _ (PText' t) = PText' t
   fmap f (PListener' g) = PListener' (\r e -> f (g r e))
   fmap _ (PFlag' b) = PFlag' b
 
+
 class Constly f g where
   constly :: (a -> b -> b) -> f a -> g b
+
 
 instance Applicative m => Constly Html' (Html m) where
   constly f (Node' t ps es) = Node t (second (constly f) <$> ps) (fmap (constly f) es)
   constly _ (Potato' p) = Potato p
   constly _ (TextNode' t) = TextNode t
 
+
 instance Applicative m => Constly Prop' (Prop m) where
   constly _ (PText' t) = PText t
   constly f (PListener' g) = PListener (\r e -> pure . pur . f $ g r e)
   constly _ (PFlag' b) = PFlag b
 
+
 class Propish p e | p -> e where
-  propText :: Text -> p o
-  propListener :: (RawNode -> RawEvent -> e o) -> p o
-  propFlag :: Bool -> p o
+  textProp :: Text -> p o
+  listenerProp :: (RawNode -> RawEvent -> e o) -> p o
+  flagProp :: Bool -> p o
+
 
 instance Propish Prop' Identity where
-  propText = PText'
-  propListener f = PListener' (\r e -> runIdentity (f r e))
-  propFlag = PFlag'
+  textProp = PText'
+  listenerProp f = PListener' (\r e -> runIdentity (f r e))
+  flagProp = PFlag'
+
 
 newtype EventHandler m o = EventHandler { runEventHandler :: (m (Continuation m o)) }
 
+
 instance Propish (Prop m) (EventHandler m) where
-  propText = PText
-  propListener f = PListener (\r e -> runEventHandler (f r e))
-  propFlag = PFlag
+  textProp = PText
+  listenerProp f = PListener (\r e -> runEventHandler (f r e))
+  flagProp = PFlag
+
 
 class Htmlish h p | h -> p where
-  htmlNode :: Text -> [(Text, p o)] -> [h o] -> h o
-  htmlPotato :: JSM RawNode -> h o
-  htmlText :: Text -> h o
+  -- | JSX style HTML element constructor
+  h :: Text -> [(Text, p o)] -> [h o] -> h o
+  -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'
+  baked :: JSM RawNode -> h o
+  -- | Construct a text node
+  text :: Text -> h o
+  -- | Lens to props
+  props :: Applicative f => ([(Text, p o)] -> f [(Text, p o)]) -> h o -> f (h o)
+  -- | Lens to children
+  children :: Applicative f => ([h o] -> f [h o]) -> h o -> f (h o)
+  -- | Lens to tag name
+  name :: Applicative f => (Text -> f Text) -> h o -> f (h o)
+  -- | Lens to content of @TextNode@s
+  textContent :: Applicative f => (Text -> f Text) -> h o -> f (h o)
+
 
 instance Htmlish Html' Prop' where
-  htmlNode = Node'
-  htmlPotato = Potato'
-  htmlText = TextNode'
+  h = Node'
+  baked = Potato'
+  text = TextNode'
+  props inj = \case
+    Node' t ps cs -> (\ps' -> Node' t ps' cs) <$> inj ps
+    t -> pure t
+  children inj = \case
+    Node' t ps cs -> Node' t ps <$> inj cs
+    t -> pure t
+  name inj = \case
+    Node' t ps cs -> (\t' -> Node' t' ps cs) <$> inj t
+    t -> pure t
+  textContent inj = \case
+    TextNode' t -> TextNode' <$> inj t
+    n -> pure n
+
 
 instance Htmlish (Html m) (Prop m) where
-  htmlNode = Node
-  htmlPotato = Potato
-  htmlText = TextNode
+  h = Node
+  baked = Potato
+  text = TextNode
+  props inj = \case
+    Node t ps cs -> (\ps' -> Node t ps' cs) <$> inj ps
+    t -> pure t
+  children inj = \case
+    Node t ps cs -> Node t ps <$> inj cs
+    t -> pure t
+  name inj = \case
+    Node t ps cs -> (\t' -> Node t' ps cs) <$> inj t
+    t -> pure t
+  textContent inj = \case
+    TextNode t -> TextNode <$> inj t
+    n -> pure n
+
+
+-- | Construct a simple listener property that will perform an action.
+listener :: Propish p e => e o -> p o
+listener = listenerProp . const . const
+{-# INLINE listener #-}
+
+
+-- | Construct a listener from its name and an event handler.
+listenRaw :: Propish p e => Text -> (RawNode -> RawEvent -> e o) -> (Text, p o)
+listenRaw k = (,) k . listenerProp
+{-# INLINE listenRaw #-}
+
+
+-- | Construct a listener from its name and an event handler.
+listen :: Propish p e => Text -> e o -> (Text, p o)
+listen k = listenRaw k . const . const
+{-# INLINE listen #-}
+
+
+-- | Construct a listener from it's 'Text' name and an output value.
+listen' :: Propish p Identity => Text -> o -> (Text, p o)
+listen' k f = listen k $ pure f
+
+
+-- | Transform the properties of some Node. This has no effect on @TextNode@s or @Potato@s
+mapProps :: Htmlish h p => ([(Text, p o)] -> [(Text, p o)]) -> h o -> h o
+mapProps f = runIdentity . props (Identity . f)
+
+
+-- | Transform the children of some Node. This has no effect on @TextNode@s or @Potato@s
+mapChildren :: Htmlish h p => ([h a] -> [h a]) -> h a -> h a
+mapChildren f = runIdentity . children (Identity . f)
+
+
+-- | Inject props into an existing @Node@
+injectProps :: Htmlish h p => [(Text, p o)] -> h o -> h o
+injectProps ps = mapProps (++ ps)
