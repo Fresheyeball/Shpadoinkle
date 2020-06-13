@@ -8,5 +8,5 @@ This is the batteries included example. A Shpadoinkle single page application, e
 
 - Server side rendering
 - Servant routing isomorphism
-- Servant type safe api bindings
+- Servant type safe API bindings
 - Form validation isomorphism
