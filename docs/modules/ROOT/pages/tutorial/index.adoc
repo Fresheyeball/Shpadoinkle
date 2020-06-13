@@ -24,16 +24,16 @@ main = runJSorWarp 8080 $ -- <1>
 
 <1> This is a little function to abstract over starting the application with GHC or GHCjs. If built with GHC it will run a server on port `8080`, if built with GHCjs it will just start the application as a normal JavaScript file.
 <2> This is the highest level wrapper around the `shpadoinkle` function provided in core. It prevents you from doing the work of choosing a `Monad` to run event handlers (defaulting to `JSM`), and creating a territory (defaulting to a `TVar`).
-<3> We are using the ParDiff backend. No matter how simple the app, you must still choose a backend explicitly.
-<4> The initial state. Since this is a "hello world" example, it's just `()`.
-<5> This is our view. Since we don't care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
+<3> We are using the ParDiff backend. No matter how simple the application, you must still choose a backend explicitly.
+<4> The initial state. Because this is a "hello world" example, it's just `()`.
+<5> This is our view. because we don't care about the `()`, we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
 <6> This is what DOM node on the page will hold our application. We use `getBody` to get the `document.body` for the page.
 
 == Addition
 
 Now that we have our hello world, let's add some interactivity, and perform addition on the part of the user.
 
-To start we will need a simple single number input.
+To start we will need a simple single number input:
 
 [source,haskell]
 ----
@@ -44,12 +44,12 @@ num x = input'
  ]
 ----
 
-Because we have our first handler, we need `MonadJSM` since allocation of the listener requires IO.
+Because we have our first handler, we need `MonadJSM` since allocation of the listener requires IO:
 
 <1> Set the value of the input to the current state of the application.
 <2> When an `"input"` event occurs update the state with the provided function.
 
-Now we can use our single number input in our view to add up two numbers for our user.
+Now we can use our single number input in our view to add up two numbers for our user:
 
 [source,haskell]
 ----
@@ -70,11 +70,11 @@ view (l,r) = -- <1>
 
 [TIP]
 .Heterogenious Composition
-We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html m Int` and `Html m (Int, Int)` obviously do not unify. Since `(Html m)` is merely a Functor, fmap is the only means provided to resolve impediences and compose herogeneous components (as we do here).
+We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html m Int` and `Html m (Int, Int)` obviously do not unify. Because `(Html m)` is merely a Functor, fmap is the only means provided to resolve impediences and compose herogeneous components (as we do here).
 
 == Selectable Operations
 
-Now that we have some inputs that can perform addition, let's allow the user to select common operations. We start by making a new ADT.
+Now that we have some inputs that can perform addition, let's allow the user to select common operations. We start by making a new ADT:
 
 [source,haskell]
 ----
@@ -86,7 +86,7 @@ data Operation
     deriving (Eq, Show, Read, Enum, Bounded)
 ----
 
-And we will need some functions to get human readable display, as well as mapping to functions.
+And we will need some functions to get human readable display, as well as mapping to functions:
 
 [source,haskell]
 ----
@@ -107,7 +107,7 @@ opText = \case
   Division       -> "÷"
 ----
 
-And we will use a traditional html `<select>` element to let user's pick the operation.
+And we will use a traditional html `<select>` element to let user's pick the operation:
 
 [source,haskell]
 ----
@@ -122,7 +122,7 @@ opSelect = select [ onOption $ read . unpack ] -- <1>
 <1> When the select element changes, we `read` the value and use that as the model.
 <2> Values are just the operation applied to `show`, so it matches when we `read`.
 
-Great! Now we have 3 members of our model, and so it's time for an actual data type.
+Great! Now we have three members of our model, and so it is time for an actual data type:
 
 [source,haskell]
 ----
@@ -133,7 +133,7 @@ data Model = Model
   } deriving (Eq, Show)
 ----
 
-And we will use the same technique with `<$>` to compose these components together.
+And we will use the same technique with `<$>` to compose these components together:
 
 [source,haskell]
 ----
@@ -147,12 +147,12 @@ view model = div_
  ]
 ----
 
-That's it! The user can select an operation, enter 2 numbers and see a result rendered.
+That's it! The user can select an operation, enter two numbers and see a result rendered.
 
 Now if you are looking at the above code, and starting to twitch, because you are a optics fiend; that is the right instinct.
 
 == Emulating Immediate Execution
 
-All the prior art on writing a calculator in GHCjs feature old school functionality namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator app, atleast let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
+All the prior art on writing a calculator in GHCjs feature old school functionality namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator application, at least let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
 
 
