@@ -18,13 +18,13 @@ of the model through a data structure is the dominant approach in UI today. And
 for good reason.
 
 If all we need is to render something based on some `a` we can have `Html` be a
-simple data structure where `Html :: Type`.
+simple data structure where `Html :: Type`:
 
 ```haskell
 view :: a -> Html
 ```
 
-This might look something like.
+This might look something like:
 
 ```haskell
 view :: Text -> Html
@@ -38,13 +38,13 @@ Which is all well and good, and something we might expect from a static renderer
 like Heist, or Blaze. Shpadoinkle handles this by allowing for `Html` to have two
 type variables associated with events, `Html :: (Type -> Type) -> Type -> Type`.
 
-The first is typically some Monad you wish to use in response to events `m`, and
+The first is typically some Monad you want to use in response to events `m`, and
 the second is the payload of those events, typically the model for your view `a`.
 
 These variables in `Html m a` are strickly about event listeners, so any view
 that doesn't have event listeners should be parametic in both `m` and `a`.
 
-Let's look at a toggle as an example.
+Let's look at a toggle as an example:
 
 ```haskell
 toggle :: Applicative m => Bool -> Html m Bool
@@ -54,14 +54,14 @@ toggle b = h "div" []
   ]
 ```
 
-That's it, we have a stateful view. When the user click's on
+That's it, we have a stateful view. When the user clicks
 the "Toggle" button the state will switch. Because we do a pure
 state transition in this function, `m` need only be `Applicative`.
 We could put `Identity` here if we wanted to, but keeping `m` general
 helps our views compose.
 
 But what if we need to do _more_? Well we can update our `m` to
-have more functionality. Let's add some logging to the console.
+have more functionality. Let's add some logging to the console:
 
 ```haskell
 toggle :: Bool -> Html IO Bool
@@ -76,7 +76,7 @@ toggle b = h "div" []
 ```
 
 What if we want to access some record of capabilities? Or update some
-concurrent memory thing? Let's say we have an enterprise grade Monad,
+concurrent memory thing? Let's say we have an enterprise grade Monad:
 
 ```haskell
 newtype App a = App { runApp :: RIO (TVar Metrics) a }
@@ -101,7 +101,7 @@ toggle b = h "div" []
 ## Composing views
 
 In Shpadoinkle we can compose views without impedance if the types match,
-or are parametric. For example.
+or are parametric. For example:
 
 ```haskell
 hero :: Html m a
@@ -139,7 +139,7 @@ view (i,t) = h "div" []
 
 ## The primitive
 
-The Shpadoinkle programming model core primative is the `shpadoinkle` function.
+The Shpadoinkle programming model core primative is the `shpadoinkle` function:
 
 ```haskell
 shpadoinkle
@@ -151,7 +151,7 @@ shpadoinkle
 ```
 
 This is the machine that runs a Shpadoinkle view. To run we need
-the following ingredients.
+the following ingredients:
 
 ### `m ~> JSM`
 
@@ -176,7 +176,7 @@ for the first render.
 This is the state container `t` that will drive the view. When the state
 changes, we should re-render the view. The semantic behind determing when
 to do this, is upto you via the `Territory` type class. Typically this is
-just a `TVar` as that is the provided cannonical implimentation.
+just a `TVar` as that is the provided cannonical implementation.
 
 ### `a -> Html (b m) a`
 
