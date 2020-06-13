@@ -104,8 +104,8 @@ mkElement name = let
 
   in return
 
-    [ SigD n (ForallT [] [ AppT (ConT ''Shpadoinkle.Htmlish) h
-                         , AppT (ConT ''Shpadoinkle.Propish) p e ]
+    [ SigD n (ForallT [] [ AppT (AppT (ConT ''Shpadoinkle.Htmlish) h) p
+                         , AppT (AppT (ConT ''Shpadoinkle.Propish) p) e ]
       (AppT (AppT ArrowT (AppT ListT (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
                                       (AppT p a))))
         (AppT (AppT ArrowT (AppT ListT (AppT h a))
@@ -114,14 +114,14 @@ mkElement name = let
     , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
 
 
-    , SigD n_ (ForallT [] [AppT (ConT ''Shpadoinkle.Htmlish) h]
+    , SigD n_ (ForallT [] [Appt (AppT (ConT ''Shpadoinkle.Htmlish) h) p]
                (AppT (AppT ArrowT (AppT ListT (AppT h a)))
                 (AppT h a)))
 
     , ValD (VarP n_) (NormalB (AppE (VarE n) (ListE []))) []
 
 
-    , SigD n' (ForallT [] [ AppT (ConT ''Shpadoinkle.Htmlish) h
+    , SigD n' (ForallT [] [ AppT (AppT (ConT ''Shpadoinkle.Htmlish) h) p
                           , AppT (AppT (ConT ''Shpadoinkle.Propish) p) e ]
       (AppT (AppT ArrowT (AppT ListT (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text)) (AppT p a))))
        (AppT h a)))
@@ -129,9 +129,8 @@ mkElement name = let
     , ValD (VarP n') (NormalB (AppE (AppE (VarE (mkName "flip")) (VarE n)) (ListE []))) []
 
 
-    , SigD n'_ (ForallT [] [AppT (ConT ''Shpadoinkle.Html h)]] (AppT h a))
+    , SigD n'_ (ForallT [] [AppT (AppT (ConT ''Shpadoinkle.Htmlish) h) p] (AppT h a))
 
-    , ValD (VarP n'_)
-      (NormalB (AppE (AppE (VarE n) (ListE [])) (ListE []))) []
+    , ValD (VarP n'_) (NormalB (AppE (AppE (VarE n) (ListE [])) (ListE []))) []
 
     ]
