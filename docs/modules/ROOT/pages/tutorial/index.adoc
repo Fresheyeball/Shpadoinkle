@@ -26,7 +26,7 @@ main = runJSorWarp 8080 $ -- <1>
 <2> This is the highest level wrapper around the `shpadoinkle` function provided in core. It prevents you from doing the work of choosing a `Monad` to run event handlers (defaulting to `JSM`), and creating a territory (defaulting to a `TVar`).
 <3> We are using the ParDiff backend. No matter how simple the app, you must still choose a backend explicitly.
 <4> The initial state. Since this is a "hello world" example, it's just `()`.
-<5> This is our view. Since we do not care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
+<5> This is our view. Since we don't care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
 <6> This is what DOM node on the page will hold our application. We use `getBody` to get the `document.body` for the page.
 
 == Addition
@@ -44,12 +44,12 @@ num x = input'
  ]
 ----
 
-Because we have our first handler, we need `MonadJSM` since allocation of the listener requires IO:
+Because we have our first handler, we need `MonadJSM` since allocation of the listener requires IO.
 
 <1> Set the value of the input to the current state of the application.
 <2> When an `"input"` event occurs update the state with the provided function.
 
-Now we can use our single number input in our view to add up two numbers for our user:
+Now we can use our single number input in our view to add up two numbers for our user.
 
 [source,haskell]
 ----
@@ -74,7 +74,7 @@ We are using `<$>` and a `TupleSection` here to compose our `num` component. Thi
 
 == Selectable Operations
 
-Now that we have some inputs that can perform addition, let's allow the user to select common operations. We start by making a new ADT:
+Now that we have some inputs that can perform addition, let the user select common operations. We start by making a new ADT:
 
 [source,haskell]
 ----
@@ -107,7 +107,7 @@ opText = \case
   Division       -> "÷"
 ----
 
-And we will use a traditional Html `<select>` element to let users pick the operation:
+And we will use a traditional Html `<select>` element to let the user pick the operation.
 
 [source,haskell]
 ----
@@ -122,7 +122,7 @@ opSelect = select [ onOption $ read . unpack ] -- <1>
 <1> When the select element changes, we `read` the value and use that as the model.
 <2> Values are just the operation applied to `show`, so it matches when we `read`.
 
-Great! Now we have three members of our model, and so it is time for an actual data type.
+Great! Now we have three members of our model, and so it's time for an actual data type.
 
 [source,haskell]
 ----
@@ -147,12 +147,12 @@ view model = div_
  ]
 ----
 
-That's it! The user can select an operation, enter two numbers and see a result rendered.
+That's it! The user can select an operation, enter 2 numbers and see a result rendered.
 
 Now if you are looking at the above code, and starting to twitch, because you are a optics fiend; that is the right instinct.
 
 == Emulating Immediate Execution
 
-All the prior art on writing a calculator in GHCjs feature old school functionality namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator application, at least let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
+All the prior art on writing a calculator in GHCjs feature old school functionality namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator app, atleast let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
 
 
