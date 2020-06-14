@@ -10,7 +10,7 @@
 {-# LANGUAGE OverloadedStrings      #-}
 
 module Shpadoinkle.Functor
-  ( Html' (..), Prop' (..), Constly (..)
+  ( Html' (..), Prop' (..), Props', Constly (..)
   , Propish (..), Htmlish (..)
   , listener, listenRaw, listen, listen'
   , mapProps, mapChildren, injectProps
@@ -72,6 +72,9 @@ instance Functor Prop' where
   fmap _ (PText' t) = PText' t
   fmap f (PListener' g) = PListener' (\r e -> f <$> g r e)
   fmap _ (PFlag' b) = PFlag' b
+
+
+type Props' a = [(Text, Prop' a)]
 
 
 class Constly f g where
