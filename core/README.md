@@ -61,7 +61,7 @@ We could put `Identity` here if we wanted to, but keeping `m` general
 helps our views compose.
 
 But what if we need to do _more_? Well we can update our `m` to
-have more functionality. Let's add some logging to the console:
+have more functionality. Let us add some logging to the console:
 
 ```haskell
 toggle :: Bool -> Html IO Bool
@@ -100,8 +100,16 @@ toggle b = h "div" []
 
 ## Composing views
 
+<<<<<<< HEAD
 In Shpadoinkle, we can compose views without impedance if the types match,
 or are parametric. For example:
+||||||| 63fa280
+In Shpadoinkle we can compose views without impedance if the types match,
+or are parametric. For example.
+=======
+In Shpadoinkle we can compose views without impedance if the types match,
+or are parametric. For example:
+>>>>>>> robbin/patch-6
 
 ```haskell
 hero :: Html m a
@@ -139,7 +147,7 @@ view (i,t) = h "div" []
 
 ## The primitive
 
-The Shpadoinkle programming model core primitive is the `shpadoinkle` function:
+The Shpadoinkle programming model core primitive is the `shpadoinkle` function.
 
 ```haskell
 shpadoinkle
@@ -163,8 +171,8 @@ you provide:
 
 This a function that takes a state container of some kind `t`,
 and returns a _Natural Transformation_ from our Shpadoinkle backend `b`,
-to our monad `m`. Backends kind of works like Monad Transformers, where
-`b` wraps our Monad `m`, and needs to be unwrappable:
+to our monad `m`. Backends works like Monad Transformers, where
+`b` wraps our Monad `m`, and needs to be unwrappable.
 
 ### `a`
 
@@ -175,14 +183,14 @@ for the first render:
 
 This is the state container `t` that will drive the view. When the state
 changes, we should re-render the view. The semantic behind determing when
-to do this, is up to you using the `Territory` type class. Typically this is
-just a `TVar` as that is the provided cannonical implementation:
+to do this, is upto you via the `Territory` type class. Typically, this is
+just a `TVar` as that is the provided cannonical implementation.
 
 ### `a -> Html (b m) a`
 
 This is the view function, you actual application to render. It takes
-the model and returns the html to render, such that it's events produce the
-same model:
+the model and returns the Html to render, such that its events produce the
+same model.
 
 ### `b m RawNode`
 
