@@ -67,3 +67,7 @@ i.fa.icon-caution::before {
 code{
   font-family: Fira Code, Consolas, Monoid, Hack, Droid Sans, Roboto Mono, monospace !important;
 }
+
+.edit-this-page{
+  display:none;
+}
