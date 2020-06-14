@@ -44,7 +44,7 @@ the second is the payload of those events, typically the model for your view `a`
 These variables in `Html m a` are strickly about event listeners, so any view
 that doesn't have event listeners should be parametic in both `m` and `a`.
 
-Let's look at a toggle as an example:
+look at a toggle as an example:
 
 ```haskell
 toggle :: Applicative m => Bool -> Html m Bool
@@ -54,14 +54,14 @@ toggle b = h "div" []
   ]
 ```
 
-That's it, we have a stateful view. When the user clicks
+That's it, we have a stateful view. When the user click's on
 the "Toggle" button the state will switch. Because we do a pure
 state transition in this function, `m` need only be `Applicative`.
 We could put `Identity` here if we wanted to, but keeping `m` general
 helps our views compose.
 
 But what if we need to do _more_? Well we can update our `m` to
-have more functionality. Let's add some logging to the console:
+have more functionality. We can add some logging to the console:
 
 ```haskell
 toggle :: Bool -> Html IO Bool
@@ -139,7 +139,7 @@ view (i,t) = h "div" []
 
 ## The primitive
 
-The Shpadoinkle programming model core primative is the `shpadoinkle` function:
+The Shpadoinkle programming model core primitive is the `shpadoinkle` function.
 
 ```haskell
 shpadoinkle
@@ -176,7 +176,7 @@ for the first render.
 This is the state container `t` that will drive the view. When the state
 changes, we should re-render the view. The semantic behind determing when
 to do this, is upto you via the `Territory` type class. Typically this is
-just a `TVar` as that is the provided cannonical implementation.
+just a `TVar` as that is the provided cannonical implimentation.
 
 ### `a -> Html (b m) a`
 
