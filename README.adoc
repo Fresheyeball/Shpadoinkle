@@ -1,8 +1,9 @@
-= Shpadoinkle
-
+[.text-center]
+image::etc/logo.png[Eddie is loved forever,150,150]
+[.text-center]
 🤠 ⟶ 🥔 🤠
 
-
+[.text-center]
 ==== I think I know precisely what I mean...
 
 https://gitlab.com/fresheyeball/Shpadoinkle/commits/master[image:https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg[pipeline
@@ -11,10 +12,12 @@ https://opensource.org/licenses/BSD-3-Clause[image:https://img.shields.io/badge/
 https://builtwithnix.org[image:https://img.shields.io/badge/built%20with-nix-41439a[built
 with nix]]
 
+= Shpadoinkle
+
 https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a
 programming model for user interface development. It supports flexible,
 simple, declarative code by modeling user interface interactions as
-Coalgebras. Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*
+Coalgebras. Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*.
 
 == Documentation
 
