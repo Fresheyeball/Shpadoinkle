@@ -115,14 +115,14 @@ You can also use the {hackage}-html/docs/Shpadoinkle-Html-Property.html#t:ClassL
 
 == Memo
 
-The memo function remebers the last arguement passed, and the last result. When a new value is passed, it compares it with the previous value, if they match, the previous result is returned from memory. This is useful when computing `Html` is expensive and benefits from memoization.
+The memo function remembers the last arguement passed, and the last result. When a new value is passed, it compares it with the previous value, if they match, the previous result is returned from memory. This is useful when computing `Html`. It is expensive and benefits from memoization:
 
 [source,haskell]
 ----
 memo = id
 ----
 
-Think of `memo` as a way of changing the evaluation stradegy.
+Think of `memo` as a way of changing the evaluation strategy:
 
 [source,haskell]
 ----

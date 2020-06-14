@@ -70,7 +70,7 @@ data Html :: (Type -> Type) -> Type -> Type where
   Node :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
   -- | If you can bake an element into a 'RawNode' then you can embed it as a baked potato.
   -- Backend does not provide any state management or abstraction to deal with
-  -- custom embedded content. It's on you to decide how and when this 'RawNode' will
+  -- custom embedded content. You must decide how and when this 'RawNode' will
   -- be updated. For example, if you wanted to embed a google map as a baked potato,
   -- and you are driving your Backend view with a 'TVar', you would need to build
   -- the 'RawNode' for this map /outside/ of your Backend view, and pass it in
@@ -213,8 +213,8 @@ deriving instance Functor m => Functor (Html m)
 
 
 -- | Properties of a DOM node. Backend does not use attributes directly,
--- but rather is focused on the more capable properties that may be set on a dom
--- node in JavaScript. If you wish to add attributes, you may do so
+-- but rather is focused on the more capable properties that can be set on a dom
+-- node in JavaScript. If you wish to add attributes, you can do so
 -- by setting its corresponding property.
 data Prop m o where
   -- | A text property
@@ -305,20 +305,20 @@ class Backend b m a | b m -> a where
     -- Some JavaScript based backends need to do this for the next tick. Regardless, whatever
     -- 'VNode' the effect produces will be passed as the previous Virtual DOM on the next render.
 
-  -- | A backend may perform some imperative setup steps
+  -- | A backend may perform some imperative setup steps:
   setup :: JSM () -> b m ()
 
 
 -- | Shpadoinkling requires a Territory, such as Colorado Territory.
--- The Territory provides for the state container. As such you may use any
--- type you wish where this semantic can be implemented.
+-- The Territory provides for the state container. As such you can use any
+-- type you want where this semantic can be implemented.
 class Territory s where
   -- | How do we update the state?
   writeUpdate :: s a -> (a -> JSM a) -> JSM ()
   -- | How do we observe state updates? This is akin to React's component should update thing.
   -- The idea is to provide a semantic for when we consider the model to have changed.
   -- The callback function provided to shouldUpdate gets called with each state in the sequence
-  -- of updated states, along with an accumulator of type b which it may update,
+  -- of updated states, along with an accumulator of type b which it can update,
   -- similar to a fold over the sequence of states.
   shouldUpdate :: Eq a => (b -> a -> JSM b) -> b -> s a -> JSM ()
   -- | Create a new Territory
@@ -388,7 +388,7 @@ shpadoinkle toJSM toM initial model view stage = do
     return ()
 
 -- | Wrapper around @shpadoinkle@ for full page apps
--- that do not need outside control of the territory
+-- that do not need outside control of the territory:
 fullPage
   :: Backend b m a => Territory t => Eq a
   => (m ~> JSM)
@@ -413,7 +413,7 @@ fullPage g f i view getStage = do
 -- where actions are performed directly in JSM.
 --
 -- This set of assumptions is extremely common when starting
--- a new project.
+-- a new project:
 fullPageJSM
   :: Backend b JSM a => Territory t => Eq a
   => (t a -> b JSM ~> JSM)
@@ -442,7 +442,7 @@ runJSorWarp = run
 #endif
 
 
--- | Simple app
+-- | Simple application:
 --
 -- A good starting place
 simple

@@ -8,7 +8,7 @@
 [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-examples/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-examples)
 
 Work in progress developing a compelling collection of example applications using Shpadoinkle.
-This repo will be used with the Shpadoinkle tutorial when it's finished.
+This repo will be used with the Shpadoinkle tutorial when it is finished.
 
 ## Complete examples
 
