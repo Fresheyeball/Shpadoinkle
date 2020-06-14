@@ -24,7 +24,7 @@ simple data structure where `Html :: Type`:
 view :: a -> Html
 ```
 
-This might look something like.
+This might look something like:
 
 ```haskell
 view :: Text -> Html
@@ -76,7 +76,7 @@ toggle b = h "div" []
 ```
 
 What if we want to access some record of capabilities? Or update some
-concurrent memory thing? Consider that we have an enterprise grade Monad:
+concurrent memory thing? Let's say we have an enterprise grade Monad:
 
 ```haskell
 newtype App a = App { runApp :: RIO (TVar Metrics) a }
@@ -118,7 +118,7 @@ view s = h "div" []
   ]
 ```
 
-If you have nesting with different types,
+If you have nesting, with different types,
 we can resolve the mismatch using 'fmap' like so:
 
 ```haskell
@@ -139,7 +139,7 @@ view (i,t) = h "div" []
 
 ## The primitive
 
-The Shpadoinkle programming model core primitive is the `shpadoinkle` function.
+The Shpadoinkle programming model core primative is the `shpadoinkle` function:
 
 ```haskell
 shpadoinkle
@@ -150,38 +150,38 @@ shpadoinkle
   -> b m RawNode -> JSM ()           -- Actually render
 ```
 
-This is the machine that runs a Shpadoinkle view. To run, we need
+This is the machine that runs a Shpadoinkle view. To run we need
 the following ingredients:
 
 ### `m ~> JSM`
 
 We need a _Natural Transformation_ from our `m` to `JSM`, so that
 we can perform the needed JavaScript effects in JSM from the `m`
-you provide:
+you provide.
 
 ### `t a -> b m ~> m`
 
 This a function that takes a state container of some kind `t`,
 and returns a _Natural Transformation_ from our Shpadoinkle backend `b`,
-to our monad `m`. Backends works like Monad Transformers, where
+to our monad `m`. Backends kind of works like Monad Transformers, where
 `b` wraps our Monad `m`, and needs to be unwrappable.
 
 ### `a`
 
 This is the initial value of our model. This will be passed to our view
-for the first render:
+for the first render.
 
 ### `t a`
 
 This is the state container `t` that will drive the view. When the state
 changes, we should re-render the view. The semantic behind determing when
-to do this, is upto you via the `Territory` type class. Typically, this is
+to do this, is upto you via the `Territory` type class. Typically this is
 just a `TVar` as that is the provided cannonical implementation.
 
 ### `a -> Html (b m) a`
 
 This is the view function, you actual application to render. It takes
-the model and returns the Html to render, such that its events produce the
+the model and returns the html to render, such that it's events produce the
 same model.
 
 ### `b m RawNode`
