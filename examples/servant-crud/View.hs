@@ -64,7 +64,7 @@ toEditForm sc = SpaceCraftUpdate
   }
 
 
-formGroup :: [Html m a] -> Html m a
+formGroup :: Htmlish h p => [h a] -> h a
 formGroup = H.div "form-group row"
 
 
@@ -163,20 +163,17 @@ editForm mid ef = H.div_
   , H.div "d-flex flex-row justify-content-end"
 
     [ H.button
-      [ H.onClick' $ do
-          navigate @SPA (RList mempty)
-          return (pur id)
+      [ H.onClick . causes $ navigate @SPA (RList mempty)
       , H.class' "btn btn-secondary"
       ] [ "Cancel" ]
 
     , H.button
-      [ H.onClick' $ case isValid of
+      [ H.onClick . causes $ case isValid of
          Nothing -> return (pur id)
          Just up -> do
            case mid of Nothing  -> () <$ createSpaceCraft up
                        Just sid -> updateSpaceCraft sid up
            navigate @SPA (RList mempty)
-           return (pur id)
       , H.class' "btn btn-primary"
       , H.disabled $ isNothing isValid
       ] [ "Save" ]
@@ -228,9 +225,7 @@ view fe = case fe of
              ]
        [ r <% search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
        , H.div "input-group-append mr-3"
-         [ H.button [ H.onClick' $ do
-                        navigate @SPA RNew
-                        return (pur id)
+         [ H.button [ H.onClick. causes $ do navigate @SPA RNew
                     , H.class' "btn btn-primary" ] [ "Register" ]
          ]
        ]
@@ -250,9 +245,8 @@ view fe = case fe of
 
   MEcho t -> H.div_
     [ maybe (text "Erie silence") text t
-    , H.a [ H.onClick' $ do
-              navigate @SPA (RList $ Input Clean "")
-              return (pur id) ] [ "Go To Space Craft Roster" ]
+    , H.a [ H.onClick . causes $ navigate @SPA (RList $ Input Clean "") ]
+          [ "Go To Space Craft Roster" ]
     ]
 
   M404 -> text "404"

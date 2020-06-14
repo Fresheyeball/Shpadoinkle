@@ -23,7 +23,7 @@ dependencies:
     - base
     - lens
     - text
-    - Shpadoinkle
+    - Shpadoinkle-continuations
 
 library:
   exposed-modules: Shpadoinkle.Lens

@@ -40,7 +40,6 @@ import           Control.Monad       (msum)
 import           Prelude             hiding (div, head, span)
 
 import           Shpadoinkle
-import           Shpadoinkle.Functor
 import           Shpadoinkle.Html.TH
 
 

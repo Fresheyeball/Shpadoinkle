@@ -23,9 +23,9 @@ import           TODOMVC.Update
 default (Text)
 
 
-filterHtml :: Applicative m => Visibility -> Visibility -> Html m Visibility
+filterHtml :: Applicative m => Visibility -> Visibility -> Html' Visibility
 filterHtml = memo2 $ \cur item -> li_
-  [ a (href "#" : onClick (pur (const item))
+  [ a (href "#" : onClick item
         : [className ("selected", cur == item)]) [ text . pack $ show item ]
   ]
 
@@ -66,7 +66,7 @@ listFooter model = footer "footer" $
     [ strong_ [ text . pack $ show co ]
     , text $ " item" <> (if co == 1 then "" else "s") <> " left"
     ]
-  , ul "filters" $ generalize visibility . filterHtml (_visibility model) <$> [minBound..maxBound]
+  , ul "filters" $ constly (set visibility) . filterHtml (_visibility model) <$> [minBound..maxBound]
   ] ++ (if count Complete (_tasks model) == 0 then [] else
   [ button [ className "clear-completed", onClick (pur clearComplete) ] [ "Clear completed" ]
   ])

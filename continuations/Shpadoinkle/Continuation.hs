@@ -9,6 +9,7 @@ module Shpadoinkle.Continuation
   ( Continuation (..)
   , pur
   , impur
+  , causes
   , runContinuation
   , MapContinuations (..)
   , convertC
@@ -64,11 +65,15 @@ data Continuation m a = Continuation (a -> a, a -> m (Continuation m a))
 pur :: Applicative m => (a -> a) -> Continuation m a
 pur = Continuation . (, const (pure Done))
 
--- | A monadic IO computation of a pure state updating function can be turned into a Continuation.
+-- | A monadic computation of a pure state updating function can be turned into a Continuation.
 impur :: Monad m => m (a -> a) -> Continuation m a
 impur m = Continuation . (id,) . const $ do
   f <- m
   return $ Continuation (f, const (return Done))
+
+-- | A monadic computation can be turned into a Continuation which does not touch the state.
+causes :: Monad m => m () -> Continuation m a
+causes m = impur (m >> return id)
 
 -- | runContinuation takes a Continuation and a state value and runs the whole continuation
 --   as if the real state was frozen at the value given to runContinuation. It performs all the
@@ -90,9 +95,6 @@ runContinuation' f Done _ = return f
 
 class MapContinuations f where
   mapMC :: Functor m => (Continuation m a -> Continuation m b) -> f m a -> f m b
-
-instance MapContinuations Continuation where
-  mapMC = id
 
 convertC :: Functor m => (forall b. m b -> n b) -> Continuation m a -> Continuation n a
 convertC _ Done = Done

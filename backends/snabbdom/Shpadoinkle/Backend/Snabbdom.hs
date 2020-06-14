@@ -31,6 +31,7 @@ import           Language.Javascript.JSaddle hiding (( # ))
 import           Prelude                     hiding ((.))
 
 import           Shpadoinkle                 hiding (children, name, props)
+import           Shpadoinkle.Continuation
 
 
 default (Text)
@@ -72,9 +73,8 @@ props toJSM i xs = do
         [] -> return ()
         ev:_ -> do
           rn <- unsafeGetProp "target" =<< valToObject ev
-          writeUpdate i
-            =<< (fmap (const . return . convertC (toJSM . runSnabbdom i)) . toJSM . runSnabbdom i)
-                (f (RawNode rn) (RawEvent ev))
+          writeUpdate i . const . fmap (convertC (toJSM . runSnabbdom i))
+                             $ f (RawNode rn) (RawEvent ev)
       unsafeSetProp (toJSString k) f' e
     PFlag b -> do
       f <- toJSVal b

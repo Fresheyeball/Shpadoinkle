@@ -36,7 +36,8 @@ module Shpadoinkle.Core
   , mapHtml, mapProp
   , Backend (..)
   , shpadoinkle, fullPage, fullPageJSM, simple
-  , Continuation (..), pur, impur
+  , Continuation (..), pur, impur, causes
+  , leftC, rightC, leftMC, rightMC
   , writeUpdate, shouldUpdate
   , type (~>)
   , RawNode (..), RawEvent (..)
@@ -101,7 +102,7 @@ mapHtml f = \case
 -- then you may change the action of @Prop@
 mapProp :: Functor m => (m ~> n) -> Prop m o -> Prop n o
 mapProp f = \case
-  PListener g -> PListener (\x y -> f . fmap (convertC f) $ g x y)
+  PListener g -> PListener (\x y -> convertC f <$> g x y)
   PText t     -> PText t
   PFlag b     -> PFlag b
 
@@ -130,7 +131,7 @@ data Prop m o where
   -- | Event listeners are provided with the 'RawNode' target, and the 'RawEvent', and may perform
   -- a monadic action such as a side effect. This is the one and only place where you may
   -- introduce a custom monadic action.
-  PListener :: (RawNode -> RawEvent -> m (Continuation m o)) -> Prop m o
+  PListener :: (RawNode -> RawEvent -> JSM (Continuation m o)) -> Prop m o
   -- | A boolean property, works as a flag
   -- for example @("disabled", PFlag False)@ has no effect
   -- while @("disabled", PFlag True)@ will add the @disabled@ attribute

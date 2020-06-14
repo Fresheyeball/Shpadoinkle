@@ -71,6 +71,7 @@ import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
 import           Shpadoinkle
+import           Shpadoinkle.Continuation
 
 
 default (Text)

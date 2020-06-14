@@ -2,10 +2,12 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE GADTs                  #-}
 
 module Shpadoinkle.Functor
   ( Html' (..), Prop' (..), Constly (..)
-  , Propish (..), EventHandler (..), Htmlish (..)
+  , Propish (..), Htmlish (..)
   , listener, listenRaw, listen, listen'
   , mapProps, mapChildren, injectProps
   ) where
@@ -54,15 +56,15 @@ instance Functor Html' where
   fmap _ (TextNode' t) = TextNode' t
 
 
-data Prop' o =
-    PText' Text
-  | PListener' (RawNode -> RawEvent -> o)
-  | PFlag' Bool
+data Prop' o where
+  PText' :: Text -> Prop' o
+  PListener' :: (RawNode -> RawEvent -> JSM o) -> Prop' o
+  PFlag' :: Bool -> Prop' o
 
 
 instance Functor Prop' where
   fmap _ (PText' t) = PText' t
-  fmap f (PListener' g) = PListener' (\r e -> f (g r e))
+  fmap f (PListener' g) = PListener' (\r e -> f <$> g r e)
   fmap _ (PFlag' b) = PFlag' b
 
 
@@ -78,28 +80,25 @@ instance Applicative m => Constly Html' (Html m) where
 
 instance Applicative m => Constly Prop' (Prop m) where
   constly _ (PText' t) = PText t
-  constly f (PListener' g) = PListener (\r e -> pure . pur . f $ g r e)
+  constly f (PListener' g) = PListener (\r e -> pur . f <$> g r e)
   constly _ (PFlag' b) = PFlag b
 
 
 class Propish p e | p -> e where
   textProp :: Text -> p o
-  listenerProp :: (RawNode -> RawEvent -> e o) -> p o
+  listenerProp :: (RawNode -> RawEvent -> JSM (e o)) -> p o
   flagProp :: Bool -> p o
 
 
 instance Propish Prop' Identity where
   textProp = PText'
-  listenerProp f = PListener' (\r e -> runIdentity (f r e))
+  listenerProp f = PListener' (\r e -> runIdentity <$> f r e)
   flagProp = PFlag'
 
 
-newtype EventHandler m o = EventHandler { runEventHandler :: (m (Continuation m o)) }
-
-
-instance Propish (Prop m) (EventHandler m) where
+instance Propish (Prop m) (Continuation m) where
   textProp = PText
-  listenerProp f = PListener (\r e -> runEventHandler (f r e))
+  listenerProp f = PListener (\r e -> f r e)
   flagProp = PFlag
 
 
@@ -158,19 +157,19 @@ instance Htmlish (Html m) (Prop m) where
 
 -- | Construct a simple listener property that will perform an action.
 listener :: Propish p e => e o -> p o
-listener = listenerProp . const . const
+listener = listenerProp . const . const . return
 {-# INLINE listener #-}
 
 
 -- | Construct a listener from its name and an event handler.
-listenRaw :: Propish p e => Text -> (RawNode -> RawEvent -> e o) -> (Text, p o)
+listenRaw :: Propish p e => Text -> (RawNode -> RawEvent -> JSM (e o)) -> (Text, p o)
 listenRaw k = (,) k . listenerProp
 {-# INLINE listenRaw #-}
 
 
 -- | Construct a listener from its name and an event handler.
 listen :: Propish p e => Text -> e o -> (Text, p o)
-listen k = listenRaw k . const . const
+listen k = listenRaw k . const . const . return
 {-# INLINE listen #-}
 
 

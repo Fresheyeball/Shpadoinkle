@@ -175,7 +175,7 @@ dropdown toTheme Config {..} x =
   let
     Theme {..} = toTheme x
   in injectProps
-  ([onKeyup' $ \case
+  ([onKeyup $ \case
     Enter     -> pur act
     UpArrow   -> pur considerPrev
     DownArrow -> pur considerNext

@@ -65,7 +65,7 @@ newTaskForm m = form [ className "todo-form", onSubmit . pur $ \m ->
     & current .~ mempty ]
   [ input' [ className "new-todo"
            , m ^. current . _Wrapped . to value
-           , onInput $ generalize current . pur . const . Description
+           , onInput $ constly (set current) . Description
            , placeholder "What needs to be done?" ]
   ]
   where insertMax x xs = M.insert k' x xs where k' = maybe minBound (succ . fst) $ M.lookupMax xs
@@ -91,16 +91,16 @@ taskView m = memo $ \tid (Task (Description d) c) ->
                  Incomplete -> Complete))
              , checked $ c == Complete
              ]
-    , label [ onDblclick . generalize editing . pur $ const (Just tid) ] [ text d ]
+    , label [ onDblclick $ constly (set editing) (Just tid) ] [ text d ]
     , button' [ className "destroy", onClick . pur $ (& tasks %~ M.delete tid) ]
     ]
-  , form [ onSubmit . generalize editing . pur $ const Nothing ]
+  , form [ onSubmit $ constly (set editing) Nothing ]
     [ input' [ className "edit"
              , value d
              , onInput $ generalize (tasks . at tid) . maybeC . generalize description
                          . pur . const . Description
              , autofocus True
-             , onBlur . generalize editing . pur $ const Nothing
+             , onBlur $ constly (set editing) Nothing
              ]
     ]
   ]

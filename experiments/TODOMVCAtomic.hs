@@ -27,9 +27,9 @@ import           TODOMVCAtomic.Update
 default (Text)
 
 
-filterHtml :: Applicative m => Eq v => Show v => v -> v -> Html m v
+filterHtml :: Eq v => Show v => v -> v -> Html' v
 filterHtml = memo $ \cur item -> li_
-  [ a [href "#" , onClick (pur (const item)) , className [("selected", cur == item)]] [ text . pack $ show item ]
+  [ a [href "#" , onClick item , className [("selected", cur == item)]] [ text . pack $ show item ]
   ]
 
 
@@ -69,7 +69,7 @@ listFooter = memo $ \ic cc v -> footer "footer" $
     [ strong_ [ text . pack $ show ic ]
     , text $ " item" <> (if ic == 1 then "" else "s") <> " left"
     ]
-  , ul "filters" $ generalize visibility . filterHtml v <$> [minBound..maxBound]
+  , ul "filters" $ constly (set visibility) . filterHtml v <$> [minBound..maxBound]
   ] ++ (if cc == 0 then [] else
   [ button [ className "clear-completed", onClick (pur clearComplete) ] [ "Clear completed" ]
   ])
@@ -88,7 +88,7 @@ newTaskForm :: MonadJSM m => Description -> Html m Model
 newTaskForm = memo $ \desc -> form [ className "todo-form", onSubmit (pur appendItem') ]
   [ input' [ className "new-todo"
            , value $ desc ^. _Wrapped
-           , onInput $ generalize current . pur . const . Description
+           , onInput $ constly (set current) . Description
            , placeholder "What needs to be done?" ]
   ]
 

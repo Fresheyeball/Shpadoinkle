@@ -52,8 +52,8 @@ opText = \case
   Division       -> "÷"
 
 
-opSelect :: MonadJSM m => Html m Operation
-opSelect = select [ onOption $ pur . const . read . unpack ]
+opSelect :: MonadJSM m => Html' Operation
+opSelect = select [ onOption $ read . unpack ]
   $ opOption <$> [minBound..maxBound]
   where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 
@@ -68,7 +68,7 @@ num x = input'
 view :: MonadJSM m => Model -> Html m Model
 view model = div_
  [ generalize left (num (_left model))
- , generalize operation opSelect
+ , constly (set operation) opSelect
  , generalize right (num (_right model))
  , text $ " = " <> pack (show $ opFunction
      (_operation model) (_left model) (_right model))

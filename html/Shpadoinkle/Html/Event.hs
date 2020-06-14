@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE TemplateHaskell     #-}
@@ -42,57 +43,57 @@ import           Shpadoinkle.Html.TH
 import           Shpadoinkle.Keyboard
 
 
-mkWithFormVal :: MonadJSM m => (JSVal -> JSM v) -> Text -> JSString -> (v -> m (Continuation m a)) -> (Text, Prop m a)
+mkWithFormVal :: Propish p e => (JSVal -> JSM v) -> Text -> JSString -> (v -> e a) -> (Text, p a)
 mkWithFormVal valTo evt from f = listenRaw evt $ \(RawNode n) _ ->
-  f =<< liftJSM (valTo =<< unsafeGetProp from =<< valToObject n)
+  return . f =<< liftJSM (valTo =<< unsafeGetProp from =<< valToObject n)
 
 
-onInput' :: MonadJSM m => (Text -> m (Continuation m a)) -> (Text, Prop m a)
-onInput' = mkWithFormVal valToText "input" "value"
+onInput :: Propish p e => (Text -> e a) -> (Text, p a)
+onInput = mkWithFormVal valToText "input" "value"
 
 
-onInput :: MonadJSM m => (Text -> Continuation m a) -> (Text, Prop m a)
-onInput f = onInput' (pure . f)
+onInput' :: Propish p e => Applicative e => (Text -> a) -> (Text, p a)
+onInput' f = onInput (pure . f)
 
 
-onOption' :: MonadJSM m => (Text -> m (Continuation m a)) -> (Text, Prop m a)
-onOption' = mkWithFormVal valToText "change" "value"
+onOption :: Propish p e => (Text -> e a) -> (Text, p a)
+onOption = mkWithFormVal valToText "change" "value"
 
 
-onOption :: MonadJSM m => (Text -> Continuation m a) -> (Text, Prop m a)
-onOption f = onOption' (pure . f)
+onOption' :: Propish p e => Applicative e => (Text -> a) -> (Text, p a)
+onOption' f = onOption (pure . f)
 
 
-mkOnKey :: MonadJSM m => Text -> (KeyCode -> m (Continuation m a)) -> (Text, Prop m a)
+mkOnKey :: Propish p e => Text -> (KeyCode -> e a) -> (Text, p a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
-  f =<< liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
+  return . f =<< liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
 
 
-onKeyup, onKeydown, onKeypress :: MonadJSM m => (KeyCode -> m (Continuation m a)) -> (Text, Prop m a)
+onKeyup, onKeydown, onKeypress :: Propish p e => (KeyCode -> e a) -> (Text, p a)
 onKeyup    = mkOnKey "keyup"
 onKeydown  = mkOnKey "keydown"
 onKeypress = mkOnKey "keypress"
-onKeyup', onKeydown', onKeypress' :: MonadJSM m => (KeyCode -> Continuation m a) -> (Text, Prop m a)
+onKeyup', onKeydown', onKeypress' :: Propish p e => Applicative e => (KeyCode -> a) -> (Text, p a)
 onKeyup'    f = onKeyup    (pure . f)
 onKeydown'  f = onKeydown  (pure . f)
 onKeypress' f = onKeypress (pure . f)
 
 
-onCheck' :: MonadJSM m => (Bool -> m (Continuation m a)) -> (Text, Prop m a)
-onCheck' = mkWithFormVal valToBool "change" "checked"
+onCheck :: Propish p e => (Bool -> e a) -> (Text, p a)
+onCheck = mkWithFormVal valToBool "change" "checked"
 
 
-onCheck :: MonadJSM m => (Bool -> Continuation m a) -> (Text, Prop m a)
-onCheck f = onCheck' (pure . f)
+onCheck' :: Propish p e => Applicative e => (Bool -> a) -> (Text, p a)
+onCheck' f = onCheck (pure . f)
 
 
-onSubmit' :: MonadJSM m => m (Continuation m a) -> (Text, Prop m a)
-onSubmit' m = listenRaw "submit" $ \_ (RawEvent e) ->
-  liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> m
+onSubmit :: Propish p e => e a -> (Text, p a)
+onSubmit m = listenRaw "submit" $ \_ (RawEvent e) ->
+  liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> return m
 
 
-onSubmit :: MonadJSM m => Continuation m a -> (Text, Prop m a)
-onSubmit = onSubmit' . pure
+onSubmit' :: Propish p e => Applicative e => a -> (Text, p a)
+onSubmit' = onSubmit . pure
 
 
 mkGlobalKey :: Text -> (KeyCode -> JSM ()) -> JSM ()

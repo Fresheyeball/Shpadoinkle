@@ -36,11 +36,8 @@ import           Shpadoinkle
 import           Shpadoinkle.Html.TH
 
 
-type TextProperty t = forall m a. ToPropText t => t -> (Text, Prop m a)
-
-
--- | How do we take a non-textual value, and make it text JavaScript will
--- cast appropriately
+-- | How do we take a non-textual value, and make it text which JavaScript will
+-- cast appropriately?
 class ToPropText a where toPropText :: a -> Text
 instance ToPropText Text where toPropText = id
 instance ToPropText Int where toPropText = pack . show
@@ -48,8 +45,8 @@ instance ToPropText Float where toPropText = pack . show
 instance ToPropText Bool where toPropText = \case True -> "true"; False -> "false"
 
 
-textProperty :: ToPropText a => Text -> a -> (Text, Prop m o)
-textProperty k = (,) k . PText . toPropText
+textProperty :: Propish p e => ToPropText a => Text -> a -> (Text, p o)
+textProperty k = (,) k . textProp . toPropText
 
 
 newtype ClassList = ClassList { unClassList :: Set.Set Text } deriving (Eq, Ord, Show, Semigroup, Monoid)
@@ -62,19 +59,19 @@ instance ClassListRep (Text, Bool) where asClass = asClass . (:[])
 instance IsString ClassList where fromString = ClassList . Set.singleton . pack
 
 
-flagProperty :: Text -> Bool -> (Text, Prop m a)
-flagProperty t = (,) t . flag
+flagProperty :: Propish p e => Text -> Bool -> (Text, p a)
+flagProperty t = (,) t . flagProp
 
 
-className :: ClassListRep cl => cl -> (Text, Prop m a)
+className :: Propish p e => ClassListRep cl => cl -> (Text, p a)
 className = textProperty "className" . unwords . Set.toList . unClassList . asClass
 
 
-class' :: ClassList -> (Text, Prop m a)
+class' :: Propish p e => ClassList -> (Text, p a)
 class' = className
 
 
-for' :: Text -> (Text, Prop m a)
+for' :: Propish p e => Text -> (Text, p a)
 for' = textProperty "htmlFor"
 
 
@@ -96,5 +93,5 @@ $(msum <$> mapM mkIntProp
  [ "tabIndex", "width", "height" ])
 
 
-tabbable :: (Text, Prop m o)
+tabbable :: Propish p e => (Text, p o)
 tabbable = tabIndex 0

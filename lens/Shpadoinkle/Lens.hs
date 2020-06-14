@@ -7,7 +7,7 @@ module Shpadoinkle.Lens where
 import           Control.Lens
 import           Data.Maybe
 
-import           Shpadoinkle
+import           Shpadoinkle.Continuation
 
 
 --embed :: Functor m => Lens s t a b -> (a -> Html m b) -> s -> Html m t

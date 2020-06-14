@@ -69,6 +69,7 @@ import           System.Random
 import           UnliftIO
 
 import           Shpadoinkle                 hiding (h, name, props, text)
+import           Shpadoinkle.Continuation
 
 
 default (Text)
@@ -140,8 +141,8 @@ props toJSM i ps (RawNode raw) = do
 prop :: Monad m => (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
 prop toJSM i raw k = \case
   PText t     -> setProp' raw k t
-  PListener f -> setListener i (\x y -> toJSM . fmap (convertC (toJSM . runParDiff i))
-                                        . runParDiff i $ f x y) raw k
+  PListener f -> setListener i (\x y -> convertC (toJSM . runParDiff i)
+                                         <$> f x y) raw k
   PFlag True  -> setProp' raw k =<< toJSVal True
   PFlag False -> return ()
 
@@ -190,8 +191,7 @@ makeProp toJSM i = \case
   PText t     -> return $ ParVText t
   PListener m -> do
     u <- liftIO randomIO
-    return . ParVListen u $ \x y -> toJSM . fmap (convertC (toJSM . runParDiff i))
-                                    . runParDiff i $ m x y
+    return . ParVListen u $ \x y -> convertC (toJSM . runParDiff i) <$> m x y
   PFlag b     -> return $ ParVFlag b
 
 

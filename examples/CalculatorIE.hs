@@ -116,8 +116,8 @@ initial :: Model
 initial = Model noEntry Nothing
 
 
-digit :: Applicative m => Digit -> Html m Digit
-digit d = button [ onClick . pur $ const d, className $ "d" <> d' ] [ text d' ]
+digit :: Applicative m => Digit -> Html' Digit
+digit d = button [ onClick d, className $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
 
@@ -170,10 +170,10 @@ view x = H.div "calculator"
       . operate (x ^? state . traverse . operator) <$> [minBound .. maxBound]
 
     , H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
-      setupDigit . digit <$> [minBound .. pred maxBound]
+      constly putDigit . digit <$> [minBound .. pred maxBound]
 
     , H.div "zerodot"
-      [ setupDigit (digit Zero)
+      [ constly putDigit (digit Zero)
       , button [ onClick $ pur (& entry %~ addDecimal) ] [ "." ]
       ]
 
@@ -184,8 +184,7 @@ view x = H.div "calculator"
     ]
   ]
 
-  where setupDigit = liftMC (\x d -> x & entry %~ applyDigit d)
-                     (const (error "Model -> Digit should be unused"))
+  where putDigit x d = x & entry %~ applyDigit d
 
 
 trapper :: Show a => (a -> Html m a) -> (a -> Html m a)
