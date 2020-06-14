@@ -61,7 +61,7 @@ We could put `Identity` here if we wanted to, but keeping `m` general
 helps our views compose.
 
 But what if we need to do _more_? Well we can update our `m` to
-have more functionality. Let us add some logging to the console:
+have more functionality. Let's add some logging to the console:
 
 ```haskell
 toggle :: Bool -> Html IO Bool
@@ -100,16 +100,8 @@ toggle b = h "div" []
 
 ## Composing views
 
-<<<<<<< HEAD
-In Shpadoinkle, we can compose views without impedance if the types match,
-or are parametric. For example:
-||||||| 63fa280
-In Shpadoinkle we can compose views without impedance if the types match,
-or are parametric. For example.
-=======
 In Shpadoinkle we can compose views without impedance if the types match,
 or are parametric. For example:
->>>>>>> robbin/patch-6
 
 ```haskell
 hero :: Html m a
