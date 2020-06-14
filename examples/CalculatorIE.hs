@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields  #-}
 {-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
@@ -116,14 +117,14 @@ initial :: Model
 initial = Model noEntry Nothing
 
 
-digit :: Applicative m => Digit -> Html' Digit
-digit d = button [ onClick d, className $ "d" <> d' ] [ text d' ]
+digit :: Digit -> Html' Digit
+digit d = button [ onClick' d, className $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
 
-operate :: Applicative m => Maybe Operator -> Operator -> Html' Operator
+operate :: Maybe Operator -> Operator -> Html' Operator
 operate active o = button
-  [ onClick o, className ("active" :: Text, Just o == active) ]
+  [ onClick' o, className ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
 
 
@@ -184,7 +185,7 @@ view x = H.div "calculator"
     ]
   ]
 
-  where putDigit x d = x & entry %~ applyDigit d
+  where putDigit d = entry %~ applyDigit d
 
 
 trapper :: Show a => (a -> Html m a) -> (a -> Html m a)

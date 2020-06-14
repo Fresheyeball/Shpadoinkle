@@ -20,7 +20,6 @@ import           Data.Text                     hiding (all, count, filter,
 import           Prelude                       hiding (div, unwords)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.Snabbdom
-import           Shpadoinkle.Functor
 import           Shpadoinkle.Html
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Memo
@@ -65,7 +64,7 @@ newTaskForm m = form [ className "todo-form", onSubmit . pur $ \m ->
     & current .~ mempty ]
   [ input' [ className "new-todo"
            , m ^. current . _Wrapped . to value
-           , onInput $ constly (set current) . Description
+           , onInput $ pur . set current . Description
            , placeholder "What needs to be done?" ]
   ]
   where insertMax x xs = M.insert k' x xs where k' = maybe minBound (succ . fst) $ M.lookupMax xs
@@ -91,16 +90,16 @@ taskView m = memo $ \tid (Task (Description d) c) ->
                  Incomplete -> Complete))
              , checked $ c == Complete
              ]
-    , label [ onDblclick $ constly (set editing) (Just tid) ] [ text d ]
+    , label [ onDblclick . pur . set editing $ Just tid ] [ text d ]
     , button' [ className "destroy", onClick . pur $ (& tasks %~ M.delete tid) ]
     ]
-  , form [ onSubmit $ constly (set editing) Nothing ]
+  , form [ onSubmit . pur $ set editing Nothing ]
     [ input' [ className "edit"
              , value d
              , onInput $ generalize (tasks . at tid) . maybeC . generalize description
                          . pur . const . Description
              , autofocus True
-             , onBlur $ constly (set editing) Nothing
+             , onBlur . pur $ set editing Nothing
              ]
     ]
   ]
@@ -123,7 +122,7 @@ listFooter m = footer "footer" $
 
 filterHtml :: Visibility -> Visibility -> Html' Visibility
 filterHtml = memo2 $ \cur item -> li_
-  [ a (href "#" : onClick item : [className ("selected", cur == item)]) [ text . pack $ show item ] ]
+  [ a (href "#" : onClick' item : [className ("selected", cur == item)]) [ text . pack $ show item ] ]
 
 info :: Html m a
 info = footer "info"

@@ -14,7 +14,6 @@ import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Html
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Memo
-import           Shpadoinkle.Lens
 
 import           TODOMVC.Types
 import           TODOMVC.Update
@@ -23,9 +22,9 @@ import           TODOMVC.Update
 default (Text)
 
 
-filterHtml :: Applicative m => Visibility -> Visibility -> Html' Visibility
+filterHtml :: Visibility -> Visibility -> Html' Visibility
 filterHtml = memo2 $ \cur item -> li_
-  [ a (href "#" : onClick item
+  [ a (href "#" : onClick' item
         : [className ("selected", cur == item)]) [ text . pack $ show item ]
   ]
 

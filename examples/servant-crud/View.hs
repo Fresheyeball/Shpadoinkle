@@ -27,7 +27,7 @@ import           Data.Coerce                       (Coercible)
 import           Data.Maybe                        (fromMaybe, isNothing)
 import           Data.String                       (IsString)
 import           Data.Text                         as T
-import           Shpadoinkle                       (Html, MonadJSM, text, pur, liftMC)
+import           Shpadoinkle                       (Html, MonadJSM, text, liftMC, causes)
 import qualified Shpadoinkle.Html                  as H
 import           Shpadoinkle.Lens                  ((<%), generalize)
 import           Shpadoinkle.Router                (navigate, toHydration)
@@ -64,7 +64,7 @@ toEditForm sc = SpaceCraftUpdate
   }
 
 
-formGroup :: Htmlish h p => [h a] -> h a
+formGroup :: [Html m a] -> Html m a
 formGroup = H.div "form-group row"
 
 
@@ -169,7 +169,7 @@ editForm mid ef = H.div_
 
     , H.button
       [ H.onClick . causes $ case isValid of
-         Nothing -> return (pur id)
+         Nothing -> return ()
          Just up -> do
            case mid of Nothing  -> () <$ createSpaceCraft up
                        Just sid -> updateSpaceCraft sid up

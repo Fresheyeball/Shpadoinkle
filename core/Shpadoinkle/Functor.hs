@@ -4,6 +4,10 @@
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE TupleSections          #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE OverloadedStrings      #-}
 
 module Shpadoinkle.Functor
   ( Html' (..), Prop' (..), Constly (..)
@@ -12,10 +16,12 @@ module Shpadoinkle.Functor
   , mapProps, mapChildren, injectProps
   ) where
 
-import Control.Arrow
-import Data.Functor.Identity (Identity (..))
-import Data.Text (Text)
-import Shpadoinkle.Core
+import           Control.Arrow
+import           Data.Functor.Identity (Identity (..))
+import           Data.String
+import           Data.Text (Text, pack)
+import           Shpadoinkle.Core
+import           Shpadoinkle.Continuation
 
 -- | `Html m` and `Prop m` are not Functors because Continuation is
 --   not a Functor. Continuation is not a Functor fundamentally because
@@ -153,6 +159,20 @@ instance Htmlish (Html m) (Prop m) where
   textContent inj = \case
     TextNode t -> TextNode <$> inj t
     n -> pure n
+
+
+instance IsString (Html' o) where
+  fromString = text . pack
+  {-# INLINE fromString #-}
+
+
+instance IsString (Prop' o) where
+  fromString = textProp . pack
+  {-# INLINE fromString #-}
+
+
+instance {-# OVERLAPPING #-} IsString [(Text, Prop' o)] where
+  fromString = pure . ("className", ) . textProp . pack
 
 
 -- | Construct a simple listener property that will perform an action.

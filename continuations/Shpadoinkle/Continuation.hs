@@ -7,24 +7,14 @@
 
 module Shpadoinkle.Continuation
   ( Continuation (..)
-  , pur
-  , impur
-  , causes
+  , pur, impur, causes
   , runContinuation
   , MapContinuations (..)
   , convertC
-  , liftC
-  , liftMC
-  , leftC
-  , leftMC
-  , rightC
-  , rightMC
-  , maybeC
-  , maybeMC
-  , comaybeC
-  , comaybeMC
-  , writeUpdate
-  , shouldUpdate
+  , liftC, liftMC
+  , leftC, leftMC, rightC, rightMC
+  , maybeC, maybeMC, comaybe, comaybeC, comaybeMC
+  , writeUpdate, shouldUpdate
   ) where
 
 import qualified Control.Categorical.Functor as F
@@ -95,6 +85,9 @@ runContinuation' f Done _ = return f
 
 class MapContinuations f where
   mapMC :: Functor m => (Continuation m a -> Continuation m b) -> f m a -> f m b
+
+instance MapContinuations Continuation where
+  mapMC = id
 
 convertC :: Functor m => (forall b. m b -> n b) -> Continuation m a -> Continuation n a
 convertC _ Done = Done

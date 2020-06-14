@@ -136,6 +136,7 @@ executables:
       - exceptions
 
       - Shpadoinkle
+      - Shpadoinkle-continuations
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-html
       - Shpadoinkle-widgets

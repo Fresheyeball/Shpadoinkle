@@ -14,7 +14,6 @@ import           Safe
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Html
-import           Shpadoinkle.Lens
 
 
 data Model = Model
@@ -52,24 +51,24 @@ opText = \case
   Division       -> "÷"
 
 
-opSelect :: MonadJSM m => Html' Operation
-opSelect = select [ onOption $ read . unpack ]
+opSelect :: Html' Operation
+opSelect = select [ onOption' $ read . unpack ]
   $ opOption <$> [minBound..maxBound]
   where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 
 
-num :: MonadJSM m => Int -> Html m Int
+num :: Int -> Html' Int
 num x = input'
  [ value . pack $ show x
- , onInput $ pur . const . fromMaybe 0 . readMay . unpack
+ , onInput' $ fromMaybe 0 . readMay . unpack
  ]
 
 
 view :: MonadJSM m => Model -> Html m Model
 view model = div_
- [ generalize left (num (_left model))
+ [ constly (set left) (num (_left model))
  , constly (set operation) opSelect
- , generalize right (num (_right model))
+ , constly (set right) (num (_right model))
  , text $ " = " <> pack (show $ opFunction
      (_operation model) (_left model) (_right model))
  ]

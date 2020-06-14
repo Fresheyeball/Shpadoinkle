@@ -9,13 +9,12 @@
 module Main where
 
 
-import           Control.Lens                  (to, (%~), (.~), (?~), (^.),
+import           Control.Lens                  (set, to, (%~), (.~), (?~), (^.),
                                                 _Wrapped)
 import           Data.Text                     hiding (count, filter, length)
 import           Prelude                       hiding (div, unwords)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.Snabbdom
-import           Shpadoinkle.Lens
 import           Shpadoinkle.Html
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Memo
@@ -29,7 +28,7 @@ default (Text)
 
 filterHtml :: Eq v => Show v => v -> v -> Html' v
 filterHtml = memo $ \cur item -> li_
-  [ a [href "#" , onClick item , className [("selected", cur == item)]] [ text . pack $ show item ]
+  [ a [href "#" , onClick' item , className [("selected", cur == item)]] [ text . pack $ show item ]
   ]
 
 
@@ -88,7 +87,7 @@ newTaskForm :: MonadJSM m => Description -> Html m Model
 newTaskForm = memo $ \desc -> form [ className "todo-form", onSubmit (pur appendItem') ]
   [ input' [ className "new-todo"
            , value $ desc ^. _Wrapped
-           , onInput $ constly (set current) . Description
+           , onInput $ pur . set current . Description
            , placeholder "What needs to be done?" ]
   ]
 

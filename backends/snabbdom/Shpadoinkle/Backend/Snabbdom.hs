@@ -31,7 +31,6 @@ import           Language.Javascript.JSaddle hiding (( # ))
 import           Prelude                     hiding ((.))
 
 import           Shpadoinkle                 hiding (children, name, props)
-import           Shpadoinkle.Continuation
 
 
 default (Text)

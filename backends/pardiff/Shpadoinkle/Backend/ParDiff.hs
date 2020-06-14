@@ -69,7 +69,6 @@ import           System.Random
 import           UnliftIO
 
 import           Shpadoinkle                 hiding (h, name, props, text)
-import           Shpadoinkle.Continuation
 
 
 default (Text)

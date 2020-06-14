@@ -36,9 +36,6 @@ module Shpadoinkle.Core
   , mapHtml, mapProp
   , Backend (..)
   , shpadoinkle, fullPage, fullPageJSM, simple
-  , Continuation (..), pur, impur, causes
-  , leftC, rightC, leftMC, rightMC
-  , writeUpdate, shouldUpdate
   , type (~>)
   , RawNode (..), RawEvent (..)
   , MonadJSM, JSM, liftJSM
@@ -138,6 +135,33 @@ data Prop m o where
   PFlag :: Bool -> Prop m o
 
 
+-- | Strings are overloaded as HTML text nodes
+-- @
+--   "hiya" = TextNode "hiya"
+-- @
+instance IsString (Html m o) where
+  fromString = TextNode . pack
+  {-# INLINE fromString #-}
+
+
+-- | Strings are overloaded as text props
+-- @
+--   ("id", "foo") = ("id", PText "foo")
+-- @
+instance IsString (Prop m o) where
+  fromString = PText . pack
+  {-# INLINE fromString #-}
+
+
+-- | Strings are overloaded as the class property
+-- @
+--   "active" = ("className", PText "active")
+-- @
+instance {-# OVERLAPPING #-} IsString [(Text, Prop m o)] where
+  fromString = pure . ("className", ) . PText . pack
+  {-# INLINE fromString #-}
+
+
 instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
   map :: forall a b. EndoIso a b -> EndoIso (Prop m a) (Prop m b)
   map f = EndoIso id mapFwd mapBack
@@ -174,32 +198,6 @@ instance Monad m => F.Functor EndoIso EndoIso (MapProps m) where
 
 instance MapContinuations MapProps where
   mapMC f = MapProps . fmap (second (mapMC f)) . unMapProps
-
-
--- | Strings are overloaded as HTML text nodes
--- @
---   "hiya" = TextNode "hiya"
--- @
-instance IsString (Html m o) where
-  fromString = TextNode . pack
-  {-# INLINE fromString #-}
-
-
--- | Strings are overloaded as text props
--- @
---   ("id", "foo") = ("id", PText "foo")
--- @
-instance IsString (Prop m o) where
-  fromString = PText . pack
-  {-# INLINE fromString #-}
-
--- | Strings are overloaded as the class property
--- @
---   "active" = ("className", PText "active")
--- @
-instance {-# OVERLAPPING #-} IsString [(Text, Prop m o)] where
-  fromString = pure . ("className", ) . PText . pack
-  {-# INLINE fromString #-}
 
 
 -- | A DOM node reference.
