@@ -12,6 +12,7 @@
 module Shpadoinkle.Functor
   ( Html' (..), Prop' (..), Props', Constly (..)
   , Propish (..), Htmlish (..)
+  , eitherH3, eitherH4, eitherH5
   , listener, listenRaw, listen, listen'
   , mapProps, mapChildren, injectProps
   ) where
@@ -126,6 +127,24 @@ class Htmlish h p | h -> p where
   name :: Applicative f => (Text -> f Text) -> h o -> f (h o)
   -- | Lens to content of @TextNode@s
   textContent :: Applicative f => (Text -> f Text) -> h o -> f (h o)
+  -- | Heterogenerous alternatives
+  eitherH :: (a -> h a) -> (b -> h b) -> Either a b -> h (Either a b)
+
+
+eitherH3 :: Htmlish h p => (a -> h a) -> (b -> h b) -> (c -> h c)
+         -> Either a (Either b c) -> h (Either a (Either b c))
+eitherH3 a b c = a `eitherH` (b `eitherH` c)
+
+
+eitherH4 :: Htmlish h p => (a -> h a) -> (b -> h b) -> (c -> h c) -> (d -> h d)
+         -> Either a (Either b (Either c d)) -> h (Either a (Either b (Either c d)))
+eitherH4 a b c d = a `eitherH` (b `eitherH` (c `eitherH` d))
+
+
+eitherH5 :: Htmlish h p => (a -> h a) -> (b -> h b) -> (c -> h c) -> (d -> h d) -> (e -> h e)
+         -> Either a (Either b (Either c (Either d e)))
+         -> h (Either a (Either b (Either c (Either d e))))
+eitherH5 a b c d e = a `eitherH` (b `eitherH` (c `eitherH` (d `eitherH` e)))
 
 
 instance Htmlish Html' Prop' where
@@ -144,9 +163,10 @@ instance Htmlish Html' Prop' where
   textContent inj = \case
     TextNode' t -> TextNode' <$> inj t
     n -> pure n
+  eitherH l r = either (fmap Left . l) (fmap Right . r)
 
 
-instance Htmlish (Html m) (Prop m) where
+instance Monad m => Htmlish (Html m) (Prop m) where
   h = Node
   baked = Potato
   text = TextNode
@@ -162,6 +182,7 @@ instance Htmlish (Html m) (Prop m) where
   textContent inj = \case
     TextNode t -> TextNode <$> inj t
     n -> pure n
+  eitherH = eitherMC
 
 
 instance IsString (Html' o) where

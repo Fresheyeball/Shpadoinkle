@@ -6,7 +6,7 @@
 {-# LANGUAGE TupleSections         #-}
 
 module Shpadoinkle.Continuation
-  ( Continuation (..)
+  ( Continuation (..), contIso
   , pur, impur, causes
   , runContinuation
   , MapContinuations (..)
@@ -14,12 +14,14 @@ module Shpadoinkle.Continuation
   , liftC, liftMC
   , leftC, leftMC, rightC, rightMC
   , maybeC, maybeMC, comaybe, comaybeC, comaybeMC
+  , eitherC, eitherMC
   , writeUpdate, shouldUpdate
   ) where
 
 import qualified Control.Categorical.Functor as F
 import           Control.Monad (liftM2)
 import           Control.PseudoInverseCategory
+import           Data.Either.Combinators (mapLeft, mapRight)
 import           GHC.Conc (retry)
 import           UnliftIO
 import           UnliftIO.Concurrent
@@ -83,6 +85,8 @@ runContinuation' f (Continuation (g, h)) x = do
 runContinuation' _ (Rollback f) x = runContinuation' id f x
 runContinuation' f Done _ = return f
 
+-- | f is a Functor to Hask from the category where the objects are
+--   Continuation types and the morphisms are functions.
 class MapContinuations f where
   mapMC :: Functor m => (Continuation m a -> Continuation m b) -> f m a -> f m b
 
@@ -137,6 +141,25 @@ comaybeC (Continuation (f,g)) = Continuation (comaybe f, fmap comaybeC . g . Jus
 
 comaybeMC :: Functor m => MapContinuations f => f m (Maybe a) -> f m a
 comaybeMC = mapMC comaybeC
+
+eitherC :: Monad m => Continuation m a -> Continuation m b -> Continuation m (Either a b)
+eitherC f g = Continuation . (id,) $ \case
+  Left x -> case f of
+    Done -> return Done
+    Rollback r -> return . Rollback $ eitherC r Done
+    Continuation (h, i) -> do
+      j <- i x
+      return $ Continuation (mapLeft h, const . return $ eitherC j (Rollback Done))
+  Right x -> case g of
+    Done -> return Done
+    Rollback r -> return . Rollback $ eitherC Done r
+    Continuation (h, i) -> do
+      j <- i x
+      return $ Continuation (mapRight h, const . return $ eitherC (Rollback Done) j)
+
+eitherMC :: Monad m => MapContinuations f => (a -> f m a) -> (b -> f m b) -> Either a b -> f m (Either a b)
+eitherMC l _ (Left x) = mapMC (\c -> eitherC c (pur id)) (l x)
+eitherMC _ r (Right x) = mapMC (\c -> eitherC (pur id) c) (r x)
 
 contIso :: Functor m => (a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 contIso f g (Continuation (h, i)) = Continuation (f.h.g, fmap (contIso f g) . i . g)

@@ -21,6 +21,7 @@
 module View where
 
 
+import qualified Control.Categorical.Functor       as F
 import           Control.Lens                      hiding (view)
 import           Control.Lens.Unsound              (lensProduct)
 import           Data.Coerce                       (Coercible)
@@ -215,9 +216,19 @@ fuzzy = flip (^.) <$>
 
 
 view :: (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
-view fe = case fe of
+view = F.map coproductIsoFrontend . viewCases . frontendToCoproduct
 
-  MList r -> liftMC (flip (const MList)) (\(MList x) -> x) $ H.div "container-fluid"
+
+viewCases :: (MonadJSM m, CRUDSpaceCraft m) => FrontendCoproduct -> Html m FrontendCoproduct
+viewCases = eitherH4
+
+  (\{-MEcho-} t -> H.div_
+    [ maybe (text "Erie silence") text t
+    , H.a [ H.onClick . causes $ navigate @SPA (RList $ Input Clean "") ]
+          [ "Go To Space Craft Roster" ]
+    ])
+
+  (\{-MList-} r -> H.div "container-fluid"
    [ H.div "row justify-content-between align-items-center"
      [ H.h2_ [ "Space Craft Roster" ]
      , H.div [ H.class' "input-group"
@@ -225,7 +236,7 @@ view fe = case fe of
              ]
        [ r <% search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
        , H.div "input-group-append mr-3"
-         [ H.button [ H.onClick. causes $ do navigate @SPA RNew
+         [ H.button [ H.onClick . causes $ do navigate @SPA RNew
                     , H.class' "btn btn-primary" ] [ "Register" ]
          ]
        ]
@@ -234,22 +245,17 @@ view fe = case fe of
      (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value))
      (r ^. sort)
    ]
+  )
 
-  MDetail sid form -> liftMC (flip (const (MDetail sid))) (\(MDetail _ x) -> x) $ H.div "row"
+  (\{-MDetail-} (sid, form) -> H.div "row"
     [ H.div "col-sm-8 offset-sm-2"
       [ H.h2_ [ text $ maybe "Register New Space Craft" (const "Edit Space Craft") sid
               ]
       , editForm sid form
       ]
-    ]
+    ])
 
-  MEcho t -> H.div_
-    [ maybe (text "Erie silence") text t
-    , H.a [ H.onClick . causes $ navigate @SPA (RList $ Input Clean "") ]
-          [ "Go To Space Craft Roster" ]
-    ]
-
-  M404 -> text "404"
+  ({-M404-} const (text "404"))
 
 
 template :: Frontend -> Html m a -> Html m a

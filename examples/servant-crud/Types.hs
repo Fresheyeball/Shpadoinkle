@@ -26,6 +26,7 @@ module Types (module Types, module Types.Prim) where
 import           Control.Lens                      as Lens hiding (Context)
 import           Control.Lens.TH                   ()
 import           Control.Monad.Except
+import           Control.PseudoInverseCategory     (EndoIso, miso)
 import           Data.Aeson
 import           Data.Function
 import           Data.Maybe
@@ -156,6 +157,33 @@ instance (FromJSON (Column [SpaceCraft])) => FromJSON Frontend
 
 
 makeLenses ''Frontend
+
+
+-- TODO: can we get rid of this coproduct boilerplate?
+type FrontendCoproduct = Either (Maybe Text)
+                         (Either Roster
+                          (Either (Maybe SpaceCraftId, SpaceCraftUpdate 'Edit)
+                           ()))
+
+
+frontendToCoproduct :: Frontend -> FrontendCoproduct
+frontendToCoproduct = \case
+  MEcho t -> Left t
+  MList r -> Right (Left r)
+  MDetail i e -> Right (Right (Left (i,e)))
+  M404 -> Right (Right (Right ()))
+
+
+coproductToFrontend :: FrontendCoproduct -> Frontend
+coproductToFrontend = \case
+  Left t -> MEcho t
+  Right (Left r) -> MList r
+  Right (Right (Left (i,e))) -> MDetail i e
+  Right (Right (Right ())) -> M404
+
+
+coproductIsoFrontend :: EndoIso FrontendCoproduct Frontend
+coproductIsoFrontend = miso coproductToFrontend frontendToCoproduct
 
 
 data Route
