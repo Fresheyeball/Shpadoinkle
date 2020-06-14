@@ -9,7 +9,7 @@ If you would like to follow along, it's advised you either:
 
 == Hello World
 
-Let's get a basic Hello World app up. Luckily that is not too hard (but not too easy either).
+Let's get a basic Hello World app up. Luckily that is not too hard (but not too easy either):
 
 [source,haskell]
 ----
@@ -31,9 +31,9 @@ main = runJSorWarp 8080 $ -- <1>
 
 == Addition
 
-Now that we have our hello world, let's add some interactivity, and perform addition on the part of the user.
+Now that we have our hello world, let's add some interactivity, and perform addition on the part of the user:
 
-To start we will need a simple single number input.
+To start we will need a simple single number input:
 
 [source,haskell]
 ----
@@ -70,11 +70,11 @@ view (l,r) = -- <1>
 
 [TIP]
 .Heterogenious Composition
-We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html m Int` and `Html m (Int, Int)` obviously do not unify. Since `(Html m)` is merely a Functor, fmap is the only means provided to resolve impediences and compose herogeneous components (as we do here).
+We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html m Int` and `Html m (Int, Int)` obviously do not unify. Because `(Html m)` is merely a Functor, fmap is the only means provided to resolve impediences and compose herogeneous components (as we do here).
 
 == Selectable Operations
 
-Now that we have some inputs that can perform addition, let's allow the user to select common operations. We start by making a new ADT.
+Now that we have some inputs that can perform addition, let the user select common operations. We start by making a new ADT:
 
 [source,haskell]
 ----
@@ -86,7 +86,7 @@ data Operation
     deriving (Eq, Show, Read, Enum, Bounded)
 ----
 
-And we will need some functions to get human readable display, as well as mapping to functions.
+And we will need some functions to get human readable display, as well as mapping to functions:
 
 [source,haskell]
 ----
@@ -107,7 +107,7 @@ opText = \case
   Division       -> "÷"
 ----
 
-And we will use a traditional html `<select>` element to let user's pick the operation.
+And we will use a traditional Html `<select>` element to let the user pick the operation.
 
 [source,haskell]
 ----
@@ -122,7 +122,7 @@ opSelect = select [ onOption $ read . unpack ] -- <1>
 <1> When the select element changes, we `read` the value and use that as the model.
 <2> Values are just the operation applied to `show`, so it matches when we `read`.
 
-Great! Now we have 3 members of our model, and so it's time for an actual data type.
+Great! Now we have three members of our model, and so it's time for an actual data type.
 
 [source,haskell]
 ----
@@ -133,7 +133,7 @@ data Model = Model
   } deriving (Eq, Show)
 ----
 
-And we will use the same technique with `<$>` to compose these components together.
+And we will use the same technique with `<$>` to compose these components together:
 
 [source,haskell]
 ----
