@@ -1,8 +1,9 @@
-= Shpadoinkle
-
+[.text-center]
+image::etc/logo.png[Eddie is loved forever,150,150]
+[.text-center]
 🤠 ⟶ 🥔 🤠
 
-
+[.text-center]
 ==== I think I know precisely what I mean...
 
 https://gitlab.com/fresheyeball/Shpadoinkle/commits/master[image:https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg[pipeline
@@ -10,6 +11,8 @@ status]]
 https://opensource.org/licenses/BSD-3-Clause[image:https://img.shields.io/badge/License-BSD%203--Clause-blue.svg[BSD-3]]
 https://builtwithnix.org[image:https://img.shields.io/badge/built%20with-nix-41439a[built
 with nix]]
+
+= Shpadoinkle
 
 https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a
 programming model for user interface development. It supports flexible,
