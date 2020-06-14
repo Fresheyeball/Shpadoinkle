@@ -36,7 +36,7 @@ htmlIfTasks :: [b] -> [Html m a] -> [Html m a]
 htmlIfTasks m h' = if Prelude.null m then [] else h'
 
 
-taskView :: MonadJSM m => Maybe TaskId -> Task -> Html m Model
+taskView :: Monad m => Maybe TaskId -> Task -> Html m Model
 taskView = memo $ \ed (Task (Description d) c tid) ->
   li [ id' . pack . show $ tid ^. _Wrapped
      , className [ ("completed", c == Complete)
@@ -62,7 +62,7 @@ taskView = memo $ \ed (Task (Description d) c tid) ->
   ]
 
 
-listFooter :: Applicative m => Int -> Int -> Visibility -> Html m Model
+listFooter :: Monad m => Int -> Int -> Visibility -> Html m Model
 listFooter = memo $ \ic cc v -> footer "footer" $
   [ Shpadoinkle.Html.span "todo-count"
     [ strong_ [ text . pack $ show ic ]
@@ -75,7 +75,7 @@ listFooter = memo $ \ic cc v -> footer "footer" $
 
 
 
-info :: Html m a
+info :: Monad m => Html m a
 info = footer "info"
   [ p_ [ "Double-click to edit a todo" ]
   , p_ [ "Credits ", a [ href "https://twitter.com/fresheyeball" ] [ "Isaac Shapira" ] ]
@@ -83,7 +83,7 @@ info = footer "info"
   ]
 
 
-newTaskForm :: MonadJSM m => Description -> Html m Model
+newTaskForm :: Monad m => Description -> Html m Model
 newTaskForm = memo $ \desc -> form [ className "todo-form", onSubmit (pur appendItem') ]
   [ input' [ className "new-todo"
            , value $ desc ^. _Wrapped
@@ -92,18 +92,18 @@ newTaskForm = memo $ \desc -> form [ className "todo-form", onSubmit (pur append
   ]
 
 
-todoList :: MonadJSM m => Maybe TaskId -> Visibility -> [Task] -> Html m Model
+todoList :: Monad m => Maybe TaskId -> Visibility -> [Task] -> Html m Model
 todoList = memo $ \ed v ts -> ul "todo-list" $ taskView ed <$> toVisible v ts
 
 
-toggleAllBtn :: Applicative m => [Html m Model]
+toggleAllBtn :: Monad m => [Html m Model]
 toggleAllBtn =
   [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange (pur toggleAll) ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
 
-render :: MonadJSM m => Model -> Html m Model
+render :: Monad m => Model -> Html m Model
 render m = div_
   [ section "todoapp" $
     header "header"

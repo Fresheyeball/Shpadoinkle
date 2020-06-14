@@ -160,7 +160,7 @@ neg = \case
   e -> Negate e
 
 
-view :: MonadJSM m => Model -> Html m Model
+view :: Monad m => Model -> Html m Model
 view x = H.div "calculator"
   [ H.div "readout" [ text . pack . show $ x ^. entry ]
   , ul "buttons"

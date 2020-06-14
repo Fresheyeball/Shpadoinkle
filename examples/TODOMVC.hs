@@ -33,7 +33,7 @@ htmlIfTasks :: Model -> [Html m a] -> [Html m a]
 htmlIfTasks m h' = if Prelude.null (_tasks m) then [] else h'
 
 
-taskView :: MonadJSM m => Model -> Task -> Html m Model
+taskView :: Monad m => Model -> Task -> Html m Model
 taskView m = memo $ \(Task (Description d) c tid) ->
   li [ id' . pack . show $ unTaskId tid
      , className [ ("completed", c == Complete)
@@ -59,7 +59,7 @@ taskView m = memo $ \(Task (Description d) c tid) ->
   ]
 
 
-listFooter :: Applicative m => Model -> Html m Model
+listFooter :: Monad m => Model -> Html m Model
 listFooter model = footer "footer" $
   [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ _tasks model in
     [ strong_ [ text . pack $ show co ]
@@ -72,7 +72,7 @@ listFooter model = footer "footer" $
 
 
 
-info :: Html m a
+info :: Monad m => Html m a
 info = footer "info"
   [ p_ [ "Double-click to edit a todo" ]
   , p_ [ "Credits ", a [ href "https://twitter.com/fresheyeball" ] [ "Isaac Shapira" ] ]
@@ -80,7 +80,7 @@ info = footer "info"
   ]
 
 
-newTaskForm :: MonadJSM m => Model -> Html m Model
+newTaskForm :: Monad m => Model -> Html m Model
 newTaskForm model = form [ className "todo-form", onSubmit (pur appendItem) ]
   [ input' [ className "new-todo"
            , value . unDescription $ _current model
@@ -89,18 +89,18 @@ newTaskForm model = form [ className "todo-form", onSubmit (pur appendItem) ]
   ]
 
 
-todoList :: MonadJSM m => Model -> Html m Model
+todoList :: Monad m => Model -> Html m Model
 todoList model = ul "todo-list" $ taskView model <$> toVisible (_visibility model) (_tasks model)
 
 
-toggleAllBtn :: Applicative m => [Html m Model]
+toggleAllBtn :: Monad m => [Html m Model]
 toggleAllBtn =
   [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange (pur toggleAll) ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
 
-view :: MonadJSM m => Model -> Html m Model
+view :: Monad m => Model -> Html m Model
 view model = div_
   [ section "todoapp" $
     header "header"

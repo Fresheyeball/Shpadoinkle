@@ -87,7 +87,7 @@ type m ~> n = forall a. m a -> n a
 
 
 -- | If you can provide a Natural Transformation from one Monad to another
--- then you may change the action of @Html@
+-- then you may change the action of @Html@.
 mapHtml :: Functor m => (m ~> n) -> Html m o -> Html n o
 mapHtml f = \case
   Node t ps cs -> Node t (fmap (mapProp f) <$> ps) (mapHtml f <$> cs)
@@ -96,7 +96,7 @@ mapHtml f = \case
 
 
 -- | If you can provide a Natural Transformation from one Monad to another
--- then you may change the action of @Prop@
+-- then you may change the action of @Prop@.
 mapProp :: Functor m => (m ~> n) -> Prop m o -> Prop n o
 mapProp f = \case
   PListener g -> PListener (\x y -> convertC f <$> g x y)
@@ -104,14 +104,18 @@ mapProp f = \case
   PFlag b     -> PFlag b
 
 
+-- | @Html m@ is a functor in the EndoIso category, where the objects are
+--   types and the morphisms are EndoIsos.
 instance Monad m => F.Functor EndoIso EndoIso (Html m) where
-  map (EndoIso f g i) = EndoIso (mapMC . mapply $ map' (mendo f))
-                                (mapMC . mapply $ map' (miso g i))
-                                (mapMC . mapply $ map' (miso i g))
+  map (EndoIso f g i) = EndoIso (mapMC . piapply $ map' (piendo f))
+                                (mapMC . piapply $ map' (piiso g i))
+                                (mapMC . piapply $ map' (piiso i g))
     where map' :: EndoIso a b -> EndoIso (Continuation m a) (Continuation m b)
           map' = F.map
 
 
+-- | Given a lens, you can change the type of an Html, by using the lens
+--   to convert the types of the continuations inside it.
 instance MapContinuations Html where
   mapMC f (Node t ps es) = Node t (unMapProps . mapMC f $ MapProps ps) (mapMC f <$> es)
   mapMC _ (Potato p) = Potato p
@@ -129,13 +133,13 @@ data Prop m o where
   -- a monadic action such as a side effect. This is the one and only place where you may
   -- introduce a custom monadic action.
   PListener :: (RawNode -> RawEvent -> JSM (Continuation m o)) -> Prop m o
-  -- | A boolean property, works as a flag
-  -- for example @("disabled", PFlag False)@ has no effect
-  -- while @("disabled", PFlag True)@ will add the @disabled@ attribute
+  -- | A boolean property works as a flag:
+  -- for example @("disabled", PFlag False)@ has no effect,
+  -- while @("disabled", PFlag True)@ will add the @disabled@ attribute.
   PFlag :: Bool -> Prop m o
 
 
--- | Strings are overloaded as HTML text nodes
+-- | Strings are overloaded as HTML text nodes:
 -- @
 --   "hiya" = TextNode "hiya"
 -- @
@@ -144,7 +148,7 @@ instance IsString (Html m o) where
   {-# INLINE fromString #-}
 
 
--- | Strings are overloaded as text props
+-- | Strings are overloaded as text props:
 -- @
 --   ("id", "foo") = ("id", PText "foo")
 -- @
@@ -153,15 +157,8 @@ instance IsString (Prop m o) where
   {-# INLINE fromString #-}
 
 
--- | Strings are overloaded as the class property
--- @
---   "active" = ("className", PText "active")
--- @
-instance {-# OVERLAPPING #-} IsString [(Text, Prop m o)] where
-  fromString = pure . ("className", ) . PText . pack
-  {-# INLINE fromString #-}
-
-
+-- | Prop is a functor in the EndoIso category (where the objects are types
+--  and the morphisms are EndoIsos).
 instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
   map :: forall a b. EndoIso a b -> EndoIso (Prop m a) (Prop m b)
   map f = EndoIso id mapFwd mapBack
@@ -169,14 +166,17 @@ instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
           f' = F.map f
 
           mapFwd (PText t) = PText t
-          mapFwd (PListener g) = PListener (\r e -> mapply f' <$> g r e)
+          mapFwd (PListener g) = PListener (\r e -> piapply f' <$> g r e)
           mapFwd (PFlag b) = PFlag b
 
           mapBack (PText t) = PText t
-          mapBack (PListener g) = PListener (\r e -> mapply (minverse f') <$> g r e)
+          mapBack (PListener g) = PListener (\r e -> piapply (piinverse f') <$> g r e)
           mapBack (PFlag b) = PFlag b
 
 
+-- | Given a lens, you can change the type of a Prop, by using the
+--   lens to convert the types of the continuations which it contains
+--   if it is a listener.
 instance MapContinuations Prop where
   mapMC _ (PText t) = PText t
   mapMC f (PListener g) = PListener (\r e -> f <$> g r e)
@@ -192,10 +192,14 @@ type Props m o = [(Text, Prop m o)]
 newtype MapProps m o = MapProps { unMapProps :: Props m o }
 
 
+-- | Props is a functor in the EndoIso category (where the objects are
+--  types and the morphisms are EndoIsos).
 instance Monad m => F.Functor EndoIso EndoIso (MapProps m) where
-  map f = miso MapProps unMapProps . fmapA (msecond (F.map f)) . miso unMapProps MapProps
+  map f = piiso MapProps unMapProps . fmapA (pisecond (F.map f)) . piiso unMapProps MapProps
 
 
+-- | Given a lens, you can change the type of a Props, by using the lens
+--   to convert the types of the continuations inside.
 instance MapContinuations MapProps where
   mapMC f = MapProps . fmap (second (mapMC f)) . unMapProps
 

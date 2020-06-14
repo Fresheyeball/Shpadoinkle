@@ -118,7 +118,7 @@ withHydration s r = do
 -- data. This function returns a script tag that makes a global variable "initState"
 -- containing a JSON representation to be used as the initial state of the application
 -- on page load. Typically this is used on the server side.
-toHydration :: ToJSON a => a -> Html m b
+toHydration :: ToJSON a => Htmlish h p => a -> h b
 toHydration fe =
   h "script" [] [ text . decodeUtf8 . toStrict $ "window.initState = '" <> encode fe <> "'" ]
 

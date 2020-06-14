@@ -1,86 +1,123 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
+
 
 module Control.PseudoInverseCategory
   ( ToHask (..)
   , HasHaskFunctors (..)
   , PseudoInverseCategory (..)
   , PIArrow (..)
-  , mswap
-  , massoc
+  , piswap
+  , piassoc
   , EndoIso (..)
+  , pimap
   ) where
 
-import Prelude hiding ((.), id)
-import Control.Category
-import Data.Tuple (swap)
+
+import           Prelude hiding ((.), id)
+import qualified Control.Categorical.Functor as F
+import           Control.Category
+import           Data.Functor.Identity
+import           Data.Tuple (swap)
+
 
 -- | A functor from another category to Hask. Laws:
 -- ```Haskell
---   mapply (f . g) = mapply f . mapply g
---   mapply id = id
+--   piapply (f . g) = piapply f . piapply g
+--   piapply id = id
 -- ```
 class Category a => ToHask a where
-  mapply :: a x y -> x -> y
+  piapply :: a x y -> x -> y
+
 
 class Category a => HasHaskFunctors a where
   fmapA :: Functor f => a x y -> a (f x) (f y)
+
 
 -- | A pseudo-inverse category is a category where every morphism has a pseudo-inverse.
 --  What this means is defined by the following laws (and perhaps things can be removed
 --  and perhaps things should be added):
 -- ```Haskell
---   mpower 1 f = f
---   mleft (mpower 0 f) = id
---   mright (mpower 0 f) = id
---   mpower (n+1) f = mleft f . mpower n f
---   minverse (minverse f) = f
---   f . minverse f = mright (mpower 2 f)
---   minverse f . f = mleft (mpower 2 f)
---   mleft (mright f) = mright (mright f) = mright f
---   mright (mleft f) = mleft (mleft f) = mleft f
---   minverse (mleft f) = mleft f
---   minverse (mright f) = mright f
+--   pipower 1 f = f
+--   pileft (pipower 0 f) = id
+--   piright (pipower 0 f) = id
+--   pipower (n+1) f = pileft f . pipower n f
+--   piinverse (piinverse f) = f
+--   f . piinverse f = piright (pipower 2 f)
+--   piinverse f . f = pileft (pipower 2 f)
+--   pileft (piright f) = piright (piright f) = piright f
+--   piright (pileft f) = pileft (pileft f) = pileft f
+--   piinverse (pileft f) = pileft f
+--   piinverse (piright f) = piright f
 -- ```
 class Category a => PseudoInverseCategory a where
-  mpower :: Int -> a x y -> a x y -- requires n >= 0
-  mleft :: a x y -> a x x
-  mright :: a x y -> a y y
-  minverse :: a x y -> a y x
+  -- | Apply a morphism n times, n >= 0.
+  pipower :: Int -> a x y -> a x y
+
+  -- | Change a morphism into an endomorphism of its domain.
+  pileft :: a x y -> a x x
+
+  -- | Change a morphism into an endomorphism of its codomain.
+  piright :: a x y -> a y y
+
+  -- | Pseudo-invert a morphism. The pseudo-inverse of a morphism may or may not
+  --   be its inverse. f is the inverse of g means that f.g = id = g.f.
+  --   If f has an inverse, then minverse f may or may not be the inverse
+  --   of f.
+  piinverse :: a x y -> a y x
+
 
 -- | An analogue of the Arrow typeclass for pseudo-inverse categories. Laws:
 -- ```Haskell
---   miso id id = id
---   mendo id = id
---   miso (f . g) (h . i) = miso f h . miso g i
---   mendo (f . h) = mendo f . mendo h
---   mfirst (miso f g) = miso (first f) (first g)
---   mfirst (mendo f) = mendo (first f)
---   mfirst (f . g) = mfirst f . mfirst g
---   msplit id g . mfirst f = mfirst f . msplit id g
---   massoc . first (first f) = first f . massoc
---   msecond f = mswap . mfirst f . mswap
---   msplit f g = mfirst f . msecond g
---   mfan f g = miso (\b -> (b,b)) fst . msplit f g
---   minverse (miso f g) = miso g f
---   minverse (mendo f) = mendo f
---   mapply (miso f g) = f
---   mapply (minverse (miso f g)) = g
---   mapply (mendo f) = f
+--   piiso id id = id
+--   piendo id = id
+--   piiso (f . g) (h . i) = piiso f h . piiso g i
+--   piendo (f . h) = piendo f . piendo h
+--   pifirst (piiso f g) = piiso (first f) (first g)
+--   pifirst (piendo f) = piendo (first f)
+--   pifirst (f . g) = pifirst f . pifirst g
+--   pisplit id g . pifirst f = pifirst f . pisplit id g
+--   piassoc . first (first f) = first f . piassoc
+--   pisecond f = piswap . pifirst f . piswap
+--   pisplit f g = pifirst f . pisecond g
+--   pifan f g = piiso (\b -> (b,b)) fst . pisplit f g
+--   piinverse (piiso f g) = piiso g f
+--   piinverse (piendo f) = piendo f
+--   piapply (piiso f g) = f
+--   piapply (piinverse (piiso f g)) = g
+--   piapply (piendo f) = f
+--   
 -- ```
 class PseudoInverseCategory a => PIArrow a where
-  miso :: (b -> c) -> (c -> b) -> a b c
-  mendo :: (b -> b) -> a b b
-  mfirst :: a b c -> a (b, d) (c, d)
-  msecond :: a b c -> a (d, b) (d, c)
-  msplit :: a b c -> a d e -> a (b, d) (c, e)
-  mfan :: a b c -> a b d -> a b (c, d)
+  -- | Create an arrow from an isomorphism (restricted version of arr).
+  piiso :: (b -> c) -> (c -> b) -> a b c
 
-mswap :: PIArrow a => a (b, c) (c, b)
-mswap = miso swap swap
+  -- | Create an arrow from an endomorphism (restricted version of arr).
+  piendo :: (b -> b) -> a b b
 
-massoc :: PIArrow a => a ((b,c),d) (b,(c,d))
-massoc = miso (\((x,y),z) -> (x,(y,z))) (\(x,(y,z)) -> ((x,y),z))
+  -- | Apply an arrow to the first coordinate of a tuple.
+  pifirst :: a b c -> a (b, d) (c, d)
+
+  -- | Apply an arrow to the second coordinate of a tuple.
+  pisecond :: a b c -> a (d, b) (d, c)
+
+  -- | Combine two arrows to work in parallel on a tuple.
+  pisplit :: a b c -> a d e -> a (b, d) (c, e)
+
+  -- | Combine two arrows on the same input to output a tuple.
+  pifan :: a b c -> a b d -> a b (c, d)
+
+
+-- | Every pseudo-inverse category has isomorphisms to swap the coordinates of a tuple.
+piswap :: PIArrow a => a (b, c) (c, b)
+piswap = piiso swap swap
+
+
+-- | Every pseudo-inverse category has isomorphisms to change the associativity of a 3-tuple.
+piassoc :: PIArrow a => a ((b,c),d) (b,(c,d))
+piassoc = piiso (\((x,y),z) -> (x,(y,z))) (\(x,(y,z)) -> ((x,y),z))
+
 
 -- | This is a pseudo-inverse category where a morphism is a composition of an endomorphism
 --   on the domain and an isomorphism of the domain with the codomain.
@@ -94,36 +131,49 @@ massoc = miso (\((x,y),z) -> (x,(y,z))) (\(x,(y,z)) -> ((x,y),z))
 -- of endomorphisms and isomorphisms in Hask.
 data EndoIso a b = EndoIso (a -> a) (a -> b) (b -> a)
 
+
 instance Category EndoIso where
   id = EndoIso id id id
 
   EndoIso i j k . EndoIso f g h = EndoIso (f . h . i . g) (j . g) (h . k)
 
+
+instance F.Functor EndoIso (->) Identity where
+  map (EndoIso f g _) = Identity . g . f . runIdentity
+
+
 instance ToHask EndoIso where
-  mapply (EndoIso f g _) = g.f
+  piapply (EndoIso f g _) = g.f
+
+
+pimap :: F.Functor EndoIso EndoIso f => EndoIso a b -> f a -> f b
+pimap = (\(EndoIso f g _) -> g.f) . F.map
+
 
 instance HasHaskFunctors EndoIso where
   fmapA (EndoIso f g h) = EndoIso (fmap f) (fmap g) (fmap h)
 
+
 instance PseudoInverseCategory EndoIso where
-  mpower n (EndoIso f g h)
-    | n < 0 = error "mpower with n < 0"
-    | n > 0 = let EndoIso f' _ _ = mpower (n-1) (EndoIso f g h) in EndoIso (f.f') g h
+  pipower n (EndoIso f g h)
+    | n < 0 = error "pipower with n < 0"
+    | n > 0 = let EndoIso f' _ _ = pipower (n-1) (EndoIso f g h) in EndoIso (f.f') g h
     | otherwise = EndoIso id g h
-  mleft (EndoIso f _ _) = EndoIso f id id
-  mright (EndoIso f g h) = EndoIso (g.f.h) id id
-  minverse (EndoIso f g h) = EndoIso (g.f.h) h g
+  pileft (EndoIso f _ _) = EndoIso f id id
+  piright (EndoIso f g h) = EndoIso (g.f.h) id id
+  piinverse (EndoIso f g h) = EndoIso (g.f.h) h g
+
 
 instance PIArrow EndoIso where
-  miso = EndoIso id
-  mendo f = EndoIso f id id
-  mfirst (EndoIso f g h) = EndoIso (\(x,y)->(f x,y)) (\(x,y)->(g x,y)) (\(x,y)->(h x,y))
-  msecond (EndoIso f g h) = EndoIso (\(x,y)->(x,f y)) (\(x,y)->(x,g y)) (\(x,y)->(x,h y))
-  msplit (EndoIso f g h) (EndoIso i j k) = EndoIso
+  piiso = EndoIso id
+  piendo f = EndoIso f id id
+  pifirst (EndoIso f g h) = EndoIso (\(x,y)->(f x,y)) (\(x,y)->(g x,y)) (\(x,y)->(h x,y))
+  pisecond (EndoIso f g h) = EndoIso (\(x,y)->(x,f y)) (\(x,y)->(x,g y)) (\(x,y)->(x,h y))
+  pisplit (EndoIso f g h) (EndoIso i j k) = EndoIso
     (\(x,y) -> (f x, i y))
     (\(x,y) -> (g x, j y))
     (\(x,y) -> (h x, k y))
-  mfan (EndoIso f g h) (EndoIso i j _) = EndoIso
+  pifan (EndoIso f g h) (EndoIso i j _) = EndoIso
     (\x -> f (i x))
     (\x -> (g x, j x))
     (\(x,_) -> h x) -- it shouldn't matter which side we use to go back because we have isomorphisms

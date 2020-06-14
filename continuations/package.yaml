@@ -30,7 +30,6 @@ extra-source-files:
 
 dependencies:
     - base >= 4.12.0 && < 4.16
-    - either >= 4.12 && < 5.0
 
 
 library:

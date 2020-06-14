@@ -6,8 +6,11 @@ module Shpadoinkle
   , liftC, liftMC, leftC, rightC, leftMC, rightMC
   , maybeC, maybeMC
   , writeUpdate, shouldUpdate
+  , EndoIso (..), piiso, pimap
   ) where
 
-import Shpadoinkle.Core
-import Shpadoinkle.Functor
-import Shpadoinkle.Continuation
+import           Control.PseudoInverseCategory
+import           Shpadoinkle.Continuation
+import           Shpadoinkle.Core
+import           Shpadoinkle.Functor
+

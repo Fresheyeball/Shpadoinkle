@@ -116,7 +116,7 @@ instance Monoid (Theme m a) where
 view :: forall m a.
   ( Tabular a
   , Effect a m
-  , Applicative m
+  , Monad m
   , Humanize (Column a)
   , Bounded  (Column a)
   , Ord      (Column a)
@@ -128,7 +128,7 @@ view = viewWith mempty
 viewWith :: forall m a.
   ( Tabular a
   , Effect a m
-  , Applicative m
+  , Monad m
   , Humanize (Column a)
   , Bounded  (Column a)
   , Ord      (Column a)

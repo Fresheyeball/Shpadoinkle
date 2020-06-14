@@ -68,8 +68,8 @@ instance Humanize String where
 
 
 class Present a where
-  present :: a -> [Html m b]
-  default present :: Humanize a => a -> [Html m b]
+  present :: Htmlish h p => a -> [h b]
+  default present :: Humanize a => Htmlish h p => a -> [h b]
   present = pure . text . humanize
   {-# INLINE present #-}
 

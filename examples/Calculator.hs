@@ -64,7 +64,7 @@ num x = input'
  ]
 
 
-view :: MonadJSM m => Model -> Html m Model
+view :: Monad m => Model -> Html m Model
 view model = div_
  [ constly (set left) (num (_left model))
  , constly (set operation) opSelect

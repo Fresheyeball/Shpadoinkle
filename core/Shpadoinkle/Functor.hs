@@ -10,9 +10,9 @@
 {-# LANGUAGE OverloadedStrings      #-}
 
 module Shpadoinkle.Functor
-  ( Html' (..), Prop' (..), Props', Constly (..)
+  ( Html' (..), Prop' (..), Props'
+  , Constly (..), static
   , Propish (..), Htmlish (..)
-  , eitherH3, eitherH4, eitherH5
   , listener, listenRaw, listen, listen'
   , mapProps, mapChildren, injectProps
   ) where
@@ -94,9 +94,19 @@ instance Applicative m => Constly Prop' (Prop m) where
   constly _ (PFlag' b) = PFlag b
 
 
+static :: Constly f g => f a -> g b
+static = constly (const id)
+
+
+-- | Abstraction of property types subsuming `Prop m` and `Prop'`.
 class Propish p e | p -> e where
+  -- | Create a text property.
   textProp :: Text -> p o
+
+  -- | Create an event listener property.
   listenerProp :: (RawNode -> RawEvent -> JSM (e o)) -> p o
+
+  -- | Create a boolean property.
   flagProp :: Bool -> p o
 
 
@@ -112,39 +122,31 @@ instance Propish (Prop m) (Continuation m) where
   flagProp = PFlag
 
 
+-- | Abstraction of HTML types subsuming `Html m` and `Html'`.
 class Htmlish h p | h -> p where
-  -- | JSX style HTML element constructor
+  -- | Construct an HTML element JSX-style.
   h :: Text -> [(Text, p o)] -> [h o] -> h o
-  -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'
+
+  -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'.
   baked :: JSM RawNode -> h o
-  -- | Construct a text node
+
+  -- | Construct a text node.
   text :: Text -> h o
+
   -- | Lens to props
   props :: Applicative f => ([(Text, p o)] -> f [(Text, p o)]) -> h o -> f (h o)
+
   -- | Lens to children
   children :: Applicative f => ([h o] -> f [h o]) -> h o -> f (h o)
+
   -- | Lens to tag name
   name :: Applicative f => (Text -> f Text) -> h o -> f (h o)
+
   -- | Lens to content of @TextNode@s
   textContent :: Applicative f => (Text -> f Text) -> h o -> f (h o)
-  -- | Heterogenerous alternatives
+
+  -- | Construct an HTML element out of heterogeneous alternatives.
   eitherH :: (a -> h a) -> (b -> h b) -> Either a b -> h (Either a b)
-
-
-eitherH3 :: Htmlish h p => (a -> h a) -> (b -> h b) -> (c -> h c)
-         -> Either a (Either b c) -> h (Either a (Either b c))
-eitherH3 a b c = a `eitherH` (b `eitherH` c)
-
-
-eitherH4 :: Htmlish h p => (a -> h a) -> (b -> h b) -> (c -> h c) -> (d -> h d)
-         -> Either a (Either b (Either c d)) -> h (Either a (Either b (Either c d)))
-eitherH4 a b c d = a `eitherH` (b `eitherH` (c `eitherH` d))
-
-
-eitherH5 :: Htmlish h p => (a -> h a) -> (b -> h b) -> (c -> h c) -> (d -> h d) -> (e -> h e)
-         -> Either a (Either b (Either c (Either d e)))
-         -> h (Either a (Either b (Either c (Either d e))))
-eitherH5 a b c d e = a `eitherH` (b `eitherH` (c `eitherH` (d `eitherH` e)))
 
 
 instance Htmlish Html' Prop' where
@@ -195,8 +197,13 @@ instance IsString (Prop' o) where
   {-# INLINE fromString #-}
 
 
-instance {-# OVERLAPPING #-} IsString [(Text, Prop' o)] where
+-- | Strings are overloaded as the class property:
+-- @
+--   "active" = ("className", PText "active")
+-- @
+instance {-# OVERLAPPING #-} Propish p e => IsString [(Text, p o)] where
   fromString = pure . ("className", ) . textProp . pack
+  {-# INLINE fromString #-}
 
 
 -- | Construct a simple listener property that will perform an action.
