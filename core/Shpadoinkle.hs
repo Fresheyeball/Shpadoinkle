@@ -1,6 +1,7 @@
 module Shpadoinkle
   ( module Shpadoinkle.Core
   , module Shpadoinkle.Functor
+  , module Shpadoinkle.EndoIso
   , Continuation (..), pur, impur, causes
   , MapContinuations (..), convertC
   , liftC, liftMC, leftC, rightC, leftMC, rightMC
@@ -12,5 +13,6 @@ module Shpadoinkle
 import           Control.PseudoInverseCategory
 import           Data.Continuation
 import           Shpadoinkle.Core
+import           Shpadoinkle.EndoIso
 import           Shpadoinkle.Functor
 

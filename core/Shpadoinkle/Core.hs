@@ -1,25 +1,13 @@
-{-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE CPP                    #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE ExplicitNamespaces     #-}
 {-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE InstanceSigs           #-}
-{-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE PartialTypeSignatures  #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE StandaloneDeriving     #-}
-{-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
+
 
 {-|
    I think I know precisely what I mean.
@@ -31,188 +19,37 @@
    Backend is focused on letting you build your frontend the way you want to. It's as unopinionated as possible, beyond providing a concrete programming model.
 -}
 
+
 module Shpadoinkle.Core
-  ( Html (..), Prop (..), Props, MapProps (..)
-  , mapHtml, mapProp
-  , Backend (..)
-  , shpadoinkle, fullPage, fullPageJSM, simple
-  , type (~>)
-  , RawNode (..), RawEvent (..)
-  , MonadJSM, JSM, liftJSM
-  , TVar, newTVarIO, readTVarIO
+  ( Backend (..)
+  , Constantly (..)
+  , shpadoinkle
   , runJSorWarp
-  , runJSM, askJSM
-  , module Shpadoinkle.Class
+  , fullPage
+  , fullPageJSM
+  , simple
+  , static
   ) where
 
 
-import           Control.Arrow
-import qualified Control.Categorical.Functor      as F
-import           Control.Category                 ((.))
-import           Control.PseudoInverseCategory
-import           Data.Continuation
-import           Data.Kind
-import           Data.String
-import           Data.Text
-import           Language.Javascript.JSaddle
-import           Prelude                          hiding ((.))
-import           UnliftIO.STM
+import           Control.Arrow                    (second)
+import           Data.Continuation                (pur, shouldUpdate)
+import           Language.Javascript.JSaddle      (JSM)
+import           UnliftIO.STM                     (TVar, newTVarIO)
 
 #ifndef ghcjs_HOST_OS
-import           Language.Javascript.JSaddle.Warp
+import           Language.Javascript.JSaddle.Warp (run)
 #endif
 
 import           Shpadoinkle.Class
+import           Shpadoinkle.EndoIso
+import           Shpadoinkle.Functor
 
-
--- | This is the core type in Backend.
--- The (Html m) 'Functor' is used to describe HTML documents.
--- Please note, this is NOT the Virtual DOM used by Backend.
--- This type backs a DSL that is then /interpreted/ into Virtual DOM
--- by the backend of your choosing. HTML comments are not supported.
-data Html :: (Type -> Type) -> Type -> Type where
-  -- | A standard node in the dom tree
-  Node :: Text -> [(Text, Prop m o)] -> [Html m o] -> Html m o
-  -- | If you can bake an element into a 'RawNode' then you can embed it as a baked potato.
-  -- Backend does not provide any state management or abstraction to deal with
-  -- custom embedded content. It's on you to decide how and when this 'RawNode' will
-  -- be updated. For example, if you wanted to embed a google map as a baked potato,
-  -- and you are driving your Backend view with a 'TVar', you would need to build
-  -- the 'RawNode' for this map /outside/ of your Backend view, and pass it in
-  -- as an argument. The 'RawNode' is a reference you control.
-  Potato :: JSM RawNode -> Html m o
-  -- | The humble text node
-  TextNode :: Text -> Html m o
-
-
--- | Natural Transformation
-type m ~> n = forall a. m a -> n a
-
-
--- | If you can provide a Natural Transformation from one Monad to another
--- then you may change the action of @Html@.
-mapHtml :: Functor m => (m ~> n) -> Html m o -> Html n o
-mapHtml f = \case
-  Node t ps cs -> Node t (fmap (mapProp f) <$> ps) (mapHtml f <$> cs)
-  Potato p -> Potato p
-  TextNode t -> TextNode t
-
-
--- | If you can provide a Natural Transformation from one Monad to another
--- then you may change the action of @Prop@.
-mapProp :: Functor m => (m ~> n) -> Prop m o -> Prop n o
-mapProp f = \case
-  PListener g -> PListener (\x y -> convertC f <$> g x y)
-  PText t     -> PText t
-  PFlag b     -> PFlag b
-
-
--- | @Html m@ is a functor in the EndoIso category, where the objects are
---   types and the morphisms are EndoIsos.
-instance Monad m => F.Functor EndoIso EndoIso (Html m) where
-  map (EndoIso f g i) = EndoIso (mapMC . piapply $ map' (piendo f))
-                                (mapMC . piapply $ map' (piiso g i))
-                                (mapMC . piapply $ map' (piiso i g))
-    where map' :: EndoIso a b -> EndoIso (Continuation m a) (Continuation m b)
-          map' = F.map
-
-
--- | Given a lens, you can change the type of an Html, by using the lens
---   to convert the types of the continuations inside it.
-instance MapContinuations Html where
-  mapMC f (Node t ps es) = Node t (unMapProps . mapMC f $ MapProps ps) (mapMC f <$> es)
-  mapMC _ (Potato p) = Potato p
-  mapMC _ (TextNode t) = TextNode t
-
-
--- | Properties of a DOM node. Backend does not use attributes directly,
--- but rather is focused on the more capable properties that may be set on a dom
--- node in JavaScript. If you wish to add attributes, you may do so
--- by setting its corresponding property.
-data Prop m o where
-  -- | A text property
-  PText :: Text -> Prop m o
-  -- | Event listeners are provided with the 'RawNode' target, and the 'RawEvent', and may perform
-  -- a monadic action such as a side effect. This is the one and only place where you may
-  -- introduce a custom monadic action.
-  PListener :: (RawNode -> RawEvent -> JSM (Continuation m o)) -> Prop m o
-  -- | A boolean property works as a flag:
-  -- for example @("disabled", PFlag False)@ has no effect,
-  -- while @("disabled", PFlag True)@ will add the @disabled@ attribute.
-  PFlag :: Bool -> Prop m o
-
-
--- | Strings are overloaded as HTML text nodes:
--- @
---   "hiya" = TextNode "hiya"
--- @
-instance IsString (Html m o) where
-  fromString = TextNode . pack
-  {-# INLINE fromString #-}
-
-
--- | Strings are overloaded as text props:
--- @
---   ("id", "foo") = ("id", PText "foo")
--- @
-instance IsString (Prop m o) where
-  fromString = PText . pack
-  {-# INLINE fromString #-}
-
-
--- | Prop is a functor in the EndoIso category (where the objects are types
---  and the morphisms are EndoIsos).
-instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
-  map :: forall a b. EndoIso a b -> EndoIso (Prop m a) (Prop m b)
-  map f = EndoIso id mapFwd mapBack
-    where f' :: EndoIso (Continuation m a) (Continuation m b)
-          f' = F.map f
-
-          mapFwd (PText t)     = PText t
-          mapFwd (PListener g) = PListener (\r e -> piapply f' <$> g r e)
-          mapFwd (PFlag b)     = PFlag b
-
-          mapBack (PText t) = PText t
-          mapBack (PListener g) = PListener (\r e -> piapply (piinverse f') <$> g r e)
-          mapBack (PFlag b) = PFlag b
-
-
--- | Given a lens, you can change the type of a Prop, by using the
---   lens to convert the types of the continuations which it contains
---   if it is a listener.
-instance MapContinuations Prop where
-  mapMC _ (PText t)     = PText t
-  mapMC f (PListener g) = PListener (\r e -> f <$> g r e)
-  mapMC _ (PFlag b)     = PFlag b
-
-
--- | Type alias for convenience. Typing out the nested brackets is tiresome.
-type Props m o = [(Text, Prop m o)]
-
-
--- | Newtype to deal with the fact that we can't make the typeclass instances
---   for Endofunctor EndoIso and MapContinuations using the Props type alias.
-newtype MapProps m o = MapProps { unMapProps :: Props m o }
-
-
--- | Props is a functor in the EndoIso category (where the objects are
---  types and the morphisms are EndoIsos).
-instance Monad m => F.Functor EndoIso EndoIso (MapProps m) where
-  map f = piiso MapProps unMapProps . fmapA (pisecond (F.map f)) . piiso unMapProps MapProps
-
-
--- | Given a lens, you can change the type of a Props, by using the lens
---   to convert the types of the continuations inside.
-instance MapContinuations MapProps where
-  mapMC f = MapProps . fmap (second (mapMC f)) . unMapProps
-
-
-
--- |
--- patch raw Nothing >=> patch raw Nothing = patch raw Nothing
 
 -- | The Backend class describes a backend that can render 'Html'.
 -- Backends are generally Monad Transformers @b@ over some Monad @m@.
+--
+-- prop> patch raw Nothing >=> patch raw Nothing = patch raw Nothing
 class Backend b m a | b m -> a where
   -- | VNode type family allows backends to have their own Virtual DOM.
   -- As such we can change out the rendering of our Backend view
@@ -223,7 +60,7 @@ class Backend b m a | b m -> a where
     :: (m ~> JSM)
     -- ^ Natural transformation for some @m@ to 'JSM'.
     -- This is how a Backend gets access to 'JSM' to perform the rendering side effects.
-    -> Html (b m) a
+    -> Html' (b m) a
     -- ^ 'Html' to interpret
     -> b m (VNode b m)
     -- ^ Effect producing the Virtual DOM representation
@@ -260,7 +97,7 @@ shpadoinkle
   -- ^ What is the initial state?
   -> TVar a
   -- ^ How can we know when to update?
-  -> (a -> Html (b m) a)
+  -> (a -> Html' (b m) a)
   -- ^ How should the HTML look?
   -> b m RawNode
   -- ^ Where do we render?
@@ -282,6 +119,7 @@ shpadoinkle toJSM toM initial model view stage = do
     _ <- j $ patch c Nothing n :: JSM (VNode b m)
     return ()
 
+
 -- | Wrapper around @shpadoinkle@ for full page apps
 -- that do not need outside control of the territory
 fullPage
@@ -292,7 +130,7 @@ fullPage
   -- ^ What backend are we running?
   -> a
   -- ^ What is the initial state?
-  -> (a -> Html (b m) a)
+  -> (a -> Html' (b m) a)
   -- ^ How should the html look?
   -> b m RawNode
   -- ^ Where do we render?
@@ -315,7 +153,7 @@ fullPageJSM
   -- ^ What backend are we running?
   -> a
   -- ^ What is the initial state?
-  -> (a -> Html (b JSM) a)
+  -> (a -> Html' (b JSM) a)
   -- ^ How should the html look?
   -> b JSM RawNode
   -- ^ Where do we render?
@@ -346,9 +184,31 @@ simple
   -- ^ What backend are we running?
   -> a
   -- ^ what is the initial state?
-  -> (a -> Html (b JSM) a)
+  -> (a -> Html' (b JSM) a)
   -- ^ how should the html look?
   -> b JSM RawNode
   -- ^ where do we render?
   -> JSM ()
 simple = fullPageJSM
+{-# INLINE simple #-}
+
+
+class Constantly f g where
+  constly :: (a -> b -> b) -> f a -> g b
+
+
+instance Applicative m => Constantly Html (Html' m) where
+  constly f (Node t ps es) = Node' t (second (constly f) <$> ps) (fmap (constly f) es)
+  constly _ (Potato p) = Potato' p
+  constly _ (TextNode t) = TextNode' t
+
+
+instance Applicative m => Constantly Prop (Prop' m) where
+  constly _ (PText t)     = PText' t
+  constly f (PListener g) = PListener' (\r e -> pur . f <$> g r e)
+  constly _ (PFlag b)     = PFlag' b
+
+
+static :: Constantly f g => f a -> g b
+static = constly (const id)
+
