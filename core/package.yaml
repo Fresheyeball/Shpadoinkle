@@ -1,7 +1,7 @@
 name:         Shpadoinkle
 license:      BSD3
 license-file: LICENSE
-version:      0.1.0.0
+version:      0.1.1.0
 author:       Isaac Shapira
 maintainer:   fresheyeball@protonmail.com
 category:     Web
@@ -50,8 +50,6 @@ library:
     - jsaddle   >= 0.9.7 && < 0.20
     - text      >= 1.2.3 && < 1.3
     - unliftio
-
-    - Shpadoinkle-continuations  >= 0.1 && < 0.2
 
 
 git: https://gitlab.com/fresheyeball/Shpadoinkle.git

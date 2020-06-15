@@ -42,24 +42,27 @@ module Shpadoinkle.Core
   , TVar, newTVarIO, readTVarIO
   , runJSorWarp
   , runJSM, askJSM
+  , module Shpadoinkle.Class
   ) where
 
 
-import           Prelude                           hiding ((.))
 import           Control.Arrow
-import           Control.Category                  ((.))
-import qualified Control.Categorical.Functor as F
+import qualified Control.Categorical.Functor      as F
+import           Control.Category                 ((.))
 import           Control.PseudoInverseCategory
+import           Data.Continuation
 import           Data.Kind
 import           Data.String
 import           Data.Text
 import           Language.Javascript.JSaddle
+import           Prelude                          hiding ((.))
+import           UnliftIO.STM
+
 #ifndef ghcjs_HOST_OS
 import           Language.Javascript.JSaddle.Warp
 #endif
-import           UnliftIO.STM
 
-import           Shpadoinkle.Continuation
+import           Shpadoinkle.Class
 
 
 -- | This is the core type in Backend.
@@ -165,9 +168,9 @@ instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
     where f' :: EndoIso (Continuation m a) (Continuation m b)
           f' = F.map f
 
-          mapFwd (PText t) = PText t
+          mapFwd (PText t)     = PText t
           mapFwd (PListener g) = PListener (\r e -> piapply f' <$> g r e)
-          mapFwd (PFlag b) = PFlag b
+          mapFwd (PFlag b)     = PFlag b
 
           mapBack (PText t) = PText t
           mapBack (PListener g) = PListener (\r e -> piapply (piinverse f') <$> g r e)
@@ -178,9 +181,9 @@ instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
 --   lens to convert the types of the continuations which it contains
 --   if it is a listener.
 instance MapContinuations Prop where
-  mapMC _ (PText t) = PText t
+  mapMC _ (PText t)     = PText t
   mapMC f (PListener g) = PListener (\r e -> f <$> g r e)
-  mapMC _ (PFlag b) = PFlag b
+  mapMC _ (PFlag b)     = PFlag b
 
 
 -- | Type alias for convenience. Typing out the nested brackets is tiresome.
@@ -203,14 +206,6 @@ instance Monad m => F.Functor EndoIso EndoIso (MapProps m) where
 instance MapContinuations MapProps where
   mapMC f = MapProps . fmap (second (mapMC f)) . unMapProps
 
-
--- | A DOM node reference.
--- Useful for building baked potatoes, and binding a Backend view to the page
-newtype RawNode  = RawNode  { unRawNode  :: JSVal }
--- | A raw event object reference
-newtype RawEvent = RawEvent { unRawEvent :: JSVal }
-instance ToJSVal   RawNode where toJSVal   = return . unRawNode
-instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
 
 
 -- |

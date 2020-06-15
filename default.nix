@@ -18,7 +18,6 @@ let
 
   packages = {
     inherit (haskell.packages.${util.compilerjs})
-    Shpadoinkle-continuations
     Shpadoinkle
     Shpadoinkle-backend-snabbdom
     Shpadoinkle-backend-static

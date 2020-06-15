@@ -1,6 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 
 module Control.PseudoInverseCategory
@@ -15,11 +15,11 @@ module Control.PseudoInverseCategory
   ) where
 
 
-import           Prelude hiding ((.), id)
 import qualified Control.Categorical.Functor as F
 import           Control.Category
 import           Data.Functor.Identity
-import           Data.Tuple (swap)
+import           Data.Tuple                  (swap)
+import           Prelude                     hiding (id, (.))
 
 
 -- | A functor from another category to Hask. Laws:
@@ -69,26 +69,25 @@ class Category a => PseudoInverseCategory a where
 
 
 -- | An analogue of the Arrow typeclass for pseudo-inverse categories. Laws:
--- ```Haskell
---   piiso id id = id
---   piendo id = id
---   piiso (f . g) (h . i) = piiso f h . piiso g i
---   piendo (f . h) = piendo f . piendo h
---   pifirst (piiso f g) = piiso (first f) (first g)
---   pifirst (piendo f) = piendo (first f)
---   pifirst (f . g) = pifirst f . pifirst g
---   pisplit id g . pifirst f = pifirst f . pisplit id g
---   piassoc . first (first f) = first f . piassoc
---   pisecond f = piswap . pifirst f . piswap
---   pisplit f g = pifirst f . pisecond g
---   pifan f g = piiso (\b -> (b,b)) fst . pisplit f g
---   piinverse (piiso f g) = piiso g f
---   piinverse (piendo f) = piendo f
---   piapply (piiso f g) = f
---   piapply (piinverse (piiso f g)) = g
---   piapply (piendo f) = f
---   
--- ```
+--
+-- prop> piiso id id = id
+-- prop> piendo id = id
+-- prop> piiso (f . g) (h . i) = piiso f h . piiso g i
+-- prop> piendo (f . h) = piendo f . piendo h
+-- prop> pifirst (piiso f g) = piiso (first f) (first g)
+-- prop> pifirst (piendo f) = piendo (first f)
+-- prop> pifirst (f . g) = pifirst f . pifirst g
+-- prop> pisplit id g . pifirst f = pifirst f . pisplit id g
+-- prop> piassoc . first (first f) = first f . piassoc
+-- prop> pisecond f = piswap . pifirst f . piswap
+-- prop> pisplit f g = pifirst f . pisecond g
+-- prop> pifan f g = piiso (\b -> (b,b)) fst . pisplit f g
+-- prop> piinverse (piiso f g) = piiso g f
+-- prop> piinverse (piendo f) = piendo f
+-- prop> piapply (piiso f g) = f
+-- prop> piapply (piinverse (piiso f g)) = g
+-- prop> piapply (piendo f) = f
+--
 class PseudoInverseCategory a => PIArrow a where
   -- | Create an arrow from an isomorphism (restricted version of arr).
   piiso :: (b -> c) -> (c -> b) -> a b c
@@ -122,10 +121,9 @@ piassoc = piiso (\((x,y),z) -> (x,(y,z))) (\(x,(y,z)) -> ((x,y),z))
 -- | This is a pseudo-inverse category where a morphism is a composition of an endomorphism
 --   on the domain and an isomorphism of the domain with the codomain.
 --   The last two arguments are required to form an isomorphism, i.e. for all EndoIso f g h:
--- ```Haskell
---   g.h = id
---   h.g = id
--- ```
+--
+-- prop> g . h = id
+-- prop> h . g = id
 --
 -- This category contains as objects all types in Hask and as morphisms all compositions
 -- of endomorphisms and isomorphisms in Hask.

@@ -45,7 +45,6 @@ library:
     - file-embed >= 0.0.11 && < 0.1
 
     - Shpadoinkle
-    - Shpadoinkle-continuations
 
 
 git: https://gitlab.com/fresheyeball/Shpadoinkle.git

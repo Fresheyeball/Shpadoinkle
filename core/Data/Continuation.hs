@@ -6,7 +6,7 @@
 {-# LANGUAGE TupleSections         #-}
 
 
-module Shpadoinkle.Continuation
+module Data.Continuation
   ( Continuation (..), contIso
   , pur, impur, causes
   , runContinuation
@@ -20,10 +20,10 @@ module Shpadoinkle.Continuation
   ) where
 
 
-import qualified Control.Categorical.Functor as F
-import           Control.Monad (liftM2)
+import qualified Control.Categorical.Functor   as F
+import           Control.Monad                 (liftM2)
 import           Control.PseudoInverseCategory
-import           GHC.Conc (retry)
+import           GHC.Conc                      (retry)
 import           UnliftIO
 import           UnliftIO.Concurrent
 
@@ -156,7 +156,7 @@ maybeMC = mapMC maybeC
 comaybe :: (Maybe a -> Maybe a) -> (a -> a)
 comaybe f x = case f (Just x) of
   Nothing -> x
-  Just y -> y
+  Just y  -> y
 
 
 -- | Change the type of a Maybe-valued continuation into the Maybe-wrapped type.
@@ -176,12 +176,12 @@ comaybeMC = mapMC comaybeC
 
 -- Just define these rather than introducing another dependency even though they are in either
 mapLeft :: (a -> b) -> Either a c -> Either b c
-mapLeft f (Left x) = Left (f x)
+mapLeft f (Left x)  = Left (f x)
 mapLeft _ (Right x) = Right x
 
 
 mapRight :: (b -> c) -> Either a b -> Either a c
-mapRight _ (Left x) = Left x
+mapRight _ (Left x)  = Left x
 mapRight f (Right x) = Right (f x)
 
 
@@ -214,7 +214,7 @@ eitherC f g = Continuation . (id,) $ \case
 --   structure will only have effect on the state while it is in the branch
 --   of the coproduct selected by the input value used to create the structure.
 eitherMC :: Monad m => MapContinuations f => (a -> f m a) -> (b -> f m b) -> Either a b -> f m (Either a b)
-eitherMC l _ (Left x) = mapMC (\c -> eitherC c (pur id)) (l x)
+eitherMC l _ (Left x)  = mapMC (\c -> eitherC c (pur id)) (l x)
 eitherMC _ r (Right x) = mapMC (\c -> eitherC (pur id) c) (r x)
 
 

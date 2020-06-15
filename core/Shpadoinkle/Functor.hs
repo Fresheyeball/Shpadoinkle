@@ -1,28 +1,34 @@
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE TupleSections          #-}
+{-# LANGUAGE UndecidableInstances   #-}
+
 
 module Shpadoinkle.Functor
   ( Html' (..), Prop' (..), Props'
   , Constly (..), static
-  , Propish (..), Htmlish (..)
+  , Propish (..), HtmlClass (..)
   , listener, listenRaw, listen, listen'
   , mapProps, mapChildren, injectProps
   ) where
 
+
 import           Control.Arrow
+import           Data.Continuation
 import           Data.Functor.Identity (Identity (..))
+import           Data.Kind
 import           Data.String
-import           Data.Text (Text, pack)
+import           Data.Text             (Text, pack)
+
 import           Shpadoinkle.Core
-import           Shpadoinkle.Continuation
+
 
 -- | `Html m` and `Prop m` are not Functors because Continuation is
 --   not a Functor. Continuation is not a Functor fundamentally because
@@ -51,16 +57,16 @@ import           Shpadoinkle.Continuation
 --   Another example of a semantically correct usage of Html'
 --   is to create a number pad widget of type Html' Int where each
 --   number button's click handler returns the number it is labeled with.
-data Html' o =
-    Node' Text [(Text, Prop' o)] [Html' o]
-  | Potato' (JSM RawNode)
-  | TextNode' Text
+data Html' :: Type -> Type where
+  Node' :: Text -> [(Text, Prop' a)] -> [Html' a] -> Html' a
+  Potato' :: JSM RawNode -> Html' a
+  TextNode' :: Text -> Html' a
 
 
 instance Functor Html' where
   fmap f (Node' t ps es) = Node' t (second (fmap f) <$> ps) (fmap f <$> es)
-  fmap _ (Potato' p) = Potato' p
-  fmap _ (TextNode' t) = TextNode' t
+  fmap _ (Potato' p)     = Potato' p
+  fmap _ (TextNode' t)   = TextNode' t
 
 
 data Prop' o where
@@ -70,9 +76,9 @@ data Prop' o where
 
 
 instance Functor Prop' where
-  fmap _ (PText' t) = PText' t
+  fmap _ (PText' t)     = PText' t
   fmap f (PListener' g) = PListener' (\r e -> f <$> g r e)
-  fmap _ (PFlag' b) = PFlag' b
+  fmap _ (PFlag' b)     = PFlag' b
 
 
 type Props' a = [(Text, Prop' a)]
@@ -89,9 +95,9 @@ instance Applicative m => Constly Html' (Html m) where
 
 
 instance Applicative m => Constly Prop' (Prop m) where
-  constly _ (PText' t) = PText t
+  constly _ (PText' t)     = PText t
   constly f (PListener' g) = PListener (\r e -> pur . f <$> g r e)
-  constly _ (PFlag' b) = PFlag b
+  constly _ (PFlag' b)     = PFlag b
 
 
 static :: Constly f g => f a -> g b
@@ -122,34 +128,7 @@ instance Propish (Prop m) (Continuation m) where
   flagProp = PFlag
 
 
--- | Abstraction of HTML types subsuming `Html m` and `Html'`.
-class Htmlish h p | h -> p where
-  -- | Construct an HTML element JSX-style.
-  h :: Text -> [(Text, p o)] -> [h o] -> h o
-
-  -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'.
-  baked :: JSM RawNode -> h o
-
-  -- | Construct a text node.
-  text :: Text -> h o
-
-  -- | Lens to props
-  props :: Applicative f => ([(Text, p o)] -> f [(Text, p o)]) -> h o -> f (h o)
-
-  -- | Lens to children
-  children :: Applicative f => ([h o] -> f [h o]) -> h o -> f (h o)
-
-  -- | Lens to tag name
-  name :: Applicative f => (Text -> f Text) -> h o -> f (h o)
-
-  -- | Lens to content of @TextNode@s
-  textContent :: Applicative f => (Text -> f Text) -> h o -> f (h o)
-
-  -- | Construct an HTML element out of heterogeneous alternatives.
-  eitherH :: (a -> h a) -> (b -> h b) -> Either a b -> h (Either a b)
-
-
-instance Htmlish Html' Prop' where
+instance HtmlClass Html' Prop' where
   h = Node'
   baked = Potato'
   text = TextNode'
@@ -168,7 +147,7 @@ instance Htmlish Html' Prop' where
   eitherH l r = either (fmap Left . l) (fmap Right . r)
 
 
-instance Monad m => Htmlish (Html m) (Prop m) where
+instance Monad m => HtmlClass (Html m) (Prop m) where
   h = Node
   baked = Potato
   text = TextNode
@@ -230,15 +209,15 @@ listen' k f = listen k $ pure f
 
 
 -- | Transform the properties of some Node. This has no effect on @TextNode@s or @Potato@s
-mapProps :: Htmlish h p => ([(Text, p o)] -> [(Text, p o)]) -> h o -> h o
+mapProps :: HtmlClass h p => ([(Text, p o)] -> [(Text, p o)]) -> h o -> h o
 mapProps f = runIdentity . props (Identity . f)
 
 
 -- | Transform the children of some Node. This has no effect on @TextNode@s or @Potato@s
-mapChildren :: Htmlish h p => ([h a] -> [h a]) -> h a -> h a
+mapChildren :: HtmlClass h p => ([h a] -> [h a]) -> h a -> h a
 mapChildren f = runIdentity . children (Identity . f)
 
 
 -- | Inject props into an existing @Node@
-injectProps :: Htmlish h p => [(Text, p o)] -> h o -> h o
+injectProps :: HtmlClass h p => [(Text, p o)] -> h o -> h o
 injectProps ps = mapProps (++ ps)

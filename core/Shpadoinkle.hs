@@ -10,7 +10,7 @@ module Shpadoinkle
   ) where
 
 import           Control.PseudoInverseCategory
-import           Shpadoinkle.Continuation
+import           Data.Continuation
 import           Shpadoinkle.Core
 import           Shpadoinkle.Functor
 
