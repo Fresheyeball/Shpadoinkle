@@ -84,6 +84,11 @@ instance IsProp Prop Identity where
   textProp = PText
   listenerProp f = PListener (\r e -> runIdentity <$> f r e)
   flagProp = PFlag
+  constUpdate _ = Identity
+  cataProp f g h = \case
+    PText t -> f t
+    PListener l -> g (\n e -> Identity <$> l n e)
+    PFlag b -> h b
 
 
 instance IsHtml Html Prop where
@@ -111,6 +116,10 @@ instance IsHtml Html Prop where
   {-# INLINE textContent #-}
   eitherH l r = either (fmap Left . l) (fmap Right . r)
   {-# INLINE eitherH #-}
+  cataH f g h = \case
+    Node t ps cs -> f t ps (cataH f g h <$> cs)
+    Potato p -> g p
+    TextNode t -> h t
 
 
 instance IsString (Html a) where

@@ -30,9 +30,9 @@
    is rather difficult, and complex.
 
    The rules of a backend are informal. Roughly, if we give the backend
-   some Html, we expect it to update the dom at runtime in the way we expect.
+   some HtmlM, we expect it to update the dom at runtime in the way we expect.
 
-   Since this is cannonical, all other backends are expected to behave
+   Since this is canonical, all other backends are expected to behave
    identically to this one. If differences exist they should be patched,
    so that we retain renderer polymorphism. Such that we can change out
    the renderer of our application, without updating the application logic
@@ -50,6 +50,7 @@ module Shpadoinkle.Backend.ParDiff
 import           Control.Applicative
 import           Control.Compactable
 import           Control.Lens
+import           Control.Monad               (void)
 import           Control.Monad.Reader
 import           Data.Align
 import           Data.Foldable
@@ -67,6 +68,7 @@ import           Language.Javascript.JSaddle hiding (( # ))
 import           NeatInterpolation
 import           System.Random
 import           UnliftIO
+import           UnliftIO.Concurrent         (forkIO)
 
 import           Shpadoinkle                 hiding (h, name, props, text)
 
@@ -131,19 +133,19 @@ instance Show (ParVProp a) where
     ParVFlag b     -> "ParVFlag " <> show b
 
 
-props :: Monad m => (m ~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
+props :: Monad m => (m ~> JSM) -> TVar a -> Map Text (PropM (ParDiffT a m) a) -> RawNode -> JSM ()
 props toJSM i ps (RawNode raw) = do
   raw' <- makeObject raw
   void . traverse (uncurry $ prop toJSM i raw') $ M.toList ps
 
 
-prop :: Monad m => (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
+prop :: Monad m => (m ~> JSM) -> TVar a -> Object -> Text -> PropM (ParDiffT a m) a -> JSM ()
 prop toJSM i raw k = \case
-  PText t     -> setProp' raw k t
-  PListener f -> setListener i (\x y -> convertC (toJSM . runParDiff i)
+  PTextM t     -> setProp' raw k t
+  PListenerM f -> setListener i (\x y -> convertC (toJSM . runParDiff i)
                                          <$> f x y) raw k
-  PFlag True  -> setProp' raw k =<< toJSVal True
-  PFlag False -> return ()
+  PFlagM True  -> setProp' raw k =<< toJSVal True
+  PFlagM False -> return ()
 
 
 setProp' :: ToJSVal t => Object -> Text -> t -> JSM ()
@@ -159,7 +161,7 @@ setListener :: TVar a -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -> Ob
 setListener i m o k = do
   elm <- RawNode <$> toJSVal o
   setProp' o ("on" <> k) . fun $ \_ _ -> \case
-    e:_ -> writeUpdate i . const $ m elm (RawEvent e)
+    e:_ -> void . forkIO . writeUpdate i . const $ m elm (RawEvent e)
     _ -> return ()
 
 
@@ -185,13 +187,13 @@ appendChild (RawNode raw) pn = do
   return pn
 
 
-makeProp :: Monad m => (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
+makeProp :: Monad m => (m ~> JSM) -> TVar a -> PropM (ParDiffT a m) a -> JSM (ParVProp a)
 makeProp toJSM i = \case
-  PText t     -> return $ ParVText t
-  PListener m -> do
+  PTextM t     -> return $ ParVText t
+  PListenerM m -> do
     u <- liftIO randomIO
     return . ParVListen u $ \x y -> convertC (toJSM . runParDiff i) <$> m x y
-  PFlag b     -> return $ ParVFlag b
+  PFlagM b     -> return $ ParVFlag b
 
 
 setup' :: MonadJSM m => JSM () -> ParDiffT a m ()
@@ -339,20 +341,20 @@ interpret'
   => MonadUnliftIO m
   => Eq a
   => Show a
-  => (m ~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
+  => (m ~> JSM) -> HtmlM (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
 interpret' toJSM = \case
 
-  TextNode t -> do
+  TextNodeM t -> do
     raw <- liftJSM . newOnce $ do
       doc <- jsg "document"
       RawNode <$> doc ^. js1 "createTextNode" t
     return $ ParTextNode raw t
 
-  Potato p -> do
+  PotatoM p -> do
     raw <- liftJSM $ newOnce p
     return $ ParPotato raw
 
-  Node name (M.fromList -> ps) cs -> do
+  NodeM name (M.fromList -> ps) cs -> do
     i <- ask
 
     let makeNode = do

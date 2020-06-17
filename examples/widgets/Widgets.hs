@@ -49,7 +49,7 @@ data Model = Model
 makeLenses ''Model
 
 
-view :: Monad m => Model -> Html m Model
+view :: Monad m => Model -> HtmlM m Model
 view m = div_
   [ link' [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ]
   , generalize pickOne $ dropdown bootstrap defConfig { _attrs = [ id' "One" ] } (_pickOne m)

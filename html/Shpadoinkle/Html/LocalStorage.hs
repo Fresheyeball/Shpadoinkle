@@ -21,11 +21,12 @@ import           GHC.Generics
 import           GHCJS.DOM
 import           GHCJS.DOM.Storage
 import           GHCJS.DOM.Window
+import           JSDOM.Types         (MonadJSM, liftJSM)
 import           Text.Read
 import           UnliftIO
 import           UnliftIO.Concurrent (forkIO)
 
-import           Shpadoinkle         (MonadJSM, liftJSM, shouldUpdate)
+import           Shpadoinkle         (shouldUpdate)
 
 
 -- | The key for a specific state kept in local storage

@@ -22,9 +22,8 @@ import           Servant.Client.Ghcjs
 #else
 import           Servant.Client
 #endif
+import           Language.Javascript.JSaddle
 import           UnliftIO
-
-import           Shpadoinkle
 
 
 -- | Run the ClientM from Servant as an XHR request.

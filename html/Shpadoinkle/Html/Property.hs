@@ -45,7 +45,7 @@ instance ToPropText Float where toPropText = pack . show
 instance ToPropText Bool where toPropText = \case True -> "true"; False -> "false"
 
 
-textProperty :: Propish p e => ToPropText a => Text -> a -> (Text, p o)
+textProperty :: IsProp p e => ToPropText a => Text -> a -> (Text, p o)
 textProperty k = (,) k . textProp . toPropText
 
 
@@ -59,19 +59,19 @@ instance ClassListRep (Text, Bool) where asClass = asClass . (:[])
 instance IsString ClassList where fromString = ClassList . Set.singleton . pack
 
 
-flagProperty :: Propish p e => Text -> Bool -> (Text, p a)
+flagProperty :: IsProp p e => Text -> Bool -> (Text, p a)
 flagProperty t = (,) t . flagProp
 
 
-className :: Propish p e => ClassListRep cl => cl -> (Text, p a)
+className :: IsProp p e => ClassListRep cl => cl -> (Text, p a)
 className = textProperty "className" . unwords . Set.toList . unClassList . asClass
 
 
-class' :: Propish p e => ClassList -> (Text, p a)
+class' :: IsProp p e => ClassList -> (Text, p a)
 class' = className
 
 
-for' :: Propish p e => Text -> (Text, p a)
+for' :: IsProp p e => Text -> (Text, p a)
 for' = textProperty "htmlFor"
 
 
@@ -82,7 +82,7 @@ $(msum <$> mapM mkBoolProp
 
 $(msum <$> mapM mkTextProp
   [ "id'", "type'", "rel", "href", "placeholder", "value", "src", "title"
-  , "accept", "accpetCharset", "action", "acceptCharset", "enctype", "method", "pattern"
+  , "accept", "action", "acceptCharset", "enctype", "method", "pattern"
   , "max", "min", "step", "wrap", "target", "download", "hreflang", "media", "ping", "shape", "coords"
   , "alt", "preload", "poster", "name'", "kind'", "srclang", "sandbox", "srcdoc", "align"
   , "headers", "scope", "datetime", "pubdate", "manifest", "contextmenu", "draggable"
@@ -93,5 +93,5 @@ $(msum <$> mapM mkIntProp
  [ "tabIndex", "width", "height" ])
 
 
-tabbable :: Propish p e => (Text, p o)
+tabbable :: IsProp p e => (Text, p o)
 tabbable = tabIndex 0

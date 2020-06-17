@@ -72,7 +72,7 @@ instance (Consideration ConsideredChoice p, Ord a)
 
 
 newtype Config m = Config
-  { _attrs :: forall a. [(Text, Prop m a)] }
+  { _attrs :: forall a. [(Text, PropM m a)] }
 
 
 defConfig :: Config m
@@ -125,10 +125,10 @@ instance Consideration ConsideredChoice p => Consideration Dropdown p where
 
 
 data Theme m = Theme
-    { _wrapper :: forall a . [Html m a] -> Html m a
-    , _header  :: forall a . [Html m a] -> [Html m a]
-    , _list    :: forall a . [Html m a] -> Html m a
-    , _item    :: forall a . [Html m a] -> Html m a
+    { _wrapper :: forall a . [HtmlM m a] -> HtmlM m a
+    , _header  :: forall a . [HtmlM m a] -> [HtmlM m a]
+    , _list    :: forall a . [HtmlM m a] -> HtmlM m a
+    , _item    :: forall a . [HtmlM m a] -> HtmlM m a
     }
 
 
@@ -170,24 +170,24 @@ dropdown ::
   , Present (Selected p a), Present a, Ord a
   , Monad m
   ) => (forall b. Dropdown p b -> Theme m)
-    -> Config m -> Dropdown p a -> Html m (Dropdown p a)
+    -> Config m -> Dropdown p a -> HtmlM m (Dropdown p a)
 dropdown toTheme Config {..} x =
   let
     Theme {..} = toTheme x
   in injectProps
   ([onKeyup $ \case
-    Enter     -> pur act
-    UpArrow   -> pur considerPrev
-    DownArrow -> pur considerNext
-    _ -> pur id
-  , onClick $ pur act
+    Enter     -> act x
+    UpArrow   -> considerPrev x
+    DownArrow -> considerNext x
+    _ -> x
+  , onClick $ act x
   , tabbable
   ] ++ _attrs) . _wrapper $
   (_header . present $ selected x) ++
   [ _list $ (\y -> injectProps
-    [ onMouseover $ pur (consider' y)
-    , onFocus     $ pur (consider' y)
-    , onClick     $ pur (flip select' y)
+    [ onMouseover $ consider' y x
+    , onFocus     $ consider' y x
+    , onClick     $ select' x y
     , tabbable
     ] . _item $ present y) <$> toList (unselected x)
   ]

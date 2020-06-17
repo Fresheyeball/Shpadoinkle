@@ -278,9 +278,9 @@ instance Tabular [SpaceCraft] where
     ToolsT        ->
       [ H.div "btn-group"
         [ H.button [ H.class' "btn btn-sm btn-secondary",
-                     H.onClick . causes $ navigate @ SPA (RExisting _identity) ] [ "Edit" ]
+                     H.onClickM_ $ navigate @ SPA (RExisting _identity) ] [ "Edit" ]
         , H.button [ H.class' "btn btn-sm btn-secondary",
-                     H.onClick . impur $ do
+                     H.onClickM $ do
                        deleteSpaceCraft _identity
                        return . Prelude.filter $ \x -> x ^. identity /= _identity ] [ "Delete" ]
         ]

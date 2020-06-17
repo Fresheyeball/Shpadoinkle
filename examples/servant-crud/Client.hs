@@ -12,6 +12,7 @@ module Main where
 import           Control.Monad.Catch         (MonadThrow)
 import           Control.Monad.Reader        (MonadIO)
 import           Data.Proxy                  (Proxy (..))
+import           Language.Javascript.JSaddle (askJSM, runJSM, MonadJSM)
 import           Servant.API                 ((:<|>) (..))
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff (runParDiff)

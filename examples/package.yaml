@@ -127,6 +127,7 @@ executables:
       - bytestring
       - beam-core
       - containers
+      - jsaddle
       - lens
       - text
       - stm

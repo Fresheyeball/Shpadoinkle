@@ -1,5 +1,6 @@
 module Shpadoinkle
   ( module Shpadoinkle.Core
+  , module Shpadoinkle.Class
   , module Shpadoinkle.Functor
   , module Shpadoinkle.EndoIso
   , Continuation (..), pur, impur, causes
@@ -13,6 +14,7 @@ module Shpadoinkle
 import           Control.PseudoInverseCategory
 import           Data.Continuation
 import           Shpadoinkle.Core
+import           Shpadoinkle.Class
 import           Shpadoinkle.EndoIso
 import           Shpadoinkle.Functor
 

@@ -22,18 +22,18 @@ import           TODOMVC.Update
 default (Text)
 
 
-filterHtml :: Visibility -> Visibility -> Html' Visibility
+filterHtml :: Visibility -> Visibility -> Html Visibility
 filterHtml = memo2 $ \cur item -> li_
-  [ a (href "#" : onClick' item
+  [ a (href "#" : onClick item
         : [className ("selected", cur == item)]) [ text . pack $ show item ]
   ]
 
 
-htmlIfTasks :: Model -> [Html m a] -> [Html m a]
+htmlIfTasks :: Model -> [h a] -> [h a]
 htmlIfTasks m h' = if Prelude.null (_tasks m) then [] else h'
 
 
-taskView :: Monad m => Model -> Task -> Html m Model
+taskView :: Model -> Task -> Html Model
 taskView m = memo $ \(Task (Description d) c tid) ->
   li [ id' . pack . show $ unTaskId tid
      , className [ ("completed", c == Complete)
@@ -42,37 +42,37 @@ taskView m = memo $ \(Task (Description d) c tid) ->
   [ div "view"
     [ input' [ type' "checkbox"
              , className "toggle"
-             , onChange . pur $ toggleCompleted tid
+             , onChange $ toggleCompleted tid m
              , checked $ c == Complete
              ]
-    , label [ onDblclick . pur . toggleEditing $ Just tid ] [ text d ]
-    , button' [ className "destroy", onClick . pur $ removeTask tid ]
+    , label [ onDblclick $ toggleEditing (Just tid) m ] [ text d ]
+    , button' [ className "destroy", onClick $ removeTask tid m ]
     ]
-  , form [ onSubmit . pur $ toggleEditing Nothing ]
+  , form [ onSubmit $ toggleEditing Nothing m ]
     [ input' [ className "edit"
              , value d
-             , onInput $ pur . updateTaskDescription tid . Description
+             , onInput $ ($ m) . updateTaskDescription tid . Description
              , autofocus True
-             , onBlur . pur $ toggleEditing Nothing
+             , onBlur $ toggleEditing Nothing m
              ]
     ]
   ]
 
 
-listFooter :: Monad m => Model -> Html m Model
+listFooter :: Model -> Html Model
 listFooter model = footer "footer" $
   [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ _tasks model in
     [ strong_ [ text . pack $ show co ]
     , text $ " item" <> (if co == 1 then "" else "s") <> " left"
     ]
-  , ul "filters" $ constly (set visibility) . filterHtml (_visibility model) <$> [minBound..maxBound]
+  , ul "filters" $ fmap (($ model) . (visibility .~)) <$> (filterHtml (_visibility model) <$> [minBound..maxBound])
   ] ++ (if count Complete (_tasks model) == 0 then [] else
-  [ button [ className "clear-completed", onClick (pur clearComplete) ] [ "Clear completed" ]
+  [ button [ className "clear-completed", onClick (clearComplete model) ] [ "Clear completed" ]
   ])
 
 
 
-info :: Monad m => Html m a
+info :: Html a
 info = footer "info"
   [ p_ [ "Double-click to edit a todo" ]
   , p_ [ "Credits ", a [ href "https://twitter.com/fresheyeball" ] [ "Isaac Shapira" ] ]
@@ -80,33 +80,33 @@ info = footer "info"
   ]
 
 
-newTaskForm :: Monad m => Model -> Html m Model
-newTaskForm model = form [ className "todo-form", onSubmit (pur appendItem) ]
+newTaskForm :: Model -> Html Model
+newTaskForm model = form [ className "todo-form", onSubmit (appendItem model) ]
   [ input' [ className "new-todo"
            , value . unDescription $ _current model
-           , onInput $ pur . set current . Description
+           , onInput $ ($ model) . (current .~) . Description
            , placeholder "What needs to be done?" ]
   ]
 
 
-todoList :: Monad m => Model -> Html m Model
+todoList :: Model -> Html Model
 todoList model = ul "todo-list" $ taskView model <$> toVisible (_visibility model) (_tasks model)
 
 
-toggleAllBtn :: Monad m => [Html m Model]
-toggleAllBtn =
-  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange (pur toggleAll) ]
+toggleAllBtn :: Model -> [Html Model]
+toggleAllBtn m =
+  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChange (toggleAll m) ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
 
-view :: Monad m => Model -> Html m Model
+view :: Model -> Html Model
 view model = div_
   [ section "todoapp" $
     header "header"
       [ h1_ [ "todos" ], newTaskForm model ]
     : htmlIfTasks model
-    [ section "main" $ toggleAllBtn ++ [ todoList model ]
+    [ section "main" $ toggleAllBtn model ++ [ todoList model ]
     , listFooter model
     ]
   , info
@@ -119,7 +119,7 @@ app = do
   initial <- readTVarIO model
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-common@1.0.5/base.css"
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-app-css@2.2.0/index.css"
-  shpadoinkle id runParDiff initial model view getBody
+  shpadoinkle id runParDiff initial model (constly' . view) getBody
 
 
 main :: IO ()

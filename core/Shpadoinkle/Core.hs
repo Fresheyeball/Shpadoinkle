@@ -23,6 +23,8 @@
 module Shpadoinkle.Core
   ( Backend (..)
   , Constantly (..)
+  , constly'
+  , JSM, TVar, newTVarIO, readTVarIO
   , shpadoinkle
   , runJSorWarp
   , fullPage
@@ -35,7 +37,7 @@ module Shpadoinkle.Core
 import           Control.Arrow                    (second)
 import           Data.Continuation                (pur, shouldUpdate)
 import           Language.Javascript.JSaddle      (JSM)
-import           UnliftIO.STM                     (TVar, newTVarIO)
+import           UnliftIO.STM                     (TVar, newTVarIO, readTVarIO)
 
 #ifndef ghcjs_HOST_OS
 import           Language.Javascript.JSaddle.Warp (run)
@@ -46,7 +48,7 @@ import           Shpadoinkle.EndoIso
 import           Shpadoinkle.Functor
 
 
--- | The Backend class describes a backend that can render 'Html'.
+-- | The Backend class describes a backend that can render 'HtmlM'.
 -- Backends are generally Monad Transformers @b@ over some Monad @m@.
 --
 -- prop> patch raw Nothing >=> patch raw Nothing = patch raw Nothing
@@ -55,13 +57,13 @@ class Backend b m a | b m -> a where
   -- As such we can change out the rendering of our Backend view
   -- with new backends without updating our view logic.
   type VNode b m
-  -- | A backend must be able to interpret 'Html' into its own internal Virtual DOM
+  -- | A backend must be able to interpret 'HtmlM' into its own internal Virtual DOM
   interpret
     :: (m ~> JSM)
     -- ^ Natural transformation for some @m@ to 'JSM'.
     -- This is how a Backend gets access to 'JSM' to perform the rendering side effects.
-    -> Html' (b m) a
-    -- ^ 'Html' to interpret
+    -> HtmlM (b m) a
+    -- ^ 'HtmlM' to interpret
     -> b m (VNode b m)
     -- ^ Effect producing the Virtual DOM representation
 
@@ -97,7 +99,7 @@ shpadoinkle
   -- ^ What is the initial state?
   -> TVar a
   -- ^ How can we know when to update?
-  -> (a -> Html' (b m) a)
+  -> (a -> HtmlM (b m) a)
   -- ^ How should the HTML look?
   -> b m RawNode
   -- ^ Where do we render?
@@ -130,7 +132,7 @@ fullPage
   -- ^ What backend are we running?
   -> a
   -- ^ What is the initial state?
-  -> (a -> Html' (b m) a)
+  -> (a -> HtmlM (b m) a)
   -- ^ How should the html look?
   -> b m RawNode
   -- ^ Where do we render?
@@ -153,7 +155,7 @@ fullPageJSM
   -- ^ What backend are we running?
   -> a
   -- ^ What is the initial state?
-  -> (a -> Html' (b JSM) a)
+  -> (a -> HtmlM (b JSM) a)
   -- ^ How should the html look?
   -> b JSM RawNode
   -- ^ Where do we render?
@@ -184,7 +186,7 @@ simple
   -- ^ What backend are we running?
   -> a
   -- ^ what is the initial state?
-  -> (a -> Html' (b JSM) a)
+  -> (a -> HtmlM (b JSM) a)
   -- ^ how should the html look?
   -> b JSM RawNode
   -- ^ where do we render?
@@ -197,16 +199,20 @@ class Constantly f g where
   constly :: (a -> b -> b) -> f a -> g b
 
 
-instance Applicative m => Constantly Html (Html' m) where
-  constly f (Node t ps es) = Node' t (second (constly f) <$> ps) (fmap (constly f) es)
-  constly _ (Potato p) = Potato' p
-  constly _ (TextNode t) = TextNode' t
+instance Applicative m => Constantly Html (HtmlM m) where
+  constly f (Node t ps es) = NodeM t (second (constly f) <$> ps) (fmap (constly f) es)
+  constly _ (Potato p) = PotatoM p
+  constly _ (TextNode t) = TextNodeM t
 
 
-instance Applicative m => Constantly Prop (Prop' m) where
-  constly _ (PText t)     = PText' t
-  constly f (PListener g) = PListener' (\r e -> pur . f <$> g r e)
-  constly _ (PFlag b)     = PFlag' b
+instance Applicative m => Constantly Prop (PropM m) where
+  constly _ (PText t)     = PTextM t
+  constly f (PListener g) = PListenerM (\r e -> pur . f <$> g r e)
+  constly _ (PFlag b)     = PFlagM b
+
+
+constly' :: Constantly f g => f a -> g a
+constly' = constly const
 
 
 static :: Constantly f g => f a -> g b

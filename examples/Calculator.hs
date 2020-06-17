@@ -51,20 +51,20 @@ opText = \case
   Division       -> "÷"
 
 
-opSelect :: Html' Operation
-opSelect = select [ onOption' $ read . unpack ]
+opSelect :: Html Operation
+opSelect = select [ onOption $ read . unpack ]
   $ opOption <$> [minBound..maxBound]
   where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 
 
-num :: Int -> Html' Int
+num :: Int -> Html Int
 num x = input'
  [ value . pack $ show x
- , onInput' $ fromMaybe 0 . readMay . unpack
+ , onInput $ fromMaybe 0 . readMay . unpack
  ]
 
 
-view :: Monad m => Model -> Html m Model
+view :: Monad m => Model -> HtmlM m Model
 view model = div_
  [ constly (set left) (num (_left model))
  , constly (set operation) opSelect

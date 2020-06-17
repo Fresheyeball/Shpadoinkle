@@ -7,6 +7,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -19,13 +20,14 @@ module Shpadoinkle.Class
   , IsHtml (..)
   , IsProp (..)
   , type (~>)
-  , listen, listen'
+  , listen, listenE
   , listener, listenRaw
   , mapProps, mapChildren, injectProps
   ) where
 
 
 import           Data.Functor.Identity       (Identity (..))
+import           Data.Proxy
 import           Data.String
 import           Data.Text
 import           Language.Javascript.JSaddle (FromJSVal (..), JSM, JSVal,
@@ -52,28 +54,34 @@ instance FromJSVal RawEvent where fromJSVal = return . Just . RawEvent
 class IsHtml h p | h -> p where
 
   -- | Construct an HTML element JSX-style.
-  h :: Text -> [(Text, p o)] -> [h o] -> h o
+  h :: Text -> [(Text, p a)] -> [h a] -> h a
 
   -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'.
-  baked :: JSM RawNode -> h o
+  baked :: JSM RawNode -> h a
 
   -- | Construct a text node.
-  text :: Text -> h o
+  text :: Text -> h a
 
   -- | Lens to props
-  props :: Applicative f => ([(Text, p o)] -> f [(Text, p o)]) -> h o -> f (h o)
+  props :: Applicative f => ([(Text, p a)] -> f [(Text, p a)]) -> h a -> f (h a)
 
   -- | Lens to children
-  children :: Applicative f => ([h o] -> f [h o]) -> h o -> f (h o)
+  children :: Applicative f => ([h a] -> f [h a]) -> h a -> f (h a)
 
   -- | Lens to tag name
-  name :: Applicative f => (Text -> f Text) -> h o -> f (h o)
+  name :: Applicative f => (Text -> f Text) -> h a -> f (h a)
 
   -- | Lens to content of @TextNode@s
-  textContent :: Applicative f => (Text -> f Text) -> h o -> f (h o)
+  textContent :: Applicative f => (Text -> f Text) -> h a -> f (h a)
 
   -- | Construct an HTML element out of heterogeneous alternatives.
   eitherH :: (a -> h a) -> (b -> h b) -> Either a b -> h (Either a b)
+
+  -- | Fold an HTML element, i.e. transform an h-algebra into an h-catamorphism.
+  cataH :: (Text -> [(Text, p a)] -> [b] -> b)
+        -> (JSM RawNode -> b)
+        -> (Text -> b)
+        -> h a -> b
 
 
 -- | Abstraction of property types subsuming `Prop m` and `Prop'`.
@@ -87,6 +95,15 @@ class IsProp p e | p -> e where
 
   -- | Create a boolean property.
   flagProp :: Bool -> p a
+
+  -- | Create an update to a constant value.
+  constUpdate :: Proxy p -> a -> e a
+
+  -- | Transform a p-algebra into a p-catamorphism. This is like polymorphic pattern matching.
+  cataProp :: (Text -> b)
+           -> ((RawNode -> RawEvent -> JSM (e a)) -> b)
+           -> (Bool -> b)
+           -> p a -> b
 
 
 -- | Strings are overloaded as the class property:
@@ -111,15 +128,15 @@ listenRaw k = (,) k . listenerProp
 
 
 -- | Construct a listener from its name and an event handler.
-listen :: IsProp p e => Text -> e o -> (Text, p o)
-listen k = listenRaw k . const . const . return
-{-# INLINE listen #-}
+listenE :: IsProp p e => Text -> e a -> (Text, p a)
+listenE k = listenRaw k . const . const . return
+{-# INLINE listenE #-}
 
 
 -- | Construct a listener from it's 'Text' name and an output value.
-listen' :: IsProp p Identity => Text -> o -> (Text, p o)
-listen' k f = listen k $ pure f
-{-# INLINE listen' #-}
+listen :: forall p e a. IsProp p e => Text -> a -> (Text, p a)
+listen k = listenE k . constUpdate (Proxy :: Proxy p)
+{-# INLINE listen #-}
 
 
 -- | Transform the properties of some Node. This has no effect on @TextNode@s or @Potato@s

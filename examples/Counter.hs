@@ -15,21 +15,21 @@ import           Shpadoinkle.Html            (br'_, button, div_, h2_, id',
 import           Shpadoinkle.Html.Utils
 
 
-view :: Monad m => Int -> Html m Int
+view :: Int -> Html Int
 view count = div_
   [ h2_ [ "Counter Example" ]
   , "The current count is: "
   , span [ id' "out" ] [ text (pack $ show count) ]
   , br'_, br'_
-  , button [ onClick . pur $ subtract 1 ] [ "Decrement" ]
-  , button [ onClick . pur $ (+ 1)      ] [ "Increment" ]
+  , button [ onClick $ count-1 ] [ "Decrement" ]
+  , button [ onClick $ count+1 ] [ "Increment" ]
   ]
 
 
 app :: JSM ()
 app = do
   model <- liftIO $ newTVarIO 0
-  shpadoinkle id runParDiff 0 model view getBody
+  shpadoinkle id runParDiff 0 model (constly' . view) getBody
 
 
 main :: IO ()

@@ -117,14 +117,14 @@ initial :: Model
 initial = Model noEntry Nothing
 
 
-digit :: Digit -> Html' Digit
-digit d = button [ onClick' d, className $ "d" <> d' ] [ text d' ]
+digit :: Digit -> Html Digit
+digit d = button [ onClick d, className $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
 
-operate :: Maybe Operator -> Operator -> Html' Operator
+operate :: Maybe Operator -> Operator -> Html Operator
 operate active o = button
-  [ onClick' o, className ("active" :: Text, Just o == active) ]
+  [ onClick o, className ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
 
 
@@ -160,7 +160,7 @@ neg = \case
   e -> Negate e
 
 
-view :: Monad m => Model -> Html m Model
+view :: Monad m => Model -> HtmlM m Model
 view x = H.div "calculator"
   [ H.div "readout" [ text . pack . show $ x ^. entry ]
   , ul "buttons"
@@ -175,20 +175,20 @@ view x = H.div "calculator"
 
     , H.div "zerodot"
       [ constly putDigit (digit Zero)
-      , button [ onClick $ pur (& entry %~ addDecimal) ] [ "." ]
+      , button [ onClick $ x & entry %~ addDecimal ] [ "." ]
       ]
 
 
-    , button [ class' "clear",  onClick (pur (const initial))  ] [ "C"   ]
-    , button [ class' "posNeg", onClick (pur (& entry %~ neg)) ] [ "-/+" ]
-    , button [ class' "equals", onClick (pur calcResult)       ] [ "="   ]
+    , button [ class' "clear",  onClick initial            ] [ "C"   ]
+    , button [ class' "posNeg", onClick (x & entry %~ neg) ] [ "-/+" ]
+    , button [ class' "equals", onClick (calcResult x)     ] [ "="   ]
     ]
   ]
 
   where putDigit d = entry %~ applyDigit d
 
 
-trapper :: Show a => (a -> Html m a) -> (a -> Html m a)
+trapper :: Show a => (a -> HtmlM m a) -> (a -> HtmlM m a)
 trapper v x = trace ("Trapper: " <> show x) $ v x
 
 
