@@ -17,7 +17,7 @@ import           Servant.API                 ((:<|>) (..))
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html.Utils      (getBody)
-import           Shpadoinkle.Router          (fullPageSPA, withHydration)
+import           Shpadoinkle.Router          (MonadJSM, fullPageSPA, withHydration)
 import           Shpadoinkle.Router.Client   (client, runXHR)
 import           UnliftIO                    (MonadUnliftIO (..), UnliftIO (..))
 
