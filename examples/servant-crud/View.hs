@@ -26,11 +26,13 @@ import           Control.Lens.Unsound              (lensProduct)
 import           Data.Coerce                       (Coercible)
 import           Data.Maybe                        (fromMaybe, isNothing)
 import           Data.String                       (IsString)
-import           Data.Text                         as T
-import           Shpadoinkle                       (Html, MonadJSM, text)
+import           Data.Text                         as T hiding (foldl)
+import           Shpadoinkle                       (Html, HtmlM, IsHtml, text,
+                                                    constly, rightMC, pimap, eitherH,
+                                                    static, IsProp)
 import qualified Shpadoinkle.Html                  as H
-import           Shpadoinkle.Lens                  ((<%), (<+))
-import           Shpadoinkle.Router                (navigate, toHydration)
+import           Shpadoinkle.Lens                  ((<%), generalize)
+import           Shpadoinkle.Router                (navigate, toHydration, MonadJSM)
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown (Dropdown (..),
                                                                 Theme (..),
                                                                 defConfig,
@@ -64,59 +66,68 @@ toEditForm sc = SpaceCraftUpdate
   }
 
 
-formGroup :: [Html m a] -> Html m a
+formGroup :: IsHtml h p => IsProp p e => [h a] -> h a
 formGroup = H.div "form-group row"
 
 
 textControl
   :: forall t m a
-   . Eq t => IsString t => Coercible Text t => MonadJSM m
+   . Eq t => IsString t => Coercible Text t
   => (forall v. Lens' (a v) (Field v Text Input (Maybe t)))
-  -> Text -> a 'Errors -> a 'Edit -> Html m (a 'Edit)
-textControl l msg errs ef = formGroup
-  [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
-  , H.div "col-sm-10" $
-    [ ef <% l . mapping (fromMaybe "" `iso` noEmpty) $ Input.text
-      [ H.name' hName
-      , H.className ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
+  -> Text -> a 'Errors -> a 'Edit -> HtmlM m (a 'Edit)
+textControl l msg errs ef = constly (set (l . mapping (fromMaybe "" `iso` noEmpty))) el
+  where
+    el = formGroup
+      [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
+      , H.div "col-sm-10" $
+        [ Input.text
+          [ H.name' hName
+          , H.className ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
+          ]
+          (fromMaybe "" <$> ef ^. l)
+        ]
+        <> invalid (errs ^. l) (ef ^. l . hygiene)
       ]
-    ]
-    <> invalid (errs ^. l) (ef ^. l . hygiene)
-  ] where hName = toHtmlName msg
-          noEmpty "" = Nothing
-          noEmpty x  = Just x
+
+    hName = toHtmlName msg
+    noEmpty "" = Nothing
+    noEmpty x  = Just x
 
 
 intControl
   :: forall n m a
-   . MonadJSM m => Integral n => Show n
+   . Integral n => Show n
   => (forall v. Lens' (a v) (Field v Text Input n))
-  -> Text -> a 'Errors -> a 'Edit -> Html m (a 'Edit)
-intControl l msg errs ef = formGroup
-  [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
-  , H.div "col-sm-10" $
-    [ ef <% l $ Input.integral @m
-      $ [ H.name' hName, H.step "1", H.min "0"
-        , H.className ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
+  -> Text -> a 'Errors -> a 'Edit -> HtmlM m (a 'Edit)
+intControl l msg errs ef = constly (set l) el
+  where
+    el = formGroup
+      [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
+      , H.div "col-sm-10" $
+        [ ef ^. l & Input.integral
+          [ H.name' hName, H.step "1", H.min "0"
+          , H.className ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
+          ]
         ]
-    ]
-    <> invalid (errs ^. l) (ef ^. l . hygiene)
-  ] where hName = toHtmlName msg
+        <> invalid (errs ^. l) (ef ^. l . hygiene)
+      ]
+
+    hName = toHtmlName msg
 
 
 selectControl
   :: forall p x m a
-   . MonadJSM m => Control (Dropdown p)
+   . Monad m => Control (Dropdown p)
   => Considered p ~ Maybe => Consideration ConsideredChoice p
   => Present (Selected p x) => Present x => Ord x
   => (forall v. Lens' (a v) (Field v Text (Dropdown p) x))
-  -> Text -> a 'Errors -> a 'Edit -> Html m (a 'Edit)
+  -> Text -> a 'Errors -> a 'Edit -> HtmlM m (a 'Edit)
 selectControl l msg errs ef = formGroup
   [ H.label [ H.for' (toHtmlName msg)
             , H.class' "col-sm-2 col-form-label" ] [ text msg ]
   , H.div "col-sm-10" $
     [ ef <% l $ dropdown bootstrap defConfig ]
-    <> invalid (errs ^. l) (ef ^. l . hygiene)
+    <> (static <$> invalid (errs ^. l) (ef ^. l . hygiene))
   ]
   where
   bootstrap Dropdown {..} = Dropdown.Theme
@@ -143,7 +154,7 @@ controlClass (Validated _) Dirty = ["is-valid"]
 controlClass _ Clean             = []
 
 
-invalid :: Validated Text a -> Hygiene -> [ Html m b ]
+invalid :: Validated Text a -> Hygiene -> [ Html b ]
 invalid (Invalid err errs) Dirty = (\e -> H.div "invalid-feedback" [ text e ]) <$> err:errs
 invalid _                  _     = []
 
@@ -152,7 +163,7 @@ toHtmlName :: Text -> Text
 toHtmlName = toLower . replace " " "-"
 
 
-editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> SpaceCraftUpdate 'Edit -> Html m (SpaceCraftUpdate 'Edit)
+editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> SpaceCraftUpdate 'Edit -> HtmlM m (SpaceCraftUpdate 'Edit)
 editForm mid ef = H.div_
 
   [ intControl    @SKU                   sku         "SKU"           errs ef
@@ -163,17 +174,17 @@ editForm mid ef = H.div_
   , H.div "d-flex flex-row justify-content-end"
 
     [ H.button
-      [ H.onClick' (ef <$ navigate @SPA (RList mempty))
+      [ H.onClickM_ $ navigate @SPA (RList mempty)
       , H.class' "btn btn-secondary"
       ] [ "Cancel" ]
 
     , H.button
-      [ H.onClick' $ case isValid of
-         Nothing -> return ef
+      [ H.onClickM_ $ case isValid of
+         Nothing -> return ()
          Just up -> do
            case mid of Nothing  -> () <$ createSpaceCraft up
                        Just sid -> updateSpaceCraft sid up
-           ef <$ navigate @SPA (RList mempty)
+           navigate @SPA (RList mempty)
       , H.class' "btn btn-primary"
       , H.disabled $ isNothing isValid
       ] [ "Save" ]
@@ -214,43 +225,58 @@ fuzzy = flip (^.) <$>
   ]
 
 
-view :: (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
-view fe = case fe of
+view :: (MonadJSM m, CRUDSpaceCraft m) => Frontend -> HtmlM m Frontend
+view = pimap coproductIsoFrontend . viewCases . frontendToCoproduct
 
-  MList r -> MList <$> H.div "container-fluid"
-   [ H.div "row justify-content-between align-items-center"
-     [ H.h2_ [ "Space Craft Roster" ]
-     , H.div [ H.class' "input-group"
-             , H.textProperty "style" ("width:300px" :: Text)
-             ]
-       [ r <% search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
-       , H.div "input-group-append mr-3"
-         [ H.button [ H.onClick' (r <$ navigate @SPA RNew), H.class' "btn btn-primary" ] [ "Register" ]
-         ]
+
+viewCases :: (MonadJSM m, CRUDSpaceCraft m) => FrontendCoproduct -> HtmlM m FrontendCoproduct
+viewCases = mecho `eitherH` mlist `eitherH` mdetail `eitherH` m404
+
+
+mecho :: MonadJSM m => Maybe Text -> HtmlM m (Maybe Text)
+mecho t = H.div_
+  [ maybe (text "Erie silence") text t
+  , H.a [ H.onClickM_ $ navigate @SPA (RList $ Input Clean "") ]
+        [ "Go To Space Craft Roster" ]
+  ]
+
+
+mlist :: (MonadJSM m, CRUDSpaceCraft m) => Roster -> HtmlM m Roster
+mlist r = H.div "container-fluid"
+ [ H.div "row justify-content-between align-items-center"
+   [ H.h2_ [ "Space Craft Roster" ]
+   , H.div [ H.class' "input-group"
+           , H.textProperty "style" ("width:300px" :: Text)
+           ]
+     [ constly (set search) $
+       Input.search [ H.class' "form-control", H.placeholder "Search" ] (r ^. search)
+     , H.div "input-group-append mr-3"
+       [ H.button [ H.onClickM_ $ do navigate @SPA RNew
+                  , H.class' "btn btn-primary" ] [ "Register" ]
        ]
      ]
-   , r <+ lensProduct table sort $ Table.viewWith tableCfg
-    (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value))
-    (r ^. sort)
    ]
+ , generalize (lensProduct table sort) $ Table.viewWith tableCfg
+   (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value))
+   (r ^. sort)
+ ]
 
-  MDetail sid form -> MDetail sid <$> H.div "row"
-    [ H.div "col-sm-8 offset-sm-2"
-      [ H.h2_ [ text $ maybe "Register New Space Craft" (const "Edit Space Craft") sid
-              ]
-      , editForm sid form
-      ]
+
+mdetail :: (MonadJSM m, CRUDSpaceCraft m) => (Maybe SpaceCraftId, SpaceCraftUpdate 'Edit)
+        -> HtmlM m (Maybe SpaceCraftId, SpaceCraftUpdate 'Edit)
+mdetail (sid, form) = H.div "row"
+  [ H.div "col-sm-8 offset-sm-2"
+    [ H.h2_ [ text $ maybe "Register New Space Craft" (const "Edit Space Craft") sid
+            ]
+    , rightMC (editForm sid form)
     ]
+  ]
 
-  MEcho t -> H.div_
-    [ maybe (text "Erie silence") text t
-    , H.a [ H.onClick' (fe <$ navigate @SPA (RList $ Input Clean "")) ] [ "Go To Space Craft Roster" ]
-    ]
-
-  M404 -> text "404"
+m404 :: Monad m => () -> HtmlM m ()
+m404 _ = text "404"
 
 
-template :: Frontend -> Html m a -> Html m a
+template :: Monad m => Frontend -> HtmlM m a -> HtmlM m a
 template fe stage = H.html_
   [ H.head_
     [ H.link'

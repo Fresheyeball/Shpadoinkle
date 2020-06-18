@@ -30,6 +30,7 @@ module Shpadoinkle.Widgets.Table
   ) where
 
 
+import           Control.Arrow             (second)
 import           Data.Aeson
 import           Data.Kind
 import           Data.List                 (sortBy)
@@ -89,7 +90,7 @@ class Tabular a where
   type Effect a (m :: Type -> Type) :: Constraint
   type Effect a m = Applicative m
   toRows    :: a -> [Row a]
-  toCell    :: Effect a m => a -> Row a -> Column a -> [Html m a]
+  toCell    :: Effect a m => a -> Row a -> Column a -> [HtmlM m a]
   sortTable :: SortCol a -> Row a -> Row a -> Ordering
 
 
@@ -98,11 +99,11 @@ toggleSort c (SortCol c' s) = if c == c' then SortCol c $ negateSort s else Sort
 
 
 data Theme m a = Theme
-  { tableProps ::             [(Text, Prop m (a, SortCol a))]
-  , headProps  ::             [(Text, Prop m (a, SortCol a))]
-  , thProps    :: Column a -> [(Text, Prop m (a, SortCol a))]
-  , bodyProps  ::             [(Text, Prop m (a, SortCol a))]
-  , tdProps    :: Column a -> [(Text, Prop m a)]
+  { tableProps ::             [(Text, PropM m (a, SortCol a))]
+  , headProps  ::             [(Text, PropM m (a, SortCol a))]
+  , thProps    :: Column a -> [(Text, PropM m (a, SortCol a))]
+  , bodyProps  ::             [(Text, PropM m (a, SortCol a))]
+  , tdProps    :: Column a -> [(Text, PropM m a)]
   } deriving Generic
 
 
@@ -116,35 +117,35 @@ instance Monoid (Theme m a) where
 view :: forall m a.
   ( Tabular a
   , Effect a m
-  , Applicative m
+  , Monad m
   , Humanize (Column a)
   , Bounded  (Column a)
   , Ord      (Column a)
   , Enum     (Column a) )
-  => a -> SortCol a -> Html m (a, SortCol a)
+  => a -> SortCol a -> HtmlM m (a, SortCol a)
 view = viewWith mempty
 
 
 viewWith :: forall m a.
   ( Tabular a
   , Effect a m
-  , Applicative m
+  , Monad m
   , Humanize (Column a)
   , Bounded  (Column a)
   , Ord      (Column a)
   , Enum     (Column a) )
-  => Theme m a -> a -> SortCol a -> Html m (a, SortCol a)
+  => Theme m a -> a -> SortCol a -> HtmlM m (a, SortCol a)
 viewWith Theme {..} xs s@(SortCol sorton sortorder) =
   table tableProps
     [ thead headProps [ tr_ $ cth_ <$> [minBound..maxBound] ]
     , tbody bodyProps $ do
         row <- sortBy (sortTable s) (toRows xs)
-        return . (fmap (, s)) . tr_ $ (\c -> td (tdProps c) $ toCell xs row c) <$> [minBound..maxBound]
+        return . leftMC . tr_ $ (\c -> td (tdProps c) $ toCell xs row c) <$> [minBound..maxBound]
     ]
 
   where
 
-  cth_ c = th (thProps c) . pure . Html.a [ onClick (xs, toggleSort c s) ]
+  cth_ c = th (thProps c) . pure . Html.a [ second rightMC . onClick $ toggleSort c s ]
          . mappend [ text (humanize c) ] . pure . text $
           if c == sorton then
             case sortorder of ASC -> "↑"; DESC -> "↓"

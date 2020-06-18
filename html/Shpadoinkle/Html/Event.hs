@@ -1,21 +1,23 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
 
 -- | This module provides a DSL of Events found on HTML elements.
 -- This DSL is entirely optional. You may use the 'Prop's 'PListener' constructor
 -- provided by Shpadoinkle core and completely ignore this module.
--- You can use the 'listener', 'listen', 'listenRaw', 'listen'' convenience
+-- You can use the 'listener', 'listen, 'listenRaw', 'listenE', 'listenM' convenience
 -- functions as well, without using this module. But for those who like a typed
 -- DSL with named function, and overloading, this is for you.
 --
--- All listners come in 2 flavors. Unctuous flavors. Plain (IE 'onInput'), and prime (IE 'onInput'').
+-- All listners come in 2 flavors. Unctuous flavors. Plain (IE 'onInput'), and monadic (IE 'onInputM').
 -- The following should hold
 --
 -- @
---   onX' (pure x) = onX x
+--   onXM (pure x) = onX x
 -- @
 --
 -- A flavor providing access to the 'RawNode' and the 'RawEvent' are not provided
@@ -34,6 +36,7 @@ module Shpadoinkle.Html.Event where
 
 
 import           Control.Monad               (msum)
+import           Data.Proxy
 import           Data.Text
 import           Language.Javascript.JSaddle
 
@@ -42,57 +45,97 @@ import           Shpadoinkle.Html.TH
 import           Shpadoinkle.Keyboard
 
 
-mkWithFormVal :: MonadJSM m => (JSVal -> JSM v) -> Text -> JSString -> (v -> m a) -> (Text, Prop m a)
+mkWithFormVal :: IsProp p e => (JSVal -> JSM v) -> Text -> JSString -> (v -> e a) -> (Text, p a)
 mkWithFormVal valTo evt from f = listenRaw evt $ \(RawNode n) _ ->
-  f =<< liftJSM (valTo =<< unsafeGetProp from =<< valToObject n)
+  return . f =<< liftJSM (valTo =<< unsafeGetProp from =<< valToObject n)
 
 
-onInput' :: MonadJSM m => (Text -> m a) -> (Text, Prop m a)
-onInput' = mkWithFormVal valToText "input" "value"
+onInputE :: IsProp p e => (Text -> e a) -> (Text, p a)
+onInputE = mkWithFormVal valToText "input" "value"
 
 
-onInput :: MonadJSM m => (Text -> a) -> (Text, Prop m a)
-onInput f = onInput' (pure . f)
+onInput :: forall p e a. IsProp p e => (Text -> a) -> (Text, p a)
+onInput f = onInputE (constUpdate (Proxy :: Proxy p) . f)
 
 
-onOption' :: MonadJSM m => (Text -> m a) -> (Text, Prop m a)
-onOption' = mkWithFormVal valToText "change" "value"
+onInputM :: Monad m => (Text -> m (a -> a)) -> (Text, PropM m a)
+onInputM f = onInputE (impur . f)
 
 
-onOption :: MonadJSM m => (Text -> a) -> (Text, Prop m a)
-onOption f = onOption' (pure . f)
+onInputM_ :: Monad m => (Text -> m ()) -> (Text, PropM m a)
+onInputM_ f = onInputE (causes . f)
 
 
-mkOnKey :: MonadJSM m => Text -> (KeyCode -> m a) -> (Text, Prop m a)
+onOptionE :: IsProp p e => (Text -> e a) -> (Text, p a)
+onOptionE = mkWithFormVal valToText "change" "value"
+
+
+onOption :: forall p e a. IsProp p e => (Text -> a) -> (Text, p a)
+onOption f = onOptionE (constUpdate (Proxy :: Proxy p) . f)
+
+
+onOptionM :: Monad m => (Text -> m (a -> a)) -> (Text, PropM m a)
+onOptionM f = onOptionE (impur . f)
+
+
+onOptionM_ :: Monad m => (Text -> m ()) -> (Text, PropM m a)
+onOptionM_ f = onOptionE (causes . f)
+
+
+mkOnKey :: IsProp p e => Text -> (KeyCode -> e a) -> (Text, p a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
-  f =<< liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
+  return . f =<< liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
 
 
-onKeyup, onKeydown, onKeypress :: MonadJSM m => (KeyCode -> m a) -> (Text, Prop m a)
-onKeyup    = mkOnKey "keyup"
-onKeydown  = mkOnKey "keydown"
-onKeypress = mkOnKey "keypress"
-onKeyup', onKeydown', onKeypress' :: MonadJSM m => (KeyCode -> a) -> (Text, Prop m a)
-onKeyup'    f = onKeyup    (pure . f)
-onKeydown'  f = onKeydown  (pure . f)
-onKeypress' f = onKeypress (pure . f)
+onKeyupE, onKeydownE, onKeypressE :: IsProp p e => (KeyCode -> e a) -> (Text, p a)
+onKeyupE    = mkOnKey "keyup"
+onKeydownE  = mkOnKey "keydown"
+onKeypressE = mkOnKey "keypress"
+onKeyup, onKeydown, onKeypress  :: forall p e a. IsProp p e => (KeyCode -> a) -> (Text, p a)
+onKeyup    f = onKeyupE    (constUpdate (Proxy :: Proxy p) . f)
+onKeydown  f = onKeydownE  (constUpdate (Proxy :: Proxy p) . f)
+onKeypress f = onKeypressE (constUpdate (Proxy :: Proxy p) . f)
+onKeyupM, onKeydownM, onKeypressM :: Monad m => (KeyCode -> m (a -> a)) -> (Text, PropM m a)
+onKeyupM    f = onKeyupE    (impur . f)
+onKeydownM  f = onKeydownE  (impur . f)
+onKeypressM f = onKeypressE (impur . f)
+onKeyupM_, onKeydownM_, onKeypressM_ :: Monad m => (KeyCode -> m ()) -> (Text, PropM m a)
+onKeyupM_    f = onKeyupE    (causes . f)
+onKeydownM_  f = onKeydownE  (causes . f)
+onKeypressM_ f = onKeypressE (causes . f)
 
 
-onCheck' :: MonadJSM m => (Bool -> m a) -> (Text, Prop m a)
-onCheck' = mkWithFormVal valToBool "change" "checked"
+onCheckE :: IsProp p e => (Bool -> e a) -> (Text, p a)
+onCheckE = mkWithFormVal valToBool "change" "checked"
 
 
-onCheck :: MonadJSM m => (Bool -> a) -> (Text, Prop m a)
-onCheck f = onCheck' (pure . f)
+onCheck :: forall p e a. IsProp p e => (Bool -> a) -> (Text, p a)
+onCheck f = onCheckE (constUpdate (Proxy :: Proxy p) . f)
 
 
-onSubmit' :: MonadJSM m => m a -> (Text, Prop m a)
-onSubmit' m = listenRaw "submit" $ \_ (RawEvent e) ->
-  liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> m
+onCheckM :: Monad m => (Bool -> m (a -> a)) -> (Text, PropM m a)
+onCheckM f = onCheckE (impur . f)
 
 
-onSubmit :: MonadJSM m => a -> (Text, Prop m a)
-onSubmit = onSubmit' . pure
+onCheckM_ :: Monad m => (Bool -> m ()) -> (Text, PropM m a)
+onCheckM_ f = onCheckE (causes . f)
+
+
+onSubmitE :: IsProp p e => e a -> (Text, p a)
+onSubmitE m = listenRaw "submit" $ \_ (RawEvent e) ->
+  liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> return m
+
+
+onSubmit :: forall p e a. IsProp p e => a -> (Text, p a)
+onSubmit = onSubmitE . constUpdate (Proxy :: Proxy p)
+
+
+onSubmitM :: Monad m => m (a -> a) -> (Text, PropM m a)
+onSubmitM = onSubmitE . impur
+
+
+onSubmitM_ :: Monad m => m () -> (Text, PropM m a)
+onSubmitM_ = onSubmitE . causes
 
 
 mkGlobalKey :: Text -> (KeyCode -> JSM ()) -> JSM ()

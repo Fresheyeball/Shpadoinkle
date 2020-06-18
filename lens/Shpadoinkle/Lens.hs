@@ -5,24 +5,22 @@ module Shpadoinkle.Lens where
 
 
 import           Control.Lens
+import           Control.ShpadoinkleContinuation
 import           Data.Maybe
-
-import           Shpadoinkle
 
 
 --embed :: Functor m => Lens s t a b -> (a -> Html m b) -> s -> Html m t
 --embed = (%%~)
 
 
-(<+) :: forall m s a. Functor m => s -> ASetter' s a -> Html m a -> Html m s
-(<+) big len = fmap $ \s -> big & len .~ s
+generalize :: forall f m s a. Functor m => MapContinuations f => Lens' s a -> f m a -> f m s
+generalize len = liftMC (set len) (view len)
 
 
-(<%) :: forall m s a. Functor m => s -> Lens' s a -> (a -> Html m a) -> Html m s
-(<%) big len comp = (\s -> big & len .~ s) <$> comp (big ^. len)
+(<%) :: forall f m s a. Functor m => MapContinuations f => s -> Lens' s a -> (a -> f m a) -> f m s
+(<%) big len f = generalize len (f (view len big))
 
 
-infixl 8 <+
 infixl 8 <%
 
 

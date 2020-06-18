@@ -17,10 +17,10 @@ import           Shpadoinkle.Widgets.Types.Form   as Form
 import           Shpadoinkle.Widgets.Types.Search
 
 
-type Config m a = Props m (Input a)
+type Config a = Props (Input a)
 
 
-mkInput :: MonadJSM m => Text -> (Text -> a) -> (a -> Text) -> Config m a -> Input a -> Html m (Input a)
+mkInput :: Text -> (Text -> a) -> (a -> Text) -> Config a -> Input a -> Html (Input a)
 mkInput t to from attrs inp = Html.input
   ( Html.value (from $ Form._value inp)
   : Html.onInput (Input Dirty . to)
@@ -28,23 +28,23 @@ mkInput t to from attrs inp = Html.input
   : attrs ) []
 
 
-fractional :: MonadJSM m => Fractional n => Show n => Config m n -> Input n -> Html m (Input n)
+fractional :: Fractional n => Show n => Config n -> Input n -> Html (Input n)
 fractional cfg inp = mkInput "number" to (pack . show) cfg inp where
   to t = case double t of
     Right (d,"") -> realToFrac d
     _            -> _value inp
 
 
-integral :: MonadJSM m => Integral n => Show n => Config m n -> Input n -> Html m (Input n)
+integral :: Integral n => Show n => Config n -> Input n -> Html (Input n)
 integral cfg inp = mkInput "number" to (pack . show) cfg inp where
   to t = case double t of
     Right (d,"") -> round d
     _            -> _value inp
 
 
-search :: MonadJSM m => Config m Search -> Input Search -> Html m (Input Search)
+search :: Config Search -> Input Search -> Html (Input Search)
 search = mkInput "search" coerce coerce
 
 
-text :: forall m t. (MonadJSM m, Coercible Text t) => Config m t -> Input t -> Html m (Input t)
+text :: forall t. Coercible Text t => Config t -> Input t -> Html (Input t)
 text = mkInput "text" coerce coerce

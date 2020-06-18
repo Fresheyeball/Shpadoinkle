@@ -53,9 +53,10 @@ toFile p bs = File
 
 -- | Serve index.html generated from a Shpadoinkle view, using the static backend, otherwise serve out of a directory.
 defaultSPAServerSettings
-  :: FilePath
+  :: Monad m
+  => FilePath
   -- ^ Directory to try files
-  -> IO (Html m a)
+  -> IO (HtmlM m a)
   -- ^ Get the index.html page
   -> StaticSettings
 defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex, ssMaxAge = MaxAgeSeconds 0 }
@@ -76,9 +77,10 @@ defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex, ssMaxAg
 -- | Serve the UI by generating a Servant Server from the SPA URIs
 class ServeRouter layout route where
   serveUI
-    :: FilePath
+    :: Monad m
+    => FilePath
     -- ^ Where should we look for static assets?
-    -> (route -> IO (Html m a))
+    -> (route -> IO (HtmlM m a))
     -- ^ How shall we get the page based on the requested route?
     -> layout :>> route
     -- ^ What is the relationship between URIs and routes?
@@ -88,47 +90,47 @@ class ServeRouter layout route where
 instance (ServeRouter x r, ServeRouter y r)
   => ServeRouter (x :<|> y) r where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (x :<|> y) :>> r -> Server (x :<|> y)
+  serveUI :: Monad m => FilePath -> (r -> IO (HtmlM m a)) -> (x :<|> y) :>> r -> Server (x :<|> y)
   serveUI root view (x :<|> y) = serveUI @x root view x :<|> serveUI @y root view y
   {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter (Capture sym x :> sub) r where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (x -> sub :>> r) -> Server (Capture sym x :> sub)
+  serveUI :: Monad m => FilePath -> (r -> IO (HtmlM m a)) -> (x -> sub :>> r) -> Server (Capture sym x :> sub)
   serveUI root view = (serveUI @sub root view .)
   {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter (QueryParam sym x :> sub) r where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (Maybe x -> sub :>> r) -> Server (QueryParam sym x :> sub)
+  serveUI :: Monad m => FilePath -> (r -> IO (HtmlM m a)) -> (Maybe x -> sub :>> r) -> Server (QueryParam sym x :> sub)
   serveUI root view = (serveUI @sub root view .)
   {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter (QueryParams sym x :> sub) r where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> ([x] -> sub :>> r) -> Server (QueryParams sym x :> sub)
+  serveUI :: Monad m => FilePath -> (r -> IO (HtmlM m a)) -> ([x] -> sub :>> r) -> Server (QueryParams sym x :> sub)
   serveUI root view = (serveUI @sub root view .)
   {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter (QueryFlag sym :> sub) r where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (Bool -> sub :>> r) -> Server (QueryFlag sym :> sub)
+  serveUI :: Monad m => FilePath -> (r -> IO (HtmlM m a)) -> (Bool -> sub :>> r) -> Server (QueryFlag sym :> sub)
   serveUI root view = (serveUI @sub root view .)
   {-# INLINABLE serveUI #-}
 
 instance ServeRouter sub r
   => ServeRouter ((path :: Symbol) :> sub) r where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (path :> sub) :>> r -> Server (path :> sub)
+  serveUI :: Monad m => FilePath -> (r -> IO (HtmlM m a)) -> (path :> sub) :>> r -> Server (path :> sub)
   serveUI = serveUI @sub
   {-# INLINABLE serveUI #-}
 
 instance ServeRouter Raw r where
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> Raw :>> r -> Server Raw
+  serveUI :: Monad m => FilePath -> (r -> IO (HtmlM m a)) -> Raw :>> r -> Server Raw
   serveUI root view = serveDirectoryWith . defaultSPAServerSettings root . view
   {-# INLINABLE serveUI #-}
 

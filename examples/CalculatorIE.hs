@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields  #-}
 {-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
@@ -116,12 +117,12 @@ initial :: Model
 initial = Model noEntry Nothing
 
 
-digit :: Applicative m => Digit -> Html m Digit
+digit :: Digit -> Html Digit
 digit d = button [ onClick d, className $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
 
-operate :: Applicative m => Maybe Operator -> Operator -> Html m Operator
+operate :: Maybe Operator -> Operator -> Html Operator
 operate active o = button
   [ onClick o, className ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
@@ -159,21 +160,21 @@ neg = \case
   e -> Negate e
 
 
-view :: MonadJSM m => Model -> Html m Model
+view :: Monad m => Model -> HtmlM m Model
 view x = H.div "calculator"
   [ H.div "readout" [ text . pack . show $ x ^. entry ]
   , ul "buttons"
 
-    [ H.div "operate" $ fmap (\o -> x
-      & state .~ Just (Operation o (x ^. entry))
-      & entry .~ noEntry)
+    [ H.div "operate" $
+      constly (\o x -> x & state .~ (Just (Operation o (x ^. entry)))
+                         & entry .~ noEntry)
       . operate (x ^? state . traverse . operator) <$> [minBound .. maxBound]
 
     , H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
-      fmap (\d -> x & entry %~ applyDigit d) . digit <$> [minBound .. pred maxBound]
+      constly putDigit . digit <$> [minBound .. pred maxBound]
 
     , H.div "zerodot"
-      [ (\d -> x & entry %~ applyDigit d) <$> digit Zero
+      [ constly putDigit (digit Zero)
       , button [ onClick $ x & entry %~ addDecimal ] [ "." ]
       ]
 
@@ -184,8 +185,10 @@ view x = H.div "calculator"
     ]
   ]
 
+  where putDigit d = entry %~ applyDigit d
 
-trapper :: Show a => (a -> Html m a) -> (a -> Html m a)
+
+trapper :: Show a => (a -> HtmlM m a) -> (a -> HtmlM m a)
 trapper v x = trace ("Trapper: " <> show x) $ v x
 
 

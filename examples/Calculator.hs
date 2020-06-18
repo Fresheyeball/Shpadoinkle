@@ -1,11 +1,13 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 
 module Main where
 
 
+import           Control.Lens                hiding (simple, view)
 import           Data.Maybe
 import           Data.Text
 import           Safe
@@ -15,9 +17,9 @@ import           Shpadoinkle.Html
 
 
 data Model = Model
-    { operation :: Operation
-    , left      :: Int
-    , right     :: Int
+    { _operation :: Operation
+    , _left      :: Int
+    , _right     :: Int
     }
     deriving (Eq, Show)
 
@@ -27,6 +29,9 @@ data Operation = Addition
     | Multiplication
     | Division
     deriving (Eq, Show, Read, Enum, Bounded)
+
+
+makeLenses ''Model
 
 
 opFunction :: Operation -> (Int -> Int -> Int)
@@ -46,26 +51,26 @@ opText = \case
   Division       -> "÷"
 
 
-opSelect :: MonadJSM m => Html m Operation
+opSelect :: Html Operation
 opSelect = select [ onOption $ read . unpack ]
   $ opOption <$> [minBound..maxBound]
   where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 
 
-num :: MonadJSM m => Int -> Html m Int
+num :: Int -> Html Int
 num x = input'
  [ value . pack $ show x
- , onInput (fromMaybe 0 . readMay . unpack)
+ , onInput $ fromMaybe 0 . readMay . unpack
  ]
 
 
-view :: MonadJSM m => Model -> Html m Model
+view :: Monad m => Model -> HtmlM m Model
 view model = div_
- [ (\l -> model { left      = l }) <$> num (left model)
- , (\o -> model { operation = o }) <$> opSelect
- , (\r -> model { right     = r }) <$> num (right model)
+ [ constly (set left) (num (_left model))
+ , constly (set operation) opSelect
+ , constly (set right) (num (_right model))
  , text $ " = " <> pack (show $ opFunction
-     (operation model) (left model) (right model))
+     (_operation model) (_left model) (_right model))
  ]
 
 

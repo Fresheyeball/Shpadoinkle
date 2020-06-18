@@ -27,6 +27,7 @@ import           Servant.API
 import           Servant.Server
 
 import           Shpadoinkle
+import           Shpadoinkle.Router        (MonadJSM)
 import           Shpadoinkle.Router.Server
 
 import           Types

@@ -21,11 +21,12 @@ import           GHC.Generics
 import           GHCJS.DOM
 import           GHCJS.DOM.Storage
 import           GHCJS.DOM.Window
+import           JSDOM.Types         (MonadJSM, liftJSM)
 import           Text.Read
 import           UnliftIO
 import           UnliftIO.Concurrent (forkIO)
 
-import           Shpadoinkle         (MonadJSM, Territory (..), liftJSM)
+import           Shpadoinkle         (shouldUpdate)
 
 
 -- | The key for a specific state kept in local storage
@@ -46,8 +47,8 @@ getStorage (LocalStorageKey k) = do
 
 
 -- Whe we should update we save
-saveOnChange :: MonadJSM m => Territory t => Show a => Eq a
-             => LocalStorageKey a -> t a -> m ()
+saveOnChange :: MonadJSM m => Show a => Eq a
+             => LocalStorageKey a -> TVar a -> m ()
 saveOnChange k = liftJSM . shouldUpdate (const $ setStorage k) ()
 
 

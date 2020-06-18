@@ -91,8 +91,13 @@ instance Compactable (Choice 'Many) where
   partition p (Choice x xs) = let (l, r) = Set.partition p xs; (l',r') = Control.Compactable.partition p x in (Choice l' l, Choice r' r)
 
 
+-- | Laws:
+-- ```Haskell
+--  if toSet a == toSet b then a == b -- toSet is injective
+--  toSet (smap f s) == fmap f (toSet s)
+--  if valid s then Set.valid (toSet s)
+-- ```
 class SetLike f where
-  -- must be injective
   toSet :: Ord a => f a -> Set a
   smap  :: Ord b => (a -> b) -> f a -> f b
   valid :: Ord a => f a -> Bool

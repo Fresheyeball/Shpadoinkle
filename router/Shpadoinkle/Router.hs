@@ -11,6 +11,7 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE TupleSections             #-}
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeOperators             #-}
@@ -33,6 +34,7 @@ module Shpadoinkle.Router
     , fromRouter
     , HasRouter(..)
     , HasLink(..)
+    , MonadJSM
     , Routed(..)
     , fullPageSPA
     , navigate
@@ -43,7 +45,6 @@ module Shpadoinkle.Router
 
 import           Control.Applicative
 import           Control.Compactable           as C
-import           Control.Concurrent
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Aeson
@@ -54,7 +55,6 @@ import           Data.Proxy
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
 import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
-import           GHC.Conc
 import           GHC.TypeLits
 import           GHCJS.DOM
 import           GHCJS.DOM.EventM              (on)
@@ -63,11 +63,13 @@ import           GHCJS.DOM.History
 import           GHCJS.DOM.Location            (getPathname, getSearch)
 import           GHCJS.DOM.PopStateEvent
 import           GHCJS.DOM.Window
-import           Language.Javascript.JSaddle   (fromJSVal, jsg)
+import           Language.Javascript.JSaddle   (JSM, MonadJSM, fromJSVal, jsg, liftJSM)
 import           Servant.API                   hiding (uriPath, uriQuery)
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)
 import           System.IO.Unsafe
+import           UnliftIO.Concurrent           (forkIO, MVar, newEmptyMVar, putMVar, takeMVar)
+import           UnliftIO.STM                  (TVar, newTVarIO)
 import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
@@ -119,7 +121,7 @@ withHydration s r = do
 -- data. This function returns a script tag that makes a global variable "initState"
 -- containing a JSON representation to be used as the initial state of the application
 -- on page load. Typically this is used on the server side.
-toHydration :: ToJSON a => a -> Html m b
+toHydration :: ToJSON a => IsHtml h p => a -> h b
 toHydration fe =
   h "script" [] [ text . decodeUtf8 . toStrict $ "window.initState = '" <> encode fe <> "'" ]
 
@@ -145,17 +147,18 @@ fullPageSPA :: forall layout b a r m
    . HasRouter layout
   => Backend b m a
   => Eq a
+  => Functor m
   => (m ~> JSM)
   -- ^ how do we get to JSM?
   -> (TVar a -> b m ~> m)
   -- ^ What backend are we running?
   -> (r -> m a)
   -- ^ what is the initial state?
-  -> (a -> Html (b m) a)
+  -> (a -> HtmlM (b m) a)
   -- ^ how should the html look?
   -> b m RawNode
   -- ^ where do we render?
-  -> (r -> a -> m a)
+  -> (r -> m (Continuation m a))
   -- ^ listen for route changes
   -> layout :>> r
   -- ^ how shall we relate urls to routes?
@@ -167,8 +170,9 @@ fullPageSPA toJSM backend i' view getStage onRoute routes = do
     Nothing -> return ()
     Just r -> do
       i <- toJSM $ i' r
-      model <- createTerritory i
-      _ <- listenStateChange router $ writeUpdate model . (toJSM .) . onRoute
+      model <- newTVarIO i
+      _ <- listenStateChange router $ writeUpdate model . Continuation . (id,) . const
+           . (fmap (convertC toJSM) . toJSM) . onRoute
       shpadoinkle toJSM backend i model view getStage
       syncPoint
 
@@ -201,17 +205,12 @@ getRoute window router handle = do
   handle $ fromRouter query segs router
 
 
-forkJSM :: JSM () -> JSM ()
-forkJSM a = void . liftIO . forkIO . runJSM a =<< askJSM
-{-# INLINE forkJSM #-}
-
-
 listenStateChange
   :: Router r -> (r -> JSM ()) -> JSM ()
 listenStateChange router handle = do
   w <- currentWindowUnchecked
   _ <- on w popstate . liftIO $ putMVar syncRoute ()
-  _ <- liftJSM . forkJSM . forever $ do
+  _ <- forkIO . forever $ do
     liftIO $ takeMVar syncRoute
     getRoute w router $ maybe (return ()) handle
   return ()

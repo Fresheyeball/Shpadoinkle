@@ -158,6 +158,31 @@ instance (FromJSON (Column [SpaceCraft])) => FromJSON Frontend
 makeLenses ''Frontend
 
 
+-- TODO: can we get rid of this coproduct boilerplate? i.e. can we derive a coproduct representation?
+type FrontendCoproduct = Either (Either (Either (Maybe Text) Roster)
+                                 (Maybe SpaceCraftId, SpaceCraftUpdate 'Edit)) ()
+
+
+frontendToCoproduct :: Frontend -> FrontendCoproduct
+frontendToCoproduct = \case
+  MEcho t -> Left (Left (Left t))
+  MList r -> Left (Left (Right r))
+  MDetail i e -> Left (Right (i, e))
+  M404 -> Right ()
+
+
+coproductToFrontend :: FrontendCoproduct -> Frontend
+coproductToFrontend = \case
+  Left (Left (Left t)) -> MEcho t
+  Left (Left (Right r)) -> MList r
+  Left (Right (i,e)) -> MDetail i e
+  Right () -> M404
+
+
+coproductIsoFrontend :: EndoIso FrontendCoproduct Frontend
+coproductIsoFrontend = piiso coproductToFrontend frontendToCoproduct
+
+
 data Route
   = REcho (Maybe Text)
   | RList (Input Search)
@@ -244,7 +269,7 @@ instance Tabular [SpaceCraft] where
 
   toRows = fmap SpaceCraftRow
 
-  toCell xs (SpaceCraftRow SpaceCraft {..}) = \case
+  toCell _ (SpaceCraftRow SpaceCraft {..}) = \case
     SKUT          -> present _sku
     DescriptionT  -> present _description
     SerialNumberT -> present _serial
@@ -252,9 +277,12 @@ instance Tabular [SpaceCraft] where
     OperableT     -> present _operable
     ToolsT        ->
       [ H.div "btn-group"
-        [ H.button [ H.class' "btn btn-sm btn-secondary", H.onClick' (xs <$ navigate @ SPA (RExisting _identity)) ] [ "Edit" ]
-        , H.button [ H.class' "btn btn-sm btn-secondary", H.onClick' (Prelude.filter (\x -> x ^. identity /= _identity) xs
-                          <$ deleteSpaceCraft _identity) ] [ "Delete" ]
+        [ H.button [ H.class' "btn btn-sm btn-secondary",
+                     H.onClickM_ $ navigate @ SPA (RExisting _identity) ] [ "Edit" ]
+        , H.button [ H.class' "btn btn-sm btn-secondary",
+                     H.onClickM $ do
+                       deleteSpaceCraft _identity
+                       return . Prelude.filter $ \x -> x ^. identity /= _identity ] [ "Delete" ]
         ]
       ]
 

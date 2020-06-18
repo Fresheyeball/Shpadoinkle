@@ -72,7 +72,7 @@ instance (Consideration ConsideredChoice p, Ord a)
 
 
 newtype Config m = Config
-  { _attrs :: forall a. [(Text, Prop m a)] }
+  { _attrs :: forall a. [(Text, PropM m a)] }
 
 
 defConfig :: Config m
@@ -125,14 +125,14 @@ instance Consideration ConsideredChoice p => Consideration Dropdown p where
 
 
 data Theme m = Theme
-    { _wrapper :: forall a . [Html m a] -> Html m a
-    , _header  :: forall a . [Html m a] -> [Html m a]
-    , _list    :: forall a . [Html m a] -> Html m a
-    , _item    :: forall a . [Html m a] -> Html m a
+    { _wrapper :: forall a . [HtmlM m a] -> HtmlM m a
+    , _header  :: forall a . [HtmlM m a] -> [HtmlM m a]
+    , _list    :: forall a . [HtmlM m a] -> HtmlM m a
+    , _item    :: forall a . [HtmlM m a] -> HtmlM m a
     }
 
 
-semantic :: Dropdown p b -> Theme m
+semantic :: Monad m => Dropdown p b -> Theme m
 semantic Dropdown {..} = Theme
   { _wrapper = div
     [ className [ ("dropdown", True)
@@ -168,14 +168,14 @@ dropdown ::
   , Consideration Dropdown p
   , Consideration ConsideredChoice p
   , Present (Selected p a), Present a, Ord a
-  , MonadJSM m
+  , Monad m
   ) => (forall b. Dropdown p b -> Theme m)
-    -> Config m -> Dropdown p a -> Html m (Dropdown p a)
+    -> Config m -> Dropdown p a -> HtmlM m (Dropdown p a)
 dropdown toTheme Config {..} x =
   let
     Theme {..} = toTheme x
   in injectProps
-  ([onKeyup' $ \case
+  ([onKeyup $ \case
     Enter     -> act x
     UpArrow   -> considerPrev x
     DownArrow -> considerNext x

@@ -54,6 +54,7 @@ executables:
 
       - Shpadoinkle
       - Shpadoinkle-html
+      - Shpadoinkle-lens
       - Shpadoinkle-backend-snabbdom
 
   todomvcdata:
@@ -67,6 +68,7 @@ executables:
 
       - Shpadoinkle
       - Shpadoinkle-html
+      - Shpadoinkle-lens
       - Shpadoinkle-backend-snabbdom
 
 
