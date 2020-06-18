@@ -11,7 +11,7 @@ status]]
 https://opensource.org/licenses/BSD-3-Clause[image:https://img.shields.io/badge/License-BSD%203--Clause-blue.svg[BSD-3]]
 https://builtwithnix.org[image:https://img.shields.io/badge/built%20with-nix-41439a[built
 with nix]]
-http://shpadoinkle.cachix.org[image:https://img.shields.io/badge/Cachix-up--to--date-green]
+http://shpadoinkle.cachix.org[image:https://img.shields.io/badge/Cachix-up%20to%20date-green[cachix]]
 
 = Shpadoinkle
 
