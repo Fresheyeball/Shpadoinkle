@@ -12,7 +12,7 @@ module Shpadoinkle
   ) where
 
 import           Control.PseudoInverseCategory
-import           Data.Continuation
+import           Control.ShpadoinkleContinuation
 import           Shpadoinkle.Core
 import           Shpadoinkle.Class
 import           Shpadoinkle.EndoIso

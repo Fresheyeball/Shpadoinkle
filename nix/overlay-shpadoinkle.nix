@@ -23,6 +23,14 @@
     };
 
 
+  continuations-src = super.fetchFromGitHub
+    { owner  = "morganthomas";
+      repo   = "Shpadoinkle-continuations";
+      rev    = "08b2fe367539183c16920c0057ee4a4a98f06eb9";
+      sha256 = "003x21hq08wvrkk7bs7awz5gv9vy4kd35psbijcd1574pi7vjrmj";
+    };
+
+
   gitignore = util.gitignore
       [ ".git"
         "*.ghc*"
@@ -59,6 +67,8 @@ in {
           Shpadoinkle-examples         = hself.callCabal2nix "Shpadoinkle-examples"         (gitignore ../examples)          {};
           Shpadoinkle-experiments      = hself.callCabal2nix "Shpadoinkle-experiments"      (gitignore ../experiments)       {};
           Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests)             {};
+
+	  Shpadoinkle-continuations    = dontJS (hself.callCabal2nix "Shpadoinkle-continuations" "${continuations-src}/" {});
 
           hashable             = dontJS hsuper.hashable;
           comonad              = dontJS hsuper.comonad;

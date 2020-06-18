@@ -5,7 +5,7 @@ module Shpadoinkle.Lens where
 
 
 import           Control.Lens
-import           Data.Continuation
+import           Control.ShpadoinkleContinuation
 import           Data.Maybe
 
 

@@ -24,7 +24,7 @@ dependencies:
     - lens
     - text
 
-    - Shpadoinkle
+    - Shpadoinkle-continuations
 
 
 library:

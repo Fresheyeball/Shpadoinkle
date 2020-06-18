@@ -35,7 +35,7 @@ module Shpadoinkle.Core
 
 
 import           Control.Arrow                    (second)
-import           Data.Continuation                (pur, shouldUpdate)
+import           Control.ShpadoinkleContinuation  (pur, shouldUpdate)
 import           Language.Javascript.JSaddle      (JSM)
 import           UnliftIO.STM                     (TVar, newTVarIO, readTVarIO)
 

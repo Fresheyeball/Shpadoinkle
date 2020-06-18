@@ -18,15 +18,15 @@ module Shpadoinkle.EndoIso
 
 
 import           Control.Arrow
-import qualified Control.Categorical.Functor   as F
-import           Control.Category              ((.))
+import qualified Control.Categorical.Functor      as F
+import           Control.Category                 ((.))
 import           Control.PseudoInverseCategory
-import           Data.Continuation
+import           Control.ShpadoinkleContinuation
 import           Data.Kind
 import           Data.String
 import           Data.Text
-import           Language.Javascript.JSaddle   (JSM)
-import           Prelude                       hiding ((.))
+import           Language.Javascript.JSaddle      (JSM)
+import           Prelude                          hiding ((.))
 
 import           Shpadoinkle.Class
 
