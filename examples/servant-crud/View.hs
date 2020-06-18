@@ -72,7 +72,7 @@ formGroup = H.div "form-group row"
 
 textControl
   :: forall t m a
-   . Eq t => IsString t => Coercible Text t => Monad m
+   . Eq t => IsString t => Coercible Text t
   => (forall v. Lens' (a v) (Field v Text Input (Maybe t)))
   -> Text -> a 'Errors -> a 'Edit -> HtmlM m (a 'Edit)
 textControl l msg errs ef = constly (set (l . mapping (fromMaybe "" `iso` noEmpty))) el
@@ -96,7 +96,7 @@ textControl l msg errs ef = constly (set (l . mapping (fromMaybe "" `iso` noEmpt
 
 intControl
   :: forall n m a
-   . Monad m => Integral n => Show n
+   . Integral n => Show n
   => (forall v. Lens' (a v) (Field v Text Input n))
   -> Text -> a 'Errors -> a 'Edit -> HtmlM m (a 'Edit)
 intControl l msg errs ef = constly (set l) el
@@ -206,7 +206,7 @@ start = \case
      _          -> M404
 
 
-tableCfg :: Applicative m => Table.Theme m [SpaceCraft]
+tableCfg :: Table.Theme m [SpaceCraft]
 tableCfg = mempty
   { tableProps = [ H.class' "table table-striped table-bordered" ]
   , tdProps    = \case
