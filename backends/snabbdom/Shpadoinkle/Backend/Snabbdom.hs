@@ -73,8 +73,8 @@ props toJSM i xs = do
         [] -> return ()
         ev:_ -> do
           rn <- unsafeGetProp "target" =<< valToObject ev
-          writeUpdate i . Continuation . (id,) . const . fmap (convertC (toJSM . runSnabbdom i))
-                             $ f (RawNode rn) (RawEvent ev)
+          x <- f (RawNode rn) (RawEvent ev)
+          writeUpdate i $ convertC (toJSM . runSnabbdom i) x
       unsafeSetProp (toJSString k) f' e
     PFlagM b -> do
       f <- toJSVal b

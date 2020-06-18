@@ -160,7 +160,9 @@ setListener :: TVar a -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -> Ob
 setListener i m o k = do
   elm <- RawNode <$> toJSVal o
   setProp' o ("on" <> k) . fun $ \_ _ -> \case
-    e:_ -> writeUpdate i . Continuation . (id,) . const $ m elm (RawEvent e)
+    e:_ -> do
+      x <- m elm (RawEvent e)
+      writeUpdate i x
     _ -> return ()
 
 
