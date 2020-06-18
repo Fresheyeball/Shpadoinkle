@@ -26,32 +26,32 @@ import           Language.Javascript.JSaddle (JSM)
 import           Shpadoinkle.Class
 
 
--- | `Html m` and `Prop m` are not Functors because Continuation is
---   not a Functor. Continuation is not a Functor fundamentally because
---   (a -> a) is not a Functor; there is no (total computable) function
---   (a -> b) -> ((a -> a) -> (b -> b)).
+-- | @HtmlM m@ and @PropM m@ are not Functors because @Continuation@ is
+--   not a @Functor@. @Continuation@ is not a @Functor@ fundamentally because
+--   @a -> a@ is not a @Functor@; there is no (total computable) function
+--   @(a -> b) -> ((a -> a) -> (b -> b))@.
 --
---   Html' is a Functor with the property that Html' a can be turned
---   into Html m b via a mapping function of type a -> b -> b.
+--   @Html@ is a @Functor@ with the property that @Html a@ can be turned
+--   into @HtmlM m b@ via a mapping function of type @a -> b -> b@.
 --   constly is the function which performs this change. Since Html'
 --   is a Functor, it can be more convenient to work with than Html m.
 --
---   The major limitations of Html' are:
+--   The major limitations of @Html@ are:
 --     1. Event handlers cannot have side effects.
 --     2. The return value of an event handler cannot depend on the current
 --        state, but only on the properties of the event and target node.
 --
---   The limitations are there to allow Html' to be a Functor which can be
---   used with correct semantics even in concurrent apps. Html' is only
+--   The limitations are there to allow @Html@ to be a @Functor@ which can be
+--   used with correct semantics even in concurrent apps. @Html@ is only
 --   correct to use when the event handlers in the HTML satisfy conditions
---   1 and 2 in a semantic sense. It is technically possible to write Html'
+--   1 and 2 in a semantic sense. It is technically possible to write @Html@
 --   where the event handlers return values based on a past state passed
 --   in via a closure (which may or may not be the current state).
 --   However, it is not semantically correct to do so. An example of a
---   semantically correct usage of Html' is to create a text field
---   of type Html' Text where the value is whatever the user typed.
---   Another example of a semantically correct usage of Html'
---   is to create a number pad widget of type Html' Int where each
+--   semantically correct usage of @Html@ is to create a text field
+--   of type @Html Text@ where the value is whatever the user typed.
+--   Another example of a semantically correct usage of @Html@
+--   is to create a number pad widget of type @Html Int@ where each
 --   number button's click handler returns the number it is labeled with.
 data Html :: Type -> Type where
   Node :: Text -> Props a -> [Html a] -> Html a
