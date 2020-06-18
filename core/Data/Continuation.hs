@@ -21,7 +21,7 @@ module Data.Continuation
 
 
 import qualified Control.Categorical.Functor   as F
-import           Control.Monad                 (liftM2)
+import           Control.Monad                 (liftM2, void)
 import           Control.PseudoInverseCategory
 import           GHC.Conc                      (retry)
 import           UnliftIO
@@ -47,19 +47,23 @@ import           UnliftIO.Concurrent
 --   finishes and they are all done atomically together.
 data Continuation m a = Continuation (a -> a, a -> m (Continuation m a))
                       | Rollback (Continuation m a)
-                      | Done
+                      | Pure (a -> a)
+
+
+done :: Continuation m a
+done = Pure id
 
 
 -- | A pure state updating function can be turned into a Continuation.
 pur :: Applicative m => (a -> a) -> Continuation m a
-pur = Continuation . (, const (pure Done))
+pur = Continuation . (, const (pure done))
 
 
 -- | A monadic computation of a pure state updating function can be turned into a Continuation.
 impur :: Monad m => m (a -> a) -> Continuation m a
 impur m = Continuation . (id,) . const $ do
   f <- m
-  return $ Continuation (f, const (return Done))
+  return $ Continuation (f, const (return done))
 
 
 -- | A monadic computation can be turned into a Continuation which does not touch the state.
@@ -84,7 +88,7 @@ runContinuation' f (Continuation (g, h)) x = do
   i <- h (f x)
   runContinuation' (g.f) i x
 runContinuation' _ (Rollback f) x = runContinuation' id f x
-runContinuation' f Done _ = return f
+runContinuation' f (Pure g) _ = return (g.f)
 
 
 -- | f is a Functor to Hask from the category where the objects are
@@ -99,14 +103,14 @@ instance MapContinuations Continuation where
 
 -- | Given a natural transformation, change a continuation's underlying functor.
 convertC :: Functor m => (forall b. m b -> n b) -> Continuation m a -> Continuation n a
-convertC _ Done = Done
+convertC _ (Pure f) = Pure f
 convertC f (Rollback r) = Rollback (convertC f r)
 convertC f (Continuation (g, h)) = Continuation . (g,) $ \x -> f $ convertC f <$> h x
 
 
 -- | Apply a lens inside a continuation to change the continuation's type.
 liftC :: Functor m => (a -> b -> b) -> (b -> a) -> Continuation m a -> Continuation m b
-liftC _ _ Done = Done
+liftC f g (Pure h) = Pure (\x -> f (h (g x)) x)
 liftC f g (Rollback r) = Rollback (liftC f g r)
 liftC f g (Continuation (h, i)) = Continuation (\x -> f (h (g x)) x, \x -> liftC f g <$> i (g x))
 
@@ -138,12 +142,12 @@ rightMC = mapMC rightC
 
 -- | Transform a continuation to work on Maybes. If it encounters Nothing, then it cancels itself.
 maybeC :: Applicative m => Continuation m a -> Continuation m (Maybe a)
-maybeC Done = Done
+maybeC (Pure f) = (Pure (fmap f))
 maybeC (Rollback r) = Rollback (maybeC r)
 maybeC (Continuation (f, g)) = Continuation . (fmap f,) $
   \case
     Just x -> maybeC <$> g x
-    Nothing -> pure (Rollback Done)
+    Nothing -> pure (Rollback done)
 
 
 -- | Change the value type of f by transforming the continuations inside f to work on Maybes using maybeC.
@@ -164,7 +168,7 @@ comaybe f x = case f (Just x) of
 --   when the input continuation would replace the current value with Nothing,
 --   instead the current value is retained.
 comaybeC :: Functor m => Continuation m (Maybe a) -> Continuation m a
-comaybeC Done = Done
+comaybeC (Pure f) = Pure (comaybe f)
 comaybeC (Rollback r) = Rollback (comaybeC r)
 comaybeC (Continuation (f,g)) = Continuation (comaybe f, fmap comaybeC . g . Just)
 
@@ -195,17 +199,17 @@ mapRight f (Right x) = Right (f x)
 eitherC :: Monad m => Continuation m a -> Continuation m b -> Continuation m (Either a b)
 eitherC f g = Continuation . (id,) $ \case
   Left x -> case f of
-    Done -> return Done
-    Rollback r -> return . Rollback $ eitherC r Done
+    Pure h -> return (Pure (mapLeft h))
+    Rollback r -> return . Rollback $ eitherC r done
     Continuation (h, i) -> do
       j <- i x
-      return $ Continuation (mapLeft h, const . return $ eitherC j (Rollback Done))
+      return $ Continuation (mapLeft h, const . return $ eitherC j (Rollback done))
   Right x -> case g of
-    Done -> return Done
-    Rollback r -> return . Rollback $ eitherC Done r
+    Pure h -> return (Pure (mapRight h))
+    Rollback r -> return . Rollback $ eitherC done r
     Continuation (h, i) -> do
       j <- i x
-      return $ Continuation (mapRight h, const . return $ eitherC (Rollback Done) j)
+      return $ Continuation (mapRight h, const . return $ eitherC (Rollback done) j)
 
 
 -- | Create a structure containing coproduct continuations using two case
@@ -222,7 +226,7 @@ eitherMC _ r (Right x) = mapMC (\c -> eitherC (pur id) c) (r x)
 contIso :: Functor m => (a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 contIso f g (Continuation (h, i)) = Continuation (f.h.g, fmap (contIso f g) . i . g)
 contIso f g (Rollback h) = Rollback (contIso f g h)
-contIso _ _ Done = Done
+contIso f g (Pure h) = Pure (f.h.g)
 
 
 -- | Continuation m is a functor in the EndoIso category (where the objects
@@ -245,14 +249,17 @@ instance Monad m => Semigroup (Continuation m a) where
   (Rollback h) <> (Continuation (_, g)) =
     Rollback (Continuation (id, \x -> liftM2 (<>) (return h) (g x)))
   (Rollback f) <> (Rollback g) = Rollback (f <> g)
-  f <> Done = f
-  Done <> f = f
+  (Pure f) <> (Pure g) = Pure (f.g)
+  (Pure f) <> (Continuation (g,h)) = Continuation (f.g,h)
+  (Continuation (f,g)) <> (Pure h) = Continuation (f.h,g)
+  (Pure f) <> (Rollback g) = Continuation (f, const (return (Rollback g)))
+  (Rollback f) <> (Pure _) = Rollback f
 
 
 -- | Since combining continuations homogeneously is an associative operation,
---   and this operation has a unit element (Done), continuations are a Monoid.
+--   and this operation has a unit element (done), continuations are a Monoid.
 instance Monad m => Monoid (Continuation m a) where
-  mempty = Done
+  mempty = done
 
 
 writeUpdate' :: MonadUnliftIO m => (a -> a) -> TVar a -> (a -> m (Continuation m a)) -> m ()
@@ -261,13 +268,18 @@ writeUpdate' h model f = do
   m <- f (h i)
   case m of
     Continuation (g,gs) -> writeUpdate' (g.h) model gs
-    Done -> atomically $ writeTVar model =<< h <$> readTVar model
+    Pure g -> atomically $ writeTVar model =<< g.h <$> readTVar model
     Rollback gs -> writeUpdate' id model (const (return gs))
 
 
 -- | Run a continuation on a state variable. This may update the state.
-writeUpdate :: MonadUnliftIO m => TVar a -> (a -> m (Continuation m a)) -> m ()
-writeUpdate = writeUpdate' id
+--   This is a synchronous, non-blocking operation for pure updates,
+--   and an asynchronous, non-blocking operation for impure updates.
+writeUpdate :: MonadUnliftIO m => TVar a -> Continuation m a -> m ()
+writeUpdate model = \case
+  Continuation (f,g) -> void . forkIO $ writeUpdate' f model g
+  Pure f -> atomically $ writeTVar model =<< f <$> readTVar model
+  Rollback f -> writeUpdate model f
 
 
 -- | Execute a fold by watching a state variable and executing the next

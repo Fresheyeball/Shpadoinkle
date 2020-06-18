@@ -11,6 +11,7 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE TupleSections             #-}
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeOperators             #-}
@@ -170,8 +171,8 @@ fullPageSPA toJSM backend i' view getStage onRoute routes = do
     Just r -> do
       i <- toJSM $ i' r
       model <- newTVarIO i
-      _ <- listenStateChange router $ writeUpdate model
-           . ((fmap (convertC toJSM) . toJSM) .) . const . onRoute
+      _ <- listenStateChange router $ writeUpdate model . Continuation . (id,) . const
+           . (fmap (convertC toJSM) . toJSM) . onRoute
       shpadoinkle toJSM backend i model view getStage
       syncPoint
 

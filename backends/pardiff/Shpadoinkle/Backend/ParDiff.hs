@@ -12,6 +12,7 @@
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -50,7 +51,6 @@ module Shpadoinkle.Backend.ParDiff
 import           Control.Applicative
 import           Control.Compactable
 import           Control.Lens
-import           Control.Monad               (void)
 import           Control.Monad.Reader
 import           Data.Align
 import           Data.Foldable
@@ -68,7 +68,6 @@ import           Language.Javascript.JSaddle hiding (( # ))
 import           NeatInterpolation
 import           System.Random
 import           UnliftIO
-import           UnliftIO.Concurrent         (forkIO)
 
 import           Shpadoinkle                 hiding (h, name, props, text)
 
@@ -161,7 +160,7 @@ setListener :: TVar a -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -> Ob
 setListener i m o k = do
   elm <- RawNode <$> toJSVal o
   setProp' o ("on" <> k) . fun $ \_ _ -> \case
-    e:_ -> void . forkIO . writeUpdate i . const $ m elm (RawEvent e)
+    e:_ -> writeUpdate i . Continuation . (id,) . const $ m elm (RawEvent e)
     _ -> return ()
 
 

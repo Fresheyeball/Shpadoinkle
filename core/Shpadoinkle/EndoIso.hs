@@ -59,7 +59,12 @@ data PropM :: (Type -> Type) -> Type -> Type where
   PTextM :: Text -> PropM m a
   -- | Event listeners are provided with the 'RawNode' target, and the 'RawEvent', and may perform
   -- a monadic action such as a side effect. This is the one and only place where you may
-  -- introduce a custom monadic action.
+  -- introduce a custom monadic action. The JSM to compute the Continuation must be
+  -- synchronous and non-blocking; otherwise race conditions may result from a Pure
+  -- Continuation which sets the state based on a previous state captured by the closure.
+  -- Such continuations must be executed synchronously during event bubbling,
+  -- and that may not be the case if the code to compute the Continuation of some
+  -- listener is blocking.
   PListenerM :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> PropM m a
   -- | A boolean property works as a flag:
   -- for example @("disabled", PFlagM False)@ has no effect,

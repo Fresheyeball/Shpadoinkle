@@ -9,6 +9,7 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -22,14 +23,12 @@ module Shpadoinkle.Backend.Snabbdom
   ) where
 
 import           Control.Category
-import           Control.Monad               (void)
 import           Control.Monad.Reader
 import           Data.FileEmbed
 import           Data.Text
 import           Data.Traversable
 import           Language.Javascript.JSaddle hiding (( # ))
-import           Prelude                     hiding ((.))
-import           UnliftIO.Concurrent         (forkIO)
+import           Prelude                     hiding ((.), id)
 import           UnliftIO.STM                (TVar)
 
 import           Shpadoinkle                 hiding (children, name, props)
@@ -74,7 +73,7 @@ props toJSM i xs = do
         [] -> return ()
         ev:_ -> do
           rn <- unsafeGetProp "target" =<< valToObject ev
-          void . forkIO . writeUpdate i . const . fmap (convertC (toJSM . runSnabbdom i))
+          writeUpdate i . Continuation . (id,) . const . fmap (convertC (toJSM . runSnabbdom i))
                              $ f (RawNode rn) (RawEvent ev)
       unsafeSetProp (toJSString k) f' e
     PFlagM b -> do
