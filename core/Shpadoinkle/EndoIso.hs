@@ -191,7 +191,7 @@ instance MapContinuations PropM where
   {-# INLINE mapMC #-}
 
 
-instance Applicative m => IsProp (PropM m) (Continuation m) where
+instance IsProp (PropM m) (Continuation m) where
   textProp = PTextM
   {-# INLINE textProp #-}
   listenerProp f = PListenerM (\r e -> f r e)

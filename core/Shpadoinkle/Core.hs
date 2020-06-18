@@ -199,13 +199,13 @@ class Constantly f g where
   constly :: (a -> b -> b) -> f a -> g b
 
 
-instance Applicative m => Constantly Html (HtmlM m) where
+instance Constantly Html (HtmlM m) where
   constly f (Node t ps es) = NodeM t (second (constly f) <$> ps) (fmap (constly f) es)
   constly _ (Potato p) = PotatoM p
   constly _ (TextNode t) = TextNodeM t
 
 
-instance Applicative m => Constantly Prop (PropM m) where
+instance Constantly Prop (PropM m) where
   constly _ (PText t)     = PTextM t
   constly f (PListener g) = PListenerM (\r e -> pur . f <$> g r e)
   constly _ (PFlag b)     = PFlagM b
