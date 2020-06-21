@@ -5,12 +5,12 @@
 module Shpadoinkle.Html.TH where
 
 
-import qualified Data.Char             as Char
+import qualified Data.Char           as Char
 import qualified Data.Text
 import           Language.Haskell.TH
 
 
-import           Shpadoinkle           hiding (name)
+import           Shpadoinkle         hiding (h, name)
 
 
 capitalized :: String -> String
@@ -116,7 +116,6 @@ mkElement name = let
     n'_ = mkName $ name ++ "'_"
     h   = VarT $ mkName "h"
     p   = VarT $ mkName "p"
-    e   = VarT $ mkName "e"
     a   = VarT $ mkName "a"
     l   = mkName "h"
 

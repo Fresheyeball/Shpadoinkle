@@ -22,7 +22,7 @@ The core idea here is to model user interfaces as functions with type:
 
 [source,haskell]
 ----
-view :: Model -> Html' Model
+view :: Model -> Html Model
 ----
 
 This lets you describe the view as a pure function predicated on the current application state. It also suggests that changes to application state are dictated by the view:
@@ -45,7 +45,7 @@ Here is a simple example, which displays a counter:
 
 [source,haskell]
 ----
-view :: Int -> Html' Int
+view :: Int -> Html Int
 view model = -- <1>
   div []
   [ text $ pack $ show model -- <2>

@@ -1,6 +1,6 @@
 rm -r dist*
 rm -r .ghc*
-rm -r result*
+rm result*
 rm client
 rm server
 rm roster.db

@@ -1,0 +1,44 @@
+name:         Shpadoinkle-debug
+license:      BSD3
+license-file: LICENSE
+version:      0.0.0.1
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+synopsis:     Debugging tools for Shpadoinkle applications.
+description:
+  Shpadoinkle tooling is a work in progress. But some useful functions
+  have already emerged. This repo centeralizes these functions, and will
+  house future work on more robust tooling, such as time travel debugging.
+
+
+ghc-options:
+    - -Wall
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+
+dependencies:
+    - base          >= 4.12.0 && < 4.16
+    - aeson
+    - jsaddle       >= 0.9.7 && < 0.20
+    - text
+    - lens
+    - unliftio
+
+
+library:
+  source-dirs: .
+
+
+git: https://gitlab.com/fresheyeball/Shpadoinkle.git
