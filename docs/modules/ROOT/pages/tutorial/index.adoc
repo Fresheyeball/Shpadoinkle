@@ -1,11 +1,12 @@
 = Tutorial
 
-Here we will build a simple calculator, following pioneers of the space http://weblog.luite.com/wordpress/?p=127[Luite Stegemann], https://reflex-frp.org/tutorial[Ryan Trinkle], and https://keera.co.uk/2020/05/28/building-a-reactive-calculator-in-haskell-1-5/[Christina Zeller].
+Here we will build a simple calculator, following pioneers of the space http://weblog.luite.com/wordpress/?p=127[Luite Stegemann], https://reflex-frp.org/tutorial[Ryan Trinkle], and https://keera.co.uk/2020/05/28/building-a-reactive-calculator-in-haskell-1-5/[Ivan Perez].
 
 If you would like to follow along, it's advised you either:
 
 * {snowman}[Use the Seed Project]
 * xref:getting-started/extend-an-example.adoc[Extend an Example]
+* xref:tutorial/immediate-execution.adoc[Skip to part 2: Immediate Execution]
 
 == Hello World
 
@@ -37,14 +38,12 @@ To start we will need a simple single number input:
 
 [source,haskell]
 ----
-num :: MonadJSM m => Int -> Html m Int
+num :: Int -> Html Int
 num x = input'
  [ value . pack $ show x -- <1>
  , onInput (fromMaybe 0 . readMay . unpack) -- <2>
  ]
 ----
-
-Because we have our first handler, we need `MonadJSM` since allocation of the listener requires IO.
 
 <1> Set the value of the input to the current state of the application.
 <2> When an `"input"` event occurs update the state with the provided function.
@@ -53,7 +52,7 @@ Now we can use our single number input in our view to add up two numbers for our
 
 [source,haskell]
 ----
-view :: MonadJSM m => (Int, Int) -> Html m (Int, Int)
+view :: (Int, Int) -> Html (Int, Int)
 view (l,r) = -- <1>
   div_
     [ (,r) <$> num l -- <2>
@@ -70,7 +69,7 @@ view (l,r) = -- <1>
 
 [TIP]
 .Heterogenious Composition
-We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html m Int` and `Html m (Int, Int)` obviously do not unify. Because `(Html m)` is merely a Functor, fmap is the only means provided to resolve impediences and compose herogeneous components (as we do here).
+We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html Int` and `Html (Int, Int)` obviously do not unify. Because `Html` is merely a Functor.
 
 == Selectable Operations
 
@@ -111,7 +110,7 @@ And we will use a traditional Html `<select>` element to let the user pick the o
 
 [source,haskell]
 ----
-opSelect :: MonadJSM m => Html m Operation
+opSelect :: Html Operation
 opSelect = select [ onOption $ read . unpack ] -- <1>
   $ opOption <$> [minBound..maxBound]
   where opOption o = option
@@ -137,7 +136,7 @@ And we will use the same technique with `<$>` to compose these components togeth
 
 [source,haskell]
 ----
-view :: MonadJSM m => Model -> Html m Model
+view :: Model -> Html Model
 view model = div_
  [ (\l -> model { left      = l }) <$> num (left model)
  , (\o -> model { operation = o }) <$> opSelect
@@ -151,8 +150,6 @@ That's it! The user can select an operation, enter 2 numbers and see a result re
 
 Now if you are looking at the above code, and starting to twitch, because you are a optics fiend; that is the right instinct.
 
-== Emulating Immediate Execution
-
-All the prior art on writing a calculator in GHCjs feature old school functionality namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator app, atleast let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
+xref:tutorial/immediate-execution.adoc[Go to part 2 ->]
 
 

@@ -95,4 +95,11 @@ CI]]
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge[Hackage
 CI]]
+
+|Debug
+|https://hackage.haskell.org/package/Shpadoinkle-debug[image:https://img.shields.io/hackage/v/Shpadoinkle-debug.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-debug[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-debug.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-debug[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-debug/badge[Hackage
+CI]]
 |===

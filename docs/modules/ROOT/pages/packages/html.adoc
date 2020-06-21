@@ -35,14 +35,7 @@ div "foo" [ "hiya" ]
 
 == Event Listeners
 
-Event listeners each get **two** named functions; a plain one, for pure event handlers, and a prime version for Monadic handlers:
-
-[source,haskell]
-----
-onX' (pure x) = onX x
-----
-
-Each of these functions is named the same as in JavaScript (sans Camel-case). See that the following are morally equivalent:
+Event listeners each get **three** named functions; a plain one, for pure event handlers, and an `M` version for Monadic handlers, and an `E` variate for full flexibility. Each of these functions is named the same as in JavaScript (sans Camel-case). See that the following are morally equivalent:
 
 [source,javascript]
 ----
@@ -54,22 +47,36 @@ div.addEventListener("click", () => model++);
 div' [ onClick (model + 1) ]
 ----
 
+The plain variant is polymorphic and will work with Functorial and EndoIso props. However the Monaic variant is monomorphic and demands `PropM`
+
+[source,haskell]
+----
+onClick :: IsProp p e => a -> (Text, p a)
+onClickM :: Monad m => m (a -> a) -> (Text, PropM m a)
+----
+
+You will also note that one take an `a` and the other `m (a -> a)`. This is because your Monadic action may be asynchronous, and the state of the application may have changed durring that time. The returned function `(a -> a)` will be applied as a state update to whatever that state is once the action completes.
+
 [NOTE]
-.Sneeky MonadJSM
 ====
-Most pure handlers are constrained by `Applicative`
+.onClickE
+Documentation in progress. This variant allows raw access to the xref:packages/core.adoc#_continuation[Continuation].
 [source,haskell]
 ----
-:: Applicative m => a -> Html m a
+onClickE :: IsProp p e => e a -> (Text, p a)
 ----
-but others have baked-in effects, like reading the value off of a target element, or calling `stopPropagation()`. This difference gets documented in the type
-[source,haskell]
-----
-:: MonadJSM m => (Text -> a) -> Html m a
-----
-For example, `Text` here is needs `MonadJSM` to be obtained.
 ====
 
+=== Affordances
+
+Some listeners provide extra information. For example
+
+[source,haskell]
+----
+onInput :: IsProp p e => (Text -> a) -> (Text, p a)
+----
+
+where the `Text` will be the current value of the input element, preventing us from having to write low level code to extract the value.
 
 == Properties
 
@@ -126,7 +133,7 @@ Think of `memo` as a way of changing the evaluation strategy:
 
 [source,haskell]
 ----
-view :: Text -> Html' a
+view :: Text -> Html a
 view = memo $ \t ->
   div_ . take (length t) . repeat . text $ expensiveFilter t
 ----

@@ -22,6 +22,7 @@ let
     Shpadoinkle-backend-snabbdom
     Shpadoinkle-backend-static
     Shpadoinkle-backend-pardiff
+    Shpadoinkle-debug
     Shpadoinkle-lens
     Shpadoinkle-html
     Shpadoinkle-router

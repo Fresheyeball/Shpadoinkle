@@ -90,6 +90,7 @@ executables:
     other-modules: []
     source-dirs: .
     dependencies:
+      - aeson
       - text
       - safe
       - lens
@@ -97,6 +98,7 @@ executables:
       - file-embed
 
       - Shpadoinkle
+      - Shpadoinkle-debug
       - Shpadoinkle-html
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-widgets

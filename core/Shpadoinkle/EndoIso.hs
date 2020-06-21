@@ -18,15 +18,15 @@ module Shpadoinkle.EndoIso
 
 
 import           Control.Arrow
-import qualified Control.Categorical.Functor      as F
-import           Control.Category                 ((.))
+import qualified Control.Categorical.Functor     as F
+import           Control.Category                ((.))
 import           Control.PseudoInverseCategory
 import           Control.ShpadoinkleContinuation
 import           Data.Kind
 import           Data.String
 import           Data.Text
-import           Language.Javascript.JSaddle      (JSM)
-import           Prelude                          hiding ((.))
+import           Language.Javascript.JSaddle     (JSM)
+import           Prelude                         hiding ((.))
 
 import           Shpadoinkle.Class
 
@@ -124,7 +124,7 @@ instance IsString (PropM m a) where
   {-# INLINE fromString #-}
 
 
--- | @Html m@ is a functor in the EndoIso category, where the objects are
+-- | @HtmlM m@ is a functor in the EndoIso category, where the objects are
 --   types and the morphisms are EndoIsos.
 instance Monad m => F.Functor EndoIso EndoIso (HtmlM m) where
   map (EndoIso f g i) = EndoIso (mapMC . piapply $ map' (piendo f))
@@ -200,10 +200,10 @@ instance IsProp (PropM m) (Continuation m) where
   {-# INLINE flagProp #-}
   constUpdate _ = pur . const
   {-# INLINE constUpdate #-}
-  cataProp f g h = \case
+  cataProp f g h' = \case
     PTextM t -> f t
     PListenerM l -> g l
-    PFlagM b -> h b
+    PFlagM b -> h' b
 
 
 instance Monad m => IsHtml (HtmlM m) (PropM m) where
@@ -231,7 +231,7 @@ instance Monad m => IsHtml (HtmlM m) (PropM m) where
   {-# INLINE textContent #-}
   eitherH = eitherMC
   {-# INLINE eitherH #-}
-  cataH f g h = \case
-    NodeM t ps cs -> f t ps (cataH f g h <$> cs)
+  cataH f g h' = \case
+    NodeM t ps cs -> f t ps (cataH f g h' <$> cs)
     PotatoM p -> g p
-    TextNodeM t -> h t
+    TextNodeM t -> h' t

@@ -82,13 +82,18 @@ type Props a = [(Text, Prop a)]
 
 instance IsProp Prop Identity where
   textProp = PText
+  {-# INLINE textProp #-}
   listenerProp f = PListener (\r e -> runIdentity <$> f r e)
+  {-# INLINE listenerProp #-}
   flagProp = PFlag
+  {-# INLINE flagProp #-}
   constUpdate _ = Identity
-  cataProp f g h = \case
+  {-# INLINE constUpdate #-}
+  cataProp f g h' = \case
     PText t -> f t
     PListener l -> g (\n e -> Identity <$> l n e)
-    PFlag b -> h b
+    PFlag b -> h' b
+  {-# INLINE cataProp #-}
 
 
 instance IsHtml Html Prop where
@@ -116,10 +121,10 @@ instance IsHtml Html Prop where
   {-# INLINE textContent #-}
   eitherH l r = either (fmap Left . l) (fmap Right . r)
   {-# INLINE eitherH #-}
-  cataH f g h = \case
-    Node t ps cs -> f t ps (cataH f g h <$> cs)
+  cataH f g h' = \case
+    Node t ps cs -> f t ps (cataH f g h' <$> cs)
     Potato p -> g p
-    TextNode t -> h t
+    TextNode t -> h' t
 
 
 instance IsString (Html a) where
@@ -130,5 +135,3 @@ instance IsString (Html a) where
 instance IsString (Prop a) where
   fromString = textProp . pack
   {-# INLINE fromString #-}
-
-

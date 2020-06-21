@@ -5,6 +5,7 @@ p core
 p backends/static
 p backends/snabbdom
 p backends/pardiff
+p debug
 p html
 p router
 p lens
