@@ -1,6 +1,18 @@
-= Howdy
+:note-caption: Category Theory
 
-Shpadoinkle is a purely functional user interface library, focused on simplicity, performance, and ergonomics.
+++++
+<h1 style="letter-spacing:10px;text-align:center;margin-bottom:0;" class="page" >SHPADOINKLE</h1>
+++++
+
+image::logo.png[Eddie is loved forever,150,150,id="logo"]
+
+++++
+<br/>
+++++
+
+'''
+
+https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a purely functional user interface library, focused on simplicity, performance, and ergonomics.
 
 * xref:getting-started/index.adoc[Getting Started]
 * xref:packages/index.adoc[Packages]
@@ -10,7 +22,7 @@ The core idea here is to model user interfaces as functions with type:
 
 [source,haskell]
 ----
-view :: Model -> Html' Model
+view :: Model -> Html Model
 ----
 
 This lets you describe the view as a pure function predicated on the current application state. It also suggests that changes to application state are dictated by the view:
@@ -33,7 +45,7 @@ Here is a simple example, which displays a counter:
 
 [source,haskell]
 ----
-view :: Int -> Html' Int
+view :: Int -> Html Int
 view model = -- <1>
   div []
   [ text $ pack $ show model -- <2>

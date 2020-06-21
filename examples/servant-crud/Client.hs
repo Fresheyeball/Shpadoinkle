@@ -12,11 +12,12 @@ module Main where
 import           Control.Monad.Catch         (MonadThrow)
 import           Control.Monad.Reader        (MonadIO)
 import           Data.Proxy                  (Proxy (..))
+import           Language.Javascript.JSaddle (askJSM, runJSM)
 import           Servant.API                 ((:<|>) (..))
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html.Utils      (getBody)
-import           Shpadoinkle.Router          (fullPageSPA, withHydration)
+import           Shpadoinkle.Router          (MonadJSM, fullPageSPA, withHydration)
 import           Shpadoinkle.Router.Client   (client, runXHR)
 import           UnliftIO                    (MonadUnliftIO (..), UnliftIO (..))
 
@@ -49,7 +50,7 @@ instance CRUDSpaceCraft App where
 
 
 app :: JSM ()
-app = fullPageSPA @ SPA runApp runParDiff (withHydration start) view getBody (const . start) routes
+app = fullPageSPA @ SPA runApp runParDiff (withHydration start) view getBody (fmap (pur . const) . start) routes
 
 
 main :: IO ()

@@ -12,7 +12,7 @@ import           GHCJS.DOM
 import           GHCJS.DOM.Document as Doc
 import           GHCJS.DOM.Element
 import           GHCJS.DOM.Node
-import           GHCJS.DOM.Types    (toJSVal, ToJSString)
+import           GHCJS.DOM.Types    (MonadJSM, liftJSM, toJSVal, ToJSString)
 
 import           Shpadoinkle
 

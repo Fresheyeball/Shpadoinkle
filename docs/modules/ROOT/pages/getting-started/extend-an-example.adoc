@@ -82,7 +82,7 @@ nix-shell examples
 cabal repl examples:counter
 ----
 
-You can then run the application with `main`. This will serve the application on `localhost:8080`. When you make changes to the code, simply press `[Ctrl+C]` then reload and run `main` once again.
+You can then run the application with `main`. This will serve the application on `localhost:8080`. When you make changes to the code, simply press btn:[Ctrl + C] then reload and run `main` once again.
 
 [source,haskell]
 ----

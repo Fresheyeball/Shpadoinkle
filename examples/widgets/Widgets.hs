@@ -3,18 +3,21 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE TemplateHaskell      #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
 module Main where
 
 
+import           Control.Lens                      hiding (view)
 import           Control.Monad.IO.Class            (liftIO)
 import           Data.Text
 import           Prelude                           hiding (div)
 
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle.Lens
 import           Shpadoinkle.Html                  as H (a, button, className,
                                                          div, div_, href, id',
                                                          link', rel,
@@ -43,15 +46,14 @@ data Model = Model
   { _pickOne        :: Dropdown 'One Cheese
   , _pickAtleastOne :: Dropdown 'AtleastOne Cheese
   } deriving (Eq, Show)
+makeLenses ''Model
 
 
-view :: MonadJSM m => Model -> Html m Model
+view :: Monad m => Model -> HtmlM m Model
 view m = div_
   [ link' [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ]
-  , (\x -> m {_pickOne = x}) <$>
-    dropdown bootstrap defConfig { _attrs = [ id' "One" ] } (_pickOne m)
-  , (\x -> m {_pickAtleastOne = x}) <$>
-    dropdown bootstrap defConfig { _attrs = [ id' "AtleastOne" ] } (_pickAtleastOne m)
+  , generalize pickOne $ dropdown bootstrap defConfig { _attrs = [ id' "One" ] } (_pickOne m)
+  , generalize pickAtleastOne $ dropdown bootstrap defConfig { _attrs = [ id' "AtleastOne" ] } (_pickAtleastOne m)
   ]
   where
   bootstrap Dropdown {..} = Dropdown.Theme

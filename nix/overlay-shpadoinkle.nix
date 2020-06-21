@@ -23,6 +23,14 @@
     };
 
 
+  continuations-src = super.fetchFromGitHub
+    { owner  = "morganthomas";
+      repo   = "Shpadoinkle-continuations";
+      rev    = "0cc5da0b7af7961fc4756371b2fe395c80620e80";
+      sha256 = "191mwas6q0hjjj5s6485k6yndjrbwz0pxsjp5ck2jh4hn209dkqs";
+    };
+
+
   gitignore = util.gitignore
       [ ".git"
         "*.ghc*"
@@ -33,6 +41,12 @@
         "*.md"
         ".*.yml"
       ];
+
+
+  addWError = x: super.haskell.lib.overrideCabal x (drv: {
+    configureFlags = ["--ghc-option=-Werror"];
+  });
+
 
 in {
 
@@ -46,19 +60,24 @@ in {
       { "${util.compilerjs}" = with super.haskell.lib;
       let dontJS = if isJS then x: dontHaddock (dontCheck x) else id;
       in super.haskell.packages.${util.compilerjs}.override (old: {
-        overrides = super.lib.composeExtensions (old.overrides or (_:_: {})) (hself: hsuper: {
+        overrides = super.lib.composeExtensions (old.overrides or (_:_: {})) (hself: hsuper:
+        let call = n: p: addWError (hself.callCabal2nix n (gitignore p) {});
+        in {
 
-          Shpadoinkle                  = hself.callCabal2nix "Shpadoinkle"                  (gitignore ../core)              {};
-          Shpadoinkle-backend-snabbdom = hself.callCabal2nix "Shpadoinkle-backend-snabbdom" (gitignore ../backends/snabbdom) {};
-          Shpadoinkle-backend-static   = hself.callCabal2nix "Shpadoinkle-backend-static"   (gitignore ../backends/static)   {};
-          Shpadoinkle-backend-pardiff  = hself.callCabal2nix "Shpadoinkle-backend-pardiff"  (gitignore ../backends/pardiff)  {};
-          Shpadoinkle-lens             = hself.callCabal2nix "Shpadoinkle-lens"             (gitignore ../lens)              {};
-          Shpadoinkle-html             = hself.callCabal2nix "Shpadoinkle-html"             (gitignore ../html)              {};
-          Shpadoinkle-router           = hself.callCabal2nix "Shpadoinkle-router"           (gitignore ../router)            {};
-          Shpadoinkle-widgets          = hself.callCabal2nix "Shpadoinkle-widgets"          (gitignore ../widgets)           {};
-          Shpadoinkle-examples         = hself.callCabal2nix "Shpadoinkle-examples"         (gitignore ../examples)          {};
-          Shpadoinkle-experiments      = hself.callCabal2nix "Shpadoinkle-experiments"      (gitignore ../experiments)       {};
-          Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests)             {};
+          Shpadoinkle                  = call "Shpadoinkle"                  ../core;
+          Shpadoinkle-backend-snabbdom = call "Shpadoinkle-backend-snabbdom" ../backends/snabbdom;
+          Shpadoinkle-backend-static   = call "Shpadoinkle-backend-static"   ../backends/static;
+          Shpadoinkle-backend-pardiff  = call "Shpadoinkle-backend-pardiff"  ../backends/pardiff;
+          Shpadoinkle-debug            = call "Shpadoinkle-debug"            ../debug;
+          Shpadoinkle-lens             = call "Shpadoinkle-lens"             ../lens;
+          Shpadoinkle-html             = call "Shpadoinkle-html"             ../html;
+          Shpadoinkle-router           = call "Shpadoinkle-router"           ../router;
+          Shpadoinkle-widgets          = call "Shpadoinkle-widgets"          ../widgets;
+          Shpadoinkle-examples         = call "Shpadoinkle-examples"         ../examples;
+          Shpadoinkle-experiments      = call "Shpadoinkle-experiments"      ../experiments;
+          Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests)       {};
+
+          Shpadoinkle-continuations    = dontJS (hself.callCabal2nix "Shpadoinkle-continuations" "${continuations-src}/" {});
 
           hashable             = dontJS hsuper.hashable;
           comonad              = dontJS hsuper.comonad;

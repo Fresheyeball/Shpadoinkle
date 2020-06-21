@@ -1,65 +1,60 @@
+{-# LANGUAGE DeriveAnyClass         #-}
+{-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE DuplicateRecordFields  #-}
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TemplateHaskell        #-}
-
+{-# LANGUAGE TypeApplications       #-}
 
 module Main where
 
-
 import           Control.Lens
+import           Data.Aeson
 import           Data.FileEmbed
 import           Data.List                   as L
 import           Data.List.Split             as L
 import           Data.Text
 import           Data.Text.Encoding
+import           GHC.Generics                (Generic)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle.Debug
 import           Shpadoinkle.Html            as H
-
-import           Debug.Trace
-
 
 data Digit
   = Seven | Eight | Nine
   | Four  | Five  | Six
   | One   | Two   | Three
-  | Zero deriving (Eq, Show, Ord, Enum, Bounded)
+  | Zero deriving (Eq, Show, Ord, Enum, Bounded, Generic, ToJSON)
 
-
-data Operator
-  = Addition
-  | Multiplication
-  | Subtraction
-  | Division
-  deriving (Eq, Enum, Bounded)
-
+data Operator = Addition | Multiplication | Subtraction | Division
+  deriving (Eq, Enum, Bounded, Generic, ToJSON)
 
 instance Show Operator where
   show = \case
     Addition       -> "+"
-    Subtraction    -> "-"
+    Subtraction    -> "−"
     Multiplication -> "×"
     Division       -> "÷"
 
-
-data Entry = Whole [Digit] | [Digit] `Decimal` [Digit] | Negate Entry
-  deriving Eq
-
+data Entry
+  = Whole [Digit]
+  | [Digit] :<.> [Digit]
+  | Negate Entry
+  deriving (Eq, Generic, ToJSON)
 
 noEntry :: Entry
 noEntry = Whole []
 
-
 instance Show Entry where
   show = let asChar = traverse . re charDigit in \case
     Whole xs        -> xs ^.. asChar
-    xs `Decimal` ys -> xs ^.. asChar <> "." <> ys ^.. asChar
+    xs :<.> ys -> xs ^.. asChar <> "." <> ys ^.. asChar
     Negate e        -> '-' : show e
-
 
 frac :: Iso' Entry Double
 frac = iso toFrac fromFrac where
@@ -69,18 +64,16 @@ frac = iso toFrac fromFrac where
              '.':xs -> L.reverse xs
              _      -> x
     in read . f . show
-
   fromFrac d =
     let asChar = traverse . charDigit
         ab xs = case L.splitOn "." xs of
          [whole, []]  -> Whole $ whole ^.. asChar
-         [whole, dec] ->        (whole ^.. asChar)
-                      `Decimal` (dec   ^.. asChar)
+         [whole, dec] ->   (whole ^.. asChar)
+                      :<.> (dec   ^.. asChar)
          _            -> noEntry
      in case show d of
        '-':xs -> Negate $ ab xs
        xs     -> ab xs
-
 
 charDigit :: Prism' Char Digit
 charDigit = prism'
@@ -93,103 +86,100 @@ charDigit = prism'
          '1' -> Just One;   '2' -> Just Two;   '3' -> Just Three
          '0' -> Just Zero;   _  -> Nothing)
 
-
-data State = Operation
+data Operation = Operation
   { _operator :: Operator
   , _entry    :: Entry
-  } deriving (Eq, Show)
+  } deriving (Eq, Show, Generic, ToJSON)
 
-
-makeFieldsNoPrefix ''State
-
+makeFieldsNoPrefix ''Operation
 
 data Model = Model
-  { _entry :: Entry
-  , _state :: Maybe State
-  } deriving (Eq, Show)
-
+  { _entry     :: Entry
+  , _operation :: Maybe Operation
+  } deriving (Eq, Show, Generic, ToJSON)
 
 makeFieldsNoPrefix ''Model
-
 
 initial :: Model
 initial = Model noEntry Nothing
 
-
-digit :: Applicative m => Digit -> Html m Digit
+digit :: Digit -> Html Digit
 digit d = button [ onClick d, className $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
-
-operate :: Applicative m => Maybe Operator -> Operator -> Html m Operator
+operate :: Maybe Operator -> Operator -> Html Operator
 operate active o = button
   [ onClick o, className ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
 
-
 applyDigit :: Digit -> Entry -> Entry
 applyDigit d = \case
-  Whole xs        -> Whole $ xs <> [d]
-  xs `Decimal` ys -> xs `Decimal` (ys <> [d])
-  Negate e        -> Negate (applyDigit d e)
-
+  Whole xs   -> Whole $ xs <> [d]
+  xs :<.> ys -> xs :<.> (ys <> [d])
+  Negate e   -> Negate $ applyDigit d e
 
 addDecimal :: Entry -> Entry
 addDecimal = \case
-  Whole xs -> xs `Decimal` []
+  Whole xs -> xs :<.> []
   ys       -> ys
 
+cleanEntry :: Entry -> Entry
+cleanEntry = \case
+  xs :<.> []     -> Whole xs
+  xs :<.> [Zero] -> Whole xs
+  x              -> x
 
 calcResult :: Model -> Model
 calcResult x = x
-  & state .~ Nothing
-  & entry .~ case x ^. state of
+  & operation .~ Nothing
+  & entry .~ case x ^. operation of
     Nothing -> x ^. entry
     Just o -> let l = o ^. entry . frac; r = x ^. entry . frac
-      in (^. from frac) $ case o ^. operator of
+      in cleanEntry . (^. from frac) $ case o ^. operator of
       Addition       -> l + r
       Subtraction    -> l - r
       Multiplication -> l * r
-      Division       -> l / r
-
+      Division       -> if r == 0 then l else l / r
 
 neg :: Entry -> Entry
 neg = \case
   Negate e -> e
   e -> Negate e
 
-
-view :: MonadJSM m => Model -> Html m Model
+view :: Model -> Html Model
 view x = H.div "calculator"
-  [ H.div "readout" [ text . pack . show $ x ^. entry ]
-  , ul "buttons"
+  [ H.div "readout" $
+    [ text . pack . show $ x ^. entry
+    ] <> case x ^? operation . traverse . operator of
+           Nothing -> []
+           Just o  -> [ H.div "operator"
+               [ text $ pack (show o) <> " " <>
+                 x ^. operation . traverse . entry . to (pack .show)
+               ]
+             ]
+  , H.div "buttons"
 
-    [ H.div "operate" $ fmap (\o -> x
-      & state .~ Just (Operation o (x ^. entry))
+    [ button [ class' "clear", onClick initial ] [ "AC" ]
+    , button [ class' "posNeg", onClick (x & entry %~ neg) ] [ "-/+" ]
+    , H.div "operate" $ fmap (\o -> x
+      & operation .~ Just (Operation o (x ^. entry))
       & entry .~ noEntry)
-      . operate (x ^? state . traverse . operator) <$> [minBound .. maxBound]
+      . operate (x ^? operation . traverse . operator) <$> [minBound .. maxBound]
 
     , H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
-      fmap (\d -> x & entry %~ applyDigit d) . digit <$> [minBound .. pred maxBound]
+       fmap putDigit . digit <$> [minBound .. pred maxBound]
 
     , H.div "zerodot"
-      [ (\d -> x & entry %~ applyDigit d) <$> digit Zero
+      [ putDigit <$> digit Zero
       , button [ onClick $ x & entry %~ addDecimal ] [ "." ]
+      , button [ class' "equals", onClick $ calcResult x ] [ "=" ]
       ]
-
-
-    , button [ class' "clear",  onClick initial            ] [ "C"   ]
-    , button [ class' "posNeg", onClick (x & entry %~ neg) ] [ "-/+" ]
-    , button [ class' "equals", onClick (calcResult x)     ] [ "="   ]
     ]
-  ]
-
-
-trapper :: Show a => (a -> Html m a) -> (a -> Html m a)
-trapper v x = trace ("Trapper: " <> show x) $ v x
-
+  ] where putDigit d = x & entry %~ applyDigit d
 
 main :: IO ()
 main = runJSorWarp 8080 $ do
+  setTitle "Calculator"
+  ctx <- askJSM
   addInlineStyle $ decodeUtf8 $(embedFile "./CalculatorIE.css")
-  Shpadoinkle.simple runParDiff initial (trapper Main.view) getBody
+  Shpadoinkle.simple runParDiff initial (constly' . Main.view . trapper @ToJSON ctx) getBody

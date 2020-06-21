@@ -1,5 +1,5 @@
 [.text-center]
-image::etc/logo.png[Eddie is loved forever,150,150]
+image::docs/modules/ROOT/assets/images/logo.png[Eddie is loved forever,150,150]
 [.text-center]
 🤠 ⟶ 🥔 🤠
 
@@ -11,6 +11,7 @@ status]]
 https://opensource.org/licenses/BSD-3-Clause[image:https://img.shields.io/badge/License-BSD%203--Clause-blue.svg[BSD-3]]
 https://builtwithnix.org[image:https://img.shields.io/badge/built%20with-nix-41439a[built
 with nix]]
+http://shpadoinkle.cachix.org[image:https://img.shields.io/badge/Cachix-up%20to%20date-green[cachix]]
 
 = Shpadoinkle
 
@@ -93,5 +94,12 @@ CI]]
 |http://packdeps.haskellers.com/reverse/Shpadoinkle-examples[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-examples.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge[Hackage
+CI]]
+
+|Debug
+|https://hackage.haskell.org/package/Shpadoinkle-debug[image:https://img.shields.io/hackage/v/Shpadoinkle-debug.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-debug[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-debug.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-debug[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-debug/badge[Hackage
 CI]]
 |===

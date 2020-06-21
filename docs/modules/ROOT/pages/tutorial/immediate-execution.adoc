@@ -1,0 +1,239 @@
+= Emulating Immediate Execution
+
+xref:tutorial/index.adoc[<- Back to part 1]
+
+All the prior art on writing a calculator in GHCjs feature old school functionality namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator app, atleast let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
+
+This portion of the tutorial makes use of Lens in an effort to show how you might leverage optics in your applications.
+
+== Digits
+
+Lets model out our calculator as types. We could easily just use `Char` or `Int` to represent our numbers, however this violates the principle of *making illegal states unrepresentable*. So instead we will use an ADT and marshall.
+
+[source,haskell]
+----
+data Digit
+  = Seven | Eight | Nine
+  | Four  | Five  | Six
+  | One   | Two   | Three
+  | Zero deriving (Eq, Show, Ord, Enum, Bounded)
+----
+
+Next, before we can make buttons for the digits, we need a way marshall a `Digit` to its respective `Char`. Which can be handled nicely by a https://hackage.haskell.org/package/lens/docs/Control-Lens-Prism.html[Prism]. We need it to be a Prism because not all `Char` s have a corrosponding `Digit`.
+
+[source,haskell]
+----
+charDigit :: Prism' Char Digit
+charDigit = prism'
+  (\case Seven    -> '7';   Eight ->    '8';   Nine  ->   '9'
+         Four     -> '4';   Five  ->    '5';   Six   ->   '6'
+         One      -> '1';   Two   ->    '2';   Three ->   '3'
+         Zero     -> '0')
+  (\case '7' -> Just Seven; '8' -> Just Eight; '9' -> Just Nine
+         '4' -> Just Four;  '5' -> Just Five;  '6' -> Just Six
+         '1' -> Just One;   '2' -> Just Two;   '3' -> Just Three
+         '0' -> Just Zero;   _  -> Nothing)
+----
+
+Now that we can marshall between the Haskell representation and one we can show our user, we can make a button for digits:
+
+[source,haskell]
+----
+digit :: Digit -> Html Digit
+digit d = button [ onClick d -- <1>
+                 , className $ "d" <> d' -- <2>
+                 ] [ text d' ]
+  where d' = d ^. re charDigit . to (pack . pure)
+----
+
+<1> When clicking the button, we send the corrosponding digit
+<2> Add a class for styling later
+
+== Entries
+
+`Digit` gives us everything we need to represent our number pad. But it is not enough to represent a user inputed number. So we can make a simple type to represent an *entry* consisting of multiple digits.
+
+[source, haskell]
+----
+newtype Entry = Entry [Digit]
+  deriving Eq
+----
+
+This works so long as our calculator need only work with https://en.wikipedia.org/wiki/Natural_number[Natural numbers]. However we want to do a bit more. We want to allow for decimals, as well as negative numbers.
+
+=== Decimals
+
+To allow for decimals, we need to have a distinction, so when the user presses a digit on the number pad, we know wether to add it before or after the decimal. We also need to ensure that when the user presses btn:[.] we can move from one state to the other.
+
+[source,haskell]
+----
+data Entry = Whole [Digit] | [Digit] :<.> [Digit]
+  deriving Eq
+----
+
+With this we can implement the decimal interaction logic easily. When the user presses btn:[.] and we have a whole number, we transtion to the `:<.>` constructor.
+
+[source,haskell]
+----
+addDecimal :: Entry -> Entry
+addDecimal = \case
+  Whole xs -> xs :<.> []
+  ys       -> ys
+----
+
+When the user presses a digit btn, and we have a whole number, we append the new digit to the end of the list. Otherwise we append to the space _after_ the decimal.
+
+[source,haskell]
+----
+applyDigit :: Digit -> Entry -> Entry
+applyDigit d = \case
+  Whole xs   -> Whole $ xs <> [d]
+  xs :<.> ys -> xs :<.> (ys <> [d])
+----
+
+=== Negative
+
+To allow for negatives, we can just make the `Entry` type recursive.
+
+[source,haskell]
+----
+data Entry = Whole [Digit] | [Digit] :<.> [Digit] | Negate Entry
+  deriving Eq
+----
+
+By adding the `Negate` constructor we can represent negatives of any existing `Entry` in the system. This makes the logic for the btn:[-/+] button straight forward.
+
+[source,haskell]
+----
+neg :: Entry -> Entry
+neg = \case
+  Negate e -> e
+  e -> Negate e
+----
+
+=== Show
+
+Now to show the entry to our user in the calculator readout, we need to convert to a human readable version.
+
+[source,haskell]
+----
+instance Show Entry where
+  show = let asChar = traverse . re charDigit in \case
+    Whole xs   -> xs ^.. asChar
+    xs :<.> ys -> xs ^.. asChar <> "." <> ys ^.. asChar
+    Negate e   -> '-' : show e
+----
+
+This show instance results in an intuitive display for the user where each button press is reflected 1:1. (IE no trailing ".0" or other issues)
+
+=== Double
+
+Lastly on the subject of entries, we need the ability to do math. Do accomplish this we need marshall entries to an actual number type (in this case `Double`), as well as marshall our results back to an `Entry`. We do this by creating an https://hackage.haskell.org/package/lens-4.19.2/docs/Control-Lens-Iso.html#t:Iso[Iso].
+
+[source,haskell]
+----
+frac :: Iso' Entry Double
+frac = iso toFrac fromFrac where
+  toFrac =
+    let f x = case L.reverse x of
+             ""     -> "0"
+             '.':xs -> L.reverse xs
+             _      -> x
+    in read . f . show
+
+  fromFrac d =
+    let asChar = traverse . charDigit
+        ab xs = case L.splitOn "." xs of
+         [whole, []]  -> Whole $ whole ^.. asChar
+         [whole, dec] -> (whole ^.. asChar)
+                    :<.> (dec   ^.. asChar)
+         _            -> Whole []
+     in case show d of
+       '-':xs -> Negate $ ab xs
+       xs     -> ab xs
+----
+
+This allows us to easily move in both directions.
+
+[CAUTION]
+.Not Lawful
+This is *not* a lawful isomorphism. But this outlaw is harmless. Producing a lawful instance is left as an exercise for the reader.
+
+== Operators
+
+We need a represntation of operators to allow our user to perform work. We can do this with another simple enumeration
+
+[source,haskell]
+----
+data Operator
+  = Addition
+  | Multiplication
+  | Subtraction
+  | Division
+  deriving (Eq, Enum, Bounded)
+----
+
+And as before we need to show this to our user
+
+[source,haskell]
+----
+instance Show Operator where
+  show = \case
+    Addition       -> "+"
+    Subtraction    -> "−"
+    Multiplication -> "×"
+    Division       -> "÷"
+
+operate :: Maybe Operator -> Operator -> Html Operator
+operate active o = button
+  [ onClick o -- <1>
+  , className ("active", Just o == active) -- <2>
+  ] [ text . pack $ show o ]
+----
+
+<1> When clicked, the button sends the corrosponding operator
+<2> Set the `"active"` class if this button is the active button (for styling)
+
+== Model
+
+Now we can actually define our model. Ultimately the immediate execution calculator is a state machine with 2 major states:
+
+1. There is a current entry
+2. There is a current entry, and a previous entry, and an operation
+
+[%header]
+|===
+| User Input   | Readout | Current Entry | Operation    | Previous Entry |
+| icon:times[] |         | `[]`          | icon:times[] | icon:times[]   |
+| `1`          | `1`     | `[1]`         | icon:times[] | icon:times[]   |
+| `2`          | `12`    | `[1,2]`       | icon:times[] | icon:times[]   |
+| `+`          | `+`     | `[]`          | `+`          | `[1,2]`        |
+| `4`          | `+4`    | `[4]`         | `+`          | `[1,2]`        |
+| `=`          | `16`    | `[1,6]`       | icon:times[] | icon:times[]   |
+|===
+
+One way to model this is with the following type:
+
+[source,haskell]
+----
+data Operation = Operation
+  { _operator :: Operator
+  , _entry    :: Entry
+  } deriving (Eq, Show)
+
+makeFieldsNoPrefix ''Operation
+
+data Model = Model
+  { _entry :: Entry -- <1>
+  , _operation :: Maybe Operation -- <2>
+  } deriving (Eq, Show)
+
+makeFieldsNoPrefix ''Model
+----
+
+<1> We always have a current entry
+<2> We might have a pervious entry and an operation
+
+== WIP
+
+image::http://www.bhmansion.com/wp-content/uploads/2019/08/Old-TV-Static_1Web.gif[Please Stand By]

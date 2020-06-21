@@ -1,29 +1,51 @@
+html,body{
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
 body{
   text-align: center;
   font-size: 18px;
   font-family: monospace;
+  background: url(https://powerstation.nyc/wp-content/uploads/2017/08/light-wood-panel-texture-desktop-picture-768x614.jpg);
+  background-size: cover;
+  display:flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .calculator{
   display: inline-block;
   margin: 1rem;
   background: #DCDCDC;
-  border: 2px solid #949494;
-  box-shadow: 0 5px 10px rgba(0,0,0,0.4);
+  border: 1px solid #949494;
+  box-shadow: 0 5px 14px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.4);
   border-radius: 4px;
+  transform: scale(1.5);
 }
 
 .readout{
   background: #161616;
   color: #4ebc55;
   text-align: right;
-  height: 18px;
+  height: 35px;
+  width: 103px;
+  box-sizing: border-box;
   margin: 1rem;
+  margin-bottom: 0;
   padding: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-top: 1px solid black;
+  border-bottom: 1px solid white;
 }
 
 .buttons{
-  padding: 0 0.5rem;
+  padding: 0.5rem;
 }
 
 button{
@@ -34,22 +56,35 @@ button{
   width: 22px;
   margin: 4px;
   padding: 4px;
+  line-height: 13px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  border-bottom: 1px solid #7b7b7b;
+  border-top: 1px solid white;
 }
 
-button:hover, button.active{
+button:hover{
   background: white;
   cursor: pointer;
+}
+
+button:active, button.active{
+  color: #0083ff;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+  border-top: 1px solid #7b7b7b;
+  border-bottom: 1px solid white;
+}
+
+button.active{
+  line-height: 14px;
 }
 
 button:focus{
   outline: none;
 }
 
-button.d0{
+button.d0, button.clear {
   width: 52px;
 }
-
 
 .operate{
   float: right;
@@ -57,8 +92,18 @@ button.d0{
   flex-direction: column;
 }
 
+.operator{
+  position: absolute;
+  font-size: 10px;
+  top: 4px;
+  left: 4px;
+}
+
 .numberpad{
-  width: 7em;
+  width: 102px;
   text-align: left;
-  padding: 0 1em;
+}
+
+.equals{
+  background: #91bbff;
 }
