@@ -29,11 +29,11 @@ Logical types and structures for common UI components, along with batteries incl
 Lens ({gitlab}/lens[Gitlab])::
 Lens combinators for ergonomic composing of heterogeneous components, and after-the-fact modification of views.
 
+Debug ({gitlab}/debug[Gitlab])::
+Debug tools for tracing the state of Shpadoinkle applications.
+
 Examples ({gitlab}/examples[Gitlab])::
 Small applications of Shpadoinkle to illustrate programming patterns.
-
-Debug ({gitlab})/debug[Gitlab]::
-Debug tools for tracing the state of Shpadoinkle applications.
 
 Experiments ({gitlab}/experiments[Gitlab])::
 Sandbox for exploring the territory.
