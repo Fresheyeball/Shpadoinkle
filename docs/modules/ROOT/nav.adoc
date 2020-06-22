@@ -7,4 +7,5 @@
 ** xref:packages/html.adoc[Html]
 ** xref:packages/router.adoc[Router]
 ** xref:packages/widgets.adoc[Widgets]
+** xref:packages/debug.adoc[Debug]
 * xref:tutorial/index.adoc[Tutorial]
