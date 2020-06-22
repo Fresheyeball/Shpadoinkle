@@ -29,7 +29,7 @@ Logical types and structures for common UI components, along with batteries incl
 Lens ({gitlab}/lens[Gitlab])::
 Lens combinators for ergonomic composing of heterogeneous components, and after-the-fact modification of views.
 
-xref:packages/debug[Debug] ({gitlab}/debug[Gitlab], {hackage}-debug[Hackage])::
+xref:packages/debug.adoc[Debug] ({gitlab}/debug[Gitlab], {hackage}-debug[Hackage])::
 Debug tools for tracing the state of Shpadoinkle applications.
 
 Examples ({gitlab}/examples[Gitlab])::
