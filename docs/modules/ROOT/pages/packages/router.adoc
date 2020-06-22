@@ -18,13 +18,10 @@ We may have a url mapping as follows
 * `https://example.com/v2/about?search=foo` => `About (Just "foo")`
 
 [TIP]
-====
+.Evolve Routes
 You can take advantage of this property to support legacy URLs and evolve a routing schema over time.
-====
 
-Call this mapping `toRoute : URL -> Route`
-
-The opposite direction an injection. To programatically navigate the application, we need a mapping from routes to URLs. This mapping documents the cannonical URL for a given route.
+This injective mapping in the opposite direction we will call `toRoute : URL -> Route`. To programatically navigate the application, we need a mapping from routes to URLs. This mapping documents the cannonical URL for a given route.
 
 * `Home` => `https://example.com/home`
 * `About Nothing` => `https://example.com/v2/about`
@@ -39,6 +36,7 @@ These functions abstractly would have the following relationship:
 ∃!url. fromRoute (toRoute url) = url
 ----
 [NOTE]
+.Dependant Types
 These functions not directly representable in Haskell so long as we intend on using `Servant` to describe our URLs, because URL descriptors are types and routes are terms.
 
 == Example Types
@@ -56,7 +54,8 @@ type SPA = "v2" :> "about" :> QueryParam "search" Search :> Raw
 ----
 
 [CAUTION]
-You must consider the order of the URLs separated by `:<|>`. Servant works like a pattern match. But because the match is type level, unreachable routes are entirely possible (GHC does not support checking for unreachable type level patterns). So think carefully about order and specificity.
+.Order and Specificity
+You must consider the order of the URLs separated by `:<|>`. Servant works like a pattern match, going from top to bottom. However because the match is type level, unreachable routes are entirely possible (GHC does not support checking for unreachable type level patterns). So think carefully about order and specificity.
 
 == To Route
 
@@ -74,6 +73,7 @@ routes = About <1>
 <1> Because you used `QueryParam "search" Search` in the first route, at this location in the mapping, you must provide a function of type `Maybe Search -> Route`.
 
 [CAUTION]
+.Order is important
 The burden is on the developer to put the right constructor at each location in the Servant specification; which while typically safe, it is not fool proof.
 
 == From Route

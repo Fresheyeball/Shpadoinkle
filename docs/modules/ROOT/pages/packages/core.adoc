@@ -22,11 +22,11 @@ data HtmlM m a
 * `m` is a effect to run your event handlers.
 * `a` is what your event handlers produce.
 
-These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrainted. 
+These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrainted.
 
 [NOTE]
 .Not Virtual DOM
-Do not diff `Html` or `HtmlM`, instead marshall this structure into one for a given xref:packages/backends.adoc#selecting[backend]. This separation allows the same code to run on any backend.
+`Html` nor `HtmlM` will be diffed, instead they will be marshalled into a type for a given xref:packages/backends.adoc#selecting[backend]. This separation allows the same code to run on any backend.
 
 This structure is the DOM Tree. There are Nodes which contain lists of Html, and which is a leaf where you can store `Text`, and Potato where we can store a component built outside of the Shpadoinkle view (for example wrapping a JavaScript component).
 
@@ -66,7 +66,7 @@ As you will recall, `Html` has a constructor:
 
 [source,haskell]
 ----
-Node :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
+Node :: Text -> [(Text, Prop a)] -> [Html a] -> Html a
 ----
 
 Where a list of this pair is passed. The `Text` should match the property key in standard JavaScript. For example, you can see the following are morally equivalent:
@@ -112,7 +112,7 @@ If you have the gumption to use the `PListener` constructor directly, you MUST e
 
 === EndoIso Listeners
 
-The endoiso listener constructor is `PListenerM`, which has the following type:
+The EndoIso listener constructor is `PListenerM`, which has the following type:
 
 [source,haskell]
 ----
@@ -123,29 +123,18 @@ The raw listener will always recieve the https://developer.mozilla.org/en-US/doc
 
 == Continuation
 
-The type of a state update in Shpadoinkle. A Continuation builds up an
-atomic state update incrementally in a series of stages. For each stage we perform
-a monadic IO computation and we may get a pure state updating function. When
-all of the stages have been executed we are left with a composition of the resulting
-pure state updating functions, and this composition is applied atomically to the state.
+The type of a state update in Shpadoinkle. A Continuation builds up an atomic state update incrementally in a series of stages. For each stage we perform a monadic IO computation and we may get a pure state updating function. When all of the stages have been executed we are left with a composition of the resulting pure state updating functions, and this composition is applied atomically to the state.
 
-Additionally, a Continuation stage may feature a Rollback action which cancels all state
-updates generated so far but allows for further state updates to be generated based on
-further monadic IO computation.
+Additionally, a Continuation stage may feature a Rollback action which cancels all state updates generated so far but allows for further state updates to be generated based on further monadic IO computation.
 
-The functions generating each stage of the Continuation
-are called with states which reflect the current state of the app, with all
-the pure state updating functions generated so far having been
-applied to it, so that each stage "sees" both the current state
-(even if it changed since the start of computing the continuation), and the updates made
-so far, although those updates are not committed to the real state until the continuation
-finishes and they are all done atomically together.
+The functions generating each stage of the Continuation are called with states which reflect the current state of the app, with all the pure state updating functions generated so far having been applied to it, so that each stage "sees" both the current state (even if it changed since the start of computing the continuation), and the updates made so far, although those updates are not committed to the real state until the continuation finishes and they are all done atomically together.
 
 [source,haskell]
 ----
-data Continuation m a = Continuation (a -> a, a -> m (Continuation m a))
-                      | Rollback (Continuation m a)
-                      | Pure (a -> a)
+data Continuation m a
+  = Continuation (a -> a, a -> m (Continuation m a))
+  | Rollback (Continuation m a)
+  | Pure (a -> a)
 ----
 
 == Backend Class

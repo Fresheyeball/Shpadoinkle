@@ -26,5 +26,5 @@ main = runJSorWarp 8080 $ do
   simple runParDiff initial (view . trapper @ToJSON ctx) getBody
 ```
 
-Will log all state by first encoding to JSON with Aeson, then then logging with `JSON.parse` so the browser console has the nice native display. If we change it to `trapper @Show ctx` it will use the `Show` instance instead.
+This will log all state by first encoding to JSON with Aeson, then then logging with `JSON.parse` so the browser console has the nice native display. If we change it to `trapper @Show ctx` it will use the `Show` instance instead.
 
