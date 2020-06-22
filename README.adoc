@@ -33,7 +33,7 @@ The easiest way to start a new Shpadoinkle project is to build a https://gitlab.
 
 == TODOMVC
 
-You can see an example of Shpadoinkle in the popular http://todomvc.com/[TODOMVC] running http://fresheyeball.gitlab.io/Shpadoinkle/todomvc[here], compiled from the code located https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/TODOMVC.hs[here].
+You can see an example of Shpadoinkle in the popular http://todomvc.com/[TODOMVC] running http://fresheyeball.gitlab.io/Shpadoinkle/examples/todomvc.jsexe[here], compiled from the code located https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/TODOMVC.hs[here].
 
 == Hackage Matrix
 

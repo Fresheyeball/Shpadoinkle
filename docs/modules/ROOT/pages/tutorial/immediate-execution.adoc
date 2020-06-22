@@ -156,7 +156,7 @@ frac = iso toFrac fromFrac where
 This allows us to easily move in both directions.
 
 [CAUTION]
-.Not Lawful
+.Outlaw
 This is *not* a lawful isomorphism. But this outlaw is harmless. Producing a lawful instance is left as an exercise for the reader.
 
 == Operators
