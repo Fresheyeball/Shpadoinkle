@@ -21,6 +21,14 @@ curl -L https://nixos.org/nix/install | sh
 [CAUTION]
 Make sure to follow the instructions output by the script.
 
+Success is indicated byt he presence of the Nix toolchain present in your terminal...
+
+[source,bash]
+----
+nix --version
+----
+
+
 == Cachix
 
 Some of the work done with Nix includes deviations for the official Nix package set. As such some dependencies are not cached on https://cache.nixos.org. Building these dependencies from source can be very slow. If you would like to avoid this wait, you can pull from our https://cachix.org/[Cachix] cache of pre-built dependencies.
