@@ -12,8 +12,11 @@ This repo will be used with the Shpadoinkle tutorial when it is finished.
 
 ## Complete examples
 
-- Simple counter
-- TODOMVC
+- [Counter](https://fresheyeball.gitlab.io/Shpadoinkle/examples/counter.jsexe/)
+- [TODOMVC](https://fresheyeball.gitlab.io/Shpadoinkle/examples/todomvc.jsexe/)
+- [Widgets](https://fresheyeball.gitlab.io/Shpadoinkle/examples/widgets.jsexe/)
+- [Calculator](https://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator.jsexe/)
+- [Immediate Execution](https://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator-ie.jsexe/)
 - Servant CRUD using Widgets
 
 This package also houses experimental designs, and other explorations.
