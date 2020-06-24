@@ -110,6 +110,7 @@ mkIntProp = mkProp ''Int "textProperty"
 mkElement :: String -> Q [Dec]
 mkElement name = let
 
+    raw = filter (not . (== '\'')) name
     n   = mkName name
     n'  = mkName $ name ++ "'"
     n_  = mkName $ name ++  "_"
@@ -127,7 +128,7 @@ mkElement name = let
         (AppT (AppT ArrowT (AppT ListT (AppT h a)))
                 (AppT h a))))
 
-    , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL name)))) []
+    , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL raw)))) []
 
 
     , SigD n_ (ForallT [] [AppT (AppT (ConT ''Shpadoinkle.IsHtml) h) p]
