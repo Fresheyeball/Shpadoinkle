@@ -7,6 +7,7 @@
 module Shpadoinkle.Html.Utils where
 
 
+import           Control.Monad      (forM_)
 import           Data.Text
 import           GHCJS.DOM
 import           GHCJS.DOM.Document as Doc
@@ -51,3 +52,32 @@ getBody = do
   body <- Doc.getBodyUnsafe doc
   setInnerHTML body ""
   liftJSM $ RawNode <$> toJSVal body
+
+
+addMeta :: [(Text, Text)] -> JSM ()
+addMeta ps = do
+  doc <- currentDocumentUnchecked
+  tag <- createElement doc ("meta" :: Text)
+  forM_ ps $ uncurry (setAttribute tag)
+  headRaw <- Doc.getHeadUnsafe doc
+  () <$ appendChild headRaw tag
+
+
+addScriptSrc :: Text -> JSM ()
+addScriptSrc src = do
+  doc <- currentDocumentUnchecked
+  tag <- createElement doc ("script" :: Text)
+  setAttribute tag ("src" :: Text) src
+  headRaw <- Doc.getHeadUnsafe doc
+  () <$ appendChild headRaw tag
+
+
+addScriptText :: Text -> JSM ()
+addScriptText js = do
+  doc <- currentDocumentUnchecked
+  tag <- createElement doc ("script" :: Text)
+  setAttribute tag ("type" :: Text) ("text/javascript" :: Text)
+  headRaw <- Doc.getHeadUnsafe doc
+  jsn <- createTextNode doc js
+  _ <- appendChild tag jsn
+  () <$ appendChild headRaw tag
