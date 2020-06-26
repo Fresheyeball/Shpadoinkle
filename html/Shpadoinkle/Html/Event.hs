@@ -35,7 +35,7 @@
 module Shpadoinkle.Html.Event where
 
 
-import           Control.Monad               (msum)
+import           Control.Monad               (msum, void)
 import           Data.Proxy
 import           Data.Text
 import           Language.Javascript.JSaddle
@@ -121,9 +121,12 @@ onCheckM_ :: Monad m => (Bool -> m ()) -> (Text, PropM m a)
 onCheckM_ f = onCheckE (causes . f)
 
 
+preventDefault :: RawEvent -> JSM ()
+preventDefault e = void $ valToObject e # ("preventDefault" :: String) $ ([] :: [()])
+
+
 onSubmitE :: IsProp p e => e a -> (Text, p a)
-onSubmitE m = listenRaw "submit" $ \_ (RawEvent e) ->
-  liftJSM (valToObject e # ("preventDefault" :: String) $ ([] :: [()])) >> return m
+onSubmitE m = listenRaw "submit" $ \_ e -> preventDefault e >> return m
 
 
 onSubmit :: forall p e a. IsProp p e => a -> (Text, p a)
