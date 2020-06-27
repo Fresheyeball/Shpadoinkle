@@ -84,6 +84,7 @@ data Router a where
   RChoice      :: Router a -> Router a -> Router a
   RCapture     :: FromHttpApiData x => (x -> Router a) -> Router a
   RQueryParam  :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> (Maybe x -> Router a) -> Router a
+  RQueryParamR :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> (x -> Router a) -> Router a
   RQueryParams :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> ([x] -> Router a) -> Router a
   RQueryFlag   :: KnownSymbol sym => Proxy sym -> (Bool -> Router a) -> Router a
   RPath        :: KnownSymbol sym => Proxy sym -> Router a -> Router a
@@ -227,6 +228,10 @@ fromRouter queries segs = \case
         case lookup (T.pack $ symbolVal sym) queries of
             Nothing -> fromRouter queries segs $ f Nothing
             Just t  -> fromRouter queries segs $ f (parseQueryParamMaybe t)
+    RQueryParamR sym f ->
+       case lookup (T.pack $ symbolVal sym) queries of
+            Nothing -> Nothing
+            Just t -> fromRouter queries segs =<< f <$> parseQueryParamMaybe t
     RQueryParams sym f ->
         fromRouter queries segs . f . compact $ parseQueryParamMaybe . snd <$> C.filter
             (\(k, _) -> k == T.pack (symbolVal sym))
@@ -277,6 +282,14 @@ instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
     route :: (Maybe x -> sub :>> r) -> Router r
     route = RQueryParam (Proxy @sym) . (route @sub .)
     {-# INLINABLE route #-}
+
+instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
+   => HasRouter (QueryParam' '[Required] sym x :> sub) where
+
+  type (QueryParam' '[Required] sym x :> sub) :>> a = x -> sub :>> a
+
+  route :: (x -> sub :>> r) -> Router r
+  route = RQueryParamR (Proxy @sym) . (route @sub .)
 
 instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
     => HasRouter (QueryParams sym x :> sub) where
