@@ -9,3 +9,5 @@
 ** xref:packages/widgets.adoc[Widgets]
 ** xref:packages/debug.adoc[Debug]
 * xref:tutorial/index.adoc[Tutorial]
+** xref:tutorial/calculator.adoc[Simple Calculator]
+** xref:tutorial/immediate-execution.adoc[Immediate Execution]

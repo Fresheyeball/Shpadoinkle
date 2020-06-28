@@ -27,12 +27,13 @@ import           Data.Coerce                       (Coercible)
 import           Data.Maybe                        (fromMaybe, isNothing)
 import           Data.String                       (IsString)
 import           Data.Text                         as T hiding (foldl)
-import           Shpadoinkle                       (Html, HtmlM, IsHtml, text,
-                                                    constly, rightMC, pimap, eitherH,
-                                                    static, IsProp)
+import           Shpadoinkle                       (Html, HtmlM, IsHtml, IsProp,
+                                                    constly, eitherH, pimap,
+                                                    rightMC, static, text)
 import qualified Shpadoinkle.Html                  as H
-import           Shpadoinkle.Lens                  ((<%), generalize)
-import           Shpadoinkle.Router                (navigate, toHydration, MonadJSM)
+import           Shpadoinkle.Lens                  (generalize, (<%))
+import           Shpadoinkle.Router                (MonadJSM, navigate,
+                                                    toHydration)
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown (Dropdown (..),
                                                                 Theme (..),
                                                                 defConfig,
@@ -82,7 +83,7 @@ textControl l msg errs ef = constly (set (l . mapping (fromMaybe "" `iso` noEmpt
       , H.div "col-sm-10" $
         [ Input.text
           [ H.name' hName
-          , H.className ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
+          , H.class' ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
           ]
           (fromMaybe "" <$> ef ^. l)
         ]
@@ -106,7 +107,7 @@ intControl l msg errs ef = constly (set l) el
       , H.div "col-sm-10" $
         [ ef ^. l & Input.integral
           [ H.name' hName, H.step "1", H.min "0"
-          , H.className ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
+          , H.class' ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
           ]
         ]
         <> invalid (errs ^. l) (ef ^. l . hygiene)
@@ -132,18 +133,18 @@ selectControl l msg errs ef = formGroup
   where
   bootstrap Dropdown {..} = Dropdown.Theme
     { _wrapper = H.div
-      [ H.className [ ("dropdown", True)
-                    , ("show", _toggle == Open) ]
+      [ H.class' [ ("dropdown", True)
+                 , ("show", _toggle == Open) ]
       ]
     , _header  = pure . H.button
-      [ H.className ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
+      [ H.class' ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
       , H.type' "button"
       ]
     , _list    = H.div
-      [ H.className [ ("dropdown-menu", True)
-                    , ("show", _toggle == Open) ]
+      [ H.class' [ ("dropdown-menu", True)
+                 , ("show", _toggle == Open) ]
       ]
-    , _item    = H.a [ H.className "dropdown-item"
+    , _item    = H.a [ H.class' "dropdown-item"
                      , H.textProperty "style" "cursor:pointer" ]
     }
 

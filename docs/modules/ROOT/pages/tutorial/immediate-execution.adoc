@@ -1,6 +1,6 @@
 = Emulating Immediate Execution
 
-xref:tutorial/index.adoc[<- Back to part 1]
+xref:tutorial/calculator.adoc[<- Back to part 2, Simple calculator]
 
 All the prior art on writing a calculator in GHCjs feature old school functionality namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator app, atleast let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
 
@@ -24,15 +24,6 @@ Next, before we can make buttons for the digits, we need a way marshall a `Digit
 [source,haskell]
 ----
 charDigit :: Prism' Char Digit
-charDigit = prism'
-  (\case Seven    -> '7';   Eight ->    '8';   Nine  ->   '9'
-         Four     -> '4';   Five  ->    '5';   Six   ->   '6'
-         One      -> '1';   Two   ->    '2';   Three ->   '3'
-         Zero     -> '0')
-  (\case '7' -> Just Seven; '8' -> Just Eight; '9' -> Just Nine
-         '4' -> Just Four;  '5' -> Just Five;  '6' -> Just Six
-         '1' -> Just One;   '2' -> Just Two;   '3' -> Just Three
-         '0' -> Just Zero;   _  -> Nothing)
 ----
 
 Now that we can marshall between the Haskell representation and one we can show our user, we can make a button for digits:
@@ -56,7 +47,6 @@ digit d = button [ onClick d -- <1>
 [source, haskell]
 ----
 newtype Entry = Entry [Digit]
-  deriving Eq
 ----
 
 This works so long as our calculator need only work with https://en.wikipedia.org/wiki/Natural_number[Natural numbers]. However we want to do a bit more. We want to allow for decimals, as well as negative numbers.
@@ -68,7 +58,6 @@ To allow for decimals, we need to have a distinction, so when the user presses a
 [source,haskell]
 ----
 data Entry = Whole [Digit] | [Digit] :<.> [Digit]
-  deriving Eq
 ----
 
 With this we can implement the decimal interaction logic easily. When the user presses btn:[.] and we have a whole number, we transtion to the `:<.>` constructor.
@@ -97,8 +86,9 @@ To allow for negatives, we can just make the `Entry` type recursive.
 
 [source,haskell]
 ----
-data Entry = Whole [Digit] | [Digit] :<.> [Digit] | Negate Entry
-  deriving Eq
+data Entry = Whole [Digit]
+           | [Digit] :<.> [Digit]
+           | Negate Entry
 ----
 
 By adding the `Negate` constructor we can represent negatives of any existing `Entry` in the system. This makes the logic for the btn:[-/+] button straight forward.
@@ -128,36 +118,18 @@ This show instance results in an intuitive display for the user where each butto
 
 === Double
 
-Lastly on the subject of entries, we need the ability to do math. Do accomplish this we need marshall entries to an actual number type (in this case `Double`), as well as marshall our results back to an `Entry`. We do this by creating an https://hackage.haskell.org/package/lens-4.19.2/docs/Control-Lens-Iso.html#t:Iso[Iso].
+Lastly on the subject of entries, we need the ability to do math. To accomplish this we need marshall entries to an actual number type (in this case `Double`), as well as marshall our results back to an `Entry`. We do this by creating an https://hackage.haskell.org/package/lens-4.19.2/docs/Control-Lens-Iso.html#t:Iso[Iso].
 
 [source,haskell]
 ----
 frac :: Iso' Entry Double
-frac = iso toFrac fromFrac where
-  toFrac =
-    let f x = case L.reverse x of
-             ""     -> "0"
-             '.':xs -> L.reverse xs
-             _      -> x
-    in read . f . show
-
-  fromFrac d =
-    let asChar = traverse . charDigit
-        ab xs = case L.splitOn "." xs of
-         [whole, []]  -> Whole $ whole ^.. asChar
-         [whole, dec] -> (whole ^.. asChar)
-                    :<.> (dec   ^.. asChar)
-         _            -> Whole []
-     in case show d of
-       '-':xs -> Negate $ ab xs
-       xs     -> ab xs
 ----
 
 This allows us to easily move in both directions.
 
 [CAUTION]
 .Outlaw
-This is *not* a lawful isomorphism. But this outlaw is harmless. Producing a lawful instance is left as an exercise for the reader.
+The source version is *not* a lawful isomorphism. But this outlaw is harmless. Producing a lawful instance is left as an exercise for the reader.
 
 == Operators
 
@@ -203,13 +175,13 @@ Now we can actually define our model. Ultimately the immediate execution calcula
 
 [%header]
 |===
-| User Input   | Readout | Current Entry | Operation    | Previous Entry |
-| icon:times[] |         | `[]`          | icon:times[] | icon:times[]   |
-| `1`          | `1`     | `[1]`         | icon:times[] | icon:times[]   |
-| `2`          | `12`    | `[1,2]`       | icon:times[] | icon:times[]   |
-| `+`          | `+`     | `[]`          | `+`          | `[1,2]`        |
-| `4`          | `+4`    | `[4]`         | `+`          | `[1,2]`        |
-| `=`          | `16`    | `[1,6]`       | icon:times[] | icon:times[]   |
+| Input        | Readout | Current | Operation    | Entry        |
+| icon:times[] |         | `[]`    | icon:times[] | icon:times[] |
+| `1`          | `1`     | `[1]`   | icon:times[] | icon:times[] |
+| `2`          | `12`    | `[1,2]` | icon:times[] | icon:times[] |
+| `+`          | `+`     | `[]`    | `+`          | `[1,2]`      |
+| `4`          | `+4`    | `[4]`   | `+`          | `[1,2]`      |
+| `=`          | `16`    | `[1,6]` | icon:times[] | icon:times[] |
 |===
 
 One way to model this is with the following type:
@@ -218,13 +190,13 @@ One way to model this is with the following type:
 ----
 data Operation = Operation
   { _operator :: Operator
-  , _entry    :: Entry
+  , _previous :: Entry
   } deriving (Eq, Show)
 
 makeFieldsNoPrefix ''Operation
 
 data Model = Model
-  { _entry :: Entry -- <1>
+  { _current   :: Entry -- <1>
   , _operation :: Maybe Operation -- <2>
   } deriving (Eq, Show)
 
@@ -234,6 +206,144 @@ makeFieldsNoPrefix ''Model
 <1> We always have a current entry
 <2> We might have a pervious entry and an operation
 
-== WIP
+== Buttons
 
-image::http://www.bhmansion.com/wp-content/uploads/2019/08/Old-TV-Static_1Web.gif[Please Stand By]
+Now lets start building the final view. The calculator needs a readout area that shows the user the current state of the system.
+
+[source,haskell]
+----
+readout :: Model -> Html a
+----
+
+Since the readout consumes the state but never produces an update we should leave the HTML parametric.
+
+[NOTE]
+The presence `a` in the above signature is proof that the HTML produced is non-interactive.
+
+We also need our buttons. This calculator will have the following familiar buttons:
+
+=== All Clear
+
+Resets the calculator to the `initial` state.
+
+[source,haskell]
+----
+clear :: Html Model
+clear  = button [ class' "clear", onClick initial ] [ "AC" ]
+----
+
+=== Negate
+
+Negates the current entry. Phrased on the button as [-/+].
+
+[source,haskell]
+----
+posNeg :: Model -> Html Model
+posNeg x = button [ class' "posNeg", onClick (x & current %~ neg) ] [ "-/+" ]
+----
+
+=== Numberpad
+
+The nine digit pad (excluding 0).
+
+[source,haskell]
+----
+numberpad :: Html Digit
+numberpad = H.div "numberpad"
+  . L.intercalate [ br'_ ] -- <3>
+  . L.chunksOf 3 -- <2>
+  $ digit <$> [minBound .. pred maxBound] -- <1>
+----
+
+<1> Get a list all members of out `Digit` type, excluding `Zero`. We are leveraging the deeived A`Ord` instance here, as the type definition alreadt has the digits arranged for the numberpad, with `Zero` as `maxBound`.
+<2> Split the resulting list of HTML into rows of three buttons each. (`chunksOf` is a part of `Data.List`)
+<3> Add `<br/>` between each row.
+
+=== Decimal
+
+A button to apply adding a decimal point to the current entry.
+
+[source,haskell]
+----
+dot :: Model -> Html Model
+dot x = button [ onClick $ x & current %~ addDecimal ] [ "." ]
+----
+
+=== Arithmetic
+
+Each operator button sets the operation to the given operator. Sets the previous entry to be the current entry. And blanks the current entry.
+
+[source,haskell]
+----
+operations :: Model -> Html Model
+operations x = H.div "operate" $ fmap (\o -> x
+  & operation .~ Just (Operation o (x ^. current))
+  & current   .~ noEntry) -- <3>
+  . operate (x ^? operation . traverse . operator)-- <2>
+ <$> [minBound .. maxBound] -- <1>
+----
+
+<1> Leverage `Bounded` and `Enum` to get a list of operators.
+<2> Get the current operator if there is one (for display purposes).
+<3> Apply the update described above.
+
+=== Equals
+
+Last we come to equals. This button should calculate the result of our operation, blank the operator and previous entry, and set the current entry to our result.
+
+[source,haskell]
+----
+calcResult :: Model -> Model
+calcResult x = x
+  & operation .~ Nothing
+  & current .~ case x ^. operation of
+    Nothing -> x ^. current
+    Just o ->
+      let l = o ^. previous . frac
+          r = x ^. current  . frac
+      in (^. from frac) $ case o ^. operator of
+      Addition       -> l + r
+      Subtraction    -> l - r
+      Multiplication -> l * r
+      Division       -> if r == 0 then l else l / r
+----
+
+Based on the above examples you should be able is easily see what is going on in this code. Writing a button to perform this operation is straight forward.
+
+[source,haskell]
+----
+equals :: Model -> Html Model
+equals x = button [ class' "equals", onClick $ calcResult x ] [ "=" ]
+----
+
+== The View
+
+Now we can construct the final view by composing together our existing parts.
+
+[source,haskell]
+----
+view :: Model -> Html Model
+view x = H.div "calculator"
+  [ readout x
+  , H.div "buttons"
+    [ clear, posNeg x , operations x
+    , putDigit <$> numberpad
+    , H.div "zerodot"
+      [ putDigit <$> digit Zero, dot x , equals x ]
+    ]
+  ] where putDigit d = x & current %~ applyDigit d
+----
+
+And we are done.
+
+== Conclusion
+
+You can review the final code https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/CalculatorIE.hs[here], and see it running http://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator-ie.jsexe/[here].
+
+[NOTE]
+.Simplicity
+There where no Monads, no message types, no FRP networking, no causality, we never considered when components render, nor how. Instead we focused on data structures and simple functions, with simple types.
+
+Thank you for your time.
+
+
