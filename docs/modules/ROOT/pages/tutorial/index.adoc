@@ -1,155 +1,104 @@
 = Tutorial
 
-Here we will build a simple calculator, following pioneers of the space http://weblog.luite.com/wordpress/?p=127[Luite Stegemann], https://reflex-frp.org/tutorial[Ryan Trinkle], and https://keera.co.uk/2020/05/28/building-a-reactive-calculator-in-haskell-1-5/[Ivan Perez].
+This is for those who would like to think they know precisely what they mean.
 
-If you would like to follow along, it's advised you either:
+Skip to:
 
-* {snowman}[Use the Seed Project]
-* xref:getting-started/extend-an-example.adoc[Extend an Example]
-* xref:tutorial/immediate-execution.adoc[Skip to part 2: Immediate Execution]
+* xref:tutorial/calculator.adoc[Part 2, Simple Calculator ->]
+* xref:tutorial/immediate-execution[Part 3, Immediate Execution ->]
 
-== Hello World
+== Setup
 
-Let's get a basic Hello World app up. Luckily that is not too hard (but not too easy either):
+This project should work with any system capable of compiling code with https://www.haskell.org/ghc/[GHC]. However this project is built with Nix, and so that is what is recommended for the tutorial.
 
-[source,haskell]
-----
-main :: IO ()
-main = runJSorWarp 8080 $ -- <1>
-  simple -- <2>
-    runParDiff -- <3>
-    () -- <4>
-    (const "hello world") -- <5>
-    getBody -- <6>
-----
+If you do not have Nix, please follow the instructions located xref:getting-started/index.adoc#Nix[here].
 
-<1> This is a little function to abstract over starting the application with GHC or GHCjs. If built with GHC it will run a server on port `8080`, if built with GHCjs it will just start the application as a normal JavaScript file.
-<2> This is the highest level wrapper around the `shpadoinkle` function provided in core. It prevents you from doing the work of choosing a `Monad` to run event handlers (defaulting to `JSM`), and creating a territory (defaulting to a `TVar`).
-<3> We are using the ParDiff backend. No matter how simple the app, you must still choose a backend explicitly.
-<4> The initial state. Since this is a "hello world" example, it's just `()`.
-<5> This is our view. Since we don't care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
-<6> This is what DOM node on the page will hold our application. We use `getBody` to get the `document.body` for the page.
+You will also need to clone the {snowman}[Snowman]. This is a minimal hello world example repo where you can build a Shpadoinkle application.
 
-== Addition
+== Basics
 
-Now that we have our hello world, let's add some interactivity, and perform addition on the part of the user:
+Shpadoinkle applications are represented a function from a given application state, to HTML that produces a new state of the same type. This function becomes something of a loop with itself, where each produced update to the state is applied to the same application to obtain new HTML which in turn can produce a new update.
 
-To start we will need a simple single number input:
+Event handlers can be pure updates, or asynchronous updates. All updates that perform IO are considered asynchronous. This difference is tracked in the type system.
 
 [source,haskell]
 ----
-num :: Int -> Html Int
-num x = input'
- [ value . pack $ show x -- <1>
- , onInput (fromMaybe 0 . readMay . unpack) -- <2>
- ]
+Prop a :: Type
 ----
 
-<1> Set the value of the input to the current state of the application.
-<2> When an `"input"` event occurs update the state with the provided function.
-
-Now we can use our single number input in our view to add up two numbers for our user.
+For non-Monadic computations, that can immediately update the UI.
 
 [source,haskell]
 ----
-view :: (Int, Int) -> Html (Int, Int)
-view (l,r) = -- <1>
-  div_
-    [ (,r) <$> num l -- <2>
-    , " + "
-    , (l,) <$> num r -- <3>
-    , text $ " = " <> pack (show $ l + r) -- <4>
-    ]
+PropM m a :: Type
 ----
 
-<1> For now we can just use a tuple to house our two numbers.
-<2> We use the `num` component, rendering it with `l`.
-<3> We use the `num` component, rendering it with `r`.
-<4> We display the result of `l + r` to the user.
+For Monadic computations that are expected to take some time to complete before there is an update for the UI.
 
-[TIP]
-.Heterogenious Composition
-We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html Int` and `Html (Int, Int)` obviously do not unify. Because `Html` is merely a Functor.
-
-== Selectable Operations
-
-Now that we have some inputs that can perform addition, let the user select common operations. We start by making a new ADT:
+This difference propagates to the Html types with
 
 [source,haskell]
 ----
-data Operation
-    = Addition
-    | Subtraction
-    | Multiplication
-    | Division
-    deriving (Eq, Show, Read, Enum, Bounded)
+Html a :: Type
+HtmlM m a :: Type
 ----
 
-And we will need some functions to get human readable display, as well as mapping to functions:
+types respectively. Non-Monadic terms can be converted to Monadic terms by use of the injective function `constly`, however Monadic terms *cannot* be converted into Non-Monadic ones.
+
+== Html
+
+Shpadoinkle Html, is an opt in module for generating Shpadoinkle Core's Html types.
+
+Each Html tag has named functions, including a plain version that accepts properties `[(Text, Prop a)]` and children `[Html a]`. Adding an underscore allows you to pass no properties. Adding a prime allows you to pass no children.
 
 [source,haskell]
 ----
-opFunction :: Operation -> (Int -> Int -> Int)
-opFunction = \case
-  Addition       -> (+)
-  Subtraction    -> (-)
-  Multiplication -> (*)
-  Division       -> \x y ->
-    if y == 0 then 0 else Prelude.div x y
-
-
-opText :: Operation -> Text
-opText = \case
-  Addition       -> "+"
-  Subtraction    -> "-"
-  Multiplication -> "×"
-  Division       -> "÷"
+h1 [ id' "foo" ] [ text "bar" ]
 ----
 
-And we will use a traditional Html `<select>` element to let the user pick the operation.
+will render as
+
+[source,html]
+----
+<h1 id="foo" >bar</h1>
+----
+
+Text nodes being extremely common, have an extra overloaded API.
 
 [source,haskell]
 ----
-opSelect :: Html Operation
-opSelect = select [ onOption $ read . unpack ] -- <1>
-  $ opOption <$> [minBound..maxBound]
-  where opOption o = option
-    [ value . pack $ show o ] -- <2>
-    [ text $ opText o ]
+h1 [ id' "foo" ] [ "bar" ]
 ----
 
-<1> When the select element changes, we `read` the value and use that as the model.
-<2> Values are just the operation applied to `show`, so it matches when we `read`.
+will work as well. Provided you have enabled `OverloadedStrings`.
 
-Great! Now we have three members of our model, and so it's time for an actual data type.
+=== CSS Classes
+
+Due to the frequency of use, CSS classes have a polymorphic overloaded API. This includes multiple representations, all of which become `ClassList`. Which is just a `newtype` of `Set Text`.
+
+To learn more about the html package see docs xref:packages/html.adoc[here].
+
+=== Events
+
+Event handling is achieved through properties. There are several named functions for each event type and a few additional helpers. A plain version for pure handlers, and an M version for Monadic ones. The plain version is polymorphic and will work with both `Prop` and `PropM` types, as where the Monadic version necessitates `PropM`.
+
+[source,javascript]
+----
+const div = document.createElement("div")
+div.addEventListener("click", doit)
+----
+
+is morally equivalent to
 
 [source,haskell]
 ----
-data Model = Model
-  { operation :: Operation
-  , left      :: Int
-  , right     :: Int
-  } deriving (Eq, Show)
+div' [ onClick doit ]
 ----
 
-And we will use the same technique with `<$>` to compose these components together:
+'''
 
-[source,haskell]
-----
-view :: Model -> Html Model
-view model = div_
- [ (\l -> model { left      = l }) <$> num (left model)
- , (\o -> model { operation = o }) <$> opSelect
- , (\r -> model { right     = r }) <$> num (right model)
- , text $ " = " <> pack (show $ opFunction
-     (operation model) (left model) (right model))
- ]
-----
+Next we will use these concepts to build a calculator, in part 2.
 
-That's it! The user can select an operation, enter 2 numbers and see a result rendered.
-
-Now if you are looking at the above code, and starting to twitch, because you are a optics fiend; that is the right instinct.
-
-xref:tutorial/immediate-execution.adoc[Go to part 2 ->]
+xref:tutorial/calculator.adoc[Go to part 2: Simple calculator ->]
 
 

@@ -28,7 +28,7 @@ default (Text)
 
 filterHtml :: Eq v => Show v => v -> v -> Html v
 filterHtml = memo $ \cur item -> li_
-  [ a [href "#" , onClick item , className [("selected", cur == item)]] [ text . pack $ show item ]
+  [ a [href "#" , onClick item , class' [("selected", cur == item)]] [ text . pack $ show item ]
   ]
 
 
@@ -39,20 +39,20 @@ htmlIfTasks m h' = if Prelude.null m then [] else h'
 taskView :: Monad m => Maybe TaskId -> Task -> HtmlM m Model
 taskView = memo $ \ed (Task (Description d) c tid) ->
   li [ id' . pack . show $ tid ^. _Wrapped
-     , className [ ("completed", c == Complete)
+     , class' [ ("completed", c == Complete)
                  , ("editing",   Just tid == ed) ]
      ]
   [ div "view"
     [ input' [ type' "checkbox"
-             , className "toggle"
+             , class' "toggle"
              , onChangeE . pur $ toggleCompleted tid
              , checked $ c == Complete
              ]
     , label [ onDblclickE . pur $ editing ?~ tid ] [ text d ]
-   , button' [ className "destroy", onClickE . pur $ tasks %~ filter ((/= tid) . _taskId) ]
+   , button' [ class' "destroy", onClickE . pur $ tasks %~ filter ((/= tid) . _taskId) ]
     ]
   , form [ onSubmitE . pur $ editing .~ Nothing ]
-    [ input' [ className "edit"
+    [ input' [ class' "edit"
              , value d
              , onInputE $ pur . updateTaskDescription tid . Description
              , autofocus True
@@ -70,7 +70,7 @@ listFooter = memo $ \ic cc v -> footer "footer" $
     ]
   , ul "filters" $ constly (set visibility) . filterHtml v <$> [minBound..maxBound]
   ] ++ (if cc == 0 then [] else
-  [ button [ className "clear-completed", onClickE (pur clearComplete) ] [ "Clear completed" ]
+  [ button [ class' "clear-completed", onClickE (pur clearComplete) ] [ "Clear completed" ]
   ])
 
 
@@ -84,8 +84,8 @@ info = footer "info"
 
 
 newTaskForm :: Monad m => Description -> HtmlM m Model
-newTaskForm = memo $ \desc -> form [ className "todo-form", onSubmitE (pur appendItem') ]
-  [ input' [ className "new-todo"
+newTaskForm = memo $ \desc -> form [ class' "todo-form", onSubmitE (pur appendItem') ]
+  [ input' [ class' "new-todo"
            , value $ desc ^. _Wrapped
            , onInputE $ pur . set current . Description
            , placeholder "What needs to be done?" ]
@@ -98,7 +98,7 @@ todoList = memo $ \ed v ts -> ul "todo-list" $ taskView ed <$> toVisible v ts
 
 toggleAllBtn :: Monad m => [HtmlM m Model]
 toggleAllBtn =
-  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox", onChangeE (pur toggleAll) ]
+  [ input' [ id' "toggle-all", class' "toggle-all", type' "checkbox", onChangeE (pur toggleAll) ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 

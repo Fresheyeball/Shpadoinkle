@@ -17,12 +17,12 @@ import           Prelude                           hiding (div)
 
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Lens
-import           Shpadoinkle.Html                  as H (a, button, className,
-                                                         div, div_, href, id',
-                                                         link', rel,
-                                                         textProperty, type')
+import           Shpadoinkle.Html                  as H (a, button, class', div,
+                                                         div_, href, id', link',
+                                                         rel, textProperty,
+                                                         type')
 import           Shpadoinkle.Html.Utils
+import           Shpadoinkle.Lens
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
 import           Shpadoinkle.Widgets.Types
 
@@ -58,18 +58,18 @@ view m = div_
   where
   bootstrap Dropdown {..} = Dropdown.Theme
     { _wrapper = div
-      [ className [ ("dropdown", True)
-                  , ("show", _toggle == Open) ]
+      [ class' [ ("dropdown", True)
+               , ("show", _toggle == Open) ]
       ]
     , _header  = pure . button
-      [ className ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
+      [ class' ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
       , type' "button"
       ]
     , _list    = div
-      [ className [ ("dropdown-menu", True)
-                  , ("show", _toggle == Open) ]
+      [ class' [ ("dropdown-menu", True)
+               , ("show", _toggle == Open) ]
       ]
-    , _item    = a [ className "dropdown-item"
+    , _item    = a [ class' "dropdown-item"
                    , textProperty "style" "cursor:pointer" ]
     }
 

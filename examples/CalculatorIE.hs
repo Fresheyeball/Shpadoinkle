@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE DuplicateRecordFields  #-}
+{-# LANGUAGE ExtendedDefaultRules   #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -9,6 +10,7 @@
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeApplications       #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults       #-}
 
 module Main where
 
@@ -24,6 +26,8 @@ import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
 import           Shpadoinkle.Debug
 import           Shpadoinkle.Html            as H
+
+default (ClassList)
 
 data Digit
   = Seven | Eight | Nine
@@ -88,13 +92,13 @@ charDigit = prism'
 
 data Operation = Operation
   { _operator :: Operator
-  , _entry    :: Entry
+  , _previous :: Entry
   } deriving (Eq, Show, Generic, ToJSON)
 
 makeFieldsNoPrefix ''Operation
 
 data Model = Model
-  { _entry     :: Entry
+  { _current   :: Entry
   , _operation :: Maybe Operation
   } deriving (Eq, Show, Generic, ToJSON)
 
@@ -104,12 +108,12 @@ initial :: Model
 initial = Model noEntry Nothing
 
 digit :: Digit -> Html Digit
-digit d = button [ onClick d, className $ "d" <> d' ] [ text d' ]
+digit d = button [ onClick d, class' $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
 operate :: Maybe Operator -> Operator -> Html Operator
 operate active o = button
-  [ onClick o, className ("active" :: Text, Just o == active) ]
+  [ onClick o, class' ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
 
 applyDigit :: Digit -> Entry -> Entry
@@ -132,9 +136,9 @@ cleanEntry = \case
 calcResult :: Model -> Model
 calcResult x = x
   & operation .~ Nothing
-  & entry .~ case x ^. operation of
-    Nothing -> x ^. entry
-    Just o -> let l = o ^. entry . frac; r = x ^. entry . frac
+  & current .~ case x ^. operation of
+    Nothing -> x ^. current
+    Just o -> let l = o ^. previous . frac; r = x ^. current . frac
       in cleanEntry . (^. from frac) $ case o ^. operator of
       Addition       -> l + r
       Subtraction    -> l - r
@@ -146,36 +150,49 @@ neg = \case
   Negate e -> e
   e -> Negate e
 
+readout :: Model -> Html a
+readout x = H.div "readout" $
+  [ text . pack . show $ x ^. current
+  ] <> case x ^? operation . traverse . operator of
+         Nothing -> []
+         Just o  -> [ H.div "operator"
+             [ text $ pack (show o) <> " " <>
+               x ^. operation . traverse . previous . to (pack .show)
+             ]
+           ]
+
+clear :: Html Model
+clear  = button [ class' "clear", onClick initial ] [ "AC" ]
+
+posNeg :: Model -> Html Model
+posNeg x = button [ class' "posNeg", onClick (x & current %~ neg) ] [ "-/+" ]
+
+numberpad :: Html Digit
+numberpad = H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
+  digit <$> [minBound .. pred maxBound]
+
+operations :: Model -> Html Model
+operations x = H.div "operate" $ fmap (\o -> x
+  & operation .~ Just (Operation o (x ^. current))
+  & current .~ noEntry)
+  . operate (x ^? operation . traverse . operator) <$> [minBound .. maxBound]
+
+dot :: Model -> Html Model
+dot x = button [ onClick $ x & current %~ addDecimal ] [ "." ]
+
+equals :: Model -> Html Model
+equals x = button [ class' "equals", onClick $ calcResult x ] [ "=" ]
+
 view :: Model -> Html Model
 view x = H.div "calculator"
-  [ H.div "readout" $
-    [ text . pack . show $ x ^. entry
-    ] <> case x ^? operation . traverse . operator of
-           Nothing -> []
-           Just o  -> [ H.div "operator"
-               [ text $ pack (show o) <> " " <>
-                 x ^. operation . traverse . entry . to (pack .show)
-               ]
-             ]
+  [ readout x
   , H.div "buttons"
-
-    [ button [ class' "clear", onClick initial ] [ "AC" ]
-    , button [ class' "posNeg", onClick (x & entry %~ neg) ] [ "-/+" ]
-    , H.div "operate" $ fmap (\o -> x
-      & operation .~ Just (Operation o (x ^. entry))
-      & entry .~ noEntry)
-      . operate (x ^? operation . traverse . operator) <$> [minBound .. maxBound]
-
-    , H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
-       fmap putDigit . digit <$> [minBound .. pred maxBound]
-
+    [ clear, posNeg x , operations x
+    , putDigit <$> numberpad
     , H.div "zerodot"
-      [ putDigit <$> digit Zero
-      , button [ onClick $ x & entry %~ addDecimal ] [ "." ]
-      , button [ class' "equals", onClick $ calcResult x ] [ "=" ]
-      ]
+      [ putDigit <$> digit Zero, dot x , equals x ]
     ]
-  ] where putDigit d = x & entry %~ applyDigit d
+  ] where putDigit d = x & current %~ applyDigit d
 
 main :: IO ()
 main = runJSorWarp 8080 $ do

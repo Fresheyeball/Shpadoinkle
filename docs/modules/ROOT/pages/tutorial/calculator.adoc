@@ -1,0 +1,148 @@
+= Calculator
+
+Here we will build a simple calculator, following pioneers of the space http://weblog.luite.com/wordpress/?p=127[Luite Stegemann], https://reflex-frp.org/tutorial[Ryan Trinkle], and https://keera.co.uk/2020/05/28/building-a-reactive-calculator-in-haskell-1-5/[Ivan Perez].
+
+xref:tutorial/index.adoc[<- See part 1, Basic concepts]
+
+== Hello World
+
+Let's get a basic Hello World app up (this is provided if you are building a snowman). Luckily that is not too hard (but not too easy either):
+
+[source,haskell]
+----
+main :: IO ()
+main = runJSorWarp 8080 $ -- <1>
+  simple -- <2>
+    runParDiff -- <3>
+    () -- <4>
+    (constly' . const "hello world") -- <5>
+    getBody -- <6>
+----
+
+<1> This is a little function to abstract over starting the application with GHC or GHCjs. If built with GHC it will run a server on port `8080`, if built with GHCjs it will just start the application as a normal JavaScript file.
+<2> This is the highest level wrapper around the `shpadoinkle` function provided in core. It prevents you from doing the work of choosing a `Monad` to run event handlers (defaulting to `JSM`), and creating a territory (defaulting to a `TVar`).
+<3> We are using the ParDiff backend. No matter how simple the app, you must still choose a backend explicitly.
+<4> The initial state. Since this is a "hello world" example, it's just `()`.
+<5> This is our view. Since we don't care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
+<6> This is what DOM node on the page will hold our application. We use `getBody` to get the `document.body` for the page.
+
+== Addition
+
+Now that we have our hello world, let's add some interactivity, and perform addition on the part of the user:
+
+To start we will need a simple single number input:
+
+[source,haskell]
+----
+num :: Int -> Html Int
+num x = input'
+ [ value . pack $ show x -- <1>
+ , onInput (fromMaybe 0 . readMay . unpack) -- <2>
+ ]
+----
+
+<1> Set the value of the input to the current state of the application.
+<2> When an `"input"` event occurs update the state with the provided function.
+
+Now we can use our single number input in our view to add up two numbers for our user.
+
+[source,haskell]
+----
+view :: (Int, Int) -> Html (Int, Int)
+view (l,r) = -- <1>
+  div_
+    [ (,r) <$> num l -- <2>
+    , " + "
+    , (l,) <$> num r -- <3>
+    , text $ " = " <> pack (show $ l + r) -- <4>
+    ]
+----
+
+<1> For now we can just use a tuple to house our two numbers.
+<2> We use the `num` component, rendering it with `l`.
+<3> We use the `num` component, rendering it with `r`.
+<4> We display the result of `l + r` to the user.
+
+[TIP]
+.Heterogenious Composition
+We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html Int` and `Html (Int, Int)` obviously do not unify.
+
+== Selectable Operations
+
+Now that we have some inputs that can perform addition, let the user select common operations. We start by making a new ADT:
+
+[source,haskell]
+----
+data Operation
+  = Addition
+  | Subtraction
+  | Multiplication
+  | Division
+  deriving (Eq, Show, Read, Enum, Bounded)
+----
+
+And we will need some functions to get human readable display, as well as mapping to functions:
+
+[source,haskell]
+----
+opFunction :: Operation -> (Int -> Int -> Int)
+opText :: Operation -> Text
+----
+
+And we will use a traditional Html `<select>` element to let the user pick the operation.
+
+[source,haskell]
+----
+opSelect :: Html Operation
+opSelect = select [ onOption $ read . unpack ] -- <1>
+  $ opOption <$> [minBound..maxBound]
+  where opOption o = option
+    [ value . pack $ show o ] -- <2>
+    [ text $ opText o ]
+----
+
+<1> When the select element changes, we `read` the value and use that as the model.
+<2> Values are just the operation applied to `show`, so it matches when we `read`.
+
+Great! Now we have three members of our model, and so it's time for an actual data type.
+
+[source,haskell]
+----
+data Model = Model
+  { operation :: Operation
+  , left      :: Int
+  , right     :: Int
+  } deriving (Eq, Show)
+----
+
+And we will use the same technique with `<$>` to compose these components together:
+
+[source,haskell]
+----
+view :: Model -> Html Model
+view model = div_
+  [ (\l -> model { left      = l }) <$> num (left model)
+  , (\o -> model { operation = o }) <$> opSelect
+  , (\r -> model { right     = r }) <$> num (right model)
+  , text $ " = " <> pack (show $ opFunction
+      (operation model) (left model) (right model))
+  ]
+----
+
+That's it! The user can select an operation, enter 2 numbers and see a result rendered.
+
+Now if you are looking at the above code, and starting to twitch, because you are a optics fiend; that is the right instinct.
+
+'''
+
+You can see the final code https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/Calculator.hs[here] running below:
+
+++++
+<iframe style="border-radius:5px;border:1px dashed blue;width:100%;height:70px" src="https://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator.jsexe/"></iframe>
+++++
+
+Next we emmulate a real world immediate execution calculator in part 3.
+
+xref:tutorial/immediate-execution.adoc[Go to part 3: Immediate execution ->]
+
+

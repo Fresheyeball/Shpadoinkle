@@ -58,11 +58,11 @@ data Model = Model
 makeLenses ''Model
 
 newTaskForm :: Monad m => Model -> HtmlM m Model
-newTaskForm m = form [ className "todo-form", onSubmit $
+newTaskForm m = form [ class' "todo-form", onSubmit $
   if m ^. current . to (== mempty) then m else m
     & tasks %~ insertMax (Task (m ^. current) Incomplete)
     & current .~ mempty ]
-  [ input' [ className "new-todo"
+  [ input' [ class' "new-todo"
            , m ^. current . _Wrapped . to value
            , onInput $ ($ m) . set current . Description
            , placeholder "What needs to be done?" ]
@@ -79,22 +79,22 @@ todoList m = ul "todo-list" . M.elems . M.mapWithKey (taskView m)
 taskView :: Monad m => Model -> TaskId -> Task -> HtmlM m Model
 taskView m = memo $ \tid (Task (Description d) c) ->
   li [ id' . pack . show $ unTaskId tid
-     , className [ ("completed", c == Complete)
+     , class' [ ("completed", c == Complete)
                  , ("editing", Just tid == m ^. editing) ]
      ]
   [ div "view"
     [ input' [ type' "checkbox"
-             , className "toggle"
+             , class' "toggle"
              , onChange $ m & tasks . at tid . traverse . completed %~ (\case
                  Complete -> Incomplete
                  Incomplete -> Complete)
              , checked $ c == Complete
              ]
     , label [ onDblclick $ m & editing .~ Just tid ] [ text d ]
-    , button' [ className "destroy", onClick $ m & tasks %~ M.delete tid ]
+    , button' [ class' "destroy", onClick $ m & tasks %~ M.delete tid ]
     ]
   , form [ onSubmit $ m & editing .~ Nothing ]
-    [ input' [ className "edit"
+    [ input' [ class' "edit"
              , value d
              , onInputE $ generalize (tasks . at tid) . maybeC . generalize description
                           . pur . const . Description
@@ -113,7 +113,7 @@ listFooter m = footer "footer" $
   , ul "filters" $ [minBound..maxBound] & mapped %~ filterHtml (m ^. visibility)
                                         & fmap (constly (set visibility))
   ] ++ (if count Complete (m ^. tasks) == 0 then [] else
-  [ button [ className "clear-completed"
+  [ button [ class' "clear-completed"
            , onClickE . generalize tasks . pur $ M.filter ((== Incomplete) . _completed)
            ] [ "Clear completed" ]
   ])
@@ -122,7 +122,7 @@ listFooter m = footer "footer" $
 
 filterHtml :: Visibility -> Visibility -> Html Visibility
 filterHtml = memo2 $ \cur item -> li_
-  [ a (href "#" : onClick item : [className ("selected", cur == item)]) [ text . pack $ show item ] ]
+  [ a (href "#" : onClick item : [class' ("selected", cur == item)]) [ text . pack $ show item ] ]
 
 info :: Monad m => HtmlM m a
 info = footer "info"
@@ -133,7 +133,7 @@ info = footer "info"
 
 toggleAllBtn :: Monad m => Model -> [HtmlM m Model]
 toggleAllBtn m =
-  [ input' [ id' "toggle-all", className "toggle-all", type' "checkbox",
+  [ input' [ id' "toggle-all", class' "toggle-all", type' "checkbox",
              onChangeE $ generalize tasks . pur $ (& mapped . completed .~
                if m ^. tasks . to (all $ (== Complete) . _completed)
                then Incomplete else Complete) ]

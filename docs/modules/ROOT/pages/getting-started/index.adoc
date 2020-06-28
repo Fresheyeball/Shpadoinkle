@@ -18,7 +18,7 @@ Nix works on all Linux distributions, as well as Darwin-based operating systems 
 curl -L https://nixos.org/nix/install | sh
 ----
 
-[CAUTION]
+[WARNING]
 Make sure to follow the instructions output by the script.
 
 Success is indicated byt he presence of the Nix toolchain present in your terminal...

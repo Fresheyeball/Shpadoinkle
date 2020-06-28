@@ -63,12 +63,12 @@ flagProperty :: IsProp p e => Text -> Bool -> (Text, p a)
 flagProperty t = (,) t . flagProp
 
 
-className :: IsProp p e => ClassListRep cl => cl -> (Text, p a)
-className = textProperty "className" . unwords . Set.toList . unClassList . asClass
+class' :: IsProp p e => ClassListRep cl => cl -> (Text, p a)
+class' = className . unwords . Set.toList . unClassList . asClass
 
 
-class' :: IsProp p e => ClassList -> (Text, p a)
-class' = className
+className :: IsProp p e => Text -> (Text, p a)
+className = textProperty "className"
 
 
 for' :: IsProp p e => Text -> (Text, p a)

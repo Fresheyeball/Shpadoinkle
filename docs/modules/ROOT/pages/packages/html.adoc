@@ -8,19 +8,19 @@ HTML tags each get **four** named functions, with the following semantic:
 
 [%header]
 |===
-| Variant | Properties Required | Children Required
-| Plain | icon:check[] Yes | icon:check[] Yes
-| Prime | icon:check[] Yes | icon:times[] No
-| Underscore | icon:times[] No | icon:check[] Yes
-| Prime + Underscore | icon:times[] No | icon:times[] No
+| Variant            | Properties Required | Children Required
+| Plain              | icon:check[] Yes    | icon:check[] Yes
+| Prime              | icon:check[] Yes    | icon:times[] No
+| Underscore         | icon:times[] No     | icon:check[] Yes
+| Prime + Underscore | icon:times[] No     | icon:times[] No
 |===
 
 or you can see the semantic as follows:
 
 [source,haskell]
 ----
-x [] = x'
-flip x [] = x_
+x [] = x_
+flip x [] = x'
 x [] [] = x'_
 h "x" = x
 ----
@@ -47,7 +47,7 @@ div.addEventListener("click", () => model++);
 div' [ onClick (model + 1) ]
 ----
 
-The plain variant is polymorphic and will work with Functorial and EndoIso props. However the Monaic variant is monomorphic and demands `PropM`
+The plain variant is polymorphic and will work with Functorial and EndoIso props. However the Monadic variant is monomorphic and demands `PropM`
 
 [source,haskell]
 ----
@@ -98,17 +98,18 @@ div' [ className "foo" ]
 Not all properties have the same type. While we endeavor to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impedances, or would like to suggest a function.
 
 
-=== ClassName
+=== CSS Class
 
 This is by **far** the most common property to set. And so extra affordances are offered here. These are provide in **outlaw** fashion with typeclasses.
 
 [source,haskell]
 ----
 div' "foo bar"
-div' [ className "foo bar" ]
-div' [ className ("foo bar", True) ]
-div' [ className ["foo", "bar"] ]
-div' [ className [("foo", True), ("bar", True), ("baz", False)] ]
+div' [ class' "foo bar" ]
+div' [ class' ("foo bar", True) ]
+div' [ class' ["foo", "bar"] ]
+div' [ class' [("foo", True), ("bar", True), ("baz", False)] ]
+div' [ class' $ "foo" <> ("bar", True) ]
 ----
 
 will all render as

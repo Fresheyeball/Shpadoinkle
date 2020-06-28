@@ -7,7 +7,6 @@
 module Main where
 
 
-import           Control.Lens                hiding (simple, view)
 import           Data.Maybe
 import           Data.Text
 import           Safe
@@ -17,21 +16,18 @@ import           Shpadoinkle.Html
 
 
 data Model = Model
-    { _operation :: Operation
-    , _left      :: Int
-    , _right     :: Int
-    }
-    deriving (Eq, Show)
+  { operation :: Operation
+  , left      :: Int
+  , right     :: Int
+  } deriving (Eq, Show)
 
 
-data Operation = Addition
-    | Subtraction
-    | Multiplication
-    | Division
-    deriving (Eq, Show, Read, Enum, Bounded)
-
-
-makeLenses ''Model
+data Operation
+  = Addition
+  | Subtraction
+  | Multiplication
+  | Division
+  deriving (Eq, Show, Read, Enum, Bounded)
 
 
 opFunction :: Operation -> (Int -> Int -> Int)
@@ -59,22 +55,22 @@ opSelect = select [ onOption $ read . unpack ]
 
 num :: Int -> Html Int
 num x = input'
- [ value . pack $ show x
- , onInput $ fromMaybe 0 . readMay . unpack
- ]
+  [ value . pack $ show x
+  , onInput $ fromMaybe 0 . readMay . unpack
+  ]
 
 
-view :: Monad m => Model -> HtmlM m Model
+view :: Model -> Html Model
 view model = div_
- [ constly (set left) (num (_left model))
- , constly (set operation) opSelect
- , constly (set right) (num (_right model))
- , text $ " = " <> pack (show $ opFunction
-     (_operation model) (_left model) (_right model))
- ]
+  [ (\l -> model { left      = l }) <$> num (left model)
+  , (\o -> model { operation = o }) <$> opSelect
+  , (\r -> model { right     = r }) <$> num (right model)
+  , text $ " = " <> pack (show $ opFunction
+      (operation model) (left model) (right model))
+  ]
 
 
 main :: IO ()
 main = runJSorWarp 8080 $
-  simple runParDiff (Model Addition 0 0) view getBody
+  simple runParDiff (Model Addition 0 0) (constly' . view) getBody
 

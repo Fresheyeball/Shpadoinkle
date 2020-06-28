@@ -135,19 +135,19 @@ data Theme m = Theme
 semantic :: Monad m => Dropdown p b -> Theme m
 semantic Dropdown {..} = Theme
   { _wrapper = div
-    [ className [ ("dropdown", True)
-                , ("ui",       True)
-                , ("active", _toggle == Open) ]
+    [ class' [ ("dropdown", True)
+             , ("ui",       True)
+             , ("active", _toggle == Open) ]
     ]
   , _header  = \cs ->
     [ div [ class' "text" ] cs
-    , i' [ className ["dropdown", "icon"] ]
+    , i' [ class' ["dropdown", "icon"] ]
     ]
   , _list    = div
-    [ className [ "menu"
-                , "transition" ]
+    [ class' [ "menu"
+             , "transition" ]
     ]
-  , _item    = div [ className "item" ]
+  , _item    = div [ class' "item" ]
   }
 
 
