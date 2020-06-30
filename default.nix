@@ -11,6 +11,7 @@ let
 
 
   util = import ./nix/util.nix { inherit compiler isJS; };
+  docker = import ./examples/servant-crud/docker.nix { inherit compiler chan; };
 
 
   ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ];
@@ -56,4 +57,4 @@ in
 
   if inNixShell
   then haskell.packages.${util.compilerjs}.shellFor (extra pkgs shellBase)
-  else packages
+  else { inherit docker; } // packages

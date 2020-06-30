@@ -282,7 +282,7 @@ template fe stage = H.html_
   [ H.head_
     [ H.link'
       [ H.rel "stylesheet"
-      , H.href "https://cdn.usebootstrap.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      , H.href "https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
       ]
     , H.meta [ H.charset "ISO-8859-1" ] []
     , toHydration fe
