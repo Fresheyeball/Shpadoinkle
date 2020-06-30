@@ -8,7 +8,7 @@ module Shpadoinkle.Html.Utils where
 
 
 import           Control.Monad      (forM_)
-import           Data.Text
+import           Data.Text hiding (empty)
 import           GHCJS.DOM
 import           GHCJS.DOM.Document as Doc
 import           GHCJS.DOM.Element
@@ -81,3 +81,9 @@ addScriptText js = do
   jsn <- createTextNode doc js
   _ <- appendChild tag jsn
   () <$ appendChild headRaw tag
+
+
+treatEmpty :: Foldable f => Functor f => a -> (f a -> a) -> (b -> a) -> f b -> a
+treatEmpty zero plural singular xs = if Prelude.null xs then zero else plural $ singular <$> xs
+
+

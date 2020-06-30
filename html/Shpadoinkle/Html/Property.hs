@@ -26,7 +26,6 @@ module Shpadoinkle.Html.Property where
 
 
 import           Control.Monad       (msum)
-import           Data.Maybe          (mapMaybe)
 import qualified Data.Set            as Set
 import           Data.String         hiding (unwords)
 import           Data.Text
@@ -52,10 +51,10 @@ textProperty k = (,) k . textProp . toPropText
 newtype ClassList = ClassList { unClassList :: Set.Set Text } deriving (Eq, Ord, Show, Semigroup, Monoid)
 class ClassListRep a where asClass :: a -> ClassList
 instance ClassListRep Text where asClass = ClassList . Set.singleton
-instance ClassListRep [Text] where asClass = ClassList . Set.fromList
 instance ClassListRep ClassList where asClass = id
-instance ClassListRep [(Text, Bool)] where asClass = asClass . mapMaybe (\(a, b) -> if b then Just a else Nothing)
-instance ClassListRep (Text, Bool) where asClass = asClass . (:[])
+instance ClassListRep (Text, Bool) where asClass (a, b) = if b then asClass a else mempty
+instance ClassListRep (ClassList, Bool) where asClass = \case (cl, True) -> cl; _ -> mempty
+instance ClassListRep cl => ClassListRep [cl] where asClass = foldMap asClass
 instance IsString ClassList where fromString = ClassList . Set.singleton . pack
 
 
