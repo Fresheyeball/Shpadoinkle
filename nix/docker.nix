@@ -5,23 +5,20 @@
   internalPort     ? 9999,
   extraNginxConfig ? "",
   extraArgs        ? "",
-  client, server
+  client, server,
+  contents         ? [],
+  setup            ? "",
+  command          ? []
 }:
 
 
 let
 
 
-  inherit (pkgs)             writeTextFile;
   inherit (pkgs.dockerTools) buildImage shadowSetup;
 
 
-  writeNginxConfig = name: text: writeTextFile {
-    inherit name text;
-  };
-
-
-  nginxConf        = writeNginxConfig "nginx.conf" ''
+  nginxConf        = ''
     user nginx nginx;
     daemon off;
     error_log /dev/stdout info;
@@ -48,7 +45,7 @@ let
 in buildImage {
   name          = imgName;
   tag           = "latest";
-  contents      = [ pkgs.nginx pkgs.sqlite ];
+  contents      = contents ++ [ pkgs.nginx pkgs.sqlite ];
 
   runAsRoot     = ''
     #!${pkgs.stdenv.shell}
@@ -58,11 +55,16 @@ in buildImage {
     mkdir -p /tmp/cache-app
     groupadd --system nginx
     useradd --system --gid nginx nginx
+    cat >/conf/nginx.conf <<EOF
+${nginxConf}
+EOF
+    ${setup}
   '';
 
   config        = {
-    Cmd =  [ "${pkgs.bash}/bin/bash" "-c"
-    "nginx -c ${nginxConf} & ${server} --port ${toString internalPort} ${extraArgs}"];
+    Cmd =  if command == [] then [ "${pkgs.bash}/bin/bash" "-c"
+      "nginx -c ${nginxConf} & ${server} --port ${toString internalPort} ${extraArgs}"]
+      else command;
     ExposedPorts = {
       "${toString port}/tcp" = {};
     };
