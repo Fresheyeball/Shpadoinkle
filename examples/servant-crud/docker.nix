@@ -12,4 +12,5 @@ in import ../../nix/docker.nix {
   pkgs      = pkgsGHC;
   imgName   = "servant-client-crud-docker";
   extraArgs = "--assets ${client}";
+  contents  = [ pkgsGHC.sqlite ];
 }
