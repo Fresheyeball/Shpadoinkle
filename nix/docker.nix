@@ -5,8 +5,6 @@
   internalPort     ? 9999,
   extraNginxConfig ? "",
   extraArgs        ? "",
-  contains         ? [],
-  setup            ? "",
   client, server
 }:
 
@@ -50,7 +48,7 @@ let
 in buildImage {
   name          = imgName;
   tag           = "latest";
-  contents      = [ pkgs.nginx ] ++ contains;
+  contents      = [ pkgs.nginx pkgs.sqlite ];
 
   runAsRoot     = ''
     #!${pkgs.stdenv.shell}
@@ -60,7 +58,6 @@ in buildImage {
     mkdir -p /tmp/cache-app
     groupadd --system nginx
     useradd --system --gid nginx nginx
-    ${setup}
   '';
 
   config        = {
