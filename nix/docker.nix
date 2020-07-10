@@ -8,7 +8,8 @@
   client, server,
   contents         ? [],
   setup            ? "",
-  command          ? []
+  command          ? "",
+  Env              ? []
 }:
 
 
@@ -18,7 +19,7 @@ let
   inherit (pkgs.dockerTools) buildImage shadowSetup;
 
 
-  nginxConf        = ''
+  nginxConf = ''
     user nginx nginx;
     daemon off;
     error_log /dev/stdout info;
@@ -43,11 +44,11 @@ let
 
 
 in buildImage {
-  name          = imgName;
-  tag           = "latest";
-  contents      = contents ++ [ pkgs.nginx pkgs.sqlite ];
+  name = imgName;
+  tag  = "latest";
+  contents = contents ++ [ pkgs.nginx ];
 
-  runAsRoot     = ''
+  runAsRoot = ''
     #!${pkgs.stdenv.shell}
     ${shadowSetup}
     mkdir -p var/log/nginx
@@ -61,10 +62,11 @@ EOF
     ${setup}
   '';
 
-  config        = {
-    Cmd =  if command == [] then [ "${pkgs.bash}/bin/bash" "-c"
+  config = {
+    Env = env;
+    Cmd =  if command == "" then [ "${pkgs.bash}/bin/bash" "-c"
       "nginx -c ${nginxConf} & ${server} --port ${toString internalPort} ${extraArgs}"]
-      else command;
+      else [ "${pkgs.writeShellScript "cmd.sh" command}" ];
     ExposedPorts = {
       "${toString port}/tcp" = {};
     };
