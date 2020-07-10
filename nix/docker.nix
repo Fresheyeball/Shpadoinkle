@@ -9,7 +9,7 @@
   contents         ? [],
   setup            ? "",
   command          ? "",
-  Env              ? []
+  env              ? []
 }:
 
 
