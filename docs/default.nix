@@ -3,7 +3,7 @@ let
 
   theme = fetchurl {
     url    = https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/master/raw/build/ui-bundle.zip?job=bundle-stable;
-    sha256 = "0jiis08zw1g263fnpsac928p2vz91cm53iklh8l0xy1fmn8szbxp";
+    sha256 = "1y1hpanswjjvlrvjc0fwchz413kwjvv04sgddkcmd0z21qrbndw0";
   };
 
 
