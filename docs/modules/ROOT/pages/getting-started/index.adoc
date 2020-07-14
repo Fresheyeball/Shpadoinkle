@@ -21,7 +21,7 @@ curl -L https://nixos.org/nix/install | sh
 [WARNING]
 Make sure to follow the instructions output by the script.
 
-Success is indicated byt he presence of the Nix toolchain present in your terminal...
+Success is indicated by the presence of the Nix toolchain present in your terminal...
 
 [source,bash]
 ----
