@@ -6,7 +6,7 @@ module Shpadoinkle
   , Continuation (..), pur, impur, kleisli, causes
   , MapContinuations (..), convertC
   , liftC, liftMC, leftC, rightC, leftMC, rightMC
-  , maybeC, maybeMC, voidC, voidMC, forgetMC
+  , maybeC, maybeMC, voidC, voidMC
   , writeUpdate, shouldUpdate
   , EndoIso (..), piiso, pimap
   , ContinuationT (..), voidRunContinuationT
