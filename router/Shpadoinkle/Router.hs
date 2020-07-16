@@ -172,7 +172,7 @@ fullPageSPA toJSM backend i' view getStage onRoute routes = do
     Just r -> do
       i <- toJSM $ i' r
       model <- newTVarIO i
-      _ <- listenStateChange router $ writeUpdate model . Continuation . (id,) . const
+      _ <- listenStateChange router $ writeUpdate model . kleisli . const
            . (fmap (convertC toJSM) . toJSM) . onRoute
       shpadoinkle toJSM backend i model view getStage
       syncPoint

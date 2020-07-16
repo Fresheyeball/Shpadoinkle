@@ -3,12 +3,14 @@ module Shpadoinkle
   , module Shpadoinkle.Class
   , module Shpadoinkle.Functor
   , module Shpadoinkle.EndoIso
-  , Continuation (..), pur, impur, causes
+  , Continuation (..), pur, impur, kleisli, causes
   , MapContinuations (..), convertC
   , liftC, liftMC, leftC, rightC, leftMC, rightMC
-  , maybeC, maybeMC
+  , maybeC, maybeMC, voidC, voidMC, forgetMC
   , writeUpdate, shouldUpdate
   , EndoIso (..), piiso, pimap
+  , ContinuationT (..), voidRunContinuationT
+  , commit, kleisliT
   ) where
 
 import           Control.PseudoInverseCategory
