@@ -124,7 +124,7 @@ withHydration s r = do
 -- on page load. Typically this is used on the server side.
 toHydration :: ToJSON a => IsHtml h p => a -> h b
 toHydration fe =
-  h "script" [] [ text . decodeUtf8 . toStrict $ "window.initState = '" <> encode fe <> "'" ]
+  h "script" [] [ text $ "window.initState = '" <> (T.replace "'" "\\'" . decodeUtf8 . toStrict $ encode fe) <> "'" ]
 
 
 -- | Change the browser's URL to the canonical URL for a given route `r`.
