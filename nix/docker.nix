@@ -5,7 +5,7 @@
   internalPort     ? 9999,
   extraNginxConfig ? "",
   extraArgs        ? "",
-  client, server,
+  client, server ? false,
   contents         ? [],
   setup            ? "",
   command          ? "",
@@ -17,9 +17,10 @@ let
 
 
   inherit (pkgs.dockerTools) buildImage shadowSetup;
+  inherit (pkgs) writeText;
 
 
-  nginxConf = ''
+  nginxConf = writeText "nginx.conf" ''
     user nginx nginx;
     daemon off;
     error_log /dev/stdout info;
@@ -30,9 +31,10 @@ let
       proxy_cache_path /tmp/cache-app levels=1:2 keys_zone=app_cache:10m max_size=10g inactive=60m use_temp_path=off;
       server {
         listen ${toString port};
-        location ~* .(jpe?g|svn|png|gif|ico|webmanifest)$ {
+        location ~* .(jpe?g|svg|png|gif|ico|css|js|webmanifest)$ {
           proxy_cache app_cache;
-          try_files ${client}/$uri ${client}/$uri.html ${client}/$uri/ =404;
+          root ${client};
+          try_files $uri uri/ =404;
         }
         location / {
           proxy_pass http://127.0.0.1:${toString internalPort};
@@ -56,9 +58,8 @@ in buildImage {
     mkdir -p /tmp/cache-app
     groupadd --system nginx
     useradd --system --gid nginx nginx
-    cat >/conf/nginx.conf <<EOF
-${nginxConf}
-EOF
+    rm /conf/nginx.conf
+    ln -s ${nginxConf} /conf/nginx.conf
     ${setup}
   '';
 

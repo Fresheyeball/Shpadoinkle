@@ -5,7 +5,7 @@ This is for those who would like to think they know precisely what they mean.
 Skip to:
 
 * xref:tutorial/calculator.adoc[Part 2, Simple Calculator ->]
-* xref:tutorial/immediate-execution[Part 3, Immediate Execution ->]
+* xref:tutorial/immediate-execution.adoc[Part 3, Immediate Execution ->]
 
 == Setup
 
@@ -14,6 +14,24 @@ This project should work with any system capable of compiling code with https://
 If you do not have Nix, please follow the instructions located xref:getting-started/index.adoc#Nix[here].
 
 You will also need to clone the {snowman}[Snowman]. This is a minimal hello world example repo where you can build a Shpadoinkle application.
+
+[source,bash]
+----
+curl -L https://nixos.org/nix/install | sh
+# Follow the instructions printed by the above command
+nix --version
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+cachix use shpadoinkle
+git clone https://gitlab.com/fresheyeball/Shpadoinkle-snowman.git
+cd Shpadoinkle-snowman
+nix-shell
+----
+
+Now you should be setup with a development environment. Sandard `cabal` toolchain should work out of the box, as well as `ghcid`.
+
+[CAUTION]
+.MacOS
+If you are on MacOS instead of Linux, the Cachix cache will not work, as cross compilation has not been implimented on this project. Therefore getting a development environment with `nix-shell` is going to compile all the dependencies from source. This can take a long time.
 
 == Basics
 
