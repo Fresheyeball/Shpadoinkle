@@ -2,7 +2,8 @@
 
 Here we will build a simple calculator, following pioneers of the space http://weblog.luite.com/wordpress/?p=127[Luite Stegemann], https://reflex-frp.org/tutorial[Ryan Trinkle], and https://keera.co.uk/2020/05/28/building-a-reactive-calculator-in-haskell-1-5/[Ivan Perez].
 
-xref:tutorial/index.adoc[<- See part 1, Basic concepts]
+* xref:tutorial/index.adoc[<- See part 1, Basic concepts]
+* xref:tutorial/immediate-execution.adoc[Go to part 3: Immediate execution ->]
 
 == Hello World
 
@@ -95,10 +96,11 @@ And we will use a traditional Html `<select>` element to let the user pick the o
 ----
 opSelect :: Html Operation
 opSelect = select [ onOption $ read . unpack ] -- <1>
-  $ opOption <$> [minBound..maxBound]
-  where opOption o = option
-    [ value . pack $ show o ] -- <2>
-    [ text $ opText o ]
+  $ opOption <$> [ minBound .. maxBound ]
+  where
+    opOption o = option
+      [ value . pack $ show o ] -- <2>
+      [ text $ opText o ]
 ----
 
 <1> When the select element changes, we `read` the value and use that as the model.
@@ -141,7 +143,7 @@ You can see the final code https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/ma
 <iframe style="border-radius:5px;border:1px dashed blue;width:100%;height:70px" src="https://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator.jsexe/"></iframe>
 ++++
 
-Next we emmulate a real world immediate execution calculator in part 3.
+Next we emulate a real world immediate execution calculator in part 3.
 
 xref:tutorial/immediate-execution.adoc[Go to part 3: Immediate execution ->]
 

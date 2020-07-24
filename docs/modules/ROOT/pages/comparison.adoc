@@ -1,0 +1,74 @@
+= Comparison
+
+If you are already familiar with FP frontend systems, such as Elm, Concur, React, or Reflex, this document will help you map your existing understanding to Shpadoinkle.
+
+== Elm
+
+Let's compare Shpadoinkle to Elm directly. Below is some Elm code for a simple counter widget:
+
+[source,haskell]
+----
+type Msg = Inc | Dec -- <1>
+
+type alias Model = Int -- <2>
+
+initial : Model -- <3>
+initial = 0
+
+update : Model -> Msg -> (Model, Cmd Msg) -- <4>
+update x msg = case msg of
+  Inc -> x + 1
+  Dec -> x - 1
+
+view : Model -> Html Msg -- <5>
+view x = div []
+  [ text <| String.fromInt x
+  , button [ onClick Inc ] [ text "Increment" ]
+  , button [ onClick Dec ] [ text "Decrement" ]
+  ]
+----
+
+The Elm Architecture demands that _stateful_ components have 5 parts
+
+<1> Model Type
+<2> Msg Type
+<3> View Function
+<4> Update Function
+<5> Initial Model
+
+From a Shpadoinkle perspective, some of this is emergent complexity and some is indirection, that is a byproduct of the Elm Architecture's functional reactive past. A Model Type, an initial state, and a view function are all needed. However the Update Function, and Msg Type, are indirection to connection a position within the DOM tree with an effect. In Shpadoinkle we don't do that, instead of a monolithic Update Function, and nesting Msg Type's we pass the updated model directly to the handler. Thanks to Haskell's lazy evaluation, this wont be computed until the handler actually fires.
+
+[source,haskell]
+----
+type Model = Int -- <1>
+
+initial :: Model -- <2>
+initial = 0
+
+view :: Model -> Html Model -- <3>
+view x = div_
+  [ text . pack $ show x
+  , button [ onClick $ x + 1 ] [ "Increment" ]
+  , button [ onClick $ x - 1 ] [ "Decrement" ]
+  ]
+----
+
+<1> Model Type
+<2> Initial Model
+<3> View Function
+
+The book keeping of the Elm Architecture on the Model is also present in Shpadoinkle, but that is it. The bulk of boilerplate is eliminated by removing the indirection of the Msg Type and Update Function. Since Shpadoinkle is subsumed by many different UI programming architectures, it is also subsumed by Elm. Shpadoinkle takes that stance that being subsumed is a good thing in terms of architecture, as it demonstrates greater and desirable simplicity. It is entirely possible to write the above code as non-idiomatic Elm.
+
+[source,haskell]
+----
+update x _ = (x, Cmd.none)
+----
+
+The above Elm update function allows for a Shpadoinkle model inside of Elm. However limitations of Elm become prohibitive in practice. For example, because Elm is a strict language, the Shpadoinkle architecture would require each view rendering to compute ALL possible future states at once (which is not ideal). And if IO actions are needed the model becomes
+
+[source,haskell]
+----
+view : Model -> Html (Model, Cmd Model)
+----
+
+which is somewhat dissonant compared to the coalgebric type of just `Model -> Html Model`.

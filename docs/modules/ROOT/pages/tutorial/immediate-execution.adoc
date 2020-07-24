@@ -1,6 +1,7 @@
 = Emulating Immediate Execution
 
-xref:tutorial/calculator.adoc[<- Back to part 2, Simple calculator]
+* xref:tutorial/index.adoc[<- See part 1, Basic concepts]
+* xref:tutorial/calculator.adoc[<- Back to part 2, Simple calculator]
 
 All the prior art on writing a calculator in GHCjs feature old school functionality namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator app, atleast let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
 
@@ -346,4 +347,4 @@ There where no Monads, no message types, no FRP networking, no causality, we nev
 
 Thank you for your time.
 
-
+xref:tutorial/composing.adoc[Go to part 4, Composing Heterogeneous Elements ->]
