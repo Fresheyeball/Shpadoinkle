@@ -25,6 +25,7 @@ import           Control.Lens                      hiding (view)
 import           Control.Lens.Unsound              (lensProduct)
 import           Data.Coerce                       (Coercible)
 import           Data.Maybe                        (fromMaybe, isNothing)
+import           Data.Proxy
 import           Data.String                       (IsString)
 import           Data.Text                         as T hiding (foldl)
 import           Shpadoinkle                       (Html, HtmlM, IsHtml, IsProp,
@@ -209,8 +210,8 @@ start = \case
 
 tableCfg :: Table.Theme m [SpaceCraft]
 tableCfg = mempty
-  { tableProps = [ H.class' "table table-striped table-bordered" ]
-  , tdProps    = \case
+  { tableProps = const [ H.class' "table table-striped table-bordered" ]
+  , tdProps    = const . const $ \case
       ToolsT -> [ H.width 1 ]
       _ -> "align-middle"
   }
@@ -257,7 +258,7 @@ mlist r = H.div "container-fluid"
        ]
      ]
    ]
- , generalize (lensProduct table sort) $ Table.viewWith tableCfg
+ , generalize (lensProduct table sort) $ Table.viewWith Proxy tableCfg
    (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value))
    (r ^. sort)
  ]
