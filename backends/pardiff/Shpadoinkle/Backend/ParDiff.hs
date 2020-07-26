@@ -223,7 +223,22 @@ setFlag obj' k b = if b then
 
 
 managePropertyState :: MonadJSM m => TVar a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
-managePropertyState i obj' old new' = void $
+managePropertyState i obj' old new' = void $ do
+  -- The following step may be necessary if the old DOM and the new VDOM both have checked == False
+  -- but the user just checked this checkbox / radio button and the browser set its
+  -- checked property to true without setting its checked attribute.
+  -- As far as we know this issue only occurs with the checked property.
+  -- As far as we know this issue only occurs with the value properties of input controls,
+  -- which include but are not necessarily limited to:
+  --  * The value properties of input, select, and textarea elements
+  --  * The checked properties of input type={checkbox,radio} elements
+  --  * The src properties of image elements
+  --  * The files properties of file elements
+  -- Of these properties, checked is the only one where we know that the absence of the attribute
+  -- in both the old and new (V)DOMs is consistent with the property needing to be updated
+  -- because the property was updated with the correponding attribute being absent the whole time.
+  maybe (return ()) (const . voidJSM $ setProp' obj' "checked" =<< toJSVal False)
+    $ M.lookup "checked" new' >>= guard . (\case { ParVFlag False -> True; _ -> False })
   M.toList (align old new') `for` \(k, x) -> case x of
     -- only old had it, delete
     This _                 -> case k of
