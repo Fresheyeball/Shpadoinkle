@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE MonoLocalBinds       #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RecordWildCards      #-}
 {-# LANGUAGE TemplateHaskell      #-}
@@ -56,6 +58,7 @@ view m = div_
   , generalize pickAtleastOne $ dropdown bootstrap defConfig { _attrs = [ id' "AtleastOne" ] } (_pickAtleastOne m)
   ]
   where
+  bootstrap :: Monad m => Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
   bootstrap Dropdown {..} = Dropdown.Theme
     { _wrapper = div
       [ class' [ ("dropdown", True)
@@ -65,12 +68,14 @@ view m = div_
       [ class' ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
       , type' "button"
       ]
+      . present
     , _list    = div
       [ class' [ ("dropdown-menu", True)
                , ("show", _toggle == Open) ]
       ]
     , _item    = a [ class' "dropdown-item"
                    , textProperty "style" "cursor:pointer" ]
+                 . present
     }
 
 

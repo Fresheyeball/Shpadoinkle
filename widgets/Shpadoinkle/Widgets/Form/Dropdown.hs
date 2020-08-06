@@ -124,15 +124,15 @@ instance Consideration ConsideredChoice p => Consideration Dropdown p where
   shrug (Dropdown c xs) = Dropdown (shrug c) xs
 
 
-data Theme m = Theme
-    { _wrapper :: forall a . [HtmlM m a] -> HtmlM m a
-    , _header  :: forall a . [HtmlM m a] -> [HtmlM m a]
-    , _list    :: forall a . [HtmlM m a] -> HtmlM m a
-    , _item    :: forall a . [HtmlM m a] -> HtmlM m a
+data Theme m p b = Theme
+    { _wrapper :: forall a . [HtmlM m a]  -> HtmlM m a
+    , _header  :: forall a . Selected p b -> [HtmlM m a]
+    , _list    :: forall a . [HtmlM m a]  -> HtmlM m a
+    , _item    :: forall a . b            -> HtmlM m a
     }
 
 
-semantic :: Monad m => Dropdown p b -> Theme m
+semantic :: Monad m => Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
 semantic Dropdown {..} = Theme
   { _wrapper = div
     [ class' [ ("dropdown", True)
@@ -140,14 +140,14 @@ semantic Dropdown {..} = Theme
              , ("active", _toggle == Open) ]
     ]
   , _header  = \cs ->
-    [ div [ class' "text" ] cs
+    [ div [ class' "text" ] (present cs)
     , i' [ class' ["dropdown", "icon"] ]
     ]
   , _list    = div
     [ class' [ "menu"
              , "transition" ]
     ]
-  , _item    = div [ class' "item" ]
+  , _item    = div [ class' "item" ] . present
   }
 
 
@@ -167,9 +167,9 @@ dropdown ::
   ( Considered p ~ Maybe
   , Consideration Dropdown p
   , Consideration ConsideredChoice p
-  , Present (Selected p a), Present a, Ord a
+  , Ord a
   , Monad m
-  ) => (forall b. Dropdown p b -> Theme m)
+  ) => (Dropdown p a -> Theme m p a)
     -> Config m -> Dropdown p a -> HtmlM m (Dropdown p a)
 dropdown toTheme Config {..} x =
   let
@@ -183,11 +183,11 @@ dropdown toTheme Config {..} x =
   , onClick $ act x
   , tabbable
   ] ++ _attrs) . _wrapper $
-  (_header . present $ selected x) ++
+  (_header $ selected x) ++
   [ _list $ (\y -> injectProps
     [ onMouseover $ consider' y x
     , onFocus     $ consider' y x
     , onClick     $ select' x y
     , tabbable
-    ] . _item $ present y) <$> toList (unselected x)
+    ] . _item $ y) <$> toList (unselected x)
   ]
