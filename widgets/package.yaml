@@ -37,11 +37,13 @@ library:
   exposed-modules:
     - Shpadoinkle.Widgets.Form.Input
     - Shpadoinkle.Widgets.Form.Dropdown
+    - Shpadoinkle.Widgets.Hover
     - Shpadoinkle.Widgets.Table
     - Shpadoinkle.Widgets.Types
     - Shpadoinkle.Widgets.Types.Choice
     - Shpadoinkle.Widgets.Types.Core
     - Shpadoinkle.Widgets.Types.Form
+    - Shpadoinkle.Widgets.Types.Hover
     - Shpadoinkle.Widgets.Types.Physical
     - Shpadoinkle.Widgets.Types.Remote
     - Shpadoinkle.Widgets.Types.Search
