@@ -31,7 +31,7 @@ let
       proxy_cache_path /tmp/cache-app levels=1:2 keys_zone=app_cache:10m max_size=10g inactive=60m use_temp_path=off;
       server {
         listen ${toString port};
-        location ~* .(jpe?g|svg|png|gif|ico|css|js|webmanifest)$ {
+        location ~* .(jpe?g|svg|png|gif|ico|css|js|webmanifest|json|fbx)$ {
           proxy_cache app_cache;
           root ${client};
           try_files $uri uri/ =404;
