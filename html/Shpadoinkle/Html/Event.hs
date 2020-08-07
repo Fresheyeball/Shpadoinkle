@@ -163,6 +163,7 @@ $(msum <$> mapM mkEventDSL
   , "contextmenu"
   , "dblclick"
   , "mousedown"
+  , "mouseenter"
   , "mouseleave"
   , "mousemove"
   , "mouseover"
