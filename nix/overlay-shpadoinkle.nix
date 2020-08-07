@@ -26,8 +26,8 @@
   continuations-src = super.fetchFromGitHub
     { owner  = "morganthomas";
       repo   = "Shpadoinkle-continuations";
-      rev    = "820066602122eca8b681057555186bb73c1e39f0";
-      sha256 = "009cr2aqbdazlgpkv4z87ws2g22pjh2dpdbb5ddk80rf8bk4sxax";
+      rev    = "bdd35635d8b0d4905617f670e12a3336ccd805ae";
+      sha256 = "15sb50gdn6z9yc04jb77fq2i3l08kkv21mldharjmlgx72rlx8sq";
     };
 
 
