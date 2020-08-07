@@ -45,7 +45,7 @@ import           Shpadoinkle.Widgets.Types         (Consideration, Considered,
                                                     ConsideredChoice,
                                                     Control (..), Field,
                                                     Hygiene (..), Input (..),
-                                                    Pick (..), Present,
+                                                    Pick (..), Present (..),
                                                     Selected, Status (..),
                                                     Toggle (..), Validated (..),
                                                     fullset, fuzzySearch,
@@ -141,12 +141,14 @@ selectControl l msg errs ef = formGroup
       [ H.class' ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
       , H.type' "button"
       ]
+      . present
     , _list    = H.div
       [ H.class' [ ("dropdown-menu", True)
                  , ("show", _toggle == Open) ]
       ]
     , _item    = H.a [ H.class' "dropdown-item"
                      , H.textProperty "style" "cursor:pointer" ]
+                 . present
     }
 
 
