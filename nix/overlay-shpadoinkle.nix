@@ -31,6 +31,14 @@
     };
 
 
+  snabbdom-src = super.fetchFromGitHub
+    { owner  = "snabbdom";
+      repo   = "snabbdom";
+      rev    = "4c86aff05a34ebbd067b8430afd40542b3f728c0";
+      sha256 = "10cvraxmblpwi30pib9zmz86dschpp89p95d8mhvdidv1hynscqj";
+    };
+
+
   gitignore = util.gitignore
       [ ".git"
         "*.ghc*"
@@ -111,6 +119,7 @@ in {
           servant-server       = dontCheck (hself.callCabal2nix "servant-server"       "${servant-src}/servant-server" {});
           servant-client       = dontCheck (hself.callCabal2nix "servant-client"       "${servant-src}/servant-client" {});
           servant-client-ghcjs = doJailbreak (dontJS (hself.callCabal2nix "servant-client-ghcjs" "${servant-src}/servant-client-ghcjs" {}));
+          snabbdom             = hself.callCabal2nix "snabbdom" snabbdom-src {};
           jsaddle-warp         = doJailbreak (hself.callCabal2nix "jsaddle-warp"         "${jsaddle-src}/jsaddle-warp" {});
           jsaddle              = doJailbreak (hself.callCabal2nix "jsaddle"              "${jsaddle-src}/jsaddle" {});
 

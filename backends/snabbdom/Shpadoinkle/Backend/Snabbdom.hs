@@ -66,7 +66,7 @@ props toJSM i xs = do
       t' <- toJSVal t
       true <- toJSVal True
       case k of
-        "className" | t /= "" -> unsafeSetProp (toJSString t) true c
+        "className" | t /= "" -> forM_ (split (== ' ') t) $ \u -> unsafeSetProp (toJSString u) true c
         _                     -> unsafeSetProp (toJSString k) t' a
     PListenerM f -> do
       f' <- toJSVal . fun $ \_ _ -> \case
