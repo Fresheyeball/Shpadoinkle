@@ -3,10 +3,10 @@ module Shpadoinkle
   , module Shpadoinkle.Class
   , module Shpadoinkle.Functor
   , module Shpadoinkle.EndoIso
-  , Continuation (..), pur, impur, kleisli, causes
+  , Continuation (..), done, pur, impur, kleisli, causes
   , MapContinuations (..), convertC
   , liftC, liftMC, leftC, rightC, leftMC, rightMC
-  , maybeC, maybeMC, voidC, voidMC, forgetMC
+  , maybeC, maybeMC, voidC, voidMC, forgetMC, forgetMC'
   , writeUpdate, shouldUpdate
   , EndoIso (..), piiso, pimap
   , ContinuationT (..), voidRunContinuationT
