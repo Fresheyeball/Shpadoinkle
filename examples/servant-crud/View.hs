@@ -210,8 +210,8 @@ start = \case
 
 tableCfg :: Table.Theme m [SpaceCraft]
 tableCfg = mempty
-  { tableProps = const [ H.class' "table table-striped table-bordered" ]
-  , tdProps    = const . const $ \case
+  { tableProps = const $ const [ H.class' "table table-striped table-bordered" ]
+  , tdProps    = const . const . const $ \case
       ToolsT -> [ H.width 1 ]
       _ -> "align-middle"
   }
