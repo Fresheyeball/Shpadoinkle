@@ -71,6 +71,12 @@ data Prop :: Type -> Type where
   PFlag :: Bool -> Prop a
 
 
+instance Show (Prop a) where
+  show (PText t)     = "PText " <> show t
+  show (PListener _) = "PListener <internal>"
+  show (PFlag b)     = "PFlag " <> show b
+
+
 instance Functor Prop where
   fmap _ (PText t)     = PText t
   fmap f (PListener g) = PListener (\r e -> f <$> g r e)

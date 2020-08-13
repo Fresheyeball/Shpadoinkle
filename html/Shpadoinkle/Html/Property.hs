@@ -45,7 +45,11 @@ instance ToPropText Bool where toPropText = \case True -> "true"; False -> "fals
 
 
 textProperty :: IsProp p e => ToPropText a => Text -> a -> (Text, p o)
-textProperty k = (,) k . textProp . toPropText
+textProperty k = textProperty' k . toPropText
+
+textProperty' :: IsProp p e => Text -> Text -> (Text, p o)
+textProperty' k = (,) k . textProp
+{-# INLINE textProperty' #-}
 
 
 newtype ClassList = ClassList { unClassList :: Set.Set Text } deriving (Eq, Ord, Show, Semigroup, Monoid)
