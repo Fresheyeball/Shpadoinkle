@@ -1,0 +1,18 @@
+.txt-rt, span.foo{
+  text-align:right;
+}
+
+.pos-relative{
+  position:relative;
+}
+
+#foo[type="bar"]{
+  background: #123233;
+}
+
+@media print (min-width:200px){
+  .bar{
+     width: #EFEFEF;
+     content: '.qux and #stuff';
+  }
+}
