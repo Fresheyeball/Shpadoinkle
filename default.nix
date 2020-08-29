@@ -10,7 +10,7 @@ let pkgs = import ./nix/pkgs.nix { inherit compiler isJS chan; }; in with pkgs; 
 let
 
 
-  util = import ./nix/util.nix { inherit compiler isJS; };
+  util   = import ./nix/util.nix { inherit compiler isJS; };
   docker = import ./examples/servant-crud/docker.nix { inherit compiler chan; };
 
 

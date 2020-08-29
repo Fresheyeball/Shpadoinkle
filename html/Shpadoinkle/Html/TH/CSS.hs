@@ -1,10 +1,12 @@
 {-# LANGUAGE CPP                   #-}
+{-# LANGUAGE JavaScriptFFI         #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# OPTIONS_GHC -ddump-splices #-}
 
 
 module Shpadoinkle.Html.TH.CSS
@@ -14,7 +16,7 @@ module Shpadoinkle.Html.TH.CSS
 
 
 import           Control.Compactable
-import           Data.ByteString.Lazy        (ByteString)
+import           Data.ByteString.Lazy        as BS (ByteString)
 import qualified Data.ByteString.Lazy.Char8  as BS
 import           Data.Containers.ListUtils   (nubOrd)
 import qualified Data.Set                    as Set
@@ -24,6 +26,8 @@ import           Language.Haskell.TH.Syntax
 
 #ifdef ghcjs_HOST_OS
 import           Data.Text.Encoding
+import           GHCJS.Marshal.Pure
+import           GHCJS.Types                 as T
 import           Language.Javascript.JSaddle
 import           System.IO.Unsafe            (unsafePerformIO)
 #else
@@ -41,17 +45,28 @@ extractNamespace fp = do
   return . split . nubOrd $ getAll css
 
 
-getAll :: ByteString -> [ByteString]
 #ifdef ghcjs_HOST_OS
-getAll css = unsafePerformIO $ do
-  matches <- eval . decodeUtf8 . BS.toStrict $
-    "Array.from(`" <> css <> "`.match(/" <> selectors <> "/g))"
-  maybe [] (fmap $ BS.fromStrict . encodeUtf8) <$> fromJSVal matches
-#else
-getAll css = getAllTextMatches $ css =~ (selectors @ByteString)
-#endif
-{-# NOINLINE getAll #-}
 
+foreign import javascript unsafe "Array.from($1.match(new RegExp($2, 'g')))"
+  js_match :: T.JSString -> T.JSString -> IO JSVal
+
+
+notMempty :: (Eq m, Monoid m) => m -> Maybe m
+notMempty x | x == mempty = Nothing
+            | otherwise   = Just x
+
+
+getAll :: ByteString -> [ByteString]
+getAll css = unsafePerformIO $ do
+  matches <- js_match (pFromJSVal . pToJSVal $ BS.unpack css) selectors
+  maybe [] (fmapMaybe $ notMempty . BS.fromStrict . encodeUtf8) <$> fromJSVal matches
+
+#else
+
+getAll :: ByteString -> [ByteString]
+getAll css = getAllTextMatches $ css =~ (selectors @ByteString)
+
+#endif
 
 
 split :: [ByteString] -> [Dec]
@@ -63,12 +78,15 @@ split ss = (toClassDec =<< classes) <> (toIdDec =<< ids) where
 
 
 toIdDec :: ByteString -> [Dec]
+toIdDec ""   = []
 toIdDec name = let
     a = VarT $ mkName "a"
     p = VarT $ mkName "p"
     e = VarT $ mkName "e"
     l = mkName "textProperty'"
-    name' = BS.unpack name
+    name' = case BS.unpack name of
+              '#':rs -> rs
+              rs     -> rs
     n = mkName $ "id'" <> sanitize name'
   in
     [ SigD n (ForallT [] [AppT (AppT (ConT ''Shpadoinkle.IsProp) p) e]
@@ -78,7 +96,12 @@ toIdDec name = let
 
 
 toClassDec :: ByteString -> [Dec]
-toClassDec n' = let n = mkName . sanitize $ BS.unpack n' in
+toClassDec "" = []
+toClassDec n' = let
+  n = mkName . sanitize $ case BS.unpack n' of
+    '.':rs -> rs
+    rs     -> rs
+  in
   [ SigD n (ConT ''ClassList)
   , ValD (VarP n) (NormalB (AppE (ConE 'ClassList)
       (AppE (VarE 'Set.singleton) (LitE (StringL $ BS.unpack n'))))) []
