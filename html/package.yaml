@@ -31,15 +31,35 @@ extra-source-files:
 
 dependencies:
     - base >= 4.12.0 && < 4.16
+    - bytestring
+    - containers       >= 0.6.0 && < 0.7
+    - compactable
+    - text             >= 1.2.3 && < 1.3
+    - time
+    - template-haskell >= 2.14.0 && < 2.17
+    - stm              >= 2.5.0 && < 2.6
+    - unliftio
+    - ghcjs-dom
+    - jsaddle          >= 0.9.7 && < 0.20
+    - jsaddle-dom
 
+    - Shpadoinkle      >= 0.1 && < 0.2
+
+
+when:
+  - condition: impl(ghcjs)
+    then:
+      dependencies:
+        - ghcjs-base
+    else:
+      dependencies:
+        - regex-pcre
 
 library:
   exposed-modules:
     - Shpadoinkle.Html
     - Shpadoinkle.Html.Element
-    - Shpadoinkle.Html.Event.Debounce
-    - Shpadoinkle.Html.Event.HandlerTransformer
-    - Shpadoinkle.Html.Event.Throttle
+    - Shpadoinkle.Html.Event
     - Shpadoinkle.Html.Property
     - Shpadoinkle.Html.Memo
     - Shpadoinkle.Html.MicroData
@@ -49,21 +69,6 @@ library:
     - Shpadoinkle.Html.TH.CSS
     - Shpadoinkle.Keyboard
   source-dirs: .
-  dependencies:
-    - jsaddle          >= 0.9.7 && < 0.20
-    - containers       >= 0.6.0 && < 0.7
-    - compactable
-    - text             >= 1.2.3 && < 1.3
-    - time
-    - bytestring
-    - template-haskell >= 2.14.0 && < 2.17
-    - stm              >= 2.5.0 && < 2.6
-    - unliftio
-    - ghcjs-dom
-    - jsaddle-dom
-    - regex-pcre
-
-    - Shpadoinkle      >= 0.1 && < 0.2
 
 
 git: https://gitlab.com/fresheyeball/Shpadoinkle.git
