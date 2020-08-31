@@ -57,4 +57,4 @@ in
 
   if inNixShell
   then haskell.packages.${util.compilerjs}.shellFor (extra pkgs shellBase)
-  else { inherit docker; } // packages
+  else (if builtins.currentSystem == "x86_64-linux" then { inherit docker; } else {}) // packages
