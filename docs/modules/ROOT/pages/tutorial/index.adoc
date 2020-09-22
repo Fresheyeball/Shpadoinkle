@@ -13,7 +13,7 @@ This project should work with any system capable of compiling code with https://
 
 If you do not have Nix, please follow the instructions located xref:getting-started/index.adoc#Nix[here].
 
-You will also need to clone the {snowman}[Snowman]. This is a minimal hello world example repo where you can build a Shpadoinkle application.
+You will also need to clone the {snowman}[Snowman]. This is a minimal "Hello World" example repo where you can build a Shpadoinkle application.
 
 [source,bash]
 ----
