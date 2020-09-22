@@ -4,18 +4,17 @@
 , chan ? "e1843646b04fb564abf6330a9432a76df3269d2f"
 , withHoogle ? false
 , extra ? (_: b: b)
+, optimize ? true
 }:
 
 let pkgs = import ./nix/pkgs.nix { inherit compiler isJS chan; }; in with pkgs; with lib;
 let
-
+  optimizeJS = optimize && isJS;
 
   util   = import ./nix/util.nix { inherit compiler isJS; };
   docker = import ./examples/servant-crud/docker.nix { inherit compiler chan; };
 
-
   ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ];
-
 
   packages = {
     inherit (haskell.packages.${util.compilerjs})
@@ -28,9 +27,11 @@ let
     Shpadoinkle-html
     Shpadoinkle-router
     Shpadoinkle-widgets
-    Shpadoinkle-examples
     Shpadoinkle-experiments
     Shpadoinkle-tests;
+
+    Shpadoinkle-examples = (if optimizeJS then util.doCannibalize else id)
+      haskell.packages.${util.compilerjs}.Shpadoinkle-examples;
   };
 
 
@@ -38,7 +39,7 @@ let
     inherit withHoogle;
     packages    = _: if pack == "all" then attrValues packages else [ packages.${pack} ];
     COMPILER    = util.compilerjs;
-    buildInputs = ghcTools ++ [ ack ];
+    buildInputs = ghcTools ++ [ ack util.cannibalize ];
     shellHook   = ''
       cat ${./etc/figlet}
       ./hpackall.sh | grep generated
