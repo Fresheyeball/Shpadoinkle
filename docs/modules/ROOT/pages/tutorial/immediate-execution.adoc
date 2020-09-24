@@ -134,7 +134,7 @@ The source version is *not* a lawful isomorphism. But this outlaw is harmless. P
 
 == Operators
 
-We need a represntation of operators to allow our user to perform work. We can do this with another simple enumeration
+We need a represntation of operators to allow our user to perform work. We can do this with another simple enumeration:
 
 [source,haskell]
 ----
@@ -146,7 +146,7 @@ data Operator
   deriving (Eq, Enum, Bounded)
 ----
 
-And as before we need to show this to our user
+And as before we need to show this to our user:
 
 [source,haskell]
 ----
@@ -164,15 +164,15 @@ operate active o = button
   ] [ text . pack $ show o ]
 ----
 
-<1> When clicked, the button sends the corrosponding operator
+<1> When clicked, the button sends the corresponding operator
 <2> Set the `"active"` class if this button is the active button (for styling)
 
 == Model
 
-Now we can actually define our model. Ultimately the immediate execution calculator is a state machine with 2 major states:
+Now we can actually define our model. Ultimately, the immediate execution calculator is a state machine with thw major states:
 
-1. There is a current entry
-2. There is a current entry, and a previous entry, and an operation
+1. There is a current entry.
+2. There is a current entry, and a previous entry, and an operation.
 
 [%header]
 |===
@@ -204,8 +204,8 @@ data Model = Model
 makeFieldsNoPrefix ''Model
 ----
 
-<1> We always have a current entry
-<2> We might have a pervious entry and an operation
+<1> We always have a current entry.
+<2> We might have a previous entry and an operation.
 
 == Buttons
 
@@ -216,7 +216,7 @@ Now lets start building the final view. The calculator needs a readout area that
 readout :: Model -> Html a
 ----
 
-Since the readout consumes the state but never produces an update we should leave the HTML parametric.
+Because the readout consumes the state but never produces an update we should leave the HTML parametric.
 
 [NOTE]
 The presence `a` in the above signature is proof that the HTML produced is non-interactive.
@@ -256,7 +256,7 @@ numberpad = H.div "numberpad"
   $ digit <$> [minBound .. pred maxBound] -- <1>
 ----
 
-<1> Get a list all members of out `Digit` type, excluding `Zero`. We are leveraging the deeived A`Ord` instance here, as the type definition alreadt has the digits arranged for the numberpad, with `Zero` as `maxBound`.
+<1> Get a list all members of out `Digit` type, excluding `Zero`. We are leveraging the derived A`Ord` instance here, as the type definition already has the digits arranged for the numberpad, with `Zero` as `maxBound`.
 <2> Split the resulting list of HTML into rows of three buttons each. (`chunksOf` is a part of `Data.List`)
 <3> Add `<br/>` between each row.
 
@@ -272,7 +272,10 @@ dot x = button [ onClick $ x & current %~ addDecimal ] [ "." ]
 
 === Arithmetic
 
-Each operator button sets the operation to the given operator. Sets the previous entry to be the current entry. And blanks the current entry.
+Each operator button does the following:
+. Sets the operation to the given operator. 
+. Sets the previous entry to be the current entry. 
+. Blanks the current entry.
 
 [source,haskell]
 ----
@@ -309,7 +312,7 @@ calcResult x = x
       Division       -> if r == 0 then l else l / r
 ----
 
-Based on the above examples you should be able is easily see what is going on in this code. Writing a button to perform this operation is straight forward.
+Based on the above examples, you should be able to see what is going on in this code. Writing a button to perform this operation is straight forward.
 
 [source,haskell]
 ----
@@ -319,7 +322,7 @@ equals x = button [ class' "equals", onClick $ calcResult x ] [ "=" ]
 
 == The View
 
-Now we can construct the final view by composing together our existing parts.
+Now, we can construct the final view by composing together our existing parts.
 
 [source,haskell]
 ----
