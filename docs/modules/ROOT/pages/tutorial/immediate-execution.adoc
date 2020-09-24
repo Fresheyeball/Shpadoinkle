@@ -169,7 +169,7 @@ operate active o = button
 
 == Model
 
-Now we can actually define our model. Ultimately, the immediate execution calculator is a state machine with thw major states:
+Now we can actually define our model. Ultimately, the immediate execution calculator is a state machine with two major states:
 
 1. There is a current entry.
 2. There is a current entry, and a previous entry, and an operation.
