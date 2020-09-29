@@ -22,10 +22,10 @@ Coalgebras. Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*.
 
 == Documentation
 
-* http://fresheyeball.gitlab.io/Shpadoinkle/docs/index.html[Home Page]
-* https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/index.html[Getting Started]
-* https://fresheyeball.gitlab.io/Shpadoinkle/docs/tutorial/index.html[Tutorial]
-* https://fresheyeball.gitlab.io/Shpadoinkle/docs/getting-started/extend-an-example.html[Extending an Example]
+* https://shpadoinkle.org/docs/index.html[Home Page]
+* https://shpadoinkle.org/docs/getting-started/index.html[Getting Started]
+* https://shpadoinkle.org/docs/tutorial/index.html[Tutorial]
+* https://shpadoinkle.org/docs/getting-started/extend-an-example.html[Extending an Example]
 
 == Snowman
 
@@ -33,7 +33,7 @@ The easiest way to start a new Shpadoinkle project is to build a https://gitlab.
 
 == TODOMVC
 
-You can see an example of Shpadoinkle in the popular http://todomvc.com/[TODOMVC] running http://fresheyeball.gitlab.io/Shpadoinkle/examples/todomvc.jsexe[here], compiled from the code located https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/TODOMVC.hs[here].
+You can see an example of Shpadoinkle in the popular http://todomvc.com/[TODOMVC] running https://shpadoinkle.org/examples/todomvc.jsexe[here], compiled from the code located https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/TODOMVC.hs[here].
 
 == Hackage Matrix
 
