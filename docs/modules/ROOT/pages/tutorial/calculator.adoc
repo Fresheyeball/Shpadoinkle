@@ -23,8 +23,8 @@ main = runJSorWarp 8080 $ -- <1>
 <1> This is a little function to abstract over starting the application with GHC or GHCjs. If built with GHC it will run a server on port `8080`, if built with GHCjs it will just start the application as a normal JavaScript file.
 <2> This is the highest level wrapper around the `shpadoinkle` function provided in core. It prevents you from doing the work of choosing a `Monad` to run event handlers (defaulting to `JSM`), and creating a territory (defaulting to a `TVar`).
 <3> We are using the ParDiff backend. No matter how simple the app, you must still choose a backend explicitly.
-<4> The initial state. Since this is a "hello world" example, it's just `()`.
-<5> This is our view. Since we don't care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
+<4> The initial state. Because this is a "hello world" example, it's just `()`.
+<5> This is our view. Because we don't care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
 <6> This is what DOM node on the page will hold our application. We use `getBody` to get the `document.body` for the page.
 
 [NOTE]
