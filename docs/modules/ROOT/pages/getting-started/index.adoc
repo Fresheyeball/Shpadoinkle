@@ -4,9 +4,10 @@
 * xref:getting-started/extend-an-example.adoc[Extend an Example]
 * xref:getting-started/adding-to-your-project.adoc[Adding to a Project]
 
-Shpadoinkle is built with Nix. While it is possible to use Shpadoinkle without Nix, this project makes Nix the first class citizen. Nix allows us to make builds of Shpadoinkle as reproducible and deterministic as possible, by pinning every aspect of the system.
+Shpadoinkle is built with Nix. But you can build however you like, `stack` and `cabal` are supported with or without Nix.
 
 [TIP]
+.⛄
 The fastest way to start a new Shpadoinkle project is to build a https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[Snowman].
 
 == Nix
@@ -19,14 +20,19 @@ curl -L https://nixos.org/nix/install | sh
 ----
 
 [WARNING]
-Make sure to follow the instructions output by the script.
+.👏 Follow 👏 Instructions
+The install script outputs important instructions you need to follow, read the output and follow instructions.
 
-Success is indicated by the presence of the Nix toolchain present in your terminal...
+Success is indicated by the presence of the Nix toolchain in your terminal...
 
 [source,bash]
 ----
 nix --version
 ----
+
+[NOTE]
+.MacOS
+Installing Nix on MacOS should work fine. But if you end up in a sticky situation, https://medium.com/@robinbb/install-nix-on-macos-catalina-ca8c03a225fc[this article may help.]
 
 
 == Cachix

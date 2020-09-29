@@ -9,7 +9,7 @@
 
 let pkgs = import ./nix/pkgs.nix { inherit compiler isJS chan; }; in with pkgs; with lib;
 let
-  optimizeJS = optimize && isJS;
+  optimizeJS = optimize && isJS && !inNixShell;
 
   util   = import ./nix/util.nix { inherit compiler isJS; };
   docker = import ./examples/servant-crud/docker.nix { inherit compiler chan; };
@@ -22,12 +22,11 @@ let
     Shpadoinkle-backend-snabbdom
     Shpadoinkle-backend-static
     Shpadoinkle-backend-pardiff
-    Shpadoinkle-debug
+    Shpadoinkle-console
     Shpadoinkle-lens
     Shpadoinkle-html
     Shpadoinkle-router
     Shpadoinkle-widgets
-    Shpadoinkle-experiments
     Shpadoinkle-tests;
 
     Shpadoinkle-examples = (if optimizeJS then util.doCannibalize else id)

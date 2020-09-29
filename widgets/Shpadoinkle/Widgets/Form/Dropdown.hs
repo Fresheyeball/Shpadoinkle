@@ -72,7 +72,7 @@ instance (Consideration ConsideredChoice p, Ord a)
 
 
 newtype Config m = Config
-  { _attrs :: forall a. [(Text, PropM m a)] }
+  { _attrs :: forall a. [(Text, Prop m a)] }
 
 
 defConfig :: Config m
@@ -125,14 +125,14 @@ instance Consideration ConsideredChoice p => Consideration Dropdown p where
 
 
 data Theme m p b = Theme
-    { _wrapper :: forall a . [HtmlM m a]  -> HtmlM m a
-    , _header  :: forall a . Selected p b -> [HtmlM m a]
-    , _list    :: forall a . [HtmlM m a]  -> HtmlM m a
-    , _item    :: forall a . b            -> HtmlM m a
+    { _wrapper :: forall a . [Html m a]  -> Html m a
+    , _header  :: forall a . Selected p b -> [Html m a]
+    , _list    :: forall a . [Html m a]  -> Html m a
+    , _item    :: forall a . b            -> Html m a
     }
 
 
-semantic :: Monad m => Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
+semantic :: Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
 semantic Dropdown {..} = Theme
   { _wrapper = div
     [ class' [ ("dropdown", True)
@@ -168,9 +168,8 @@ dropdown ::
   , Consideration Dropdown p
   , Consideration ConsideredChoice p
   , Ord a
-  , Monad m
   ) => (Dropdown p a -> Theme m p a)
-    -> Config m -> Dropdown p a -> HtmlM m (Dropdown p a)
+    -> Config m -> Dropdown p a -> Html m (Dropdown p a)
 dropdown toTheme Config {..} x =
   let
     Theme {..} = toTheme x

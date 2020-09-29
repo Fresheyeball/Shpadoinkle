@@ -3,24 +3,25 @@
 
 
 module Shpadoinkle.Html.Event.Debounce
-  ( debounceRaw
-  , debounce
-  , Debounce (..)
+  ( debounce
+  , Debounce
+  , runDebounce
   ) where
 
 
-import Control.Monad.IO.Class
-import Data.Maybe
-import Data.Text
-import Data.Time.Clock
-import Language.Javascript.JSaddle
-import Shpadoinkle
-import Shpadoinkle.Html.Event.HandlerTransformer
-import UnliftIO
-import UnliftIO.Concurrent
+import           Control.Monad.IO.Class
+import           Data.Maybe
+import           Data.Text
+import           Data.Time.Clock
+import           Language.Javascript.JSaddle
+import           Shpadoinkle
+import           UnliftIO
+import           UnliftIO.Concurrent
 
 
-newtype Debounce m a b = Debounce (HandlerTransformer m a b)
+newtype Debounce m a b = Debounce { runDebounce
+  :: (a -> (Text, Prop m b))
+  ->  a -> (Text, Prop m b) }
 
 
 debounceRaw :: MonadJSM m => MonadIO n
@@ -42,10 +43,9 @@ debounceRaw duration = do
       if continue then liftJSM $ handler rn re else return done
 
 
-debounce :: IsProp p (Continuation m) => MonadJSM m => MonadIO n
+debounce :: MonadJSM m => MonadIO n
          => NominalDiffTime
-         -> n ( (b -> (Text, p a))
-             ->  b -> (Text, p a) )
+         -> n (Debounce m a b)
 debounce duration = do
   db <- debounceRaw duration
-  return $ \g x -> let (attr, p) = g x in (attr, cataProp textProp (listenerProp . db) flagProp p)
+  return . Debounce $ \g x -> let (attr, p) = g x in (attr, cataProp textProp (listenerProp . db) flagProp p)

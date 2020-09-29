@@ -1,4 +1,4 @@
-name:         Shpadoinkle-debug
+name:         Shpadoinkle-console
 license:      BSD3
 license-file: LICENSE
 version:      0.0.0.1
@@ -6,11 +6,9 @@ author:       Isaac Shapira
 maintainer:   fresheyeball@protonmail.com
 category:     Web
 build-type:   Simple
-synopsis:     Debugging tools for Shpadoinkle applications.
+synopsis:     Support for the native browser console
 description:
-  Shpadoinkle tooling is a work in progress. But some useful functions
-  have already emerged. This repo centeralizes these functions, and will
-  house future work on more robust tooling, such as time travel debugging.
+  This package adds support for native browser console features for logging and debugging.
 
 
 ghc-options:

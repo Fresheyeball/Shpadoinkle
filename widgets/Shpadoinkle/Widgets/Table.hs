@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveAnyClass         #-}
@@ -36,12 +37,12 @@ import           Data.Functor.Identity
 import           Data.Kind
 import           Data.List                 (sortBy)
 import qualified Data.Map                  as M
-import           Data.Proxy
 import           Data.Text
 import           GHC.Generics
 
 import           Shpadoinkle
-import           Shpadoinkle.Html          hiding (a, a', max, min, s, s', u, u')
+import           Shpadoinkle.Html          hiding (a, a', max, min, s, s', u,
+                                            u')
 import qualified Shpadoinkle.Html          as Html
 import           Shpadoinkle.Widgets.Types
 
@@ -95,12 +96,12 @@ class Tabular a where
   toRows         :: a -> [Row a]
   toFilter       :: a -> (Row a -> Bool)
   toFilter = const (const True)
-  toCell         :: Effect a m => a -> Row a -> Column a -> [HtmlM m a]
+  toCell         :: Effect a m => a -> Row a -> Column a -> [Html m a]
   sortTable      :: SortCol a -> Row a -> Row a -> Ordering
-  ascendingIcon  :: Effect a m => Proxy a -> HtmlM m (a, SortCol a)
-  ascendingIcon _ = TextNodeM "↑"
-  descendingIcon :: Effect a m => Proxy a -> HtmlM m (a, SortCol a)
-  descendingIcon _ = TextNodeM "↓"
+  ascendingIcon  :: Effect a m => Html m (a, SortCol a)
+  ascendingIcon = TextNode "↑"
+  descendingIcon :: Effect a m => Html m (a, SortCol a)
+  descendingIcon = TextNode "↓"
 
 
 toggleSort :: Eq (Column a) => Column a -> SortCol a -> SortCol a
@@ -108,13 +109,13 @@ toggleSort c (SortCol c' s) = if c == c' then SortCol c $ negateSort s else Sort
 
 
 data Theme m a = Theme
-  { tableProps :: a -> SortCol a ->                      [(Text, PropM m (a, SortCol a))]
-  , headProps  :: a -> SortCol a ->                      [(Text, PropM m (a, SortCol a))]
-  , htrProps   :: a -> SortCol a ->                      [(Text, PropM m (a, SortCol a))]
-  , trProps    :: a -> SortCol a -> Row a ->             [(Text, PropM m (a, SortCol a))]
-  , thProps    :: a -> SortCol a ->          Column a -> [(Text, PropM m (a, SortCol a))]
-  , bodyProps  :: a -> SortCol a ->                      [(Text, PropM m (a, SortCol a))]
-  , tdProps    :: a -> SortCol a -> Row a -> Column a -> [(Text, PropM m a)]
+  { tableProps :: a -> SortCol a ->                      [(Text, Prop m (a, SortCol a))]
+  , headProps  :: a -> SortCol a ->                      [(Text, Prop m (a, SortCol a))]
+  , htrProps   :: a -> SortCol a ->                      [(Text, Prop m (a, SortCol a))]
+  , trProps    :: a -> SortCol a -> Row a ->             [(Text, Prop m (a, SortCol a))]
+  , thProps    :: a -> SortCol a ->          Column a -> [(Text, Prop m (a, SortCol a))]
+  , bodyProps  :: a -> SortCol a ->                      [(Text, Prop m (a, SortCol a))]
+  , tdProps    :: a -> SortCol a -> Row a -> Column a -> [(Text, Prop m a)]
   } deriving Generic
 
 
@@ -133,8 +134,8 @@ view :: forall m a.
   , Bounded  (Column a)
   , Ord      (Column a)
   , Enum     (Column a) )
-  => Proxy a -> a -> SortCol a -> HtmlM m (a, SortCol a)
-view pxy = viewWith pxy mempty
+  => a -> SortCol a -> Html m (a, SortCol a)
+view = viewWith mempty
 
 
 viewWith :: forall m a.
@@ -145,13 +146,13 @@ viewWith :: forall m a.
   , Bounded  (Column a)
   , Ord      (Column a)
   , Enum     (Column a) )
-  => Proxy a -> Theme m a -> a -> SortCol a -> HtmlM m (a, SortCol a)
-viewWith pxy Theme {..} xs s@(SortCol sorton sortorder) =
+  => Theme m a -> a -> SortCol a -> Html m (a, SortCol a)
+viewWith Theme {..} xs s@(SortCol sorton sortorder) =
   table (tableProps xs s)
     [ thead (headProps xs s) [ tr (htrProps xs s) $ cth_ <$> [minBound..maxBound] ]
     , tbody (bodyProps xs s) $ do
         row <- sortBy (sortTable s) (toRows xs)
-        return . filterRow row . tr (trProps xs s row) . fmap leftMC $ 
+        return . filterRow row . tr (trProps xs s row) . fmap leftC $
           (\c -> td (tdProps xs s row c) $ toCell xs row c) <$> [minBound..maxBound]
     ]
 
@@ -159,20 +160,20 @@ viewWith pxy Theme {..} xs s@(SortCol sorton sortorder) =
 
   f = toFilter xs
 
-  filterRow :: Row a -> HtmlM m (a, SortCol a) -> HtmlM m (a, SortCol a)
+  filterRow :: Row a -> Html m (a, SortCol a) -> Html m (a, SortCol a)
   filterRow row el = if f row then el
     else runIdentity $ props (Identity . addDisplayNoneStyle) el
 
-  addDisplayNoneStyle :: [(Text, PropM m (a, SortCol a))] -> [(Text, PropM m (a, SortCol a))]
+  addDisplayNoneStyle :: [(Text, Prop m (a, SortCol a))] -> [(Text, Prop m (a, SortCol a))]
   addDisplayNoneStyle ps =
     let pMap = M.fromList ps
         styleProp = M.lookup "style" pMap in
       case styleProp of
-        Just (PTextM sty) -> M.toList (M.insert "style" (textProp $ sty <> "; display: none") pMap)
+        Just (PText sty) -> M.toList (M.insert "style" (textProp $ sty <> "; display: none") pMap)
         _ -> M.toList (M.insert "style" (textProp "display: none") pMap)
 
-  cth_ c = th (thProps xs s c) . pure . Html.a [ second rightMC . onClick $ toggleSort c s ]
+  cth_ c = th (thProps xs s c) . pure . Html.a [ second rightC . onClick $ toggleSort c s ]
          . mappend [ text (humanize c) ] . pure $
           if c == sorton then
-            case sortorder of ASC -> ascendingIcon pxy; DESC -> descendingIcon pxy
+            case sortorder of ASC -> ascendingIcon; DESC -> descendingIcon
           else ""

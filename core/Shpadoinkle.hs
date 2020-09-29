@@ -1,22 +1,11 @@
+{-|
+  This module re-exports for convenience.
+-}
+
 module Shpadoinkle
   ( module Shpadoinkle.Core
-  , module Shpadoinkle.Class
-  , module Shpadoinkle.Functor
-  , module Shpadoinkle.EndoIso
-  , Continuation (..), done, pur, impur, kleisli, causes
-  , MapContinuations (..), convertC
-  , liftC, liftMC, leftC, rightC, leftMC, rightMC
-  , maybeC, maybeMC, voidC, voidMC, forgetMC, forgetMC'
-  , writeUpdate, shouldUpdate
-  , EndoIso (..), piiso, pimap
-  , ContinuationT (..), voidRunContinuationT
-  , commit, kleisliT
+  , module Shpadoinkle.Continuation
   ) where
 
-import           Control.PseudoInverseCategory
-import           Control.ShpadoinkleContinuation
+import           Shpadoinkle.Continuation
 import           Shpadoinkle.Core
-import           Shpadoinkle.Class
-import           Shpadoinkle.EndoIso
-import           Shpadoinkle.Functor
-

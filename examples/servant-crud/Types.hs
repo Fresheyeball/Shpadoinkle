@@ -155,32 +155,7 @@ instance (ToJSON   (Column [SpaceCraft])) => ToJSON   Frontend
 instance (FromJSON (Column [SpaceCraft])) => FromJSON Frontend
 
 
-makeLenses ''Frontend
-
-
--- TODO: can we get rid of this coproduct boilerplate? i.e. can we derive a coproduct representation?
-type FrontendCoproduct = Either (Either (Either (Maybe Text) Roster)
-                                 (Maybe SpaceCraftId, SpaceCraftUpdate 'Edit)) ()
-
-
-frontendToCoproduct :: Frontend -> FrontendCoproduct
-frontendToCoproduct = \case
-  MEcho t -> Left (Left (Left t))
-  MList r -> Left (Left (Right r))
-  MDetail i e -> Left (Right (i, e))
-  M404 -> Right ()
-
-
-coproductToFrontend :: FrontendCoproduct -> Frontend
-coproductToFrontend = \case
-  Left (Left (Left t)) -> MEcho t
-  Left (Left (Right r)) -> MList r
-  Left (Right (i,e)) -> MDetail i e
-  Right () -> M404
-
-
-coproductIsoFrontend :: EndoIso FrontendCoproduct Frontend
-coproductIsoFrontend = piiso coproductToFrontend frontendToCoproduct
+makePrisms ''Frontend
 
 
 data Route

@@ -6,6 +6,8 @@ author:       Isaac Shapira
 maintainer:   fresheyeball@protonmail.com
 category:     Web
 build-type:   Simple
+description:
+  Lens combinators for Shpadoinkle applications.
 
 
 ghc-options:
@@ -24,7 +26,7 @@ dependencies:
     - lens
     - text
 
-    - Shpadoinkle-continuations
+    - Shpadoinkle
 
 
 library:

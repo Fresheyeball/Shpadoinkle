@@ -35,7 +35,21 @@ div "foo" [ "hiya" ]
 
 == Event Listeners
 
-Event listeners each get **three** named functions; a plain one, for pure event handlers, and an `M` version for Monadic handlers, and an `E` variate for full flexibility. Each of these functions is named the same as in JavaScript (sans Camel-case). See that the following are morally equivalent:
+Event listeners each get named functions:
+
+* A plain one, for pure event handlers (synchronous)
+* An `M` version for monadic handlers (asynchronous)
+* A `C` variant for working with `Continuation` s. (asynchronous)
+
+[source,haskell]
+----
+onClick :: a -> (Text, Prop m a)
+onClickM :: Monad m => m (a -> a) -> (Text, Prop m a)
+onClickM_ :: Monad m => m () -> (Text, Prop m a)
+onClickC :: Continuation m a -> (Text, Prop m a)
+----
+
+Each of these functions is named the same as in JavaScript (sans Camel-case). See that the following are morally equivalent:
 
 [source,javascript]
 ----
@@ -47,33 +61,15 @@ div.addEventListener("click", () => model++);
 div' [ onClick (model + 1) ]
 ----
 
-The plain variant is polymorphic and will work with Functorial and EndoIso props. However the Monadic variant is monomorphic and demands `PropM`
-
-[source,haskell]
-----
-onClick :: IsProp p e => a -> (Text, p a)
-onClickM :: Monad m => m (a -> a) -> (Text, PropM m a)
-----
-
-You will also note that one take an `a` and the other `m (a -> a)`. This is because your Monadic action may be asynchronous, and the state of the application may have changed durring that time. The returned function `(a -> a)` will be applied as a state update to whatever that state is once the action completes.
-
-[NOTE]
-====
-.onClickE
-Documentation in progress. This variant allows raw access to the xref:packages/core.adoc#_continuation[Continuation].
-[source,haskell]
-----
-onClickE :: IsProp p e => e a -> (Text, p a)
-----
-====
+You will also note that synchronous handlers take an `a` and asynchronous handlers are `m (a -> a)`. This is because your Monadic action may be asynchronous, and the state of the application may have changed durring that time. The returned function `(a -> a)` will be applied as a state update to whatever that state is once the action completes. Should you need to query the state of the running application in the middle of asynchronous processing, use a `Continuation m a`.
 
 === Affordances
 
-Some listeners provide extra information. For example
+Some listeners provide extra information. For example:
 
 [source,haskell]
 ----
-onInput :: IsProp p e => (Text -> a) -> (Text, p a)
+onInput :: (Text -> a) -> (Text, Prop m a)
 ----
 
 where the `Text` will be the current value of the input element, preventing us from having to write low level code to extract the value.
@@ -95,8 +91,7 @@ div.className = "foo";
 div' [ className "foo" ]
 ----
 
-Not all properties have the same type. While we endeavor to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impedances, or would like to suggest a function.
-
+Not all properties have the same type. While we try to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impedences, or would like to suggest a function.
 
 === CSS Class
 
@@ -123,7 +118,7 @@ You can also use the {hackage}-html/docs/Shpadoinkle-Html-Property.html#t:ClassL
 
 == Memo
 
-The memo function remembers the last arguement passed, and the last result. When a new value is passed, it compares it with the previous value, if they match, the previous result is returned from memory. This is useful when computing `Html`. It is expensive and benefits from memoization:
+The memo function remembers the last arguement passed, and the last result. When a new value is passed, it compares it with the previous value, if they match, the previous result is returned from memory. This is useful when computing `Html` is expensive and benefits from memoization:
 
 [source,haskell]
 ----
@@ -134,7 +129,7 @@ Think of `memo` as a way of changing the evaluation strategy:
 
 [source,haskell]
 ----
-view :: Text -> Html a
+view :: Text -> Html m a
 view = memo $ \t ->
   div_ . take (length t) . repeat . text $ expensiveFilter t
 ----

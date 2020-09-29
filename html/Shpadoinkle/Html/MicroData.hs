@@ -9,19 +9,19 @@ import           Shpadoinkle      (Html, Prop (PFlag))
 import           Shpadoinkle.Html as H
 
 
-itemscope :: (Text, Prop a)
+itemscope :: (Text, Prop m a)
 itemscope = ("itemscope", PFlag True)
 
 
-itemtype :: Text -> (Text, Prop a)
+itemtype :: Text -> (Text, Prop m a)
 itemtype t = textProperty "itemtype" $ "https://schema.org/" <> t
 
 
-propmeta :: Text -> Text -> Html a
+propmeta :: Text -> Text -> Html m a
 propmeta ip c = meta' [ itemprop ip, content c ]
 
 
-subitem :: Text -> Text -> Text -> Text -> Html a
+subitem :: Text -> Text -> Text -> Text -> Html m a
 subitem ip it ip' it' = H.div [ className "hidden", itemprop ip, itemscope, itemtype it ]
   [ propmeta ip' it' ]
 

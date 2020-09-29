@@ -26,14 +26,11 @@ xref:packages/router.adoc[Router] ({gitlab}/router[Gitlab], {hackage}-router[Hac
 xref:packages/widgets.adoc[Widgets] ({gitlab}/widgets[Gitlab], {hackage}-widgets[Hackage])::
 Logical types and structures for common UI components, along with batteries included implementations.
 
-Lens ({gitlab}/lens[Gitlab])::
+xref:packages/lens.adoc[Lens] ({gitlab}/lens[Gitlab])::
 Lens combinators for ergonomic composing of heterogeneous components, and after-the-fact modification of views.
 
-xref:packages/debug.adoc[Debug] ({gitlab}/debug[Gitlab], {hackage}-debug[Hackage])::
-Debug tools for tracing the state of Shpadoinkle applications.
+xref:packages/console.adoc[Console] ({gitlab}/console[Gitlab], {hackage}-console[Hackage])::
+Support for the native JavaScript browser console.
 
 Examples ({gitlab}/examples[Gitlab])::
 Small applications of Shpadoinkle to illustrate programming patterns.
-
-Experiments ({gitlab}/experiments[Gitlab])::
-Sandbox for exploring the territory.

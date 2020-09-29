@@ -8,7 +8,7 @@ See an example of this working by examining {snowman}[default.nix] in the {snowm
 
 Introducing GHCjs brings with it a host of problems, that are solved with Nix. For example, many Haskell packages use a library called https://hackage.haskell.org/package/doctest[doctest]. This is not compatible with GHCjs, and will prevent dependencies from building.
 
-Likewise, there are other impedances introduced by testing libraries, and other minor odds and ends, that make packages that should work just fine with GHCjs fail to build.
+Likewise, there are other impedences introduced by testing libraries, and other minor odds and ends, that make packages that should work just fine with GHCjs fail to build.
 
 Additionally, the stock GHCjs and the GHCjs package set is not optimized. It lacks some critical optimization that have their source of truth in https://github.com/reflex-frp/reflex-platform[Reflex Platform]. These optimizations require custom compilation of the GHCjs compiler, as well as many downstream packages this project depends on.
 

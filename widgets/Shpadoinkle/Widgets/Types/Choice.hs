@@ -29,7 +29,7 @@ import           Data.Set            as Set
 import           GHC.Generics
 
 
-data Pick   = One | AtleastOne | Many
+data Pick = One | AtleastOne | Many
 
 
 type family Selected (p :: Pick) (a :: Type) :: Type where

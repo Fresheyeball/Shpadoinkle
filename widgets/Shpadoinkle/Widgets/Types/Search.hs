@@ -25,14 +25,19 @@ newtype Search = Search { unSearch :: Text }
   deriving stock Generic
 
 
-data Levenshtiened a = Levenshtiened { _distance :: !Int, _unLevenshtiened :: a } deriving Eq
-instance Eq       a => Ord      (Levenshtiened a) where
-  compare (Levenshtiened x _) (Levenshtiened y _) = compare x y
+newtype EditDistance = EditDistance { unEditDistance :: Int }
+  deriving newtype (Eq, Ord, Show, Read, ToJSON, FromJSON)
+  deriving stock Generic
+
+
+data Levenshtiened a = Levenshtiened { _distance :: !EditDistance, _unLevenshtiened :: a } deriving Eq
+instance Eq       a => Ord    (Levenshtiened a) where
+  compare (Levenshtiened x _) (Levenshtiened y _) = unEditDistance x `compare` unEditDistance y
 
 
 mkLevenshtiened :: Text -> Search -> a -> Levenshtiened a
 mkLevenshtiened  t (Search s) x =
-  Levenshtiened (levenshteinDistance defaultEditCosts (prep s) (prep t)) x
+  Levenshtiened (EditDistance $ levenshteinDistance defaultEditCosts (prep s) (prep t)) x
   where prep = unpack . strip
 
 

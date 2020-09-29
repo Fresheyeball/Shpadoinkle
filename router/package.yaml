@@ -8,7 +8,7 @@ category:     Web
 build-type:   Simple
 synopsis:     A single page application rounter for Shpadoinkle based on Servant.
 description:
-  Surjective single page application routing with Servant. Surjectivity means routes
+  Surjective single page application routing with Servant. Surjectivity in this context means routes
   can be backward compatible, allowing URLs to evolve. Since routes are specified as
   Servant combinators, serving these routes from the backend is trivial. For an example
   of leveraging the client-server isomorphism via Servant specification, check the servant-crud example.
@@ -52,6 +52,7 @@ dependencies:
     - exceptions    >= 0.10.3 && < 0.11
     - servant       >= 0.16 && < 0.18
     - http-api-data >= 0.4.1 && < 0.5
+    - http-media
     - network-uri   >= 2.6.1 && < 2.8
     - lens          >= 4.17.1 && < 5.0
     - jsaddle       >= 0.9.7 && < 0.20

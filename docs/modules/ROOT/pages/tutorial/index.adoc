@@ -9,11 +9,11 @@ Skip to:
 
 == Setup
 
-This project should work with any system capable of compiling code with https://www.haskell.org/ghc/[GHC]. However this project is built with Nix, and so that is what is recommended for the tutorial.
+It is recommended you start by building a Snowman. The {snowman}[Snowman] is a minimal "Hello World" example repo where you can build a Shpadoinkle application. This project should work with any system capable of compiling code with https://www.haskell.org/ghc/[GHC]. This project is built with Nix but `stack` is also supported.
 
-If you do not have Nix, please follow the instructions located xref:getting-started/index.adoc#Nix[here].
+=== Nix
 
-You will also need to clone the {snowman}[Snowman]. This is a minimal "Hello World" example repo where you can build a Shpadoinkle application.
+If you do not have Nix, please follow the instructions located xref:getting-started/index.adoc#Nix[here]. You may also follow the TLDR version below:
 
 [source,bash]
 ----
@@ -27,41 +27,22 @@ cd Shpadoinkle-snowman
 nix-shell
 ----
 
-Now you should be setup with a development environment. Sandard `cabal` toolchain should work out of the box, as well as `ghcid`.
+Now you should be setup with a development environment. Standard `cabal` toolchain should work out of the box, as well as `ghcid`.
 
-[CAUTION]
-.MacOS
-If you are on MacOS instead of Linux, the Cachix cache will not work, as cross compilation has not been implimented on this project. Therefore getting a development environment with `nix-shell` is going to compile all the dependencies from source. This can take a long time.
+=== Stack
 
-== Basics
+If you do not wish to use Nix, you may also build a Snowman with `stack`. This should work out of the box, using standard `stack` commands.
 
-Shpadoinkle applications are represented a function from a given application state, to HTML that produces a new state of the same type. This function becomes something of a loop with itself, where each produced update to the state is applied to the same application to obtain new HTML which in turn can produce a new update.
-
-Event handlers can be pure updates, or asynchronous updates. All updates that perform IO are considered asynchronous. This difference is tracked in the type system.
-
-[source,haskell]
+[source,bash]
 ----
-Prop a :: Type
+curl -sSL https://get.haskellstack.org/ | sh
+stack --version
+git clone https://gitlab.com/fresheyeball/Shpadoinkle-snowman.git
+cd Shpadoinkle-snowman
+stack build
 ----
 
-For non-Monadic computations, that can immediately update the UI.
-
-[source,haskell]
-----
-PropM m a :: Type
-----
-
-For Monadic computations that are expected to take some time to complete before there is an update for the UI.
-
-This difference propagates to the Html types with
-
-[source,haskell]
-----
-Html a :: Type
-HtmlM m a :: Type
-----
-
-types respectively. Non-Monadic terms can be converted to Monadic terms by use of the injective function `constly`, however Monadic terms *cannot* be converted into Non-Monadic ones.
+However you will not benefit from cachix caching and so this will take some time for the initial compile.
 
 == Html
 
@@ -98,7 +79,7 @@ To learn more about the html package see docs xref:packages/html.adoc[here].
 
 === Events
 
-Event handling is achieved through properties. There are several named functions for each event type and a few additional helpers. A plain version for pure handlers, and an M version for Monadic ones. The plain version is polymorphic and will work with both `Prop` and `PropM` types, as where the Monadic version necessitates `PropM`.
+Event handling is achieved through properties. There are several named functions for each event type and a few additional helpers. A plain version for pure handlers, an M version for monadic handlers, and a C version for working with `Continuation`s.
 
 [source,javascript]
 ----

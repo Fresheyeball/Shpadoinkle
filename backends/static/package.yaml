@@ -2,7 +2,7 @@ name:         Shpadoinkle-backend-static
 license:      BSD3
 license-file: LICENSE
 author:       Isaac Shapira
-version:      0.1.0.1
+version:      0.1.0.2
 maintainer:   fresheyeball@protonmail.com
 category:     Web
 build-type:   Simple
