@@ -234,10 +234,6 @@ table {
   }
 }
 
-.nav-panel-menu{
-  overflow-y: auto;
-}
-
 .doc .quoteblock, .doc .verseblock {
    background-image: initial;
    background-color: rgb(27, 29, 30);
@@ -266,4 +262,10 @@ table {
 
 .navbar-burger{
   color: rgb(200,195,188);
+}
+
+@media screen and (min-width: 1024px){
+  .nav-panel-menu {
+      height: 100%;
+  }
 }
