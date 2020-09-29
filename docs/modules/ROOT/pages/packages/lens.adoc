@@ -4,7 +4,7 @@ Lens combinators for Shpadoinkle applications. The primary use case is the compo
 
 == Heterogeneous Composition
 
-Optics in general are an ideal way to compose heterogeneous `Html` components. Consider usage with https://hackage.haskell.org/package/generic-lens-labels[generic-lens-labels].
+Optics in general are an ideal way to compose heterogeneous `Html` components. Consider usage with https://hackage.haskell.org/package/generic-lens[generic-lens].
 
 === On Record
 

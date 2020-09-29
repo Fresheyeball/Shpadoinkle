@@ -68,8 +68,9 @@ code{
   font-family: Fira Code, Consolas, Monoid, Hack, Droid Sans, Roboto Mono, monospace !important;
 }
 
-.doc code{
-  background: rgb(250,250,250);
+.doc p code{
+  background: rgb(27,29,30);
+  color: rgb(211,207,201);
   padding: 0 4px;
   border-radius: 3px;
   box-shadow: 0 0 1.75px rgba(0,0,0,0.4);
@@ -90,10 +91,179 @@ code{
   display: none;
 }
 
-.breadcrumbs li:first-child{
+.breadcrumbs li:first-child, .nav-panel-explore, .home-link{
   display: none;
 }
 
-.nav-panel-explore{
-  display: none;
+.toolbar{
+  opacity: 0;
+  pointer-events: none;
+  height: 1.2rem;
+}
+
+.navbar, footer.footer{
+  background: #131415;
+}
+
+.nav, .toolbar{
+  background: #131415;
+  color: rgb(173,166,156);
+}
+
+.content, body{
+  background: #181a1b;
+}
+
+.doc h2:not(.discrete) {
+    border-bottom-color: rgb(56, 61, 64);
+}
+
+.doc, .doc h1, .doc h2, .doc h3, .doc h4, .doc h5, .doc h6{
+  color: rgb(200,195,188);
+}
+
+.doc a{
+  color: rgb(94, 171, 237);
+}
+
+.doc code {
+    background-image: initial;
+    background-color: rgb(27, 29, 30);
+    box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 1.75px;
+    padding: 0 4px;
+    border-color: rgb(49, 54, 56);
+}
+
+.doc pre.highlight code, .doc pre:not(.highlight) {
+    border-color: rgb(49, 54, 56);
+}
+
+.doc .listingblock pre:not(.highlight), .doc .literalblock pre, .doc pre.highlight code {
+    background-image: initial;
+    background-color: rgb(27, 29, 30);
+    box-shadow: rgb(41, 44, 46) 0px 0px 1.75px inset;
+}
+
+.hljs-class .hljs-title, .hljs-type {
+    color: rgb(139, 166, 197);
+}
+
+.hljs-keyword, .hljs-selector-tag, .hljs-subst {
+    color: rgb(200, 195, 188);
+}
+
+.hljs-section, .hljs-selector-id, .hljs-title {
+    color: rgb(255, 97, 97);
+}
+
+.hljs-doctag, .hljs-string {
+    color: rgb(239, 53, 100);
+}
+
+.hljs-literal, .hljs-number, .hljs-tag .hljs-attr, .hljs-template-variable, .hljs-variable {
+    color: rgb(114, 255, 255);
+}
+
+.doc table.tableblock > :not(thead) th, .doc table.tableblock td {
+    border-top-color: rgb(56, 61, 64);
+    border-bottom-color: rgb(56, 61, 64);
+}
+
+table {
+    border-color: #545b5e;
+}
+
+
+.doc table.tableblock thead th {
+    border-bottom-color: rgb(56, 61, 64);
+}
+
+::-webkit-scrollbar {
+    background-color: #202324;
+    color: #aba499;
+}
+
+::-webkit-scrollbar-corner {
+    background-color: #181a1b;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #454a4d;
+}
+
+::selection {
+    background-color: #004daa !important;
+    color: #e8e6e3 !important;
+}
+
+.toc-menu {
+    color: rgb(173, 166, 156);
+}
+
+.sidebar.toc .toc-menu a:focus {
+    background-image: initial;
+    background-color: rgb(27, 29, 30);
+}
+
+.toc .toc-menu h3 {
+    color: rgb(200, 195, 188);
+}
+
+.toc .toc-menu ul {
+    list-style-image: initial;
+}
+
+.toc .toc-menu a.is-active {
+    border-left-color: rgb(19, 91, 172);
+    color: rgb(200, 195, 188);
+}
+
+.toc .toc-menu a {
+    color: inherit;
+    border-left-color: rgb(56, 61, 64);
+    text-decoration-color: initial;
+}
+
+.toc .toc-menu a:hover {
+    color: rgb(94, 171, 237);
+}
+
+@media screen and (min-width: 769px){
+  .doc>h1.page:first-child{
+    margin-top: 0;
+  }
+}
+
+.nav-panel-menu{
+  overflow-y: auto;
+}
+
+.doc .quoteblock, .doc .verseblock {
+   background-image: initial;
+   background-color: rgb(27, 29, 30);
+   border-left-color: rgb(109, 102, 90);
+   color: rgb(173, 166, 156);
+}
+
+.hljs-built_in, .hljs-builtin-name {
+      color: rgb(79, 211, 255);
+}
+
+.doc .admonitionblock .title, .doc .exampleblock .title, .doc .imageblock .title, .doc .listingblock .title, .doc .literalblock .title, .doc .openblock .title, .doc .tableblock caption {
+      color: rgb(173, 166, 156);
+}
+
+.hljs-attribute, .hljs-name, .hljs-tag {
+      color: rgb(127, 174, 255);
+}
+
+@media screen and (max-width: 1023px){
+  .navbar-menu {
+     background-image: initial;
+     background-color: rgb(24, 26, 27);
+  }
+}
+
+.navbar-burger{
+  color: rgb(200,195,188);
 }
