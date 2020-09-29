@@ -7,7 +7,7 @@ Here we will build a simple calculator, following pioneers of the space http://w
 
 == Hello World
 
-Let's get a basic Hello World app up (this is provided if you are building a snowman). Luckily that is not too hard (but not too easy either):
+Let's get a basic "Hello World" app up (this is provided if you are building a snowman). Luckily that is not too hard (but not too easy either):
 
 [source,haskell]
 ----
@@ -26,6 +26,9 @@ main = runJSorWarp 8080 $ -- <1>
 <4> The initial state. Since this is a "hello world" example, it's just `()`.
 <5> This is our view. Since we don't care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
 <6> This is what DOM node on the page will hold our application. We use `getBody` to get the `document.body` for the page.
+
+[NOTE]
+You need to stop ghcid and restart it after making _any_ changes to the .cabal file.
 
 == Addition
 
@@ -131,7 +134,7 @@ view model = div_
   ]
 ----
 
-That's it! The user can select an operation, enter 2 numbers and see a result rendered.
+That's it! The user can select an operation, enter two numbers and see a result rendered.
 
 Now if you are looking at the above code, and starting to twitch, because you are a optics fiend; that is the right instinct.
 

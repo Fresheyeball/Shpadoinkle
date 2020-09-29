@@ -12,7 +12,7 @@ The fastest way to start a new Shpadoinkle project is to build a https://gitlab.
 
 == Nix
 
-Nix works on all Linux distributions, as well as Darwin-based operating systems such as MacOS. To install Nix simply run
+Nix works on all Linux distributions, as well as Darwin-based operating systems such as MacOS. To install Nix run:
 
 [source,bash]
 ----
@@ -32,7 +32,7 @@ nix --version
 
 [NOTE]
 .MacOS
-Installing Nix on MacOS should work fine. But if you end up in a sticky situation, https://medium.com/@robinbb/install-nix-on-macos-catalina-ca8c03a225fc[this article may help.]
+Installing Nix on MacOS should work fine. But if you end up in a sticky situation, https://medium.com/@robinbb/install-nix-on-macos-catalina-ca8c03a225fc[this article may help.] Or refer to https://nixos.org/manual/nix/stable/#sect-macos-installation[the official manual] for more information about Nix.
 
 
 == Cachix
@@ -45,5 +45,5 @@ nix-env -iA cachix -f https://cachix.org/api/v1/install
 cachix use shpadoinkle
 ----
 
-Now builds of Shpadoinkle will used cached dependencies from https://shpadoinkle.cachix.org/[shpadoinkle.cachix.org], which are kept up to date with `master` via Gitlab CI.
+Now builds of Shpadoinkle will used cached dependencies from https://shpadoinkle.cachix.org/[shpadoinkle.cachix.org], which are kept up to date with `master` using Gitlab CI.
 
