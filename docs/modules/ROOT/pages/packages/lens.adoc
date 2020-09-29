@@ -1,15 +1,15 @@
 = Lens
 
-Lens combinators for Shpadoinkle applications. The primary use case is the composition of heterogenious `Html` components.
+Lens combinators for Shpadoinkle applications. The primary use case is the composition of heterogeneous `Html` components.
 
-== Heterogenious Composition
+== Heterogeneous Composition
 
-Optics in general are an ideal way to compose heterogenious `Html` components. Consider usage with https://hackage.haskell.org/package/generic-lens-labels[generic-lens-labels].
+Optics in general are an ideal way to compose heterogeneous `Html` components. Consider usage with https://hackage.haskell.org/package/generic-lens-labels[generic-lens-labels].
 
 === On Record
 
 We can use 'OverloadedLabels' to gain lenses to each field on a record, then compose
-heterogenious sub components onto the parent state with `onRecord`.
+heterogeneous sub components onto the parent state with `onRecord`.
 
 [source,haskell]
 ----
@@ -81,5 +81,5 @@ view = \case
 <1> Here we have an impedence `Html m Counter` vs `Html m Model`, which we resolve with the use of `onSum` and a generic derived prism as a label `#_MCounter`.
 <2> Another impedence `Html m Form` vs `Html m Model`, which we resolve with the use of `onSum` and a generic derived prism as a label `#_MForm`.
 
-And since we can use these lens combinators to compose heterogenious `Html` at any place we wish, adding in
+And since we can use these lens combinators to compose heterogeneous `Html` at any place we wish, adding in
 navigation buttons to switch the `Model` from one constuctor to the other is trivial.
