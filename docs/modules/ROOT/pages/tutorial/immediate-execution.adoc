@@ -31,7 +31,7 @@ Now that we can marshall between the Haskell representation and one we can show 
 
 [source,haskell]
 ----
-digit :: Digit -> Html Digit
+digit :: Digit -> Html m Digit
 digit d = button [ onClick d -- <1>
                  , className $ "d" <> d' -- <2>
                  ] [ text d' ]
@@ -157,7 +157,7 @@ instance Show Operator where
     Multiplication -> "×"
     Division       -> "÷"
 
-operate :: Maybe Operator -> Operator -> Html Operator
+operate :: Maybe Operator -> Operator -> Html m Operator
 operate active o = button
   [ onClick o -- <1>
   , className ("active", Just o == active) -- <2>
@@ -213,7 +213,7 @@ Now lets start building the final view. The calculator needs a readout area that
 
 [source,haskell]
 ----
-readout :: Model -> Html a
+readout :: Model -> Html m a
 ----
 
 Because the readout consumes the state but never produces an update we should leave the HTML parametric.
@@ -229,7 +229,7 @@ Resets the calculator to the `initial` state.
 
 [source,haskell]
 ----
-clear :: Html Model
+clear :: Html m Model
 clear  = button [ class' "clear", onClick initial ] [ "AC" ]
 ----
 
@@ -239,7 +239,7 @@ Negates the current entry. Phrased on the button as [-/+].
 
 [source,haskell]
 ----
-posNeg :: Model -> Html Model
+posNeg :: Model -> Html m Model
 posNeg x = button [ class' "posNeg", onClick (x & current %~ neg) ] [ "-/+" ]
 ----
 
@@ -249,7 +249,7 @@ The nine digit pad (excluding 0).
 
 [source,haskell]
 ----
-numberpad :: Html Digit
+numberpad :: Html m Digit
 numberpad = H.div "numberpad"
   . L.intercalate [ br'_ ] -- <3>
   . L.chunksOf 3 -- <2>
@@ -266,24 +266,24 @@ A button to apply adding a decimal point to the current entry.
 
 [source,haskell]
 ----
-dot :: Model -> Html Model
+dot :: Model -> Html m Model
 dot x = button [ onClick $ x & current %~ addDecimal ] [ "." ]
 ----
 
 === Arithmetic
 
 Each operator button does the following:
-. Sets the operation to the given operator. 
-. Sets the previous entry to be the current entry. 
+. Sets the operation to the given operator.
+. Sets the previous entry to be the current entry.
 . Blanks the current entry.
 
 [source,haskell]
 ----
-operations :: Model -> Html Model
+operations :: Model -> Html m Model
 operations x = H.div "operate" $ fmap (\o -> x
   & operation .~ Just (Operation o (x ^. current))
   & current   .~ noEntry) -- <3>
-  . operate (x ^? operation . traverse . operator)-- <2>
+  . operate (x ^? operation . traverse . operator) -- <2>
  <$> [minBound .. maxBound] -- <1>
 ----
 
@@ -316,7 +316,7 @@ Based on the above examples, you should be able to see what is going on in this 
 
 [source,haskell]
 ----
-equals :: Model -> Html Model
+equals :: Model -> Html m Model
 equals x = button [ class' "equals", onClick $ calcResult x ] [ "=" ]
 ----
 

@@ -16,7 +16,7 @@ main = runJSorWarp 8080 $ -- <1>
   simple -- <2>
     runParDiff -- <3>
     () -- <4>
-    (constly' . const "hello world") -- <5>
+    (const "hello world") -- <5>
     getBody -- <6>
 ----
 
@@ -38,7 +38,7 @@ To start we will need a simple single number input:
 
 [source,haskell]
 ----
-num :: Int -> Html Int
+num :: Int -> Html m Int
 num x = input'
  [ value . pack $ show x -- <1>
  , onInput (fromMaybe 0 . readMay . unpack) -- <2>
@@ -52,12 +52,12 @@ Now we can use our single number input in our view to add up two numbers for our
 
 [source,haskell]
 ----
-view :: (Int, Int) -> Html (Int, Int)
+view :: (Int, Int) -> Html m (Int, Int)
 view (l,r) = -- <1>
   div_
-    [ (,r) <$> num l -- <2>
+    [ liftC (,r) fst $ num l -- <2>
     , " + "
-    , (l,) <$> num r -- <3>
+    , liftC (l,) snd $ num r -- <3>
     , text $ " = " <> pack (show $ l + r) -- <4>
     ]
 ----
@@ -68,8 +68,16 @@ view (l,r) = -- <1>
 <4> We display the result of `l + r` to the user.
 
 [TIP]
-.Heterogenious Composition
-We are using `<$>` and a `TupleSection` here to compose our `num` component. This is because `Html Int` and `Html (Int, Int)` obviously do not unify.
+.Heterogeneous Composition
+====
+We are using `liftC` and a `TupleSection` here to compose our `num` component. This is because `Html Int` and `Html (Int, Int)` obviously do not unify.
+`liftC` comes from the `Continuous` type class, which underpins event handling in Shpadoinkle.
+[source,haskell]
+----
+liftC :: (Functor m, Continuous f) => (a -> b -> b) -> (b -> a) -> f m a -> f m b
+----
+To lift `Html Int` to `Html (Int,Int)` we need to provide `liftC` with both a getter function and a setter function.
+====
 
 == Selectable Operations
 
@@ -97,7 +105,7 @@ And we will use a traditional Html `<select>` element to let the user pick the o
 
 [source,haskell]
 ----
-opSelect :: Html Operation
+opSelect :: Html m Operation
 opSelect = select [ onOption $ read . unpack ] -- <1>
   $ opOption <$> [ minBound .. maxBound ]
   where
@@ -120,15 +128,15 @@ data Model = Model
   } deriving (Eq, Show)
 ----
 
-And we will use the same technique with `<$>` to compose these components together:
+And we will use the same technique with `liftC` to compose these components together:
 
 [source,haskell]
 ----
 view :: Model -> Html Model
 view model = div_
-  [ (\l -> model { left      = l }) <$> num (left model)
-  , (\o -> model { operation = o }) <$> opSelect
-  , (\r -> model { right     = r }) <$> num (right model)
+  [ liftC (\l m -> m { left      = l }) left      $ num (left model)
+  , liftC (\o m -> m { operation = o }) operation $ opSelect
+  , liftC (\r m -> m { right     = r }) right     $ num (right model)
   , text $ " = " <> pack (show $ opFunction
       (operation model) (left model) (right model))
   ]
