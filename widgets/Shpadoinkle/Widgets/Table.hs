@@ -37,6 +37,7 @@ import           Data.Functor.Identity
 import           Data.Kind
 import           Data.List                 (sortBy)
 import qualified Data.Map                  as M
+import           Data.Proxy
 import           Data.Text
 import           GHC.Generics
 
@@ -96,12 +97,12 @@ class Tabular a where
   toRows         :: a -> [Row a]
   toFilter       :: a -> (Row a -> Bool)
   toFilter = const (const True)
-  toCell         :: Effect a m => a -> Row a -> Column a -> [Html m a]
+  toCell         :: Functor m => Effect a m => a -> Row a -> Column a -> [Html m a]
   sortTable      :: SortCol a -> Row a -> Row a -> Ordering
-  ascendingIcon  :: Effect a m => Html m (a, SortCol a)
-  ascendingIcon = TextNode "↑"
-  descendingIcon :: Effect a m => Html m (a, SortCol a)
-  descendingIcon = TextNode "↓"
+  ascendingIcon  :: Functor m => Effect a m => Proxy a -> Html m (a, SortCol a)
+  ascendingIcon _ = TextNode "↑"
+  descendingIcon :: Functor m => Effect a m => Proxy a -> Html m (a, SortCol a)
+  descendingIcon _ = TextNode "↓"
 
 
 toggleSort :: Eq (Column a) => Column a -> SortCol a -> SortCol a
@@ -175,5 +176,5 @@ viewWith Theme {..} xs s@(SortCol sorton sortorder) =
   cth_ c = th (thProps xs s c) . pure . Html.a [ second rightC . onClick $ toggleSort c s ]
          . mappend [ text (humanize c) ] . pure $
           if c == sorton then
-            case sortorder of ASC -> ascendingIcon; DESC -> descendingIcon
+            case sortorder of ASC -> ascendingIcon Proxy; DESC -> descendingIcon Proxy
           else ""

@@ -38,6 +38,7 @@ library:
     - Shpadoinkle.Widgets.Form.Input
     - Shpadoinkle.Widgets.Form.Dropdown
     - Shpadoinkle.Widgets.Table
+    - Shpadoinkle.Widgets.Table.Lazy
     - Shpadoinkle.Widgets.Types
     - Shpadoinkle.Widgets.Types.Choice
     - Shpadoinkle.Widgets.Types.Core
