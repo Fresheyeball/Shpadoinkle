@@ -1,6 +1,6 @@
 site:
   title: Shpadoinkle Documentation
-  url: https://fresheyeball.gitlab.io/Shpadoinkle
+  url: https://shpadoinkle.org
   start_page: docs::index.adoc
 content:
   sources:
