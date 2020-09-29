@@ -44,14 +44,28 @@ dependencies:
 executables:
   todomvc:
     main: TODOMVC.hs
-    other-modules:
-      - TODOMVC.Types
-      - TODOMVC.Update
+    other-modules: []
     source-dirs: .
     dependencies:
       - text
       - containers
+      - generic-lens
       - lens
+
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-lens
+      - Shpadoinkle-backend-pardiff
+
+  lens:
+    main: Lens.hs
+    other-modules: []
+    source-dirs: .
+    dependencies:
+      - text
+      - generic-lens
+      - lens
+      - safe
 
       - Shpadoinkle
       - Shpadoinkle-html
@@ -98,7 +112,7 @@ executables:
       - file-embed
 
       - Shpadoinkle
-      - Shpadoinkle-debug
+      - Shpadoinkle-console
       - Shpadoinkle-html
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-widgets
@@ -204,7 +218,7 @@ executables:
      - lens
 
      - Shpadoinkle
-     - Shpadoinkle-debug
+     - Shpadoinkle-console
      - Shpadoinkle-html
      - Shpadoinkle-backend-pardiff
 

@@ -31,7 +31,7 @@
    is rather difficult, and complex.
 
    The rules of a backend are informal. Roughly, if we give the backend
-   some HtmlM, we expect it to update the dom at runtime in the way we expect.
+   some Html, we expect it to update the dom at runtime in the way we expect.
 
    Since this is canonical, all other backends are expected to behave
    identically to this one. If differences exist they should be patched,
@@ -64,7 +64,7 @@ import           Data.These
 import           Data.Traversable
 import           Data.UUID
 import           GHC.Generics
-import           Language.Javascript.JSaddle hiding (( # ))
+import           Language.Javascript.JSaddle hiding (MonadJSM, ( # ))
 import           NeatInterpolation
 import           System.Random
 import           UnliftIO
@@ -104,6 +104,7 @@ instance MonadUnliftIO m => MonadUnliftIO (ParDiffT r m) where
     inner (run' . flip runReaderT r . unParDiff)
 
 
+-- | 'ParDiffT' is a @newtype@ of 'ReaderT', this is the 'runReaderT' equivalent.
 runParDiff :: TVar model -> ParDiffT model m ~> m
 runParDiff t (ParDiffT r) = runReaderT r t
 
@@ -132,19 +133,19 @@ instance Show (ParVProp a) where
     ParVFlag b     -> "ParVFlag " <> show b
 
 
-props :: Monad m => (m ~> JSM) -> TVar a -> Map Text (PropM (ParDiffT a m) a) -> RawNode -> JSM ()
+props :: Monad m => (m ~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
 props toJSM i ps (RawNode raw) = do
   raw' <- makeObject raw
   void . traverse (uncurry $ prop toJSM i raw') $ M.toList ps
 
 
-prop :: Monad m => (m ~> JSM) -> TVar a -> Object -> Text -> PropM (ParDiffT a m) a -> JSM ()
+prop :: Monad m => (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
 prop toJSM i raw k = \case
-  PTextM t     -> setProp' raw k t
-  PListenerM f -> setListener i (\x y -> convertC (toJSM . runParDiff i)
+  PText t     -> setProp' raw k t
+  PListener f -> setListener i (\x y -> hoist (toJSM . runParDiff i)
                                          <$> f x y) raw k
-  PFlagM True  -> setProp' raw k =<< toJSVal True
-  PFlagM False -> return ()
+  PFlag True  -> setProp' raw k =<< toJSVal True
+  PFlag False -> return ()
 
 
 setProp' :: ToJSVal t => Object -> Text -> t -> JSM ()
@@ -188,17 +189,17 @@ appendChild (RawNode raw) pn = do
   return pn
 
 
-makeProp :: Monad m => (m ~> JSM) -> TVar a -> PropM (ParDiffT a m) a -> JSM (ParVProp a)
+makeProp :: Monad m => (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
 makeProp toJSM i = \case
-  PTextM t     -> return $ ParVText t
-  PListenerM m -> do
+  PText t     -> return $ ParVText t
+  PListener m -> do
     u <- liftIO randomIO
-    return . ParVListen u $ \x y -> convertC (toJSM . runParDiff i) <$> m x y
-  PFlagM b     -> return $ ParVFlag b
+    return . ParVListen u $ \x y -> hoist (toJSM . runParDiff i) <$> m x y
+  PFlag b     -> return $ ParVFlag b
 
 
-setup' :: MonadJSM m => JSM () -> ParDiffT a m ()
-setup' cb = liftJSM $ do
+setup' :: JSM () -> JSM ()
+setup' cb = do
   void $ eval @Text [text|
       window.deleteProp = (k, obj) => {
         delete obj[k]
@@ -206,7 +207,7 @@ setup' cb = liftJSM $ do
       window.container = document.createElement('div')
       document.body.appendChild(container)
     |]
-  liftJSM cb
+  cb
 
 
 voidJSM :: MonadJSM m => JSM a -> m ()
@@ -357,20 +358,20 @@ interpret'
   => MonadUnliftIO m
   => Eq a
   => Show a
-  => (m ~> JSM) -> HtmlM (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
+  => (m ~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
 interpret' toJSM = \case
 
-  TextNodeM t -> do
+  TextNode t -> do
     raw <- liftJSM . newOnce $ do
       doc <- jsg "document"
       RawNode <$> doc ^. js1 "createTextNode" t
     return $ ParTextNode raw t
 
-  PotatoM p -> do
+  Potato p -> do
     raw <- liftJSM $ newOnce p
     return $ ParPotato raw
 
-  NodeM name (M.fromList -> ps) cs -> do
+  Node name (M.fromList -> ps) cs -> do
     i <- ask
 
     let makeNode = do
@@ -401,5 +402,6 @@ instance
   patch = patch'
 
 
+-- | Get the DOM node produced by 'setup'.
 stage :: FromJSVal b => MonadJSM m => ParDiffT a m b
 stage = liftJSM $ fromJSValUnchecked =<< jsg "container"

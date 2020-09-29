@@ -2,21 +2,14 @@
 
 This module is for core types and logic.
 
-== The Html Types
-
-There are two types that represent HTML in core. A Functorial variant for components that do not need monadic event handlers, and an EndoIso variant for times when event handlers may be Monadic.
+== Html Type
 
 [source,haskell]
 ----
-data Html a
+data Html m a
   = TextNode Text
-  | Node Text [(Text, Prop a)] [Html a]
+  | Node Text [(Text, Prop m a)] [Html m a]
   | Potato (JSM RawNode)
-
-data HtmlM m a
-  = TextNodeM Text
-  | NodeM Text [(Text, PropM m a)] [HtmlM m a]
-  | PotatoM (JSM RawNode)
 ----
 
 * `m` is a effect to run your event handlers.
@@ -26,18 +19,14 @@ These are only relevant to event handling. If your view has no event listeners, 
 
 [NOTE]
 .Not Virtual DOM
-`Html` nor `HtmlM` will be diffed, instead they will be marshalled into a type for a given xref:packages/backends.adoc#selecting[backend]. This separation allows the same code to run on any backend.
+`Html` will NOT be diffed, instead they will be marshalled into a type for a given xref:packages/backends.adoc#selecting[backend]. This separation allows the same code to run on any backend.
 
 This structure is the DOM Tree. There are Nodes which contain lists of Html, and which is a leaf where you can store `Text`, and Potato where we can store a component built outside of the Shpadoinkle view (for example wrapping a JavaScript component).
 
 [NOTE]
-.Coalgebra
-`Html` is the Functor in our Coalgebra. It is a Functor, not Applicative, or Monadic. This is by design. By being merely functorial, you do not need to reason about when components will render.
-
-[NOTE]
 .EndoIso
 ====
-`(HtmlM m)` is a Functor, but not `Prelude.Functor`. It is not functorial in `Hask` but rather in `EndoIso`, where the objects are types and the morphisms are EndoIsos.
+`(Html m)` is a Functor, but not `Prelude.Functor`. It is not functorial in `Hask` but rather in `EndoIso`, where the objects are types and the morphisms are EndoIsos.
 
 [source,haskell]
 ----
@@ -45,28 +34,23 @@ data EndoIso a b = EndoIso (a -> a) (a -> b) (b -> a)
 ----
 ====
 
-== The Prop Types
+== Prop Type
 
-Nodes (and only Nodes) in Html can have properties. These properties are represented as the following types, paired with `Text` giving the property a field key:
+Nodes (and only Nodes) in Html can have properties. These properties are represented as the following type, paired with `Text` giving the property a field key:
 
 [source,haskell]
 ----
-data Prop a
+data Prop m a
   = PText Text
   | PListener (RawNode -> RawEvent -> JSM a)
   | PFlag Bool
-
-data PropM m a
-  | PTextM Text
-  | PListenerM (RawNode -> RawEvent -> JSM (Continuation m a))
-  | PFlagM Bool
 ----
 
 As you will recall, `Html` has a constructor:
 
 [source,haskell]
 ----
-Node :: Text -> [(Text, Prop a)] -> [Html a] -> Html a
+Node :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
 ----
 
 Where a list of this pair is passed. The `Text` should match the property key in standard JavaScript. For example, you can see the following are morally equivalent:
@@ -93,39 +77,24 @@ It is recommended you do **not** use these constructors, but rather use the expo
 h "div" [("className",  textProp "foo")] []
 ----
 
-`h` is exposed by the `IsHtml` type class that ties our types together, and will work polymorphically.
 ====
 
-=== Functorial Listeners
+=== Listeners
 
-The functorial listener constuctor is `PListener`, which has the following type:
-
-[source,haskell]
-----
-PListener :: (RawNode -> RawEvent -> JSM a) -> Prop a
-----
-
-The raw listener will always recieve the https://developer.mozilla.org/en-US/docs/Web/API/Node[`RawNode`], which is the target of the event, and the https://developer.mozilla.org/en-US/docs/Web/API/Event[`RawEvent`] which is the event object itself. Both of these `newtypes` are https://hackage.haskell.org/package/jsaddle-0.9.7.0/docs/GHCJS-Types.html#t:JSVal[JSVal]. This is needed so that you can still do low-level work; however, in practice it is expected you would use functions that allow you to ignore these raw components.
-
-[CAUTION]
-If you have the gumption to use the `PListener` constructor directly, you MUST ensure that the `JSM` returned is **synchronous**. Hint, don't use this constructor directly unless you know what you are doing.
-
-=== EndoIso Listeners
-
-The EndoIso listener constructor is `PListenerM`, which has the following type:
+The listener constructor is `PListener`, which has the following type:
 
 [source,haskell]
 ----
-PListenerM :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> PropM m a
+PListener :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> Prop m a
 ----
 
 The raw listener will always recieve the https://developer.mozilla.org/en-US/docs/Web/API/Node[`RawNode`], which is the target of the event, and the https://developer.mozilla.org/en-US/docs/Web/API/Event[`RawEvent`] which is the event object itself. Both of these `newtypes` are https://hackage.haskell.org/package/jsaddle-0.9.7.0/docs/GHCJS-Types.html#t:JSVal[JSVal]. This is needed so that you can still do low-level work; however, in practice it is expected you would use functions that allow you to ignore these raw components.
 
 == Continuation
 
-The type of a state update in Shpadoinkle. A Continuation builds up an atomic state update incrementally in a series of stages. For each stage we perform a monadic IO computation and we may get a pure state updating function. When all of the stages have been executed we are left with a composition of the resulting pure state updating functions, and this composition is applied atomically to the state.
+The type of a state update in Shpadoinkle. A Continuation builds up an atomic state update incrementally in a series of stages. For each stage we perform a monadic I/O computation and we can get a pure state updating function. When all of the stages have been executed we are left with a composition of the resulting pure state updating functions, and this composition is applied atomically to the state.
 
-Additionally, a Continuation stage may feature a Rollback action which cancels all state updates generated so far but allows for further state updates to be generated based on further monadic IO computation.
+Additionally, a Continuation stage can feature a Rollback action which cancels all state updates generated so far but allows for further state updates to be generated based on further monadic I/O computation.
 
 The functions generating each stage of the Continuation are called with states which reflect the current state of the app, with all the pure state updating functions generated so far having been applied to it, so that each stage "sees" both the current state (even if it changed since the start of computing the continuation), and the updates made so far, although those updates are not committed to the real state until the continuation finishes and they are all done atomically together.
 
@@ -147,7 +116,7 @@ class Backend b m a | b m -> a where
   type VNode b m
   interpret :: (m ~> JSM) -> Html (b m) a -> b m (VNode b m)
   patch     :: RawNode -> Maybe (VNode b m) -> VNode b m -> b m (VNode b m)
-  setup     :: JSM () -> b m ()
+  setup     :: JSM () -> JSM ()
 ----
 
 This interface lets you plug into various rendering systems. So long as you can provide implementations of these three functions, you can use `shpadoinkle` to get an application out of `Html`.
@@ -217,7 +186,7 @@ This is an optional IO action to perform any initial setup steps a given backend
 ----
 setup
   :: JSM () -- <1>
-  -> b m ()
+  -> JSM ()
 ----
 
 <1> This is a callback you are responsible for executing after the setup process is complete. The callback is the entire application. If you do not evaluate the `JSM ()`, then nothing will happen.
@@ -261,8 +230,7 @@ There is one application primitive, the `shpadoinkle` function. It is where thes
 
 [source,haskell]
 ----
-shpadoinkle
-  :: forall b m a t. Backend b m a => Eq a
+shpadoinkle :: forall b m a. Backend b m a => Monad (b m) => Eq a
   => (m ~> JSM) -> (TVar a -> b m ~> m) -> a -> TVar a -> (a -> Html (b m) a) -> b m RawNode -> JSM ()
 shpadoinkle toJSM toM initial model view stage = do
   let
@@ -270,22 +238,24 @@ shpadoinkle toJSM toM initial model view stage = do
     j = toJSM . toM model
 
     go :: RawNode -> VNode b m -> a -> JSM (VNode b m)
-    go c n a = do
-      !m  <- j $ interpret toJSM (view a)
-      j $ patch c (Just n) m
+    go c n a = j $ do
+      !m  <- interpret toJSM (view a)
+      patch c (Just n) m
 
-  j . setup $ do -- <1>
-    c <- j stage -- <2>
-    n <- j $ interpret toJSM (view initial) -- <3>
-    _ <- shouldUpdate (go c) n model -- <4>
-    _ <- j $ patch c Nothing n :: JSM (VNode b m) -- <5>
+  setup @b @m @a $ do -- <1>
+    (c,n) <- j $ do
+      c <- stage -- <2>
+      n <- interpret toJSM (view initial) -- <3>
+      _ <- patch c Nothing n -- <4>
+      return (c,n)
+    _ <- shouldUpdate (go c) n model -- <5>
     return ()
 ----
 
 <1> Run the `setup` for the backend.
 <2> Get the DOM Node on which to append the view.
 <3> Pass the initial model to the view function, then convert the `Html m` to `VNode b m`.
-<4> Set up `go` to run whenever `shouldUpdate`. `go` renders subsequent states.
-<5> Render the initial `VNode b m`.
+<4> Render the initial `VNode b m`.
+<5> Set up `go` to run whenever `shouldUpdate`. `go` renders subsequent states.
 
 Everything else is built on top of this to simplify different setups.

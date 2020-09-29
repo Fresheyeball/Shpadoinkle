@@ -20,26 +20,28 @@
 
 
 -- | This module provides for Servant based routing for Shpadoinkle applications.
--- The technique in use is standard for Servant. We have a GADT @Router@, and some
--- type class inductive programming with class @HasRouter@. The @Router@ the term
+-- The technique in use is standard for Servant. We have a GADT 'Router', and some
+-- type class inductive programming with class 'HasRouter'. The 'Router' the term
 -- necissary for the runtime operation of single page application routing.
 --
 -- State changes are tracked by the "popstate" event and an @MVar ()@. Ideally this is
--- done the browser's native api's only, and not an @MVar@. However that approach is
--- blocked by a but in GHCjs which is documented here https://stackoverflow.com/questions/59954787/cant-get-dispatchevent-to-fire-in-ghcjs.
+-- done the browser's native api's only, and not an 'MVar'. However that approach is
+-- blocked by a but in GHCjs which is documented <https://stackoverflow.com/questions/59954787/cant-get-dispatchevent-to-fire-in-ghcjs here>.
 
 
-module Shpadoinkle.Router
-    ( Raw, Redirect(..)
-    , fromRouter
-    , HasRouter(..)
-    , HasLink(..)
-    , MonadJSM
-    , Routed(..)
-    , fullPageSPA
+module Shpadoinkle.Router (
+    -- * Classes
+    HasRouter(..), Routed(..)
+    -- * Types
+    , Redirect(..), Router(..)
+    -- * Shpadoinkle with SPA
+    , fullPageSPAC, fullPageSPA
+    -- * Navigation
     , navigate
-    , withHydration
-    , toHydration
+    -- * Rehydration
+    , withHydration, toHydration
+    -- * Re-Exports
+    , Raw, MonadJSM, HasLink(..)
     ) where
 
 
@@ -63,12 +65,14 @@ import           GHCJS.DOM.History
 import           GHCJS.DOM.Location            (getPathname, getSearch)
 import           GHCJS.DOM.PopStateEvent
 import           GHCJS.DOM.Window
-import           Language.Javascript.JSaddle   (JSM, MonadJSM, fromJSVal, jsg, liftJSM)
+import           Language.Javascript.JSaddle   (JSM, MonadJSM, fromJSVal, jsg,
+                                                liftJSM)
 import           Servant.API                   hiding (uriPath, uriQuery)
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)
 import           System.IO.Unsafe
-import           UnliftIO.Concurrent           (forkIO, MVar, newEmptyMVar, putMVar, takeMVar)
+import           UnliftIO.Concurrent           (MVar, forkIO, newEmptyMVar,
+                                                putMVar, takeMVar)
 import           UnliftIO.STM                  (TVar, newTVarIO)
 import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
@@ -122,7 +126,7 @@ withHydration s r = do
 -- data. This function returns a script tag that makes a global variable "initState"
 -- containing a JSON representation to be used as the initial state of the application
 -- on page load. Typically this is used on the server side.
-toHydration :: ToJSON a => IsHtml h p => a -> h b
+toHydration :: ToJSON a => a -> Html m b
 toHydration fe =
   h "script" [] [ text $ "window.initState = '" <> (T.replace "'" "\\'" . decodeUtf8 . toStrict $ encode fe) <> "'" ]
 
@@ -143,10 +147,12 @@ navigate r = do
 -- | This method wraps @shpadoinkle@ providing for a convenient entrypoint
 -- for single page applications. It wires together your normal @shpadoinkle@
 -- app components with a function to respond to route changes, and the route mapping
--- itself.
-fullPageSPA :: forall layout b a r m
+-- itself. This flavor provides access to the full power of @Continuation@ incase you
+-- need to handle in flight updates.
+fullPageSPAC :: forall layout b a r m
    . HasRouter layout
   => Backend b m a
+  => Monad (b m)
   => Eq a
   => Functor m
   => (m ~> JSM)
@@ -155,7 +161,7 @@ fullPageSPA :: forall layout b a r m
   -- ^ What backend are we running?
   -> (r -> m a)
   -- ^ what is the initial state?
-  -> (a -> HtmlM (b m) a)
+  -> (a -> Html (b m) a)
   -- ^ how should the html look?
   -> b m RawNode
   -- ^ where do we render?
@@ -164,7 +170,7 @@ fullPageSPA :: forall layout b a r m
   -> layout :>> r
   -- ^ how shall we relate urls to routes?
   -> JSM ()
-fullPageSPA toJSM backend i' view getStage onRoute routes = do
+fullPageSPAC toJSM backend i' view getStage onRoute routes = do
   let router = route @layout @r routes
   window <- currentWindowUnchecked
   getRoute window router $ \case
@@ -173,9 +179,38 @@ fullPageSPA toJSM backend i' view getStage onRoute routes = do
       i <- toJSM $ i' r
       model <- newTVarIO i
       _ <- listenStateChange router $ writeUpdate model . kleisli . const
-           . (fmap (convertC toJSM) . toJSM) . onRoute
+           . (fmap (hoist toJSM) . toJSM) . onRoute
       shpadoinkle toJSM backend i model view getStage
       syncPoint
+
+
+-- | This method wraps @shpadoinkle@ providing for a convenient entrypoint
+-- for single page applications. It wires together your normal @shpadoinkle@
+-- app components with a function to respond to route changes, and the route mapping
+-- itself.
+fullPageSPA :: forall layout b a r m
+   . HasRouter layout
+  => Backend b m a
+  => Monad (b m)
+  => Eq a
+  => Functor m
+  => (m ~> JSM)
+  -- ^ how do we get to JSM?
+  -> (TVar a -> b m ~> m)
+  -- ^ What backend are we running?
+  -> (r -> m a)
+  -- ^ what is the initial state?
+  -> (a -> Html (b m) a)
+  -- ^ how should the html look?
+  -> b m RawNode
+  -- ^ where do we render?
+  -> (r -> m a)
+  -- ^ listen for route changes
+  -> layout :>> r
+  -- ^ how shall we relate urls to routes?
+  -> JSM ()
+fullPageSPA a b c v g s = fullPageSPAC @layout a b c v g (fmap (pur . const) . s)
+
 
 
 -- | ?foo=bar&baz=qux -> [("foo","bar"),("baz","qux")]
@@ -248,7 +283,7 @@ fromRouter queries segs = \case
 -- | This type class traverses the Servant API, and sets up a function to
 -- build its term level representation.
 class HasRouter layout where
-    -- | :>> (pronounced "routed as") should be surjective.
+    -- | ':>>' (pronounced "routed as") should be surjective.
     -- As in one route can be the handler for more than one url.
     type layout :>> route :: Type
     route :: layout :>> route -> Router route

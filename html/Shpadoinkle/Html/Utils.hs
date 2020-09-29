@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                  #-}
+{-# LANGUAGE ExplicitForAll       #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -8,12 +9,12 @@ module Shpadoinkle.Html.Utils where
 
 
 import           Control.Monad      (forM_)
-import           Data.Text hiding (empty)
+import           Data.Text          hiding (empty)
 import           GHCJS.DOM
 import           GHCJS.DOM.Document as Doc
 import           GHCJS.DOM.Element
 import           GHCJS.DOM.Node
-import           GHCJS.DOM.Types    (MonadJSM, liftJSM, toJSVal, ToJSString)
+import           GHCJS.DOM.Types    (ToJSString, liftJSM, toJSVal)
 
 import           Shpadoinkle
 

@@ -24,7 +24,7 @@ import           Data.Text.Encoding
 import           GHC.Generics                (Generic)
 import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Debug
+import           Shpadoinkle.Console
 import           Shpadoinkle.Html            as H
 
 default (ClassList)
@@ -107,11 +107,11 @@ makeFieldsNoPrefix ''Model
 initial :: Model
 initial = Model noEntry Nothing
 
-digit :: Digit -> Html Digit
-digit d = button [ onClick d, class' $ "d" <> d' ] [ text d' ]
+digit :: Model -> Digit -> Html m Model
+digit m d = button [ onClick $ m & current %~ applyDigit d, class' $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
-operate :: Maybe Operator -> Operator -> Html Operator
+operate :: Maybe Operator -> Operator -> Html m Operator
 operate active o = button
   [ onClick o, class' ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
@@ -150,7 +150,7 @@ neg = \case
   Negate e -> e
   e -> Negate e
 
-readout :: Model -> Html a
+readout :: Model -> Html m a
 readout x = H.div "readout" $
   [ text . pack . show $ x ^. current
   ] <> case x ^? operation . traverse . operator of
@@ -161,42 +161,45 @@ readout x = H.div "readout" $
              ]
            ]
 
-clear :: Html Model
+clear :: Html m Model
 clear  = button [ class' "clear", onClick initial ] [ "AC" ]
 
-posNeg :: Model -> Html Model
+posNeg :: Model -> Html m Model
 posNeg x = button [ class' "posNeg", onClick (x & current %~ neg) ] [ "-/+" ]
 
-numberpad :: Html Digit
-numberpad = H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
-  digit <$> [minBound .. pred maxBound]
+numberpad :: Model -> Html m Model
+numberpad m = H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
+  digit m <$> [minBound .. pred maxBound]
 
-operations :: Model -> Html Model
-operations x = H.div "operate" $ fmap (\o -> x
+operations :: Functor m => Model -> Html m Model
+operations x = H.div "operate" $ (\o' -> liftC (\o _ -> x
   & operation .~ Just (Operation o (x ^. current))
-  & current .~ noEntry)
-  . operate (x ^? operation . traverse . operator) <$> [minBound .. maxBound]
+  & current .~ noEntry) (const o')
+  $ operate (x ^? operation . traverse . operator) o') <$> ([minBound .. maxBound] :: [Operator])
 
-dot :: Model -> Html Model
+dot :: Model -> Html m Model
 dot x = button [ onClick $ x & current %~ addDecimal ] [ "." ]
 
-equals :: Model -> Html Model
+equals :: Model -> Html m Model
 equals x = button [ class' "equals", onClick $ calcResult x ] [ "=" ]
 
-view :: Model -> Html Model
-view x = H.div "calculator"
-  [ readout x
+view :: Monad m => Model -> Html m Model
+view m = H.div "calculator"
+  [ readout m
   , H.div "buttons"
-    [ clear, posNeg x , operations x
-    , putDigit <$> numberpad
+    [ clear, posNeg m, operations m
+    , numberpad m
     , H.div "zerodot"
-      [ putDigit <$> digit Zero, dot x , equals x ]
+      [ digit m Zero
+      , dot m
+      , equals m
+      ]
     ]
-  ] where putDigit d = x & current %~ applyDigit d
+  ]
 
 main :: IO ()
 main = runJSorWarp 8080 $ do
   setTitle "Calculator"
   ctx <- askJSM
   addInlineStyle $ decodeUtf8 $(embedFile "./CalculatorIE.css")
-  Shpadoinkle.simple runParDiff initial (constly' . Main.view . trapper @ToJSON ctx) getBody
+  Shpadoinkle.simple runParDiff initial (Main.view . trapper @ToJSON ctx) getBody

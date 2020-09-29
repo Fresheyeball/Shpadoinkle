@@ -47,24 +47,24 @@ opText = \case
   Division       -> "÷"
 
 
-opSelect :: Html Operation
+opSelect :: Html m Operation
 opSelect = select [ onOption $ read . unpack ]
   $ opOption <$> [minBound..maxBound]
   where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 
 
-num :: Int -> Html Int
+num :: Int -> Html m Int
 num x = input'
   [ value . pack $ show x
   , onInput $ fromMaybe 0 . readMay . unpack
   ]
 
 
-view :: Model -> Html Model
+view :: Functor m => Model -> Html m Model
 view model = div_
-  [ (\l -> model { left      = l }) <$> num (left model)
-  , (\o -> model { operation = o }) <$> opSelect
-  , (\r -> model { right     = r }) <$> num (right model)
+  [ liftC (\l m -> m { left      = l }) left      $ num (left model)
+  , liftC (\o m -> m { operation = o }) operation $ opSelect
+  , liftC (\r m -> m { right     = r }) right     $ num (right model)
   , text $ " = " <> pack (show $ opFunction
       (operation model) (left model) (right model))
   ]
@@ -72,5 +72,5 @@ view model = div_
 
 main :: IO ()
 main = runJSorWarp 8080 $
-  simple runParDiff (Model Addition 0 0) (constly' . view) getBody
+  simple runParDiff (Model Addition 0 0) view getBody
 

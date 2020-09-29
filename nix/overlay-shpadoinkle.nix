@@ -23,14 +23,6 @@
     };
 
 
-  continuations-src = super.fetchFromGitHub
-    { owner  = "morganthomas";
-      repo   = "Shpadoinkle-continuations";
-      rev    = "bdd35635d8b0d4905617f670e12a3336ccd805ae";
-      sha256 = "15sb50gdn6z9yc04jb77fq2i3l08kkv21mldharjmlgx72rlx8sq";
-    };
-
-
   snabbdom-src = super.fetchFromGitHub
     { owner  = "snabbdom";
       repo   = "snabbdom";
@@ -76,7 +68,7 @@ in {
           Shpadoinkle-backend-snabbdom = call "Shpadoinkle-backend-snabbdom" ../backends/snabbdom;
           Shpadoinkle-backend-static   = call "Shpadoinkle-backend-static"   ../backends/static;
           Shpadoinkle-backend-pardiff  = call "Shpadoinkle-backend-pardiff"  ../backends/pardiff;
-          Shpadoinkle-debug            = call "Shpadoinkle-debug"            ../debug;
+          Shpadoinkle-console          = call "Shpadoinkle-console"          ../console;
           Shpadoinkle-lens             = call "Shpadoinkle-lens"             ../lens;
           Shpadoinkle-html             = call "Shpadoinkle-html"             ../html;
           Shpadoinkle-router           = call "Shpadoinkle-router"           ../router;
@@ -85,8 +77,6 @@ in {
           Shpadoinkle-experiments      = call "Shpadoinkle-experiments"      ../experiments;
           Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests)       {};
 
-          Shpadoinkle-continuations    = dontJS (hself.callCabal2nix "Shpadoinkle-continuations" "${continuations-src}/" {});
-
           hashable             = dontJS hsuper.hashable;
           comonad              = dontJS hsuper.comonad;
 
@@ -94,6 +84,7 @@ in {
           beam-core            = doJailbreak hsuper.beam-core;
           beam-migrate         = doJailbreak hsuper.beam-migrate;
           ghcid                = doJailbreak hsuper.ghcid;
+          generic-lens-labels  = doJailbreak hsuper.generic-lens-labels;
 
           cryptohash-sha1      = dontJS hsuper.cryptohash-sha1;
           cryptohash-md5       = dontJS hsuper.cryptohash-md5;

@@ -44,10 +44,10 @@ instance ToPropText Float where toPropText = pack . show
 instance ToPropText Bool where toPropText = \case True -> "true"; False -> "false"
 
 
-textProperty :: IsProp p e => ToPropText a => Text -> a -> (Text, p o)
+textProperty :: ToPropText a => Text -> a -> (Text, Prop m b)
 textProperty k = textProperty' k . toPropText
 
-textProperty' :: IsProp p e => Text -> Text -> (Text, p o)
+textProperty' :: Text -> Text -> (Text, Prop m b)
 textProperty' k = (,) k . textProp
 {-# INLINE textProperty' #-}
 
@@ -62,19 +62,19 @@ instance ClassListRep cl => ClassListRep [cl] where asClass = foldMap asClass
 instance IsString ClassList where fromString = ClassList . Set.fromList . split (== ' ') . pack
 
 
-flagProperty :: IsProp p e => Text -> Bool -> (Text, p a)
+flagProperty :: Text -> Bool -> (Text, Prop m a)
 flagProperty t = (,) t . flagProp
 
 
-class' :: IsProp p e => ClassListRep cl => cl -> (Text, p a)
+class' :: ClassListRep cl => cl -> (Text, Prop m a)
 class' = className . unwords . Set.toList . unClassList . asClass
 
 
-className :: IsProp p e => Text -> (Text, p a)
+className :: Text -> (Text, Prop m a)
 className = textProperty "className"
 
 
-for' :: IsProp p e => Text -> (Text, p a)
+for' :: Text -> (Text, Prop m a)
 for' = textProperty "htmlFor"
 
 
@@ -96,5 +96,5 @@ $(msum <$> mapM mkIntProp
  [ "tabIndex", "width", "height" ])
 
 
-tabbable :: IsProp p e => (Text, p o)
+tabbable :: (Text, Prop m a)
 tabbable = tabIndex 0

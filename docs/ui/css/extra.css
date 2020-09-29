@@ -68,6 +68,32 @@ code{
   font-family: Fira Code, Consolas, Monoid, Hack, Droid Sans, Roboto Mono, monospace !important;
 }
 
+.doc code{
+  background: rgb(250,250,250);
+  padding: 0 4px;
+  border-radius: 3px;
+  box-shadow: 0 0 1.75px rgba(0,0,0,0.4);
+}
+
 .edit-this-page{
   display:none;
+}
+
+.home h1{
+  letter-spacing:10px;
+  text-align:center;
+  margin-bottom:0;
+  text-transform: uppercase;
+}
+
+.nav-menu h3.title{
+  display: none;
+}
+
+.breadcrumbs li:first-child{
+  display: none;
+}
+
+.nav-panel-explore{
+  display: none;
 }

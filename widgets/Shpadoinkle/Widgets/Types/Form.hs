@@ -86,6 +86,7 @@ newtype Placeholder = Placeholder { unPlaceholder :: Text }
 data Validated e a = Validated a | Invalid e [e]
   deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON, Functor, Foldable, Traversable)
 
+
 instance Semigroup (Validated e a) where
   Validated a <> Validated _ = Validated a
   Validated _ <> x = x

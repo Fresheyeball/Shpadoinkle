@@ -51,14 +51,14 @@ data Model = Model
 makeLenses ''Model
 
 
-view :: Monad m => Model -> HtmlM m Model
+view :: Monad m => Model -> Html m Model
 view m = div_
   [ link' [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ]
   , generalize pickOne $ dropdown bootstrap defConfig { _attrs = [ id' "One" ] } (_pickOne m)
   , generalize pickAtleastOne $ dropdown bootstrap defConfig { _attrs = [ id' "AtleastOne" ] } (_pickAtleastOne m)
   ]
   where
-  bootstrap :: Monad m => Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
+  bootstrap :: Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
   bootstrap Dropdown {..} = Dropdown.Theme
     { _wrapper = div
       [ class' [ ("dropdown", True)
@@ -77,7 +77,6 @@ view m = div_
                    , textProperty "style" "cursor:pointer" ]
                  . present
     }
-
 
 
 initial :: Model

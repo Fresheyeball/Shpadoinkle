@@ -16,11 +16,17 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
+{-|
+   This module provides 'Backend' binding for the JavaScript virtual DOM implimentation <https://github.com/snabbdom/snabbdom Snabbdom>.
+-}
+
+
 module Shpadoinkle.Backend.Snabbdom
   ( SnabbdomT (..)
   , runSnabbdom
   , stage
   ) where
+
 
 import           Control.Category
 import           Control.Monad.Reader
@@ -28,7 +34,7 @@ import           Data.FileEmbed
 import           Data.Text
 import           Data.Traversable
 import           Language.Javascript.JSaddle hiding (( # ))
-import           Prelude                     hiding ((.), id)
+import           Prelude                     hiding (id, (.))
 import           UnliftIO.STM                (TVar)
 
 import           Shpadoinkle                 hiding (children, name, props)
@@ -51,32 +57,33 @@ deriving instance MonadJSM m => MonadJSM (SnabbdomT model m)
 #endif
 
 
+-- | 'SnabbdomT' is a @newtype@ of 'ReaderT', this is the 'runReaderT' equivalent.
 runSnabbdom :: TVar model -> SnabbdomT model m a -> m a
 runSnabbdom t (Snabbdom r) = runReaderT r t
 
 
-props :: Monad m => (m ~> JSM) -> TVar a -> [(Text, PropM (SnabbdomT a m) a)] -> JSM Object
+props :: Monad m => (m ~> JSM) -> TVar a -> [(Text, Prop (SnabbdomT a m) a)] -> JSM Object
 props toJSM i xs = do
   o <- create
   a <- create
   e <- create
   c <- create
   void $ xs `for` \(k, p) -> case p of
-    PTextM t -> do
+    PText t -> do
       t' <- toJSVal t
       true <- toJSVal True
       case k of
         "className" | t /= "" -> forM_ (split (== ' ') t) $ \u -> unsafeSetProp (toJSString u) true c
         _                     -> unsafeSetProp (toJSString k) t' a
-    PListenerM f -> do
+    PListener f -> do
       f' <- toJSVal . fun $ \_ _ -> \case
         [] -> return ()
         ev:_ -> do
           rn <- unsafeGetProp "target" =<< valToObject ev
           x <- f (RawNode rn) (RawEvent ev)
-          writeUpdate i $ convertC (toJSM . runSnabbdom i) x
+          writeUpdate i $ hoist (toJSM . runSnabbdom i) x
       unsafeSetProp (toJSString k) f' e
-    PFlagM b -> do
+    PFlag b -> do
       f <- toJSVal b
       unsafeSetProp (toJSString k) f a
 
@@ -92,23 +99,23 @@ props toJSM i xs = do
 instance (MonadJSM m, Eq a) => Backend (SnabbdomT a) m a where
   type VNode (SnabbdomT a) m = SnabVNode
 
-  interpret :: (m ~> JSM) -> HtmlM (SnabbdomT a m) a -> SnabbdomT a m SnabVNode
+  interpret :: (m ~> JSM) -> Html (SnabbdomT a m) a -> SnabbdomT a m SnabVNode
   interpret toJSM = \case
 
-    TextNodeM t -> liftJSM $ fromJSValUnchecked =<< toJSVal t
+    TextNode t -> liftJSM $ fromJSValUnchecked =<< toJSVal t
 
-    NodeM name ps [TextNodeM t] -> do
+    Node name ps [TextNode t] -> do
       i <- ask; liftJSM $ do
         o <- props toJSM i ps
         fromJSValUnchecked =<< jsg3 "vnode" name o t
 
-    NodeM name ps children -> do
+    Node name ps children -> do
       i <- ask; liftJSM $ do
         o <- props toJSM i ps
         traverse ((toJSM . runSnabbdom i) . interpret toJSM >=> toJSVal) children
           >>= jsg3 "vnode" name o >>= fromJSValUnchecked
 
-    PotatoM mrn -> liftJSM $ do
+    Potato mrn -> liftJSM $ do
       o <- create
       hook <- create
       rn <- mrn
@@ -126,12 +133,13 @@ instance (MonadJSM m, Eq a) => Backend (SnabbdomT a) m a where
     where f' = maybe r unVNode f
 
 
-  setup :: JSM () -> SnabbdomT a m ()
-  setup cb = liftJSM $ do
+  setup :: JSM () -> JSM ()
+  setup cb = do
     void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/Setup.js")
     void . jsg1 "startApp" . fun $ \_ _ _ -> cb
 
 
+-- | Get the @window.container@ DOM node produced by 'setup' (@Setup.js@).
 stage :: MonadJSM m => SnabbdomT a m RawNode
 stage = liftJSM $ fromJSValUnchecked =<< jsg "container"
 

@@ -1,42 +1,41 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections       #-}
 
 
 module Main where
 
 
-import Control.Arrow ( second )
-import Control.Monad.IO.Class
-import Data.Text (Text, pack)
-import Shpadoinkle
-import Shpadoinkle.Backend.ParDiff
-import Shpadoinkle.Html
+import           Control.Monad.IO.Class
+import           Data.Text                   (Text, pack)
+import           Shpadoinkle
+import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle.Html
 
 
 type Model = (Int, Text)
 
+
 type App = ParDiffT Model JSM
 
+
 data Control m = Control
-               { _debounceModel :: Debounce m Model Model
-               , _debounceInput :: Debounce m (Text -> Continuation m Model) Model
-               , _throttleModel :: Throttle m Model Model
-               , _throttleInput :: Throttle m (Text -> Continuation m Model) Model }
+  (Debounce m Model Model)
+  (Debounce m (Text -> Model) Model)
+  (Throttle m Model Model)
+  (Throttle m (Text -> Model) Model)
 
 
-view :: Monad m
-     => Control m
-     -> Model
-     -> HtmlM m Model
-view (Control (Debounce debounceModel) (Debounce debounceInput) (Throttle throttleModel) (Throttle throttleInput))
-     (count, txt) = div_
+view :: Control m -> Model -> Html m Model
+view (Control debouncer1 debouncer2 throttler1 throttler2) (count, txt) = div_
   [ text ("Count: " <> pack (show count))
-  , div_ [ button [ onClick $ (count+1, txt) ] [ text "Increment" ] ]
-  , div_ [ button [ throttleModel onClick $ (count+1, txt) ] [ text "Increment (throttle)" ] ]
-  , div_ [ button [ debounceModel onClick $ (count+1, txt) ] [ text "Increment (debounce)" ] ]
-  , div_ [ text "Debounced input", input [ debounceInput onInputE (pur . second . const) ] [ ] ]
+  , div_ [ button [ onClick (count+1, txt) ] [ text "Increment" ] ]
+  , div_ [ button [ runThrottle throttler1 onClick (count+1, txt) ] [ text "Increment (throttle)" ] ]
+  , div_ [ button [ runDebounce debouncer1 onClick (count+1, txt) ] [ text "Increment (debounce)" ] ]
+  , div_ [ text "Debounced input", input [ runDebounce debouncer2 onInput (count,) ] [ ] ]
   , div_ [ text txt ]
-  , div_ [ text "Throttled input", input [ throttleInput onInputE (pur . second . const) ] [ ] ]
+  , div_ [ text "Throttled input", input [ runThrottle throttler2 onInput (count,) ] [ ] ]
   ]
 
 
@@ -49,8 +48,5 @@ app control = do
 
 main :: IO ()
 main = do
-  control <- Control <$> (Debounce <$> debounce 1)
-                     <*> (Debounce <$> debounce 2)
-                     <*> (Throttle <$> throttle 1)
-                     <*> (Throttle <$> throttle 2)
+  control <- Control <$> debounce 1 <*> debounce 2 <*> throttle 1 <*> throttle 2
   runJSorWarp 8080 (app control)

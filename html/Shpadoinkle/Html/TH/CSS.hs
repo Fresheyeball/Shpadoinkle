@@ -34,7 +34,7 @@ import           System.IO.Unsafe            (unsafePerformIO)
 import           Text.Regex.PCRE
 #endif
 
-import           Shpadoinkle                 (IsProp)
+import           Shpadoinkle                 (Prop)
 import           Shpadoinkle.Html            (ClassList (..))
 import           Shpadoinkle.Html.Property   (textProperty')
 
@@ -81,16 +81,15 @@ toIdDec :: ByteString -> [Dec]
 toIdDec ""   = []
 toIdDec name = let
     a = VarT $ mkName "a"
-    p = VarT $ mkName "p"
-    e = VarT $ mkName "e"
+    m = VarT $ mkName "m"
     l = mkName "textProperty'"
     name' = case BS.unpack name of
               '#':rs -> rs
               rs     -> rs
     n = mkName $ "id'" <> sanitize name'
   in
-    [ SigD n (ForallT [] [AppT (AppT (ConT ''Shpadoinkle.IsProp) p) e]
-      ((AppT (AppT (TupleT 2) (ConT ''Data.Text.Text)) (AppT p a))))
+    [ SigD n
+      ((AppT (AppT (TupleT 2) (ConT ''Data.Text.Text)) (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a)))
     , ValD (VarP n) (NormalB (AppE (AppE (VarE l) (LitE (StringL "id"))) (LitE (StringL name')))) []
     ]
 

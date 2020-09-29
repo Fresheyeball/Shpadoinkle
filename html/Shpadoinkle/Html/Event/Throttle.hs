@@ -2,23 +2,24 @@
 
 
 module Shpadoinkle.Html.Event.Throttle
-  ( throttleRaw
-  , throttle
-  , Throttle (..)
+  ( throttle
+  , Throttle
+  , runThrottle
   ) where
 
 
-import Control.Monad
-import Control.Monad.IO.Class
-import Data.Text
-import Data.Time.Clock
-import GHC.Conc
-import Language.Javascript.JSaddle
-import Shpadoinkle hiding (newTVarIO)
-import Shpadoinkle.Html.Event.HandlerTransformer
+import           Control.Monad
+import           Control.Monad.IO.Class
+import           Data.Text
+import           Data.Time.Clock
+import           GHC.Conc
+import           Language.Javascript.JSaddle
+import           Shpadoinkle                 hiding (newTVarIO)
 
 
-newtype Throttle m a b = Throttle (HandlerTransformer m a b)
+newtype Throttle m a b = Throttle { runThrottle
+  :: (a -> (Text, Prop m b))
+  ->  a -> (Text, Prop m b) }
 
 
 throttleRaw :: MonadIO n
@@ -42,13 +43,11 @@ throttleRaw duration = do
     if continue then handler rn re else return done
 
 
-
-throttle :: IsProp p (Continuation m) => MonadIO n
+throttle :: MonadIO n
          => NominalDiffTime
-         -> n ( (b -> (Text, p a))
-             ->  b -> (Text, p a) )
+         -> n (Throttle m a b)
 throttle duration = do
   f <- throttleRaw duration
-  return $ \g x ->
+  return . Throttle $ \g x ->
     let (attr, p) = g x
     in (attr, cataProp textProp (listenerProp . f) flagProp p)
