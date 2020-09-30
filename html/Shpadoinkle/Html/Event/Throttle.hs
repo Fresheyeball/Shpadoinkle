@@ -13,7 +13,6 @@ import           Control.Monad.IO.Class
 import           Data.Text
 import           Data.Time.Clock
 import           GHC.Conc
-import           Language.Javascript.JSaddle
 import           Shpadoinkle                 hiding (newTVarIO)
 
 

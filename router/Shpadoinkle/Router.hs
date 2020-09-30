@@ -64,9 +64,9 @@ import           GHCJS.DOM.EventTargetClosures
 import           GHCJS.DOM.History
 import           GHCJS.DOM.Location            (getPathname, getSearch)
 import           GHCJS.DOM.PopStateEvent
+import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
 import           GHCJS.DOM.Window
-import           Language.Javascript.JSaddle   (JSM, MonadJSM, fromJSVal, jsg,
-                                                liftJSM)
+import           Language.Javascript.JSaddle   (fromJSVal, jsg)
 import           Servant.API                   hiding (uriPath, uriQuery)
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)

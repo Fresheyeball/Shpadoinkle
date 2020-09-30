@@ -37,7 +37,8 @@ module Shpadoinkle.Html.Event where
 
 import           Control.Monad               (msum, void)
 import           Data.Text
-import           Language.Javascript.JSaddle
+import           GHCJS.DOM.Types             hiding (Text)
+import           Language.Javascript.JSaddle hiding (JSM, liftJSM, toJSString)
 
 import           Shpadoinkle
 import           Shpadoinkle.Html.TH

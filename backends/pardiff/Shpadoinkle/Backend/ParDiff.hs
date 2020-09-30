@@ -64,7 +64,7 @@ import           Data.These
 import           Data.Traversable
 import           Data.UUID
 import           GHC.Generics
-import           Language.Javascript.JSaddle hiding (MonadJSM, ( # ))
+import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, ( # ))
 import           NeatInterpolation
 import           System.Random
 import           UnliftIO

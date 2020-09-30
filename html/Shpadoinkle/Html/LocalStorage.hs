@@ -19,9 +19,9 @@ import           Data.String
 import           Data.Text
 import           GHC.Generics
 import           GHCJS.DOM
+import           GHCJS.DOM.Types     (MonadJSM, liftJSM)
 import           GHCJS.DOM.Storage
 import           GHCJS.DOM.Window
-import           JSDOM.Types         (MonadJSM, liftJSM)
 import           Text.Read
 import           UnliftIO
 import           UnliftIO.Concurrent (forkIO)

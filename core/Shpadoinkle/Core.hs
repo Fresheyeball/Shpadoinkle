@@ -70,8 +70,8 @@ import           Data.Functor.Identity
 import           Data.Kind
 import           Data.String
 import           Data.Text
-import           Language.Javascript.JSaddle      (FromJSVal (..), JSM, JSVal,
-                                                   MonadJSM, ToJSVal (..))
+import           GHCJS.DOM.Types                  (JSM, MonadJSM)
+import           Language.Javascript.JSaddle      (FromJSVal (..), JSVal, ToJSVal (..))
 import           Prelude                          hiding ((.))
 import           UnliftIO.STM                     (TVar, newTVarIO, readTVarIO)
 #ifndef ghcjs_HOST_OS
