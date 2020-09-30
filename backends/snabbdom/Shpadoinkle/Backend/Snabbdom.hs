@@ -33,7 +33,8 @@ import           Control.Monad.Reader
 import           Data.FileEmbed
 import           Data.Text
 import           Data.Traversable
-import           Language.Javascript.JSaddle hiding (( # ))
+import           GHCJS.DOM.Types             (JSM, MonadJSM, liftJSM)
+import           Language.Javascript.JSaddle hiding (( # ), JSM, MonadJSM, liftJSM)
 import           Prelude                     hiding (id, (.))
 import           UnliftIO.STM                (TVar)
 

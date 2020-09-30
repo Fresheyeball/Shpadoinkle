@@ -33,7 +33,7 @@ import Data.Proxy
 import Data.Text hiding (filter, find, take)
 import GHC.Generics
 
-import Language.Javascript.JSaddle hiding (JSM)
+import Language.Javascript.JSaddle hiding (JSM, MonadJSM)
 import Shpadoinkle
 import Shpadoinkle.Html (div)
 import Shpadoinkle.Widgets.Table
