@@ -52,8 +52,8 @@ onRecord = generalize
 {-|
   Split multiple Shpadoinkle views over a sum type. This is commonly the case when
   using a sum to represent pages in a single page application, but it's useful for
-  any sum. For example, consider we have a view with a model of @Either Int String@,
-  and a child @Html@ that produces 'Int's. We can compose this child onto the parent
+  any sum. For example, consider that you have a view with a model of @Either Int String@,
+  and a child @Html@ that produces 'Int's. You can compose this child onto the parent
   using '_Left' traversal like so.
 
   @
