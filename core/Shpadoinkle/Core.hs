@@ -71,7 +71,8 @@ import           Data.Kind
 import           Data.String
 import           Data.Text
 import           GHCJS.DOM.Types                  (JSM, MonadJSM)
-import           Language.Javascript.JSaddle      (FromJSVal (..), JSVal, ToJSVal (..))
+import           Language.Javascript.JSaddle      (FromJSVal (..), JSVal,
+                                                   ToJSVal (..))
 import           Prelude                          hiding ((.))
 import           UnliftIO.STM                     (TVar, newTVarIO, readTVarIO)
 #ifndef ghcjs_HOST_OS

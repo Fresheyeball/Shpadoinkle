@@ -15,10 +15,8 @@ http://shpadoinkle.cachix.org[image:https://img.shields.io/badge/Cachix-up%20to%
 
 = Shpadoinkle
 
-https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a
-programming model for user interface development. It supports flexible,
-simple, declarative code by modeling user interface interactions as
-Coalgebras. Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*.
+https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is an abstract frontend programming model, with one way data flow, and a single source of truth.
+Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*.
 
 == Documentation
 
