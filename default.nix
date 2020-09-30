@@ -5,9 +5,11 @@
 , withHoogle ? false
 , extra ? (_: b: b)
 , optimize ? true
+, system ? "x86_64-linux"
 }:
 
-let pkgs = import ./nix/pkgs.nix { inherit compiler isJS chan; }; in with pkgs; with lib;
+let pkgs = import ./nix/pkgs.nix { inherit compiler isJS system chan; }; in with pkgs; with lib;
+
 let
   optimizeJS = optimize && isJS && !inNixShell;
 

@@ -1,25 +1,45 @@
 stages:
   - build
 
-build-864-ghc:
+build-linux-864-ghc:
   stage: build
   script:
   - nix-build --argstr compiler ghc864 --fallback
 
-build-864-ghcjs:
+build-linux-864-ghcjs:
   stage: build
   script:
   - nix-build --argstr compiler ghc864 --arg isJS true --fallback
 
-shell-864-ghc:
+build-darwin-864-ghc:
   stage: build
   script:
-  - nix-shell --argstr compiler ghc864 --command "echo works" --fallback
+  - nix-build --argstr compiler ghc864 --argstr system x86_64-darwin --fallback
 
-shell-864-ghcjs:
+build-darwin-864-ghcjs:
   stage: build
   script:
-  - nix-shell --argstr compiler ghc864 --arg isJS true --command "echo works" --fallback
+  - nix-build --argstr compiler ghc864 --argstr system x86_64-darwin --arg isJS true --fallback
+
+shell-linux-864-ghc:
+  stage: build
+  script:
+  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc864 --fallback
+
+shell-linux-864-ghcjs:
+  stage: build
+  script:
+  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc864 --arg isJS true --fallback
+
+shell-darwin-864-ghc:
+  stage: build
+  script:
+  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc864 --argstr system x86_64-darwin --fallback
+
+shell-darwin-864-ghcjs:
+  stage: build
+  script:
+  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc864 --argstr system x86_64-darwin --arg isJS true --fallback
 
 antora:
   stage: build
@@ -69,11 +89,6 @@ cachix:
   script:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - cachix authtoken $AUTHTOKEN
-  - nix-build --arg isJS true                              | cachix push shpadoinkle
-  - nix-build --arg isJS false                             | cachix push shpadoinkle
-  - nix-build --arg isJS true  -A Shpadoinkle-examples.env | cachix push shpadoinkle
-  - nix-build --arg isJS false -A Shpadoinkle-examples.env | cachix push shpadoinkle
-  - nix-build --arg isJS true  -A Shpadoinkle-tests.env    | cachix push shpadoinkle
-  - nix-build --arg isJS false -A Shpadoinkle-tests.env    | cachix push shpadoinkle
+  - ./cachix.sh
   only:
   - master
