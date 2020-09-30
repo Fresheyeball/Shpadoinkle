@@ -1,5 +1,3 @@
-mkdir -p public/haddock
-
 nix-build -A Shpadoinkle.doc
 cp -r result-doc/share/doc/Shpadoinkle*/html public/core
 
