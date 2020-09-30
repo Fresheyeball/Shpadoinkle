@@ -41,11 +41,11 @@ instance MonadUnliftIO App where
 
 
 instance CRUDSpaceCraft App where
-  listSpaceCraft       = runXHR App listSpaceCraftM
-  getSpaceCraft        = runXHR App . getSpaceCraftM
-  updateSpaceCraft x y = runXHR App $ updateSpaceCraftM x y
-  createSpaceCraft     = runXHR App . createSpaceCraftM
-  deleteSpaceCraft     = runXHR App . deleteSpaceCraftM
+  listSpaceCraft       = App $ runXHR listSpaceCraftM
+  getSpaceCraft x      = App . runXHR $ getSpaceCraftM x
+  updateSpaceCraft x y = App . runXHR $ updateSpaceCraftM x y
+  createSpaceCraft x   = App . runXHR $ createSpaceCraftM x
+  deleteSpaceCraft x   = App . runXHR $ deleteSpaceCraftM x
 
 
 (listSpaceCraftM :<|> getSpaceCraftM :<|> updateSpaceCraftM :<|> createSpaceCraftM :<|> deleteSpaceCraftM)

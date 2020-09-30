@@ -31,6 +31,30 @@
     };
 
 
+  servant-client-js-src = super.fetchFromGitHub
+    { owner = "morganthomas";
+      repo = "servant-client-js";
+      rev = "9dcec8521ec18226b404d18504ddd28cd118b2d0";
+      sha256 = "10vah3qv3q3hiwidynbq272x6cg3wcan68rlxsy0i0f238vn7g96";
+   };
+
+
+  servant-jsaddle-src = super.fetchFromGitHub
+    { owner  = "haskell-servant";
+      repo   = "servant-jsaddle";
+      rev    = "6ef0204b651b259ae165c3ad94e5814213515e44";
+      sha256 = "1193iplbbqvxd0nxbzikr6x8ilc6qqi4rp8yr34zlrzi0d32lqjn";
+    };
+
+
+  ghcjs-base-stub-src = super.fetchFromGitHub
+    { owner = "morganthomas";
+      repo = "ghcjs-base-stub";
+      rev = "2743c98c736af5193317c98c38edce3e2ca2222f";
+      sha256 = "07cp0nlm0ab6z69pdsbb2rdp3gw5c874v3j3pj051041vxcbbb54";
+    };
+
+
   gitignore = util.gitignore
       [ ".git"
         "*.ghc*"
@@ -84,6 +108,7 @@ in {
           beam-core            = doJailbreak hsuper.beam-core;
           beam-migrate         = doJailbreak hsuper.beam-migrate;
           ghcid                = doJailbreak hsuper.ghcid;
+          ghcjs-base-stub      = hself.callCabal2nix "ghcjs-base-stub" ghcjs-base-stub-src {};
           generic-lens-labels  = doJailbreak hsuper.generic-lens-labels;
 
           cryptohash-sha1      = dontJS hsuper.cryptohash-sha1;
@@ -109,7 +134,8 @@ in {
           servant              = dontJS    (hself.callCabal2nix "servant"              "${servant-src}/servant" {});
           servant-server       = dontCheck (hself.callCabal2nix "servant-server"       "${servant-src}/servant-server" {});
           servant-client       = dontCheck (hself.callCabal2nix "servant-client"       "${servant-src}/servant-client" {});
-          servant-client-ghcjs = doJailbreak (dontJS (hself.callCabal2nix "servant-client-ghcjs" "${servant-src}/servant-client-ghcjs" {}));
+          servant-client-js    = hself.callCabal2nix "servant-client-js" servant-client-js-src {};
+          servant-jsaddle      = dontCheck (hself.callCabal2nix "servant-jsaddle" "${servant-jsaddle-src}" {});
           snabbdom             = hself.callCabal2nix "snabbdom" snabbdom-src {};
           jsaddle-warp         = doJailbreak (hself.callCabal2nix "jsaddle-warp"       "${jsaddle-src}/jsaddle-warp" {});
           jsaddle              = doJailbreak (hself.callCabal2nix "jsaddle"            "${jsaddle-src}/jsaddle" {});

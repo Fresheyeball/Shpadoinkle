@@ -162,7 +162,7 @@ executables:
       - condition: impl(ghcjs)
         then:
           dependencies:
-            - servant-client-ghcjs
+            - servant-client-js
         else:
           dependencies:
             - servant-client
