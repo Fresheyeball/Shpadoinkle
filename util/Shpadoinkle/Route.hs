@@ -11,7 +11,8 @@ module Shpadoinkle.Route
 
 import           Control.Isomorphic
 import           Control.Lens
-import           Language.Javascript.JSaddle
+import           GHCJS.DOM.Types (JSM)
+import           Language.Javascript.JSaddle hiding (JSM)
 import           Network.HTTP.Types.URI
 
 

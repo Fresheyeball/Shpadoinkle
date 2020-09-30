@@ -41,7 +41,6 @@ dependencies:
     - unliftio
     - ghcjs-dom
     - jsaddle          >= 0.9.7 && < 0.20
-    - jsaddle-dom
 
     - Shpadoinkle      >= 0.1 && < 0.2
 

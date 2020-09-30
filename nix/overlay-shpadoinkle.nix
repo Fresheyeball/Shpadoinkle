@@ -48,9 +48,9 @@
 
 
   ghcjs-base-stub-src = super.fetchFromGitHub
-    { owner = "morganthomas";
+    { owner = "louispan";
       repo = "ghcjs-base-stub";
-      rev = "2743c98c736af5193317c98c38edce3e2ca2222f";
+      rev = "8eaee240c9af1a2290f4572a87528f3ddb3e9f12";
       sha256 = "07cp0nlm0ab6z69pdsbb2rdp3gw5c874v3j3pj051041vxcbbb54";
     };
 
