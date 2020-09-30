@@ -8,7 +8,7 @@ Shpadoinkle is segregated into several packages that compose together or can be 
 xref:packages/core.adoc[Core] ({gitlab}/core[Gitlab], {hackage}[Hackage], https://shpadoinkle.org/core[Haddock])::
 This stores the core types and logic for Shpadoinkle.
 
-xref:packages/html.adoc[Html] ({gitlab}/html[Gitlab], {hackage}-html[Hackage])::
+xref:packages/html.adoc[Html] ({gitlab}/html[Gitlab], {hackage}-html[Hackage], https://shpadoinkle.org/html[Haddock])::
 A template-generated DSL defining HTML tags, Properties, and Events. It includes some related Utilities like keyboard support.
 
 xref:packages/backends.adoc[Static Backend] ({gitlab}/static[Gitlab], {hackage}-backend-static[Hackage], https://shpadoinkle.org/backend-static[Haddock])::
