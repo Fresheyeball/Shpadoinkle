@@ -54,6 +54,7 @@ pages:
   - nix-build docs --fallback
 
   - cp -r result/* public
+  - ./fish.sh
   - chmod -R 755 public/*
   artifacts:
     paths:
