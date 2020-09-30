@@ -2,6 +2,8 @@
 
 This module is for core types and logic.
 
+https://shpadoinkle.org/core[Haddock]
+
 == Html Type
 
 [source,haskell]

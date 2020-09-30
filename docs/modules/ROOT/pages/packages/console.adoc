@@ -2,6 +2,8 @@
 
 Support for logging to the JavaScript console, using three classes, as follows:
 
+https://shpadoinkle.org/console/index.html[Haddock]
+
 [source,haskell]
 ----
 class LogJS (c :: Type -> Constraint) where
