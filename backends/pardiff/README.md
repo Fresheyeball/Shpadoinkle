@@ -1,6 +1,7 @@
 # Shpadoinkle Backend ParDiff
 
 [![Goldwater](https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg)](https://gitlab.com/fresheyeball/Shpadoinkle)
+[![Haddock](https://img.shields.io/badge/haddock-master-informational)](https://shpadoinkle.org/backend-pardiff)
 [![BSD-3](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![built with nix](https://img.shields.io/badge/built%20with-nix-41439a)](https://builtwithnix.org)
 [![Hackage](https://img.shields.io/hackage/v/Shpadoinkle-backend-pardiff.svg)](https://hackage.haskell.org/package/Shpadoinkle-backend-pardiff)
