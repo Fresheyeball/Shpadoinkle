@@ -10,7 +10,7 @@ nix-build -A Shpadoinkle-backend-pardiff.doc
 cp -r result-doc/share/doc/Shpadoinkle-backend-pardiff-*/html public/backend-pardiff
 
 nix-build -A Shpadoinkle-backend-snabbdom.doc
-cp -r result-doc/share/doc/shpadoinkle-backend-snabbdom-*/html public/backend-snabbdom
+cp -r result-doc/share/doc/shpadoinkle-backend-snabbdom-0.1.0.1/html public/backend-snabbdom
 
 nix-build -A Shpadoinkle-backend-static.doc
 cp -r result-doc/share/doc/shpadoinkle-backend-static-*/html public/backend-static
