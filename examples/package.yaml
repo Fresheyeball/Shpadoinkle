@@ -117,6 +117,19 @@ executables:
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-widgets
 
+  animation:
+    main: Animation.hs
+    other-modules: []
+    source-dirs: .
+    dependencies:
+      - Shpadoinkle
+      - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-html
+      - text
+      - ease
+      - ghcjs-dom
+      - stm
+
   widgets:
     main: Widgets.hs
     source-dirs: ./widgets

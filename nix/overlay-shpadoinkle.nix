@@ -55,6 +55,13 @@
     };
 
 
+  ease = builtins.fetchGit {
+    url = https://gitlab.com/fresheyeball/Ease.git;
+    rev = "86c5b8696186f4f0a6b47b7556f50f9f4083cfa9";
+    ref = "master";
+  };
+
+
   gitignore = util.gitignore
       [ ".git"
         "*.ghc*"
@@ -107,6 +114,7 @@ in {
           compactable          = doJailbreak hsuper.compactable;
           beam-core            = doJailbreak hsuper.beam-core;
           beam-migrate         = doJailbreak hsuper.beam-migrate;
+          ease                 = hself.callCabal2nix "ease" ease {};
           ghcid                = doJailbreak hsuper.ghcid;
           ghcjs-base-stub      = hself.callCabal2nix "ghcjs-base-stub" ghcjs-base-stub-src {};
           generic-lens-labels  = doJailbreak hsuper.generic-lens-labels;
