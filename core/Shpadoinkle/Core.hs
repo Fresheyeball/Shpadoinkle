@@ -88,13 +88,13 @@ import           Shpadoinkle.Continuation
 -- This type backs a DSL that is then /interpreted/ into Virtual DOM
 -- by the backend of your choosing. HTML comments are not supported.
 data Html :: (Type -> Type) -> Type -> Type where
-  -- | A standard node in the dom tree
+  -- | A standard node in the DOM tree
   Node :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
   -- | If you can bake an element into a 'RawNode' then you can embed it as a baked potato.
   -- Backend does not provide any state management or abstraction to deal with
   -- custom embedded content. It's on you to decide how and when this 'RawNode' will
   -- be updated. For example, if you wanted to embed a google map as a baked potato,
-  -- and you are driving your Backend view witHtml m a 'TVar', you would need to build
+  -- and you are driving your Backend view with a 'TVar', you would need to build
   -- the 'RawNode' for this map /outside/ of your Backend view, and pass it in
   -- as an argument. The 'RawNode' is a reference you control.
   Potato :: JSM RawNode -> Html m a
@@ -103,14 +103,14 @@ data Html :: (Type -> Type) -> Type -> Type where
 
 
 -- | Properties of a DOM node. Backend does not use attributes directly,
--- but rather is focused on the more capable properties that may be set on a dom
+-- but rather is focused on the more capable properties that may be set on a DOM
 -- node in JavaScript. If you wish to add attributes, you may do so
 -- by setting its corresponding property.
 data Prop :: (Type -> Type) -> Type -> Type where
   -- | A text property
   PText :: Text -> Prop m a
   -- | Event listeners are provided with the 'RawNode' target, and the 'RawEvent', and may perform
-  -- a monadic action sucHtml m as a side effect. This is the one and only place where you may
+  -- a monadic action such as a side effect. This is the one and only place where you may
   -- introduce a custom monadic action. The JSM to compute the Continuation must be
   -- synchronous and non-blocking; otherwise race conditions may result from a Pure
   -- Continuation which sets the state based on a previous state captured by the closure.
@@ -134,7 +134,7 @@ listenM_ :: Monad m => Text -> m () -> (Text, Prop m a)
 listenM_ k = listenC k . causes
 
 
--- | Type alias for convenience. Typing out the nested brackets is tiresome.
+-- | Type alias for convenience (typing out the nested brackets is tiresome)
 type Props' m a = [(Text, Prop m a)]
 
 
@@ -215,7 +215,7 @@ instance Continuous Html where
 
 
 -- | Newtype to deal with the fact that we can't make the typeclass instances
---   for Endofunctor EndoIso and Continuous using the Props type alias.
+--   for Endofunctor EndoIso and Continuous using the Props type alias
 newtype MapProps m a = MapProps { unMapProps :: Props' m a }
 
 
@@ -383,25 +383,25 @@ listenC k = listenRaw k . const . const . return
 {-# INLINE listenC #-}
 
 
--- | Construct a listener from it's 'Text' name and an output value.
+-- | Construct a listener from its 'Text' name and an output value.
 listen :: Text -> a -> (Text, Prop m a)
 listen k = listenC k . constUpdate
 {-# INLINE listen #-}
 
 
--- | Transform the properties of some Node. This has no effect on 'TextNode's or 'Potato's
+-- | Transform the properties of some Node. This has no effect on 'TextNode's or 'Potato'es.
 mapProps :: ([(Text, Prop m a)] -> [(Text, Prop m a)]) -> Html m a -> Html m a
 mapProps f = runIdentity . props (Identity . f)
 {-# INLINE mapProps #-}
 
 
--- | Transform the children of some Node. This has no effect on 'TextNode's or 'Potato's
+-- | Transform the children of some Node. This has no effect on 'TextNode's or 'Potato'es.
 mapChildren :: ([Html m a] -> [Html m a]) -> Html m a -> Html m a
 mapChildren f = runIdentity . children (Identity . f)
 {-# INLINE mapChildren #-}
 
 
--- | Inject props into an existing 'Node'
+-- | Inject props into an existing 'Node'.
 injectProps :: [(Text, Prop m a)] -> Html m a -> Html m a
 injectProps ps = mapProps (++ ps)
 {-# INLINE injectProps #-}
@@ -416,11 +416,11 @@ class Backend b m a | b m -> a where
   -- As such we can change out the rendering of our Backend view
   -- with new backends without updating our view logic.
   type VNode b m
-  -- | A backend must be able to interpret 'Html' into its own internal Virtual DOM
+  -- | A backend must be able to interpret 'Html' into its own internal Virtual DOM.
   interpret
     :: (m ~> JSM)
-    -- ^ Natural transformation for some @m@ to 'JSM'.
-    -- This is how a Backend gets access to 'JSM' to perform the rendering side effects.
+    -- ^ Natural transformation for some @m@ to 'JSM'
+    -- (this is how a Backend gets access to 'JSM' to perform the rendering side effects)
     -> Html (b m) a
     -- ^ 'Html' to interpret
     -> b m (VNode b m)
@@ -430,22 +430,22 @@ class Backend b m a | b m -> a where
   -- new view if the Virtual DOM changed.
   patch
     :: RawNode
-    -- ^ The container for rendering the Backend view.
+    -- ^ The container for rendering the Backend view
     -> Maybe (VNode b m)
-    -- ^ Perhaps there is a previous Virtual DOM to diff against. Will be 'Nothing' on the first run.
+    -- ^ Perhaps there is a previous Virtual DOM to diff against. The value will be 'Nothing' on the first run.
     -> VNode b m
-    -- ^ New Virtual DOM to render.
+    -- ^ New Virtual DOM to render
     -> b m (VNode b m)
     -- ^ Effect producing an updated Virtual DOM. This is not needed by all backends.
     -- Some JavaScript based backends need to do this for the next tick. Regardless, whatever
     -- 'VNode' the effect produces will be passed as the previous Virtual DOM on the next render.
 
-  -- | A backend may perform some imperative setup steps
+  -- | A backend may perform some imperative setup steps.
   setup :: JSM () -> JSM ()
 
 
--- | The core view instantiation function.
--- This combines a backend, a territory, and a model
+-- | The core view instantiation function:
+-- combines a backend, a territory, and a model
 -- and renders the Backend view to the page.
 shpadoinkle
   :: forall b m a
@@ -504,9 +504,9 @@ fullPage g f i view getStage = do
 {-# INLINE fullPage #-}
 
 
--- | Wrapper around 'shpadoinkle' for full page apps
--- that do not need outside control of the territory
--- where actions are performed directly in JSM.
+-- | 'fullPageJSM' is a wrapper around 'shpadoinkle'
+-- for full page apps that do not need outside control
+-- of the territory, where actions are performed directly in JSM.
 --
 -- This set of assumptions is extremely common when starting
 -- a new project.
@@ -527,7 +527,7 @@ fullPageJSM = fullPage id
 
 -- | Start the program!
 --
--- For GHC or GHCjs. I saved you from using CPP directly. You're welcome.
+-- This function works in GHC and GHCjs. I saved you from using C preprocessor directly. You're welcome.
 runJSorWarp :: Int -> JSM () -> IO ()
 #ifdef ghcjs_HOST_OS
 runJSorWarp _ = id
@@ -540,7 +540,7 @@ runJSorWarp = run
 
 -- | Simple app
 --
--- A good starting place
+-- (a good starting place)
 simple
   :: Backend b JSM a => Monad (b JSM) => Eq a
   => (TVar a -> b JSM ~> JSM)
