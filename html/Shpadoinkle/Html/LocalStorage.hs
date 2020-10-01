@@ -14,12 +14,13 @@ module Shpadoinkle.Html.LocalStorage where
 
 
 import           Control.Monad
+import           Control.Monad.Trans.Maybe
 import           Data.Maybe
 import           Data.String
 import           Data.Text
 import           GHC.Generics
 import           GHCJS.DOM
-import           GHCJS.DOM.Types     (MonadJSM, liftJSM)
+import           GHCJS.DOM.Types     hiding (Text)
 import           GHCJS.DOM.Storage
 import           GHCJS.DOM.Window
 import           Text.Read
@@ -36,14 +37,20 @@ newtype LocalStorageKey a = LocalStorageKey { unLocalStorageKey :: Text }
 
 setStorage :: MonadJSM m => Show a => LocalStorageKey a -> a -> m ()
 setStorage (LocalStorageKey k) m = do
-  s <- getLocalStorage =<< currentWindowUnchecked
-  setItem s k $ show m
+  w <- currentWindow
+  case w of
+    Just w' -> do
+      s <- getLocalStorage w'
+      setItem s k $ show m
+      return ()
+    Nothing -> return ()
 
 
 getStorage :: MonadJSM m => Read a => LocalStorageKey a -> m (Maybe a)
-getStorage (LocalStorageKey k) = do
-  s <- getLocalStorage =<< currentWindowUnchecked
-  (>>= readMaybe) <$> getItem s k
+getStorage (LocalStorageKey k) = runMaybeT $ do
+  w <- MaybeT $ currentWindow
+  s <- MaybeT $ Just <$> getLocalStorage w
+  MaybeT $ (>>= readMaybe) <$> getItem s k
 
 
 -- Whe we should update we save
