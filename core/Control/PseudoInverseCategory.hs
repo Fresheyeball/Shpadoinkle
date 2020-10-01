@@ -29,7 +29,7 @@ import           Data.Tuple                  (swap)
 import           Prelude                     hiding (id, (.))
 
 
--- | A functor from another category to Hask. Laws:
+-- | A type satisfying this class is a functor from another category to Hask. Laws:
 --
 -- prop> piapply (f . g) = piapply f . piapply g
 -- prop> piapply id = id
@@ -38,6 +38,12 @@ class Category a => ToHask a where
   piapply :: a x y -> x -> y
 
 
+-- | For any type a satisfying this class, we can lift endofunctors of Hask into a.
+--   This mapping should constitute a functor from one monoidal category of endofunctors
+--   to the other. That statement defines the applicable laws, which are in other words:
+--
+--   prop> fmapA id = id
+--   prop> fmapA (f >>> g) = fmapA f >>> fmapA g
 class Category a => HasHaskFunctors a where
   fmapA :: Functor f => a x y -> a (f x) (f y)
 
