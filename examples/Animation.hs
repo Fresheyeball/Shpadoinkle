@@ -7,7 +7,6 @@
 module Main where
 
 
-import           Control.Concurrent                      (forkIO)
 import           Control.Concurrent.STM                  (atomically, writeTVar)
 import           Control.Monad                           (void)
 import           Control.Monad.IO.Class
@@ -37,22 +36,22 @@ dur = 3000
 
 
 view :: Double -> Html m a
-view time = H.div
+view clock = H.div
   [ textProperty "style" $
      "position:absolute;background:red;padding:10px;" <> left
-       (easeRange dur bounceOut time) ]
-  [ if | time < 500         -> "Wat?"
-       | time < 1000        -> "AAAA!!"
-       | time < dur * 0.65  -> "Oh no!"
+       (easeRange dur bounceOut clock) ]
+  [ if | clock < 500         -> "Wat?"
+       | clock < 1000        -> "AAAA!!"
+       | clock < dur * 0.65  -> "Oh no!"
        | otherwise          -> "I'm ok" ]
 
 
 animation :: Window -> TVar Double -> JSM ()
 animation w t = void $ requestAnimationFrame w =<< go where
-  go = newRequestAnimationFrameCallback $ \time -> do
-    liftIO . atomically $ writeTVar t time
+  go = newRequestAnimationFrameCallback $ \clock -> do
+    liftIO . atomically $ writeTVar t clock
     r <- go
-    if time < dur then void $ requestAnimationFrame w r else return ()
+    if clock < dur then void $ requestAnimationFrame w r else return ()
 
 
 main :: IO ()
