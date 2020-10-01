@@ -81,7 +81,7 @@ pur :: (a -> a) -> Continuation m a
 pur = Pure
 
 
--- | A continuation which doesn't touch the state and doesn't have any side effects.
+-- | A continuation which doesn't touch the state and doesn't have any side effects
 done :: Continuation m a
 done = pur id
 
@@ -93,6 +93,9 @@ impur m = Continuation . (id,) . const $ do
   return $ Continuation (f, const (return done))
 
 
+-- | This turns a kleisli arrow for computing a continuation into the continuation which
+--   reads the state, runs the monadic computation specified by the arrow on that state,
+--   and runs the resulting continuation.
 kleisli :: (a -> m (Continuation m a)) -> Continuation m a
 kleisli = Continuation . (id,)
 
@@ -365,18 +368,29 @@ shouldUpdate sun prev model = do
       go y p
 
 
+-- | A monad transformer for building up a continuation in a series of steps in a monadic computation
 newtype ContinuationT model m a = ContinuationT
   { runContinuationT :: m (a, Continuation m model) }
 
 
+-- | This adds the given continuation to the continuation being built up in the monadic context
+--   where this function is invoked.
 commit :: Monad m => Continuation m model -> ContinuationT model m ()
 commit = ContinuationT . return . ((),)
 
 
+-- | This turns a monadic computation to build up a continuation into the continuation which it
+--   represents. The actions inside monadic the computation will be run when the continuation
+--   is run. The return value of the monadic computation will be discarded.
 voidRunContinuationT :: Monad m => ContinuationT model m a -> Continuation m model
 voidRunContinuationT m = Continuation . (id,) . const $ snd <$> runContinuationT m
 
 
+-- | This turns a function for building a continuation in a monadic computation,
+--   which is parameterized by the current state of the model,
+--   into a continuation which reads the current state of the model,
+--   runs the resulting monadic computation, and runs the continuation
+--   resulting from that computation.
 kleisliT :: Monad m => (model -> ContinuationT model m a) -> Continuation m model
 kleisliT f = kleisli $ \x -> return . voidRunContinuationT $ f x
 
