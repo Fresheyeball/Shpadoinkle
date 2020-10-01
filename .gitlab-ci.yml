@@ -1,5 +1,6 @@
 stages:
   - build
+  - pages
   - cachix
 
 build-linux-864-ghc:
@@ -64,7 +65,10 @@ antora:
 #     untracked: true
 
 pages:
-  stage: build
+  stage: pages
+  needs:
+  - antora
+  - build-linux-864-ghcjs
   script:
   - nix-build --arg isJS true -A Shpadoinkle-examples --fallback
 
@@ -87,6 +91,15 @@ pages:
 
 cachix:
   stage: cachix
+  needs:
+  - build-linux-864-ghc
+  - build-linux-864-ghcjs
+  - build-darwin-864-ghc
+  - build-darwin-864-ghcjs
+  - shell-linux-864-ghc
+  - shell-linux-864-ghcjs
+  - shell-darwin-864-ghc
+  - shell-darwin-864-ghcjs
   script:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - cachix authtoken $AUTHTOKEN
