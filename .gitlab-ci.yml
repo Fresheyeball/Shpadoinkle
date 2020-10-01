@@ -1,5 +1,6 @@
 stages:
   - build
+  - cachix
 
 build-linux-864-ghc:
   stage: build
@@ -85,7 +86,7 @@ pages:
 
 
 cachix:
-  stage: build
+  stage: cachix
   script:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - cachix authtoken $AUTHTOKEN
