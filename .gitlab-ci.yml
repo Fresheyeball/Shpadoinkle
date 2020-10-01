@@ -1,7 +1,7 @@
 stages:
   - build
-  - pages
   - cachix
+  - pages
 
 build-linux-864-ghc:
   stage: build
