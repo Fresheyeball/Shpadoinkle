@@ -1,10 +1,10 @@
 = Router
 
+https://shpadoinkle.org/router[Haddock]
+
 This package contains a SPA (Single Page Application) router, based on https://www.servant.dev[Servant] combinators.
 
 The routing schema is a surjection between URLs and routes, in that more than one URL could result in the same route.
-
-https://shpadoinkle.org/router[Haddock]
 
 [source,haskell]
 ----

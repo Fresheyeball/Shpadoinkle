@@ -1,8 +1,8 @@
 = Html
 
-This package exposes a Haskell-generated template Digital Subscriber Line (DSL) of HTML tags, as well as properties. While not complete, this package is intended to eventually house utilities for web APIs.
-
 https://shpadoinkle.org/html[Haddock]
+
+This package exposes a Haskell-generated template Digital Subscriber Line (DSL) of HTML tags, as well as properties. While not complete, this package is intended to eventually house utilities for web APIs.
 
 == Named Tags
 

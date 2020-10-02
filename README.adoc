@@ -23,7 +23,7 @@ Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*.
 * https://shpadoinkle.org/docs/index.html[Home Page]
 * https://shpadoinkle.org/docs/getting-started/index.html[Getting Started]
 * https://shpadoinkle.org/docs/tutorial/index.html[Tutorial]
-* https://shpadoinkle.org/docs/getting-started/extend-an-example.html[Extending an Example]
+* https://shpadoinkle.org/docs/packages/index.html[Packages]
 
 == Snowman
 
