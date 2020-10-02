@@ -38,9 +38,9 @@ class Category a => ToHask a where
   piapply :: a x y -> x -> y
 
 
--- | For any type a satisfying this class, we can lift endofunctors of Hask into a.
+-- | For any type @a@ satisfying this class, we can lift endofunctors of Hask into @a@.
 --   This mapping should constitute a functor from one monoidal category of endofunctors
---   to the other. That statement defines the applicable laws, which are in other words:
+--   to the other. That statement defines the applicable laws, which are, in other words:
 --
 --   prop> fmapA id = id
 --   prop> fmapA (f >>> g) = fmapA f >>> fmapA g
@@ -49,7 +49,7 @@ class Category a => HasHaskFunctors a where
 
 
 -- | A pseudo-inverse category is a category where every morphism has a pseudo-inverse.
---  What this means is defined by the following laws (and perhaps things can be removed
+--  What this means is defined by the following laws (perhaps things can be removed
 --  and perhaps things should be added):
 --
 -- prop> pipower 1 f = f
@@ -65,7 +65,7 @@ class Category a => HasHaskFunctors a where
 -- prop> piinverse (piright f) = piright f
 --
 class Category a => PseudoInverseCategory a where
-  -- | Apply a morphism n times, n >= 0.
+  -- | Apply a morphism /n/ times, /n/ >= 0.
   pipower :: Int -> a x y -> a x y
 
   -- | Change a morphism into an endomorphism of its domain.
@@ -75,9 +75,9 @@ class Category a => PseudoInverseCategory a where
   piright :: a x y -> a y y
 
   -- | Pseudo-invert a morphism. The pseudo-inverse of a morphism may or may not
-  --   be its inverse. f is the inverse of g means that f.g = id = g.f.
-  --   If f has an inverse, then piinverse f may or may not be the inverse
-  --   of f.
+  --   be its inverse. @f@ is the inverse of @g@ means that @f.g = id = g.f@.
+  --   If @f@ has an inverse, then @piinverse f@ may or may not be the inverse
+  --   of @f@.
   piinverse :: a x y -> a y x
 
 
@@ -133,7 +133,7 @@ piassoc = piiso (\((x,y),z) -> (x,(y,z))) (\(x,(y,z)) -> ((x,y),z))
 
 -- | This is a pseudo-inverse category where a morphism is a composition of an endomorphism
 --   on the domain and an isomorphism of the domain with the codomain.
---   The last two arguments are required to form an isomorphism, i.e. for all EndoIso f g h:
+--   The last two arguments are required to form an isomorphism, i.e. for all @EndoIso f g h@:
 --
 -- prop> g . h = id
 -- prop> h . g = id
