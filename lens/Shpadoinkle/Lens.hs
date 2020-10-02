@@ -25,10 +25,10 @@ import           Shpadoinkle.Continuation
 generalize, onRecord :: forall f m s a. Functor m => Continuous f => Lens' s a -> f m a -> f m s
 {-|
   Compose multiple Shpadoinkle views onto a product type, most frequently a record.
-  Let's say we have @Html@ which produces 'Int's. And we need to use it in a view
+  Let's say we have @Html@ which produces 'Int's, and we need to use it in a view
   with more components. The model for such a view might be @(Int, String)@. To use
   our child @Html@ inside the parent, we can assign produced @Int@s to the parent
-  tuple by using the '_1' lens like so.
+  tuple by using the '_1' lens like so:
 
   @
   child :: Html Int
@@ -52,9 +52,9 @@ onRecord = generalize
 {-|
   Split multiple Shpadoinkle views over a sum type. This is commonly the case when
   using a sum to represent pages in a single page application, but it's useful for
-  any sum. For example, consider that you have a view with a model of @Either Int String@,
+  any sum. For example, consider that you have a view with a model of @Either Int String@
   and a child @Html@ that produces 'Int's. You can compose this child onto the parent
-  using '_Left' traversal like so.
+  using '_Left' traversal like so:
 
   @
   child :: Html Int
