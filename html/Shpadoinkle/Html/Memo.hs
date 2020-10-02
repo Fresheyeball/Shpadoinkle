@@ -4,8 +4,8 @@
 
 
 {-|
-  The memo function remembers the last arguement passed, and the last result.
-  When a new value is passed, it compares it with the previous value, if they match,
+  The memo function remembers the last argument passed and the last result.
+  When a new value is passed, it compares it with the previous value and if they match,
   the previous result is returned from memory. This is useful when computing Html
   is expensive and benefits from memoization.
 -}
