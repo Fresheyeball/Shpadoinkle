@@ -21,9 +21,7 @@
 
 
 {-|
-   I think I know precisely what I mean.
-
-   Shpadoinkle is an abstract frontend programming model, with one way data flow, and a single source of truth.
+   Shpadoinkle is an abstract frontend programming model, with one-way data flow, and a single source of truth.
    This module provides a parsimonious implementation of Shpadoinkle with few implementation details.
 -}
 
@@ -86,16 +84,16 @@ import           Shpadoinkle.Continuation
 -- | This is the core type in Backend.
 -- Please note, this is NOT the Virtual DOM used by Backend.
 -- This type backs a DSL that is then /interpreted/ into Virtual DOM
--- by the backend of your choosing. HTML comments are not supported.
+-- by the Backend of your choosing. HTML comments are not supported.
 data Html :: (Type -> Type) -> Type -> Type where
   -- | A standard node in the DOM tree
   Node :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
   -- | If you can bake an element into a 'RawNode' then you can embed it as a baked potato.
   -- Backend does not provide any state management or abstraction to deal with
-  -- custom embedded content. It's on you to decide how and when this 'RawNode' will
-  -- be updated. For example, if you wanted to embed a google map as a baked potato,
+  -- custom embedded content; it's on you to decide how and when this 'RawNode' will
+  -- be updated. For example, if you wanted to embed a Google map as a baked potato,
   -- and you are driving your Backend view with a 'TVar', you would need to build
-  -- the 'RawNode' for this map /outside/ of your Backend view, and pass it in
+  -- the 'RawNode' for this map /outside/ of your Backend view and pass it in
   -- as an argument. The 'RawNode' is a reference you control.
   Potato :: JSM RawNode -> Html m a
   -- | The humble text node
@@ -114,7 +112,7 @@ data Prop :: (Type -> Type) -> Type -> Type where
   -- introduce a custom monadic action. The JSM to compute the Continuation must be
   -- synchronous and non-blocking; otherwise race conditions may result from a Pure
   -- Continuation which sets the state based on a previous state captured by the closure.
-  -- Such continuations must be executed synchronously during event bubbling,
+  -- Such Continuations must be executed synchronously during event propagation,
   -- and that may not be the case if the code to compute the Continuation of some
   -- listener is blocking.
   PListener :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> Prop m a
@@ -187,8 +185,8 @@ instance Monad m => F.Functor EndoIso EndoIso (Html m) where
   {-# INLINE map #-}
 
 
--- | Prop is a functor in the EndoIso category (where the objects are types
---  and the morphisms are EndoIsos).
+-- | Prop is a functor in the EndoIso category, where the objects are types
+--  and the morphisms are EndoIsos.
 instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
   map :: forall a b. EndoIso a b -> EndoIso (Prop m a) (Prop m b)
   map f = EndoIso id mapFwd mapBack
@@ -205,8 +203,8 @@ instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
   {-# INLINE map #-}
 
 
--- | Given a lens, you can change the type of an Html, by using the lens
---   to convert the types of the continuations inside it.
+-- | Given a lens, you can change the type of an Html by using the lens
+--   to convert the types of the Continuations inside it.
 instance Continuous Html where
   mapC f (Node t ps es) = Node t (unMapProps . mapC f $ MapProps ps) (mapC f <$> es)
   mapC _ (Potato p) = Potato p
@@ -219,22 +217,22 @@ instance Continuous Html where
 newtype MapProps m a = MapProps { unMapProps :: Props' m a }
 
 
--- | Props is a functor in the EndoIso category (where the objects are
---  types and the morphisms are EndoIsos).
+-- | Props is a functor in the EndoIso category, where the objects are
+--  types and the morphisms are EndoIsos.
 instance Monad m => F.Functor EndoIso EndoIso (MapProps m) where
   map f = piiso MapProps unMapProps . fmapA (pisecond (F.map f)) . piiso unMapProps MapProps
   {-# INLINE map #-}
 
 
--- | Given a lens, you can change the type of a Props, by using the lens
---   to convert the types of the continuations inside.
+-- | Given a lens, you can change the type of a Props by using the lens
+--   to convert the types of the Continuations inside.
 instance Continuous MapProps where
   mapC f = MapProps . fmap (second (mapC f)) . unMapProps
   {-# INLINE mapC #-}
 
 
--- | Given a lens, you can change the type of a Prop, by using the
---   lens to convert the types of the continuations which it contains
+-- | Given a lens, you can change the type of a Prop by using the
+--   lens to convert the types of the Continuations which it contains
 --   if it is a listener.
 instance Continuous Prop where
   mapC _ (PText t)     = PText t
@@ -344,7 +342,7 @@ type m ~> n = forall a. m a -> n a
 
 
 -- | A DOM node reference.
--- Useful for building baked potatoes, and binding a Backend view to the page
+-- Useful for building baked potatoes and binding a Backend view to the page
 newtype RawNode  = RawNode  { unRawNode  :: JSVal }
 instance ToJSVal   RawNode where toJSVal   = return . unRawNode
 instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
@@ -426,7 +424,7 @@ class Backend b m a | b m -> a where
     -> b m (VNode b m)
     -- ^ Effect producing the Virtual DOM representation
 
-  -- | A backend must be able to patch the 'RawNode' containing the view, with a
+  -- | A Backend must be able to patch the 'RawNode' containing the view, with a
   -- new view if the Virtual DOM changed.
   patch
     :: RawNode
@@ -437,14 +435,14 @@ class Backend b m a | b m -> a where
     -- ^ New Virtual DOM to render
     -> b m (VNode b m)
     -- ^ Effect producing an updated Virtual DOM. This is not needed by all backends.
-    -- Some JavaScript based backends need to do this for the next tick. Regardless, whatever
+    -- Some JavaScript-based backends need to do this for the next tick. Regardless, whatever
     -- 'VNode' the effect produces will be passed as the previous Virtual DOM on the next render.
 
-  -- | A backend may perform some imperative setup steps.
+  -- | A Backend may perform some imperative setup steps.
   setup :: JSM () -> JSM ()
 
 
--- | The core view instantiation function:
+-- | The core view instantiation function
 -- combines a backend, a territory, and a model
 -- and renders the Backend view to the page.
 shpadoinkle
