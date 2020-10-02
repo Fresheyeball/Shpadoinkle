@@ -15,8 +15,8 @@
 -- | Since the single page application URIs are specified with Servant, we can automate much
 -- of the process of serving the application with server-side rendering. This module provides
 -- the basic infrastructure for serving rendered HTML using the same code that would be used
--- to render the same route on the client-side. Ensuring a consistent rendering, whether a
--- URI is accessed via a client-side popstate event, or via the initial page load.
+-- to render the same route on the client-side, ensuring a consistent rendering, whether a
+-- URI is accessed via a client-side popstate event or via the initial page load.
 
 
 module Shpadoinkle.Router.Server where
@@ -51,7 +51,7 @@ toFile p bs = File
   }
 
 
--- | Serve index.html generated from a Shpadoinkle view, using the static backend, otherwise serve out of a directory.
+-- | Serve index.html generated from a Shpadoinkle view using the static backend, otherwise serve out of a directory.
 defaultSPAServerSettings
   :: FilePath
   -- ^ Directory to try files

@@ -2,7 +2,7 @@
 
 This package contains a SPA (Single Page Application) router, based on https://www.servant.dev[Servant] combinators.
 
-The routing schema is a surjection between URLs and routes. That is more than one URL could result in the same route.
+The routing schema is a surjection between URLs and routes, in that more than one URL could result in the same route.
 
 https://shpadoinkle.org/router[Haddock]
 
@@ -11,7 +11,7 @@ https://shpadoinkle.org/router[Haddock]
 data Route = Home | About Search
 ----
 
-We may have a url mapping as follows
+We may have a URL mapping as follows:
 
 * `https://example.com/` => `Home`
 * `https://example.com/home` => `Home`
@@ -23,7 +23,7 @@ We may have a url mapping as follows
 .Evolve Routes
 You can take advantage of this property to support legacy URLs and evolve a routing schema over time.
 
-This injective mapping in the opposite direction we will call `toRoute : URL -> Route`. To programatically navigate the application, we need a mapping from routes to URLs. This mapping documents the cannonical URL for a given route.
+This injective mapping in the opposite direction we will call `toRoute : URL -> Route`. To programatically navigate the application, we need a mapping from routes to URLs. This mapping documents the canonical URL for a given route.
 
 * `Home` => `https://example.com/home`
 * `About Nothing` => `https://example.com/v2/about`
@@ -39,11 +39,11 @@ These functions abstractly would have the following relationship:
 ----
 [NOTE]
 .Dependant Types
-These functions not directly representable in Haskell so long as we intend on using `Servant` to describe our URLs, because URL descriptors are types and routes are terms.
+These functions are not directly representable in Haskell so long as we intend on using `Servant` to describe our URLs, because URL descriptors are types and routes are terms.
 
 == Example Types
 
-Using the above example, below, you describe your types. Note again that URL descriptors are types, yet routes are terms.
+Using the above example, below you describe your types. Note again that URL descriptors are types, yet routes are terms.
 
 [source,haskell]
 ----
@@ -57,7 +57,7 @@ type SPA = "v2" :> "about" :> QueryParam "search" Search :> Raw
 
 [CAUTION]
 .Order and Specificity
-You must consider the order of the URLs separated by `:<|>`. Servant works like a pattern match, going from top to bottom. However because the match is type level, unreachable routes are entirely possible (GHC does not support checking for unreachable type level patterns). So think carefully about order and specificity.
+You must consider the order of the URLs separated by `:<|>`. Servant works like a pattern match, going from top to bottom, however because the match is type level, unreachable routes are entirely possible (GHC does not support checking for unreachable type level patterns), so think carefully about order and specificity.
 
 == To Route
 
@@ -72,11 +72,11 @@ routes = About <1>
     :<|> Home
 ----
 
-<1> Because you used `QueryParam "search" Search` in the first route, at this location in the mapping, you must provide a function of type `Maybe Search -> Route`.
+<1> Because you used `QueryParam "search" Search` in the first route, at this location in the mapping you must provide a function of type `Maybe Search -> Route`.
 
 [CAUTION]
 .Order is important
-The burden is on the developer to put the right constructor at each location in the Servant specification; which while typically safe, it is not fool proof.
+The burden is on the developer to put the right constructor at each location in the Servant specification, which while typically safe, is not fool-proof.
 
 == From Route
 
@@ -94,7 +94,7 @@ The above mapping is type safe, and URLs not present in the `SPA` type will not 
 
 == Running the Router
 
-To use the router, it is expected that you use an function to start your application (such as {hackage}-router/docs/Shpadoinkle-Router.html#v:fullPageSPA[fullPageSPA]), where there is a `(r -> m a)` argument, and where you can describe how to obtain an application state based on a given route. This is useful both for pure frontend applications, as well as applications that use isomorphic rendering with the static renderer.
+To use the router, it is expected that you use a function to start your application (such as {hackage}-router/docs/Shpadoinkle-Router.html#v:fullPageSPA[fullPageSPA]), where there is a `(r -> m a)` argument and where you can describe how to obtain an application state based on a given route. This is useful both for pure frontend applications, as well as applications that use isomorphic rendering with the static renderer.
 
 This is typically a relationship between Routes and a sum type of page data. You can use the `m` in `(r -> m a)` to perform IO and populate our model with data: 
 
@@ -114,5 +114,4 @@ initial = \case
     AboutPage search $ searchFilter search posts
 ----
 
-For an example that takes advantage of server side rendering, isomorphic `Servant` route sharing, see the {gitlab}/examples/servant-crud[Servant CRUD Example].
-
+For an example that takes advantage of server-side rendering, isomorphic `Servant` route sharing, see the {gitlab}/examples/servant-crud[Servant CRUD Example].

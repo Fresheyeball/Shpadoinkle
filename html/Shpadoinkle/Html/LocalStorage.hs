@@ -7,7 +7,7 @@
 
 
 -- | Local storage IO operations
--- Get and set localstorage values from some 'LocalStorageKey'
+-- Get and set local storage values from some 'LocalStorageKey'
 
 
 module Shpadoinkle.Html.LocalStorage where
@@ -53,7 +53,7 @@ getStorage (LocalStorageKey k) = runMaybeT $ do
   MaybeT $ (>>= readMaybe) <$> getItem s k
 
 
--- Whe we should update we save
+-- When we should update we save
 saveOnChange :: MonadJSM m => Show a => Eq a
              => LocalStorageKey a -> TVar a -> m ()
 saveOnChange k = liftJSM . shouldUpdate (const $ setStorage k) ()

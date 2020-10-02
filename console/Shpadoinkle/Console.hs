@@ -10,8 +10,8 @@
 
 
 {-|
-  This module exposes the browser's native console logging and debugging features.
-  Including underutilized features such as time measurement, table displays, and assertions.
+  This module exposes the browser's native console logging and debugging features,
+  including underutilized features such as time measurement, table displays, and assertions.
 -}
 
 
@@ -46,7 +46,7 @@ default (Text)
    'LogJS' is the base class for logging to the browser console.
    Browser consoles contain rich tooling for exploring JavaScript objects,
    DOM nodes, and much more. To take advantage of these native features, we
-   need to choose how we are going to log. The 'LogJS' class is intented to
+   need to choose how we are going to log. The 'LogJS' class is intended to
    be used in conjunction with 'TypeApplications'.
 
    @
@@ -54,13 +54,13 @@ default (Text)
    main = logJS @ToJSON "log" $ Person "bob" "saget" 45
    @
 
-   Is effectively equivalent to:
+   is effectively equivalent to:
 
    @
    console.log({first: "bob", last: "saget", age: 45})
    @
 
-   In that the console will render with nice expand/collapse object exploration features.
+   in that the console will render with nice expand/collapse object exploration features.
 -}
 class LogJS (c :: Type -> Constraint) where
   logJS :: c a => Text -> a -> JSM ()
@@ -91,9 +91,9 @@ instance LogJS ToJSVal where
 
 
 {-|
-  Trapper is a class intended for continuous logging of your application, and the catching of helpless animals.
+  Trapper is a class intended for continuous logging of your application and the catching of helpless animals.
   Usage is along the lines of 'Debug.Trace.trace' where the effect of logging is implicit.
-  To make this work with both GHC and GHCjs contexts, you do need to
+  To make this work in both GHC and GHCjs contexts, you do need to
   pass the 'JSContextRef' in manually ('askJSM' re-exported here for convenience).
 
   @
@@ -139,7 +139,7 @@ instance Assert ToJSVal where
     () <$ console ^. js2 "assert" (toJSVal b) (toJSVal x)
 
 
--- | Log a list of json objects to the console where it will rendered as a table using <https://developer.mozilla.org/en-US/docs/Web/API/Console/table console.table>
+-- | Log a list of JSON objects to the console where it will rendered as a table using <https://developer.mozilla.org/en-US/docs/Web/API/Console/table console.table>
 table :: ToJSON a => [a] -> JSM ()
 table = logJS @ToJSON "table"
 

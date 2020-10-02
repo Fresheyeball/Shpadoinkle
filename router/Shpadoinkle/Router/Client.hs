@@ -5,7 +5,7 @@
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 {-# OPTIONS_GHC -Wno-type-defaults              #-}
 
--- | Helper for querying the server from client side code, using a derived client.
+-- | Helper for querying the server from client side code using a derived client.
 -- This module exists to save you from having to use CPP yourself.
 
 module Shpadoinkle.Router.Client

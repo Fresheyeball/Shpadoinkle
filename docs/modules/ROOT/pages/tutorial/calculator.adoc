@@ -21,10 +21,10 @@ main = runJSorWarp 8080 $ -- <1>
 ----
 
 <1> This is a little function to abstract over starting the application with GHC or GHCjs. If built with GHC it will run a server on port `8080`, if built with GHCjs it will just start the application as a normal JavaScript file.
-<2> This is the highest level wrapper around the `shpadoinkle` function provided in core. It prevents you from doing the work of choosing a `Monad` to run event handlers (defaulting to `JSM`), and creating a territory (defaulting to a `TVar`).
+<2> This is the highest-level wrapper around the `shpadoinkle` function provided in core. It prevents you from doing the work of choosing a `Monad` to run event handlers (defaulting to `JSM`), and creating a territory (defaulting to a `TVar`).
 <3> We are using the ParDiff backend. No matter how simple the app, you must still choose a backend explicitly.
 <4> The initial state. Because this is a "hello world" example, it's just `()`.
-<5> This is our view. Because we don't care about the `()` we using `const` here. `"hello world"` is an `OverloadedString`, of type `Html m a`.
+<5> This is our view. Because we don't care about the `()` we're using `const` here. `"hello world"` is an `OverloadedString` of type `Html m a`.
 <6> This is what DOM node on the page will hold our application. We use `getBody` to get the `document.body` for the page.
 
 [NOTE]
@@ -32,9 +32,9 @@ You need to stop ghcid and restart it after making _any_ changes to the .cabal f
 
 == Addition
 
-Now that we have our hello world, let's add some interactivity, and perform addition on the part of the user:
+Now that we have our hello world, let's add some interactivity and perform addition on the part of the user:
 
-To start we will need a simple single number input:
+To start, we will need a simple single number input:
 
 [source,haskell]
 ----
@@ -46,7 +46,7 @@ num x = input'
 ----
 
 <1> Set the value of the input to the current state of the application.
-<2> When an `"input"` event occurs update the state with the provided function.
+<2> When an `"input"` event occurs, update the state with the provided function.
 
 Now we can use our single number input in our view to add up two numbers for our user.
 
@@ -93,7 +93,7 @@ data Operation
   deriving (Eq, Show, Read, Enum, Bounded)
 ----
 
-And we will need some functions to get human readable display, as well as mapping to functions:
+We will need some functions to get human readable display, as well as mapping to functions:
 
 [source,haskell]
 ----
@@ -101,7 +101,7 @@ opFunction :: Operation -> (Int -> Int -> Int)
 opText :: Operation -> Text
 ----
 
-And we will use a traditional Html `<select>` element to let the user pick the operation.
+We will use a traditional Html `<select>` element to let the user pick the operation.
 
 [source,haskell]
 ----
@@ -128,7 +128,7 @@ data Model = Model
   } deriving (Eq, Show)
 ----
 
-And we will use the same technique with `liftC` to compose these components together:
+We will use the same technique with `liftC` to compose these components together:
 
 [source,haskell]
 ----
@@ -142,9 +142,9 @@ view model = div_
   ]
 ----
 
-That's it! The user can select an operation, enter two numbers and see a result rendered.
+That's it! The user can select an operation, enter two numbers, and see a result rendered.
 
-Now if you are looking at the above code, and starting to twitch, because you are a optics fiend; that is the right instinct.
+Now if you are looking at the above code and starting to twitch because you are an optics fiend, that is the right instinct.
 
 '''
 
@@ -154,8 +154,6 @@ You can see the final code https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/ma
 <iframe style="border-radius:5px;border:1px dashed blue;width:100%;height:70px" src="https://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator.jsexe/"></iframe>
 ++++
 
-Next we emulate a real world immediate execution calculator in part 3.
+Next we emulate a real-world immediate execution calculator in part 3.
 
 xref:tutorial/immediate-execution.adoc[Go to part 3: Immediate execution ->]
-
-

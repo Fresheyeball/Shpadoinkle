@@ -26,17 +26,17 @@
 
 
 {-|
-   This backend is to serve as a cannonical representation of a well
-   behaved backend. Defining well behaved in the context of web development
-   is rather difficult, and complex.
+   This backend is to serve as a canonical representation of a well-behaved
+   backend. Defining well-behaved in the context of web development
+   is rather difficult and complex.
 
    The rules of a backend are informal. Roughly, if we give the backend
-   some Html, we expect it to update the dom at runtime in the way we expect.
+   some Html, we expect it to update the DOM at runtime in the way we expect.
 
    Since this is canonical, all other backends are expected to behave
-   identically to this one. If differences exist they should be patched,
-   so that we retain renderer polymorphism. Such that we can change out
-   the renderer of our application, without updating the application logic
+   identically to this one. If differences exist they should be patched
+   so that we retain renderer polymorphism, such that we can change out
+   the renderer of our application; without updating the application logic
    with confidence it will behave as expected.
 -}
 
@@ -237,7 +237,7 @@ managePropertyState i obj' old new' = void $ do
   --  * The files properties of file elements
   -- Of these properties, checked is the only one where we know that the absence of the attribute
   -- in both the old and new (V)DOMs is consistent with the property needing to be updated
-  -- because the property was updated with the correponding attribute being absent the whole time.
+  -- because the property was updated with the corresponding attribute being absent the whole time.
   maybe (return ()) (const . voidJSM $ setProp' obj' "checked" =<< toJSVal False)
     $ M.lookup "checked" new' >>= guard . (\case { ParVFlag False -> True; _ -> False })
   M.toList (align old new') `for` \(k, x) -> case x of
@@ -261,7 +261,7 @@ managePropertyState i obj' old new' = void $ do
     These (ParVFlag t)
           (ParVFlag t')
                 | t /= t' -> setFlag obj' k t'
-    -- new listner, set
+    -- new listener, set
     That  (ParVListen _ h) -> voidJSM $ setListener i h obj' k
     -- changed listener, set
     These (ParVListen u _) (ParVListen u' h) | u /= u' -> voidJSM $ setListener i h obj' k
@@ -334,7 +334,7 @@ patch' parent old new' = do
       return $ ParNode raw name ps' cs''
 
 
-    -- node definately has changed
+    -- node definitely has changed
     (Just old', _) -> do
 
       RawNode p <- return parent

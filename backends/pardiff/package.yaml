@@ -8,9 +8,9 @@ category:     Web
 build-type:   Simple
 synopsis:     A Virtual Dom in pure Haskell, based on Html as an Alignable Functor.
 description:
-  Virtual Dom diffing in pure Haskell. The Diffing is a lawful usage of @alignWith@
-  from the @Data.These@ package. This implimentation stores a reference to the @RawNode@
-  for each node in the virtual tree, merging keyed and unkeyed virtual dom techniques.
+  Virtual DOM diffing in pure Haskell. The diffing is a lawful usage of @alignWith@
+  from the @Data.These@ package. This implementation stores a reference to the @RawNode@
+  for each node in the virtual tree, merging keyed and unkeyed virtual DOM techniques.
 
 
 ghc-options:

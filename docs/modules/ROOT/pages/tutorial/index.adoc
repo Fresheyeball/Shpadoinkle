@@ -27,7 +27,7 @@ cd Shpadoinkle-snowman
 nix-shell
 ----
 
-Now you should be setup with a development environment. Standard `cabal` toolchain should work out of the box, as well as `ghcid`.
+Now you should be set up with a development environment. Standard `cabal` toolchain should work out of the box as well as `ghcid`.
 
 === Stack
 
@@ -42,11 +42,11 @@ cd Shpadoinkle-snowman
 stack build
 ----
 
-However you will not benefit from cachix caching and so this will take some time for the initial compile.
+however you will not benefit from cachix caching and this will take some time for the initial compile.
 
 == Html
 
-Shpadoinkle Html, is an opt in module for generating Shpadoinkle Core's Html types.
+Shpadoinkle Html is an opt in module for generating Shpadoinkle Core's Html types.
 
 Each Html tag has named functions, including a plain version that accepts properties `[(Text, Prop a)]` and children `[Html a]`. Adding an underscore allows you to pass no properties. Adding a prime allows you to pass no children.
 
@@ -62,7 +62,7 @@ will render as
 <h1 id="foo" >bar</h1>
 ----
 
-Text nodes being extremely common, have an extra overloaded API.
+Text nodes, being extremely common, have an extra overloaded API.
 
 [source,haskell]
 ----
@@ -73,9 +73,9 @@ will work as well. Provided you have enabled `OverloadedStrings`.
 
 === CSS Classes
 
-Due to the frequency of use, CSS classes have a polymorphic overloaded API. This includes multiple representations, all of which become `ClassList`. Which is just a `newtype` of `Set Text`.
+Due to the frequency of use, CSS classes have a polymorphic overloaded API. This includes multiple representations, all of which become `ClassList`, which is just a `newtype` of `Set Text`.
 
-To learn more about the html package see docs xref:packages/html.adoc[here].
+To learn more about the HTML package see docs xref:packages/html.adoc[here].
 
 === Events
 
@@ -99,5 +99,3 @@ div' [ onClick doit ]
 Next we will use these concepts to build a calculator, in part 2.
 
 xref:tutorial/calculator.adoc[Go to part 2: Simple calculator ->]
-
-

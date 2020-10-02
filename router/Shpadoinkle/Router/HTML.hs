@@ -4,7 +4,7 @@
 
 
 {-|
-  HTML is a Servant combinator for the "text/html" Mime type, equipped with an instances
+  HTML is a Servant combinator for the "text/html" MIME type, equipped with instances
   for serving Shpadoinkle's 'Html' type.
 -}
 

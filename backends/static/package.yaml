@@ -8,8 +8,8 @@ category:     Web
 build-type:   Simple
 synopsis:     A backend for rendering Shpadoinkle as Text.
 description:
-  Shpadoinkle's static backend, renders Html as Text. Event listeners are ignored.
-  This is useful when rendering on the server, or for static site generation.
+  Shpadoinkle's static backend, which renders Html as Text. Event listeners are ignored.
+  This is useful when rendering on the server or for static site generation.
 
 
 ghc-options:

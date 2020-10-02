@@ -8,9 +8,9 @@ category:     Web
 build-type:   Simple
 synopsis:     A collection of common reusable types and components.
 description:
-  There are many shared abstractions between various UI's that represent
-  themselves in frameworks, and applications. This package provides a useful
-  subset of these concepts as types. Along with implimentations consuming
+  There are many shared abstractions between various UIs that represent
+  themselves in frameworks and applications. This package provides a useful
+  subset of these concepts as types along with implementations consuming
   these types.
 
 

@@ -3,18 +3,18 @@
 {-# OPTIONS_GHC -fno-warn-missing-pattern-synonym-signatures #-}
 
 
--- | Keyboard key code pattern synonyms, to make your keyEvents easier to use.
+-- | Keyboard key code pattern synonyms to make your keyEvents easier to use.
 -- When you use a listener from 'Shpadoinkle.Html.Events' that reads from the
 -- Keyboard, you will get the key in question as a 'KeyCode' which just wraps
 -- the native 'Int' key code from JavaScript.
 --
--- The named alias are to enhance code readability and ergonomics.
+-- The named aliases are to enhance code readability and ergonomics.
 --
 -- @
 --   Enter = KeyCode 13
 -- @
 --
--- I saved you from googling for the key code cowboy, you welcome.
+-- I saved you from Googling for the key code cowboy, you're welcome.
 
 
 module Shpadoinkle.Keyboard where
