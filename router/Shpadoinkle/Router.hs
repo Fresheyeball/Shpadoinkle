@@ -19,14 +19,14 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
--- | This module provides for Servant based routing for Shpadoinkle applications.
--- The technique in use is standard for Servant. We have a GADT 'Router', and some
+-- | This module provides for Servant-based routing for Shpadoinkle applications.
+-- The technique in use is standard for Servant. We have a GADT 'Router' and some
 -- type class inductive programming with class 'HasRouter'. The 'Router' the term
--- necissary for the runtime operation of single page application routing.
+-- necessary for the runtime operation of single page application routing.
 --
 -- State changes are tracked by the "popstate" event and an @MVar ()@. Ideally this is
--- done the browser's native api's only, and not an 'MVar'. However that approach is
--- blocked by a but in GHCjs which is documented <https://stackoverflow.com/questions/59954787/cant-get-dispatchevent-to-fire-in-ghcjs here>.
+-- done via the browser's native APIs only and not an 'MVar', however that approach is
+-- blocked by a bug in GHCjs which is documented <https://stackoverflow.com/questions/59954787/cant-get-dispatchevent-to-fire-in-ghcjs here>.
 
 
 module Shpadoinkle.Router (
@@ -110,10 +110,10 @@ syncRoute = unsafePerformIO newEmptyMVar
 {-# NOINLINE syncRoute #-}
 
 
--- | When using serverside rendering you may benefit from seeding the page with
--- data. This function get an assumed global variable on the page called "initState"
--- if it's found, we return that. Otherwise we use the provided (r -> m a) function
--- to generate the init state for our app, based on the currout route. Typically
+-- | When using server-side rendering you may benefit from seeding the page with
+-- data. This function get an assumed global variable on the page called "initState".
+-- If it's found, we return that, otherwise we use the provided @(r -> m a)@ function
+-- to generate the init state for our app, based on the current route. Typically
 -- this is used on the client side.
 withHydration :: (MonadJSM m, FromJSON a) => (r -> m a) -> r -> m a
 withHydration s r = do
@@ -122,7 +122,7 @@ withHydration s r = do
     Just fe -> return fe
     _       -> s r
 
--- | When using serverside rendering you may benefit from seeding the page with
+-- | When using server-side rendering, you may benefit from seeding the page with
 -- data. This function returns a script tag that makes a global variable "initState"
 -- containing a JSON representation to be used as the initial state of the application
 -- on page load. Typically this is used on the server side.
@@ -144,11 +144,11 @@ navigate r = do
       liftIO $ putMVar syncRoute ()
 
 
--- | This method wraps @shpadoinkle@ providing for a convenient entrypoint
+-- | This method wraps @shpadoinkle@, providing for a convenient entrypoint
 -- for single page applications. It wires together your normal @shpadoinkle@
--- app components with a function to respond to route changes, and the route mapping
--- itself. This flavor provides access to the full power of @Continuation@ incase you
--- need to handle in flight updates.
+-- app components with a function to respond to route changes and the route mapping
+-- itself. This flavor provides access to the full power of @Continuation@ in case you
+-- need to handle in-flight updates.
 fullPageSPAC :: forall layout b a r m
    . HasRouter layout
   => Backend b m a
@@ -184,9 +184,9 @@ fullPageSPAC toJSM backend i' view getStage onRoute routes = do
       syncPoint
 
 
--- | This method wraps @shpadoinkle@ providing for a convenient entrypoint
+-- | This method wraps @shpadoinkle@, providing for a convenient entrypoint
 -- for single page applications. It wires together your normal @shpadoinkle@
--- app components with a function to respond to route changes, and the route mapping
+-- app components with a function to respond to route changes and the route mapping
 -- itself.
 fullPageSPA :: forall layout b a r m
    . HasRouter layout
@@ -252,7 +252,7 @@ listenStateChange router handle = do
   return ()
 
 
--- | Get an @r@ from a route and url context
+-- | Get an @r@ from a route and URL context
 fromRouter :: [(Text,Text)] -> [Text] -> Router r -> Maybe r
 fromRouter queries segs = \case
     RChoice x y        -> fromRouter queries segs x <|> fromRouter queries segs y
@@ -280,11 +280,11 @@ fromRouter queries segs = \case
     RView a            -> if null segs then Just a else Nothing
 
 
--- | This type class traverses the Servant API, and sets up a function to
+-- | This type class traverses the Servant API and sets up a function to
 -- build its term level representation.
 class HasRouter layout where
-    -- | ':>>' (pronounced "routed as") should be surjective.
-    -- As in one route can be the handler for more than one url.
+    -- | ':>>' (pronounced "routed as") should be surjective,
+    -- as in one route can be the handler for more than one URL.
     type layout :>> route :: Type
     route :: layout :>> route -> Router route
 
