@@ -14,15 +14,16 @@ data Html m a
   | Potato (JSM RawNode)
 ----
 
-* `m` is a effect to run your event handlers.
+* `m` is an effect to run your event handlers.
 * `a` is what your event handlers produce.
 
-These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrainted.
+These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrained.
 
 [NOTE]
 .Not Virtual DOM
 `Html` will NOT be diffed, instead they will be marshalled into a type for a given xref:packages/backends.adoc#selecting[backend]. This separation allows the same code to run on any backend.
 
+// This needs to be reworded, I'm uncertain what's trying to be said. -ckever
 This structure is the DOM Tree. There are Nodes which contain lists of Html, and which is a leaf where you can store `Text`, and Potato where we can store a component built outside of the Shpadoinkle view (for example wrapping a JavaScript component).
 
 [NOTE]
@@ -90,7 +91,7 @@ The listener constructor is `PListener`, which has the following type:
 PListener :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> Prop m a
 ----
 
-The raw listener will always recieve the https://developer.mozilla.org/en-US/docs/Web/API/Node[`RawNode`], which is the target of the event, and the https://developer.mozilla.org/en-US/docs/Web/API/Event[`RawEvent`] which is the event object itself. Both of these `newtypes` are https://hackage.haskell.org/package/jsaddle-0.9.7.0/docs/GHCJS-Types.html#t:JSVal[JSVal]. This is needed so that you can still do low-level work; however, in practice it is expected you would use functions that allow you to ignore these raw components.
+The raw listener will always receive the https://developer.mozilla.org/en-US/docs/Web/API/Node[`RawNode`], which is the target of the event; and the https://developer.mozilla.org/en-US/docs/Web/API/Event[`RawEvent`], which is the event object itself. Both of these `newtypes` are https://hackage.haskell.org/package/jsaddle-0.9.7.0/docs/GHCJS-Types.html#t:JSVal[JSVal]. This is needed so that you can still do low-level work; in practice it is expected you would use functions that allow you to ignore these raw components.
 
 == Continuation
 
@@ -98,7 +99,7 @@ The type of a state update in Shpadoinkle. A Continuation builds up an atomic st
 
 Additionally, a Continuation stage can feature a Rollback action which cancels all state updates generated so far but allows for further state updates to be generated based on further monadic I/O computation.
 
-The functions generating each stage of the Continuation are called with states which reflect the current state of the app, with all the pure state updating functions generated so far having been applied to it, so that each stage "sees" both the current state (even if it changed since the start of computing the continuation), and the updates made so far, although those updates are not committed to the real state until the continuation finishes and they are all done atomically together.
+The functions generating each stage of the Continuation are called with states which reflect the current state of the app, with all the pure state updating functions generated so far having been applied to it, so that each stage "sees" both the current state (even if it changed since the start of computing the Continuation) and the updates made so far, although those updates are not committed to the real state until the Continuation finishes and they are all done atomically together.
 
 [source,haskell]
 ----
@@ -128,7 +129,7 @@ This packages does **not** come with a backend implementation, and an implementa
 [NOTE]
 .Monad Transformer
 ====
-`b` is expected to be a Monad Transformer, though this is not required; however in practice, `(b m)` must have in instance of `MonadJSM`.
+`b` is expected to be a Monad Transformer, though this is not required; in practice, `(b m)` must have in instance of `MonadJSM`.
 ====
 
 === VNode
@@ -144,7 +145,7 @@ In the case of binding to a JavaScript library, this would most likely be a `new
 
 === Interpret
 
-This function describes how to marshall between `Html` and the native representation (IE `VNode`):
+This function describes how to marshal between `Html` and the native representation (i.e. `VNode`):
 
 [source,haskell]
 ----
@@ -157,7 +158,7 @@ interpret
 The interpret function can be Monadic, as it is likely going to require IO to obtain the native representation.
 
 <1> Interpret is provided with a mechanism for getting from the end user provided Monad to JSM directly.
-<2> The `Html` shpadoinkle view that needs to be marshalled to the native representation for this backend.
+<2> The `Html` Shpadoinkle view that needs to be marshalled to the native representation for this backend.
 <3> A Monadic action that generates `VNode`.
 
 === Patch
@@ -201,9 +202,9 @@ In the case of JavaScript-based backends, it will likely include steps like addi
 The interface for driving the view is STM.
 
 The Haskell ecosystem has many options for concurrent data structures. Many of these containers can be marshalled to the humble `TVar`
-Theoretically. you could write instances for containers such as: https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-IORef.html#t:IORef[IORef], https://hackage.haskell.org/package/reflex-0.7.1.0/docs/Reflex-Class.html#t:Event[Event t], https://hackage.haskell.org/package/auto-0.4.3.1/docs/Control-Auto.html#t:Auto[Auto m]
+Theoretically, you could write instances for containers such as https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-IORef.html#t:IORef[IORef], https://hackage.haskell.org/package/reflex-0.7.1.0/docs/Reflex-Class.html#t:Event[Event t], and https://hackage.haskell.org/package/auto-0.4.3.1/docs/Control-Auto.html#t:Auto[Auto m]
 
-The TVar is part of ensuring Shpadoinkle applications compose with one another, as well as surrounding code. Consider a scenario where there is an existing piece of code that taps into a data stream and logs it:
+The TVar is part of ensuring Shpadoinkle applications compose with one another as well as surrounding code. Consider a scenario where there is an existing piece of code that taps into a data stream and logs it:
 
 [source,haskell]
 ----
@@ -220,15 +221,15 @@ shpadoinkle id runSnabbdom territory mempty view getBody -- <4>
 
 <1> Create a TVar of the frontend model.
 <2> Some existing code uses Conduit to read a log file.
-<3> Now, to show each Log as it passes through. simply write it to the TVar setting it with a Lens.
+<3> Now, to show each Log as it passes through, simply write it to the TVar, setting it with a Lens.
 <4> Start the application. Changes to the territory will be reflected in the view.
 
-This makes integrating the frontend state machine into existing work fairly easy, because often existing locations in the code can be used to update the `TVar`. You can also listen for state changes originating from inside the shpadoinkle application, using existing machinery such as `retry` from https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Monad-STM.html#v:retry[STM].
+This makes integrating the frontend state machine into existing work fairly easy, because often existing locations in the code can be used to update the `TVar`. You can also listen for state changes originating from inside the Shpadoinkle application using existing machinery such as `retry` from https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Monad-STM.html#v:retry[STM].
 
 
 == Shpadoinkle
 
-There is one application primitive, the `shpadoinkle` function. It is where these different components come together, and describes how they interrelate:
+There is one application primitive, the `shpadoinkle` function. It is where these different components come together and describes how they interrelate:
 
 [source,haskell]
 ----
@@ -258,6 +259,7 @@ shpadoinkle toJSM toM initial model view stage = do
 <2> Get the DOM Node on which to append the view.
 <3> Pass the initial model to the view function, then convert the `Html m` to `VNode b m`.
 <4> Render the initial `VNode b m`.
+// This is worded confusingly. -ckever
 <5> Set up `go` to run whenever `shouldUpdate`. `go` renders subsequent states.
 
 Everything else is built on top of this to simplify different setups.

@@ -34,7 +34,7 @@ import Shpadoinkle.Backend.Snabbdom
 shpadoinkle id runSnabbdom 0 territory view getBody
 ----
 
-Now the application will render with https://github.com/snabbdom/snabbdom[Snabbdom] Virtual DOM backend written in JavaScript to render instead.
+Now the application will render with the https://github.com/snabbdom/snabbdom[Snabbdom] Virtual DOM backend written in JavaScript instead.
 
 [TIP]
 ====

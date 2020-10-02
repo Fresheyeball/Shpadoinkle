@@ -23,7 +23,7 @@ The core idea here is to model user interfaces as functions with type:
 view :: Model -> Html m Model
 ----
 
-This lets you describe the view as a pure function predicated on the current application state. It also suggests that changes to application state are dictated by the view:
+This lets you describe the view as a pure function predicated on the current application state. It also suggests that changes to application state are dictated by the view.
 
 Here is a simple example, which displays a counter:
 

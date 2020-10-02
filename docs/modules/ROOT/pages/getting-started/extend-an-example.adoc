@@ -14,7 +14,7 @@ Shpadoinkle works with both https://gitlab.haskell.org/ghc/ghc[GHC] and https://
 
 === GHCjs
 
-When built with GHCjs, Shpadoinkle Haskell code is compiled to JavaScript. This is the recommended path for run code in production, for the majority of use cases.
+When built with GHCjs, Shpadoinkle Haskell code is compiled to JavaScript. This is, for the majority of use cases, the recommended path for running code in production.
 
 [source,bash]
 ----
@@ -50,7 +50,7 @@ Open `localhost:8080` in your browser.
 
 == Live development
 
-For live development building a fully optimized build from scratch with `nix-build` can be too slow. When writing code, we need rapid feedback to be productive.
+For live development, building a fully optimized build from scratch with `nix-build` can be too slow. When writing code, we need rapid feedback to be productive.
 
 === GHCID
 
@@ -65,7 +65,7 @@ nix-shell examples
 ghcid --command "cabal repl examples:counter"
 ----
 
-You can also get this with a one liner
+You can also get this with a one-liner
 
 [source,bash]
 ----
@@ -74,7 +74,7 @@ nix-shell examples --command "ghcid --command 'cabal repl examples:counter'"
 
 === Repl Serving
 
-The easiest way to get changes into your browser as fast as possible is to reload main in a REPL.
+The easiest way to get changes into your browser as fast as possible is to reload `main` in a REPL.
 
 [source,bash]
 ----

@@ -24,7 +24,7 @@ xref:packages/router.adoc[Router] ({gitlab}/router[Gitlab], {hackage}-router[Hac
  Single Page Application (SPA) router based on https://docs.servant.dev/en/stable/[Servant].
 
 xref:packages/widgets.adoc[Widgets] ({gitlab}/widgets[Gitlab], {hackage}-widgets[Hackage], https://shpadoinkle.org/widgets[Haddock])::
-Logical types and structures for common UI components, along with batteries included implementations.
+Logical types and structures for common UI components, along with batteries-included implementations.
 
 xref:packages/lens.adoc[Lens] ({gitlab}/lens[Gitlab], {hackage}-lens[Hackage], https://shpadoinkle.org/lens[Haddock])::
 Lens combinators for ergonomic composing of heterogeneous components, and after-the-fact modification of views.

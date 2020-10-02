@@ -63,7 +63,7 @@ div.addEventListener("click", () => model++);
 div' [ onClick (model + 1) ]
 ----
 
-You will also note that synchronous handlers take an `a` and asynchronous handlers are `m (a -> a)`. This is because your Monadic action may be asynchronous, and the state of the application may have changed durring that time. The returned function `(a -> a)` will be applied as a state update to whatever that state is once the action completes. Should you need to query the state of the running application in the middle of asynchronous processing, use a `Continuation m a`.
+You will also note that synchronous handlers take an `a` and asynchronous handlers are `m (a -> a)`. This is because your Monadic action may be asynchronous and the state of the application may have changed during that time. The returned function `(a -> a)` will be applied as a state update to whatever that state is once the action completes. Should you need to query the state of the running application in the middle of asynchronous processing, use a `Continuation m a`.
 
 === Affordances
 
@@ -74,11 +74,11 @@ Some listeners provide extra information. For example:
 onInput :: (Text -> a) -> (Text, Prop m a)
 ----
 
-where the `Text` will be the current value of the input element, preventing us from having to write low level code to extract the value.
+where the `Text` will be the current value of the input element, preventing us from having to write low-level code to extract the value.
 
 == Properties
 
-Instead of orienting around attributes, we orient around _properties_ in Shpadoinkle. This is because, largely you can set any attribute by properties, but not vice-versa. Credit due to https://kriszyp.github.io/alkali/[alkali] which introduced the author to this observation.
+Instead of orienting around attributes, we orient around _properties_ in Shpadoinkle. This is largely because you can set any attribute by properties, but not vice-versa. Credit due to https://kriszyp.github.io/alkali/[alkali] which introduced the author to this observation.
 
 In most cases the named function will have the same name it would have in JavaScript. For example, the following are morally equivalent:
 
@@ -93,7 +93,7 @@ div.className = "foo";
 div' [ className "foo" ]
 ----
 
-Not all properties have the same type. While we try to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impedences, or would like to suggest a function.
+Not all properties have the same type. While we try to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impedances, or would like to suggest a function.
 
 === CSS Class
 
@@ -120,7 +120,7 @@ You can also use the {hackage}-html/docs/Shpadoinkle-Html-Property.html#t:ClassL
 
 == Memo
 
-The memo function remembers the last arguement passed, and the last result. When a new value is passed, it compares it with the previous value, if they match, the previous result is returned from memory. This is useful when computing `Html` is expensive and benefits from memoization:
+The memo function remembers the last argument passed and the last result. When a new value is passed, it compares it with the previous value, and if they match, the previous result is returned from memory. This is useful when computing `Html` is expensive and benefits from memoization:
 
 [source,haskell]
 ----

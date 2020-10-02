@@ -3,13 +3,13 @@
 * xref:tutorial/index.adoc[<- See part 1, Basic concepts]
 * xref:tutorial/calculator.adoc[<- Back to part 2, Simple calculator]
 
-All the prior art on writing a calculator in GHCjs feature old school functionality namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator app, atleast let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
+All the prior articles on writing a calculator in GHCjs feature old school functionality, namely https://en.wikipedia.org/wiki/Calculator_input_methods#Immediate_execution[immediate execution], which is a terrible UX. If you ever make an actual calculator app, at least let your users type into an input the expression they want evaluated. However, this choice makes good sense, as it requires a state machine and some other properties that make it good for learning.
 
 This portion of the tutorial makes use of Lens in an effort to show how you might leverage optics in your applications.
 
 == Digits
 
-Lets model out our calculator as types. We could easily just use `Char` or `Int` to represent our numbers, however this violates the principle of *making illegal states unrepresentable*. So instead we will use an ADT and marshall.
+Let's model out our calculator as types. We could easily just use `Char` or `Int` to represent our numbers, however this violates the principle of *making illegal states unrepresentable*. So instead we will use an ADT and marshal.
 
 [source,haskell]
 ----
@@ -20,14 +20,14 @@ data Digit
   | Zero deriving (Eq, Show, Ord, Enum, Bounded)
 ----
 
-Next, before we can make buttons for the digits, we need a way marshall a `Digit` to its respective `Char`. Which can be handled nicely by a https://hackage.haskell.org/package/lens/docs/Control-Lens-Prism.html[Prism]. We need it to be a Prism because not all `Char` s have a corrosponding `Digit`.
+Next, before we can make buttons for the digits, we need a way marshal a `Digit` to its respective `Char`, which can be handled nicely by a https://hackage.haskell.org/package/lens/docs/Control-Lens-Prism.html[Prism]. We need it to be a Prism because not all `Char` s have a corresponding `Digit`.
 
 [source,haskell]
 ----
 charDigit :: Prism' Char Digit
 ----
 
-Now that we can marshall between the Haskell representation and one we can show our user, we can make a button for digits:
+Now that we can marshal between the Haskell representation and one we can show our user, we can make a button for digits:
 
 [source,haskell]
 ----
@@ -38,30 +38,30 @@ digit d = button [ onClick d -- <1>
   where d' = d ^. re charDigit . to (pack . pure)
 ----
 
-<1> When clicking the button, we send the corrosponding digit
+<1> When clicking the button, we send the corresponding digit
 <2> Add a class for styling later
 
 == Entries
 
-`Digit` gives us everything we need to represent our number pad. But it is not enough to represent a user inputed number. So we can make a simple type to represent an *entry* consisting of multiple digits.
+`Digit` gives us everything we need to represent our number pad, but it is not enough to represent a user inputed number. So we can make a simple type to represent an *entry* consisting of multiple digits.
 
 [source, haskell]
 ----
 newtype Entry = Entry [Digit]
 ----
 
-This works so long as our calculator need only work with https://en.wikipedia.org/wiki/Natural_number[Natural numbers]. However we want to do a bit more. We want to allow for decimals, as well as negative numbers.
+This works so long as our calculator need only work with https://en.wikipedia.org/wiki/Natural_number[Natural numbers], however we want to do a bit more. We want to allow for decimals as well as negative numbers.
 
 === Decimals
 
-To allow for decimals, we need to have a distinction, so when the user presses a digit on the number pad, we know wether to add it before or after the decimal. We also need to ensure that when the user presses btn:[.] we can move from one state to the other.
+To allow for decimals, we need to have a distinction so when the user presses a digit on the number pad, we know whether to add it before or after the decimal. We also need to ensure that when the user presses btn:[.] we can move from one state to the other.
 
 [source,haskell]
 ----
 data Entry = Whole [Digit] | [Digit] :<.> [Digit]
 ----
 
-With this we can implement the decimal interaction logic easily. When the user presses btn:[.] and we have a whole number, we transtion to the `:<.>` constructor.
+With this we can implement the decimal interaction logic easily. When the user presses btn:[.] and we have a whole number, we transition to the `:<.>` constructor.
 
 [source,haskell]
 ----
@@ -71,7 +71,7 @@ addDecimal = \case
   ys       -> ys
 ----
 
-When the user presses a digit btn, and we have a whole number, we append the new digit to the end of the list. Otherwise we append to the space _after_ the decimal.
+When the user presses a digit button and we have a whole number, we append the new digit to the end of the list. Otherwise, we append to the space _after_ the decimal.
 
 [source,haskell]
 ----
@@ -115,11 +115,11 @@ instance Show Entry where
     Negate e   -> '-' : show e
 ----
 
-This show instance results in an intuitive display for the user where each button press is reflected 1:1. (IE no trailing ".0" or other issues)
+This shows instance results in an intuitive display for the user where each button press is reflected 1:1. (IE no trailing ".0" or other issues)
 
 === Double
 
-Lastly on the subject of entries, we need the ability to do math. To accomplish this we need marshall entries to an actual number type (in this case `Double`), as well as marshall our results back to an `Entry`. We do this by creating an https://hackage.haskell.org/package/lens-4.19.2/docs/Control-Lens-Iso.html#t:Iso[Iso].
+Lastly on the subject of entries, we need the ability to do math. To accomplish this we need to marshal entries to an actual number type (in this case `Double`), as well as marshal our results back to an `Entry`. We do this by creating an https://hackage.haskell.org/package/lens-4.19.2/docs/Control-Lens-Iso.html#t:Iso[Iso].
 
 [source,haskell]
 ----
@@ -130,11 +130,11 @@ This allows us to easily move in both directions.
 
 [CAUTION]
 .Outlaw
-The source version is *not* a lawful isomorphism. But this outlaw is harmless. Producing a lawful instance is left as an exercise for the reader.
+The source version is *not* a lawful isomorphism, but this outlaw is harmless. Producing a lawful instance is left as an exercise for the reader.
 
 == Operators
 
-We need a represntation of operators to allow our user to perform work. We can do this with another simple enumeration:
+We need a representation of operators to allow our user to perform work. We can do this with another simple enumeration:
 
 [source,haskell]
 ----
@@ -209,7 +209,7 @@ makeFieldsNoPrefix ''Model
 
 == Buttons
 
-Now lets start building the final view. The calculator needs a readout area that shows the user the current state of the system.
+Now let's start building the final view. The calculator needs a readout area that shows the user the current state of the system.
 
 [source,haskell]
 ----
@@ -256,7 +256,7 @@ numberpad = H.div "numberpad"
   $ digit <$> [minBound .. pred maxBound] -- <1>
 ----
 
-<1> Get a list all members of out `Digit` type, excluding `Zero`. We are leveraging the derived A`Ord` instance here, as the type definition already has the digits arranged for the numberpad, with `Zero` as `maxBound`.
+<1> Get a list all members of our `Digit` type, excluding `Zero`. We are leveraging the derived `Ord` instance here, as the type definition already has the digits arranged for the number pad, with `Zero` as `maxBound`.
 <2> Split the resulting list of HTML into rows of three buttons each. (`chunksOf` is a part of `Data.List`)
 <3> Add `<br/>` between each row.
 
@@ -272,6 +272,7 @@ dot x = button [ onClick $ x & current %~ addDecimal ] [ "." ]
 
 === Arithmetic
 
+// This is ambiguous as to what's going on. We're setting the current entry then blanking it? -ckever
 Each operator button does the following:
 . Sets the operation to the given operator.
 . Sets the previous entry to be the current entry.
@@ -312,7 +313,7 @@ calcResult x = x
       Division       -> if r == 0 then l else l / r
 ----
 
-Based on the above examples, you should be able to see what is going on in this code. Writing a button to perform this operation is straight forward.
+Based on the above examples, you should be able to see what is going on in this code. Writing a button to perform this operation is straightforward.
 
 [source,haskell]
 ----
@@ -346,7 +347,7 @@ You can review the final code https://gitlab.com/fresheyeball/Shpadoinkle/-/blob
 
 [NOTE]
 .Simplicity
-There where no Monads, no message types, no FRP networking, no causality, we never considered when components render, nor how. Instead we focused on data structures and simple functions, with simple types.
+There were no Monads, no message types, no FRP networking, no causality, and we never considered when or how components render. Instead we focused on data structures, and simple functions with simple types.
 
 Thank you for your time.
 
