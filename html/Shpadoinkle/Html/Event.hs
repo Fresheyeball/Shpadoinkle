@@ -9,11 +9,11 @@
 -- | This module provides a DSL of Events found on HTML elements.
 -- This DSL is entirely optional. You may use the 'Prop's 'PListener' constructor
 -- provided by Shpadoinkle core and completely ignore this module.
--- You can use the 'listener', 'listen, 'listenRaw', 'listenC', 'listenM' convenience
--- functions as well, without using this module. But for those who like a typed
--- DSL with named function, and overloading, this is for you.
+-- You can use the 'listener', 'listen', 'listenRaw', 'listenC', and 'listenM' convenience
+-- functions as well without using this module. For those who like a typed
+-- DSL with named functions and overloading, this is for you.
 --
--- All listners come in 2 flavors. Unctuous flavors. Plain (IE 'onInput'), and monadic (IE 'onInputM').
+-- All listeners come in 2 flavors. Unctuous flavors. Plain (i.e. 'onInput') and monadic (i.e. 'onInputM').
 -- The following should hold
 --
 -- @
@@ -21,14 +21,14 @@
 -- @
 --
 -- A flavor providing access to the 'RawNode' and the 'RawEvent' are not provided
--- here. If you want access to these try the 'listenRaw' constructor. The intent
--- of this DSL is to provide a simple named functions.
+-- here. If you want access to these, try the 'listenRaw' constructor. The intent
+-- of this DSL is to provide simple named functions.
 --
--- Right now this module features limited specialization. But ideally we specialize
--- all of these listeners. For example the 'onInput' listener takes a function
--- @(Text -> m a)@ where 'Text' is the current value of the input, and 'onKeyup' takes
+-- Right now this module features limited specialization, but ideally we specialize
+-- all of these listeners. For example, the 'onInput' listener takes a function
+-- @(Text -> m a)@ where 'Text' is the current value of the input and 'onKeyup' takes
 -- a function of type @(KeyCode -> m a)@ from 'Shpadoinkle.Keyboard'. Mouse move
--- listeners for example, should take a function of @((Float, Float) -> m a)@ but
+-- listeners, for example, should take a function of @((Float, Float) -> m a)@, but
 -- this work is not yet done. See https://gitlab.com/fresheyeball/Shpadoinkle/issues/5
 
 
