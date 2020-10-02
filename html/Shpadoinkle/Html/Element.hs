@@ -3,15 +3,15 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 
--- | This module provides a DSL of HTML elements
--- This DSL is entirely optional. You may use the 'Html' constuctors
+-- | This module provides a DSL of HTML elements.
+-- This DSL is entirely optional. You may use the 'Html' constructors
 -- provided by Shpadoinkle core and completely ignore this module.
--- You can write your code `h` style and not use this module. But for
--- those who like a typed DSL with named functions for different tags
+-- You can write your code `h` style and not use this module. For
+-- those who like a typed DSL with named functions for different tags,
 -- this is for you.
 --
--- Each HTML element comes in 4 flavors. Delicous flavors. Plain (IE 'div'),
--- prime (IE 'div''), underscore (IE 'div_'), and both (IE 'div_''). The following should hold
+-- Each HTML element comes in 4 flavors. Delicious flavors. Plain (IE 'div'),
+-- prime (IE 'div\''), underscore (IE 'div_'), and both (IE 'div_\''). The following should hold
 --
 -- @
 --   x [] = x'
@@ -20,9 +20,9 @@
 --   h "x" = x
 -- @
 --
--- So plain versions like 'div' are for cases where we care about properties
--- as well as children. `div\'' is for cases where we care about children
--- but not properties. And 'div_' is for cases where we care about properties
+-- Plain versions like 'div' are for cases where we care about properties
+-- as well as children, 'div\'' is for cases where we care about children
+-- but not properties, and 'div_' is for cases where we care about properties
 -- but not children.
 --
 -- Due to 'OverloadedStrings' this yields a pleasent DSL
