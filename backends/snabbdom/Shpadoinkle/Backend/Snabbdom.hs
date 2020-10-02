@@ -17,7 +17,7 @@
 
 
 {-|
-   This module provides 'Backend' binding for the JavaScript virtual DOM implimentation <https://github.com/snabbdom/snabbdom Snabbdom>.
+   This module provides the 'Backend' binding for the JavaScript virtual DOM implementation <https://github.com/snabbdom/snabbdom Snabbdom>.
 -}
 
 
