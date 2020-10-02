@@ -274,3 +274,10 @@ hr{
    border: 0;
    border-bottom: 1px dashed #6b6b6b;
 }
+
+@media screen and (max-width: 1023px){
+  .navbar-menu .navbar-link:hover, .navbar-menu a.navbar-item:hover{
+    background: #202325;
+  }
+}
+ 
