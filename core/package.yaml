@@ -11,8 +11,8 @@ description:
   Shpadoinkle is a programming model for user interface development. It supports flexible,
   simple, declarative code by modeling user interface interactions as Coalgebras.
 
-  This package implements the bare-bones core abstraction. By performing little work
-  shpadoinkle is trivially high performance.
+  This package implements the bare-bones core abstraction. By performing little work,
+  Shpadoinkle is trivially high performance.
 
 
 ghc-options:
