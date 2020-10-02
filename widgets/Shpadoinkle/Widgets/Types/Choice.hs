@@ -92,11 +92,11 @@ instance Compactable (Choice 'Many) where
 
 
 -- | Laws:
--- ```Haskell
---  if toSet a == toSet b then a == b -- toSet is injective
---  toSet (smap f s) == fmap f (toSet s)
---  if valid s then Set.valid (toSet s)
--- ```
+-- @
+-- if toSet a == toSet b then a == b -- toSet is injective
+-- toSet (smap f s) == fmap f (toSet s)
+-- if valid s then Set.valid (toSet s)
+-- @
 class SetLike f where
   toSet :: Ord a => f a -> Set a
   smap  :: Ord b => (a -> b) -> f a -> f b
