@@ -8,17 +8,17 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
--- | This module prives a DSL for HTML properties
+-- | This module provides a DSL for HTML properties
 -- This DSL is entirely optional. You may use the 'Prop' constructors
 -- provided by Shpadoinkle core and completely ignore this module.
--- But for those who like a typed DSL with named functions for
--- different properties, and nice overloading, this is for you.
+-- For those who like a typed DSL with named functions for
+-- different properties and nice overloading, this is for you.
 --
--- Unlike Events and Elements, Properties come in one flavor. Vanilla.
+-- Unlike Events and Elements, Properties come in one flavor: Vanilla.
 --
--- Each named function documents the type of property it constructs
+-- Each named function documents the type of property it constructs,
 -- whether it be 'Text' or 'Bool'. We also support other types
--- such as `Int`, and `Float`, but via converting them to 'Text' and
+-- such as `Int` and `Float`, but via converting them to 'Text' and
 -- letting JavaScript weirdness cast them to the correct underlying type.
 
 
