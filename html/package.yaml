@@ -8,10 +8,10 @@ category:     Web
 build-type:   Simple
 synopsis:     A typed, template generated Html DSL, and helpers.
 description:
-  Shpadoinkle Html is a typed template generated Html DSL building on
+  Shpadoinkle Html is a typed template-generated Html DSL building on
   types provided by Shpadoinkle Core. This exports a large namespace
-  of terms covering most of the Html specifications. Some Elm API
-  style helpers are present but as outlaw type classes.
+  of terms covering most of the Html specifications. Some Elm-API-style
+  helpers are present, but as outlaw type classes.
 
 
 ghc-options:
