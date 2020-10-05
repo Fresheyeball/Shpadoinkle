@@ -280,4 +280,7 @@ hr{
     background: #202325;
   }
 }
- 
+
+.language-bash{
+  cursor: copy;
+}
