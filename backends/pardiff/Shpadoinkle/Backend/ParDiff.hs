@@ -17,6 +17,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -51,7 +52,9 @@ module Shpadoinkle.Backend.ParDiff
 import           Control.Applicative
 import           Control.Compactable
 import           Control.Lens
+import           Control.Monad.Base
 import           Control.Monad.Reader
+import           Control.Monad.Trans.Control
 import           Data.Align
 import           Data.Foldable
 import           Data.Kind
@@ -84,12 +87,23 @@ newtype ParDiffT model m a = ParDiffT { unParDiff :: ReaderT (TVar model) m a }
   , MonadIO
   , MonadReader (TVar model)
   , MonadTrans
+  , MonadTransControl
   )
 
 
 #ifndef ghcjs_HOST_OS
 deriving instance MonadJSM m => MonadJSM (ParDiffT model m)
 #endif
+
+
+instance MonadBase n m => MonadBase n (ParDiffT model m) where
+  liftBase = liftBaseDefault
+
+
+instance MonadBaseControl n m => MonadBaseControl n (ParDiffT model m) where
+  type StM (ParDiffT model m) a = ComposeSt (ParDiffT model) m a
+  liftBaseWith = defaultLiftBaseWith
+  restoreM = defaultRestoreM
 
 
 instance MonadUnliftIO m => MonadUnliftIO (ParDiffT r m) where
