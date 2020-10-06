@@ -262,6 +262,14 @@ pre, code, kbd, samp, tt, .src {
 	font-family:monospace;
 }
 
+.doc code {
+    background-image: initial;
+    background-color: rgb(27, 29, 30);
+    box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 1.75px;
+    padding: 0 4px;
+    border-color: rgb(49, 54, 56);
+}
+
 .links, .link {
   font-size: 85%; /* 11pt */
 }
