@@ -74,8 +74,9 @@
       ];
 
 
-  addWError = x: super.haskell.lib.overrideCabal x (drv: {
+  addFlags = x: super.haskell.lib.overrideCabal x (drv: {
     configureFlags = ["--ghc-option=-Werror"];
+    haddockFlags   = ["--css=${../etc/linuwial.css}"];
   });
 
 
@@ -92,7 +93,7 @@ in {
       let dontJS = if isJS then x: dontHaddock (dontCheck x) else id;
       in super.haskell.packages.${util.compilerjs}.override (old: {
         overrides = super.lib.composeExtensions (old.overrides or (_:_: {})) (hself: hsuper:
-        let call = n: p: addWError (hself.callCabal2nix n (gitignore p) {});
+        let call = n: p: addFlags (hself.callCabal2nix n (gitignore p) {});
         in {
 
           Shpadoinkle                  = call "Shpadoinkle"                  ../core;
