@@ -1,7 +1,7 @@
 name:         Shpadoinkle-html
 license:      BSD3
 license-file: LICENSE
-version:      0.2.0.0
+version:      0.2.0.1
 author:       Isaac Shapira
 maintainer:   fresheyeball@protonmail.com
 category:     Web
@@ -43,7 +43,7 @@ dependencies:
     - ghcjs-dom
     - jsaddle          >= 0.9.7 && < 0.20
 
-    - Shpadoinkle      >= 0.1 && < 0.2
+    - Shpadoinkle
 
 
 when:
