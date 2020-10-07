@@ -40,70 +40,70 @@ You can see an example of Shpadoinkle in the popular http://todomvc.com/[TODOMVC
 |Package |Version |Dependencies |Availablity
 |Core
 |https://hackage.haskell.org/package/Shpadoinkle[image:https://img.shields.io/hackage/v/Shpadoinkle.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle[image:https://img.shields.io/hackage-deps/v/Shpadoinkle.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle[image:https://img.shields.io/hackage-deps/v/Shpadoinkle.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle/badge[Hackage
 CI]]
 
 |Console
 |https://hackage.haskell.org/package/Shpadoinkle-console[image:https://img.shields.io/hackage/v/Shpadoinkle-console.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-console[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-console.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-console[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-console.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-console[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-console/badge[Hackage
 CI]]
 
 |Html
 |https://hackage.haskell.org/package/Shpadoinkle-html[image:https://img.shields.io/hackage/v/Shpadoinkle-html.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-html[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-html.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-html[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-html.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-html[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-html/badge[Hackage
 CI]]
 
 |Static
 |https://hackage.haskell.org/package/Shpadoinkle-backend-static[image:https://img.shields.io/hackage/v/Shpadoinkle-backend-static.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-backend-static[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-static.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-backend-static[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-static.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-static[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-static/badge[Hackage
 CI]]
 
 |ParDiff
 |https://hackage.haskell.org/package/Shpadoinkle-backend-pardiff[image:https://img.shields.io/hackage/v/Shpadoinkle-backend-pardiff.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-backend-pardiff[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-pardiff.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-backend-pardiff[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-pardiff.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-pardiff[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-pardiff/badge[Hackage
 CI]]
 
 |Snabbdom
 |https://hackage.haskell.org/package/Shpadoinkle-backend-snabbdom[image:https://img.shields.io/hackage/v/Shpadoinkle-backend-snabbdom.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-backend-snabbdom[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-snabbdom.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-backend-snabbdom[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-backend-snabbdom.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-snabbdom[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-snabbdom/badge[Hackage
 CI]]
 
 |Router
 |https://hackage.haskell.org/package/Shpadoinkle-router[image:https://img.shields.io/hackage/v/Shpadoinkle-router.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-router[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-router.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-router[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-router.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-snabbdom[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-snabbdom/badge[Hackage
 CI]]
 
 |Lens
 |https://hackage.haskell.org/package/Shpadoinkle-lens[image:https://img.shields.io/hackage/v/Shpadoinkle-lens.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-lens[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-lens.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-lens[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-lens.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-lens[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-lens/badge[Hackage
 CI]]
 
 |Widgets
 |https://hackage.haskell.org/package/Shpadoinkle-widgets[image:https://img.shields.io/hackage/v/Shpadoinkle-widgets.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-widgets[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-widgets.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-widgets[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-widgets.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge[Hackage
 CI]]
 
 |Examples
 |https://hackage.haskell.org/package/Shpadoinkle-examples[image:https://img.shields.io/hackage/v/Shpadoinkle-examples.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-examples[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-examples.svg[Hackage
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-examples[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-examples.svg[Hackage
 Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge[Hackage
 CI]]

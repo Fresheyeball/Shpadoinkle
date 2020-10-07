@@ -52,6 +52,7 @@ module Shpadoinkle.Backend.ParDiff
 import           Control.Applicative
 import           Control.Compactable
 import           Control.Lens
+import           Control.Monad.Catch
 import           Control.Monad.Base
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Control
@@ -88,6 +89,8 @@ newtype ParDiffT model m a = ParDiffT { unParDiff :: ReaderT (TVar model) m a }
   , MonadReader (TVar model)
   , MonadTrans
   , MonadTransControl
+  , MonadThrow
+  , MonadCatch
   )
 
 
