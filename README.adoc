@@ -45,6 +45,13 @@ Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle/badge[Hackage
 CI]]
 
+|Console
+|https://hackage.haskell.org/package/Shpadoinkle-console[image:https://img.shields.io/hackage/v/Shpadoinkle-console.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-console[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-console.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-console[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-console/badge[Hackage
+CI]]
+
 |Html
 |https://hackage.haskell.org/package/Shpadoinkle-html[image:https://img.shields.io/hackage/v/Shpadoinkle-html.svg[Hackage]]
 |http://packdeps.haskellers.com/reverse/Shpadoinkle-html[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-html.svg[Hackage
@@ -94,10 +101,4 @@ Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge[Hackage
 CI]]
 
-|Debug
-|https://hackage.haskell.org/package/Shpadoinkle-debug[image:https://img.shields.io/hackage/v/Shpadoinkle-debug.svg[Hackage]]
-|http://packdeps.haskellers.com/reverse/Shpadoinkle-debug[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-debug.svg[Hackage
-Deps]]
-|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-debug[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-debug/badge[Hackage
-CI]]
 |===
