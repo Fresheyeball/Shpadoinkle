@@ -87,6 +87,13 @@ Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-snabbdom[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-snabbdom/badge[Hackage
 CI]]
 
+|Lens
+|https://hackage.haskell.org/package/Shpadoinkle-lens[image:https://img.shields.io/hackage/v/Shpadoinkle-lens.svg[Hackage]]
+|http://packdeps.haskellers.com/reverse/Shpadoinkle-lens[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-lens.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-lens[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-lens/badge[Hackage
+CI]]
+
 |Widgets
 |https://hackage.haskell.org/package/Shpadoinkle-widgets[image:https://img.shields.io/hackage/v/Shpadoinkle-widgets.svg[Hackage]]
 |http://packdeps.haskellers.com/reverse/Shpadoinkle-widgets[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-widgets.svg[Hackage
