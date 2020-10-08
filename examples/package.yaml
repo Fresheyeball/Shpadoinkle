@@ -55,7 +55,7 @@ executables:
       - Shpadoinkle
       - Shpadoinkle-html
       - Shpadoinkle-lens
-      - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-backend-snabbdom
 
   lens:
     main: Lens.hs

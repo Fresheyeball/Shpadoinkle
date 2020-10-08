@@ -16,7 +16,7 @@ import           Data.Text                     hiding (count, filter, length)
 import           GHC.Generics
 import           Prelude                       hiding (div, unwords)
 import           Shpadoinkle
-import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle.Backend.Snabbdom
 import           Shpadoinkle.Html
 import           Shpadoinkle.Html.LocalStorage
 import           Shpadoinkle.Html.Memo
@@ -203,7 +203,7 @@ app = do
   initial <- readTVarIO model
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-common@1.0.5/base.css"
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-app-css@2.2.0/index.css"
-  shpadoinkle id runParDiff initial model view getBody
+  shpadoinkle id runSnabbdom initial model view getBody
 
 
 main :: IO ()
