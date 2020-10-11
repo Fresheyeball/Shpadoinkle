@@ -41,6 +41,12 @@ dependencies:
     - text
 
 
+library:
+  source-dirs: .
+  exposed-modules:
+    - Shpadoinkle.Isreal.Types
+
+
 executables:
   isreal:
     main: Main.hs

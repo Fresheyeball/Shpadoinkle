@@ -13,8 +13,7 @@ module Main where
 
 
 import           Control.Monad.IO.Class   (MonadIO (..))
-import           Data.Aeson               (FromJSON, ToJSON)
-import           Data.ByteString.Lazy     as BSL (ByteString, writeFile)
+import           Data.ByteString.Lazy     as BSL (writeFile)
 import           Data.String              (fromString)
 import           Data.Text                as T (Text, unpack)
 import           Network.Wai.Handler.Warp (run)
@@ -26,38 +25,7 @@ import           System.FilePath          ((</>))
 import           System.Process           (proc, readCreateProcessWithExitCode)
 
 
-data Options = Options
-  { territory :: FilePath
-  , swan      :: FilePath
-  }
-
-
-newtype CompileError = CompileError Text
-  deriving (ToJSON, FromJSON)
-
-
-newtype Code = Code ByteString
-deriving instance MimeUnrender OctetStream Code
-deriving instance MimeRender   OctetStream Code
-
-
-newtype SnowToken = SnowToken Text
-  deriving (FromHttpApiData)
-
-
-type API = "echo" :> Capture "echo" Text :> Get '[PlainText] Text
-   :<|> "compile"
-     :> Capture "token" SnowToken
-     :> ReqBody '[OctetStream] Code
-     :> Post    '[JSON] (Either CompileError Text)
-   :<|> "clean"
-     :> Capture "token" SnowToken
-     :> Delete '[JSON, PlainText] Text
-   :<|> "clean-all"
-     :> Delete '[JSON, PlainText] Text
-   :<|> "serve"
-     :> Capture "token" SnowToken
-     :> Raw
+import           Shpadoinkle.Isreal.Types
 
 
 getDir :: Options -> SnowToken -> FilePath
@@ -97,11 +65,11 @@ static options snow = serveDirectoryWebApp $ getDir options snow </>
 
 
 api :: Int -> Options -> IO ()
-api port options = run port $ serve (Proxy @API) $
-  pure :<|> compile  options
-       :<|> clean    options
-       :<|> cleanAll options
-       :<|> static   options
+api port options = run port $ serve (Proxy @API) $ pure
+  :<|> compile  options
+  :<|> clean    options
+  :<|> cleanAll options
+  :<|> static   options
 
 
 main :: IO ()
