@@ -10,11 +10,13 @@ imports = [
     url    = https://gitlab.com/fresheyeball/Shpadoinkle.git;
     rev    = "c7807d5bcd31563a1fbc8df24832ae10c34a3268";
     ref    = "master";
-  })}/isreal/module.nix";
+  })}/isreal/module.nix"
 ];
+
+services.shpadoinkle-isreal.enable = true;
 ```
 
-This will setup a web server where you can post code.
+This will setup a web server where you can post code. You may also customize the port and workspace location.
 
 ## Usage
 
