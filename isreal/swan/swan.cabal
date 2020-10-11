@@ -5,6 +5,14 @@ build-type:          Simple
 
 executable swan
   main-is:             Main.hs
+  extensions:          OverloadedStrings
+                     , MultiParamTypeClasses
+                     , GeneralizedNewtypeDeriving
+                     , TypeApplications
+                     , DeriveGeneric
+                     , DataKinds
+                     , KindSignatures
+                     , ScopedTypeVariables
   build-depends:       base >=4.12 && <4.16
                      , transformers
                      , lens
