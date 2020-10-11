@@ -12,3 +12,4 @@ p lens
 p widgets
 p examples
 p tests
+p isreal

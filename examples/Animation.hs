@@ -9,15 +9,20 @@ module Main where
 
 import           Control.Concurrent.STM                  (atomically, writeTVar)
 import           Control.Monad                           (void)
-import           Control.Monad.IO.Class
-import           Data.Text
-import           Ease
-import           GHCJS.DOM
-import           GHCJS.DOM.RequestAnimationFrameCallback
-import           GHCJS.DOM.Window
-import           Shpadoinkle
-import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Html                        as H
+import           Control.Monad.IO.Class                  (MonadIO (liftIO))
+import           Data.Text                               (Text, pack)
+import           Ease                                    (bounceOut)
+import           GHCJS.DOM                               (currentWindowUnchecked)
+import           GHCJS.DOM.RequestAnimationFrameCallback (newRequestAnimationFrameCallback)
+import           GHCJS.DOM.Window                        (Window,
+                                                          requestAnimationFrame)
+import           Shpadoinkle                             (Html, JSM, TVar,
+                                                          newTVarIO,
+                                                          runJSorWarp,
+                                                          shpadoinkle)
+import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom, stage)
+import           Shpadoinkle.Html                        as H (div,
+                                                               textProperty)
 
 
 default (Text)
@@ -61,4 +66,4 @@ main = do
     t <- newTVarIO 0
     w <- currentWindowUnchecked
     animation w t
-    shpadoinkle id runParDiff 0 t view getBody
+    shpadoinkle id runSnabbdom 0 t view stage

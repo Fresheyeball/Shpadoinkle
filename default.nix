@@ -19,6 +19,7 @@ let
   ghcTools = with haskell.packages.${compiler}; [ stylish-haskell cabal-install ghcid hpack ];
 
   packages = {
+
     inherit (haskell.packages.${util.compilerjs})
     Shpadoinkle
     Shpadoinkle-backend-snabbdom
@@ -30,10 +31,15 @@ let
     Shpadoinkle-router
     Shpadoinkle-widgets
     Shpadoinkle-tests;
-
     Shpadoinkle-examples = (if optimizeJS then util.doCannibalize else id)
       haskell.packages.${util.compilerjs}.Shpadoinkle-examples;
-  };
+
+    } // (if !isJS then {
+
+    inherit (haskell.packages.${util.compilerjs})
+    Shpadoinkle-isreal;
+
+    } else {});
 
 
   shellBase = {
