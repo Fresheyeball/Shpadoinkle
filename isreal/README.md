@@ -2,47 +2,58 @@
 
 Snowman as a service
 
-## Installation
+> If you build me a snowman, then I'll build one for you.
 
-```nix
-imports = [
- "${(builtins.fetchGit {
-    url    = https://gitlab.com/fresheyeball/Shpadoinkle.git;
-    rev    = "c7807d5bcd31563a1fbc8df24832ae10c34a3268";
-    ref    = "master";
-  })}/isreal/module.nix"
-];
+This service is hosted at https://isreal.shpadoinkle.org, and allows you to post
+Shpadoinkle code, and see the resulting UI in your browser. For example lets say we have
+the following file locally:
 
-services.shpadoinkle-isreal.enable = true;
+`Hello.hs` containing
+
+```haskell
+module Main where
+
+
+import           Shpadoinkle
+import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle.Html
+
+
+view :: () -> Html m ()
+view _ = "hello world"
+
+
+main :: IO ()
+main = runJSorWarp 8080 $ simple runParDiff () view getBody
 ```
 
-This will setup a web server where you can post code. You may also customize the port and workspace location.
-
-## Usage
-
-### Compile and View
-
-We will run a build with token `foo`.
+You can send this to Isreal Swan with the following `curl` command.
 
 ```bash
-echo "module Main where\nmain = putStrLn \"Howdy\"" > Test.hs
-curl -X POST -H "Content-Type:application/octet-stream" --data-binary @Test.hs http://localhost:8080/compile/foo
+curl -X POST -H "Content-Type:application/octet-stream" --data-binary @Hello.hs \
+  https://isreal.shpadoinkle.org/compile/hello-token
 ```
 
-If there was an error it will be returned. Otherwise you can view the compiled code at
+Notice **hello-token** in the URL. It's _on you_ to make this a unique token for your work,
+as the system is open ended. Reusing this token will result in incremental rebuilds, which
+are much faster. Also please note, these spaces are ephemeral and will be deleted.
 
-`http://localhost:8080/serve/foo/index.html`
+The `curl` command will respond with `Either` an error message from the compiler, or
+a message indicating success. If your code compiled successfully, you will be able to see
+the resulting UI here:
 
-### Clean up
+`https://isreal.shpadoinkle.org/serve/hello-token/index.html`
 
-Clean up one token
+
+## Deps & Such
+
+Many common haskell dependencies are provided.
+The environment is based on the cabal file located [here](https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/isreal/swan/swan.cabal).
+
+## Clean Up
+
+Clean up your token
 
 ```bash
-curl -X DELETE http://localhost:8080/clean/foo
-```
-
-Clean up everything
-
-```bash
-curl -X DELETE http://localhost:8080/clean-all
+curl -X DELETE http://localhost:8080/clean/hello-token
 ```
