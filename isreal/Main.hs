@@ -1,0 +1,112 @@
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeOperators              #-}
+
+
+module Main where
+
+
+import           Control.Monad.IO.Class   (MonadIO (..))
+import           Data.Aeson               (FromJSON, ToJSON)
+import           Data.ByteString.Lazy     as BSL (ByteString, writeFile)
+import           Data.String              (fromString)
+import           Data.Text                as T (Text, unpack)
+import           Network.Wai.Handler.Warp (run)
+import           Servant
+import qualified System.Directory         as Dir
+import           System.Environment       (getEnv)
+import           System.Exit              (ExitCode (ExitFailure, ExitSuccess))
+import           System.FilePath          ((</>))
+import           System.Process           (proc, readCreateProcessWithExitCode)
+
+
+data Options = Options
+  { territory :: FilePath
+  , swan      :: FilePath
+  }
+
+
+newtype CompileError = CompileError Text
+  deriving (ToJSON, FromJSON)
+
+
+newtype Code = Code ByteString
+deriving instance MimeUnrender OctetStream Code
+deriving instance MimeRender   OctetStream Code
+
+
+newtype SnowToken = SnowToken Text
+  deriving (FromHttpApiData)
+
+
+type API = "echo" :> Capture "echo" Text :> Get '[PlainText] Text
+   :<|> "compile"
+     :> Capture "token" SnowToken
+     :> ReqBody '[OctetStream] Code
+     :> Post    '[JSON] (Either CompileError Text)
+   :<|> "clean"
+     :> Capture "token" SnowToken
+     :> Delete '[JSON, PlainText] Text
+   :<|> "clean-all"
+     :> Delete '[JSON, PlainText] Text
+   :<|> "serve"
+     :> Capture "token" SnowToken
+     :> Raw
+
+
+getDir :: Options -> SnowToken -> FilePath
+getDir Options {..} (SnowToken snow) = territory </> T.unpack snow
+
+
+compile :: MonadIO m => Options -> SnowToken -> Code -> m (Either CompileError Text)
+compile options@Options {..} snow (Code code) = liftIO $ do
+  let dir = getDir options snow
+  Dir.createDirectoryIfMissing False dir
+  BSL.writeFile (dir </> "Main.hs") code
+  isCabal <- Dir.doesFileExist $ dir </> "swan.cabal"
+  if isCabal then pure () else Dir.createFileLink (swan </> "swan.cabal") $ dir </> "swan.cabal"
+  Dir.setCurrentDirectory dir
+  (exit, _, err) <- readCreateProcessWithExitCode (proc "cabal" ["build", "--ghcjs"]) ""
+  return $ case exit of
+    ExitSuccess   -> Right "Compiled!"
+    ExitFailure _ -> Left . CompileError $ fromString err
+
+
+clean :: MonadIO m => Options -> SnowToken -> m Text
+clean options snow@(SnowToken snow') = liftIO $ do
+  Dir.removePathForcibly $ getDir options snow
+  return $ snow' <> " is clean"
+
+
+cleanAll :: MonadIO m => Options -> m Text
+cleanAll Options {..} = liftIO $ do
+  Dir.removePathForcibly territory
+  Dir.createDirectory territory
+  return "All is clean in Colorado"
+
+
+static :: Options -> SnowToken -> ServerT Raw m
+static options snow = serveDirectoryWebApp $ getDir options snow </>
+  "dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/swan-0.1.0.0/x/swan/build/swan/swan.jsexe/"
+
+
+api :: Int -> Options -> IO ()
+api port options = run port $ serve (Proxy @API) $
+  pure :<|> compile  options
+       :<|> clean    options
+       :<|> cleanAll options
+       :<|> static   options
+
+
+main :: IO ()
+main = do
+  Prelude.putStrLn "starting to build snowmen"
+  options <- Options <$> getEnv "TERRITORY" <*> getEnv "SWAN"
+  port <- read <$> getEnv "PORT"
+  api port options

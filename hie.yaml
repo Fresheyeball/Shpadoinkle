@@ -37,6 +37,12 @@ cradle:
           cabal:
             component: "html"
 
+    - path: "./isreal/"
+      config:
+        cradle:
+          cabal:
+            component: "isreal"
+
     - path: "./examples/servant-crud/Server.hs"
       config:
         cradle:
@@ -48,6 +54,12 @@ cradle:
         cradle:
           cabal:
             component: "servant-crud-client"
+
+    - path: "./examples/Animation.hs"
+      config:
+        cradle:
+          cabal:
+            component: "animation"
 
     - path: "./examples/Counter.hs"
       config:

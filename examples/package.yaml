@@ -123,7 +123,7 @@ executables:
     source-dirs: .
     dependencies:
       - Shpadoinkle
-      - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-backend-snabbdom
       - Shpadoinkle-html
       - text
       - ease

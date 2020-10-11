@@ -1,0 +1,50 @@
+name:         Shpadoinkle-isreal
+license:      BSD3
+license-file: LICENSE
+version:      0.0.0.1
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+synopsis:     Isreal Swan will make a snowman for you!
+description:
+  Snowman as a service. The web server calls a bash script.
+  That builds inside a nix-shell. Results are returned via http.
+
+
+ghc-options:
+    - -Wall
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+extra-source-files:
+    - README.md
+    - CHANGELOG.md
+
+
+dependencies:
+    - base >= 4.12.0 && < 4.16
+    - aeson
+    - bytestring
+    - containers
+    - directory
+    - filepath
+    - process
+    - servant
+    - servant-server
+    - warp
+    - text
+
+
+executables:
+  isreal:
+    main: Main.hs
+    source-dirs: .
+
+
+git: https://gitlab.com/fresheyeball/Shpadoinkle.git

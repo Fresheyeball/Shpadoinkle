@@ -106,7 +106,7 @@ in {
           Shpadoinkle-router           = call "Shpadoinkle-router"           ../router;
           Shpadoinkle-widgets          = call "Shpadoinkle-widgets"          ../widgets;
           Shpadoinkle-examples         = call "Shpadoinkle-examples"         ../examples;
-          Shpadoinkle-experiments      = call "Shpadoinkle-experiments"      ../experiments;
+          Shpadoinkle-isreal           = call "Shpadoinkle-isreal"           ../isreal;
           Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests)       {};
 
           hashable             = dontJS hsuper.hashable;

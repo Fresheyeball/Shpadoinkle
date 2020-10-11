@@ -1,1 +1,1 @@
-packages: core, lens, backends/snabbdom, backends/pardiff, backends/static, router, console, html, widgets, examples
+packages: core, lens, backends/snabbdom, backends/pardiff, backends/static, router, console, html, widgets, examples, isreal
