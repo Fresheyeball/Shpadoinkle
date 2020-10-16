@@ -86,17 +86,7 @@ pages:
   - Build Antora
   - Shell for GHCJS 8.6 on Linux
   script:
-  - nix-build --arg isJS true -A Shpadoinkle-examples --fallback
-
-  - mkdir -p public/examples
-  - cp -r result/bin/*.jsexe public/examples
-  - rm result*
-
-  - nix-build docs --fallback
-
-  - cp -r result/* public
-  - ./fish.sh
-  - chmod -R 755 public/*
+  - ./nix/build-pages.sh
   artifacts:
     paths:
     - public
@@ -119,6 +109,6 @@ Upload to Cachix:
   script:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - cachix authtoken $AUTHTOKEN
-  - ./cachix.sh
+  - ./nix/cachix.sh
   only:
   - master
