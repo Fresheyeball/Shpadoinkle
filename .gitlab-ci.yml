@@ -3,8 +3,8 @@ stages:
   - Darwin Build
   - Linux Shell
   - Darwin Shell
-  - Documentation
-  - Deploy
+  - Antora Documentation
+  - Push Artifacts
 
 Build with GHC 8.6.5 on Linux:
   stage: Linux Build
@@ -58,6 +58,12 @@ Shell for GHCJS 8.6 on Darwin:
   script:
   - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
 
+Build Antora:
+  stage: Antora Documentation
+  needs: []
+  script:
+  - nix-build docs --fallback
+
 # test-865-ghc:
 #   stage: test
 #   script:
@@ -75,8 +81,9 @@ Shell for GHCJS 8.6 on Darwin:
 #     untracked: true
 
 pages:
-  stage: Documentation
+  stage: Push Artifacts
   needs:
+  - Build Antora
   - Build with GHCJS 8.6 on Linux
   script:
   - ./nix/build-pages.sh
@@ -89,7 +96,7 @@ pages:
 
 
 Upload to Cachix:
-  stage: Deploy
+  stage: Push Artifacts
   needs:
   - Build with GHC 8.6.5 on Linux
   - Build with GHCJS 8.6 on Linux
