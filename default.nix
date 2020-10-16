@@ -19,12 +19,6 @@ in
     util = import ./nix/util.nix { inherit compiler isJS; };
     docker = import ./examples/servant-crud/docker.nix { inherit compiler chan; };
 
-    hlsrev = "875e9b94d0358a88bd6f4cd2a35161ee1ebce896";
-
-    hls = (import (builtins.fetchTarball {
-      url = "https://github.com/NixOS/nixpkgs/archive/${hlsrev}.tar.gz";
-    }) {}).haskell.packages.${compiler}.haskell-language-server;
-
     ghcTools = with haskell.packages.${compiler}; [ cabal-install ghcid hpack ];
 
     packages = {
