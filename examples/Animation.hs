@@ -23,6 +23,7 @@ import           Shpadoinkle                             (Html, JSM, TVar,
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom, stage)
 import           Shpadoinkle.Html                        as H (div,
                                                                textProperty)
+import           UnliftIO.Concurrent                     (forkIO, threadDelay)
 
 
 default (Text)
@@ -51,9 +52,14 @@ view clock = H.div
        | otherwise          -> "I'm ok" ]
 
 
+wait :: Num n => n
+wait = 3000000
+
+
 animation :: Window -> TVar Double -> JSM ()
 animation w t = void $ requestAnimationFrame w =<< go where
-  go = newRequestAnimationFrameCallback $ \clock -> do
+  go = newRequestAnimationFrameCallback $ \clock' -> do
+    let clock = clock' - (wait / 1000)
     liftIO . atomically $ writeTVar t clock
     r <- go
     if clock < dur then void $ requestAnimationFrame w r else return ()
@@ -61,9 +67,8 @@ animation w t = void $ requestAnimationFrame w =<< go where
 
 main :: IO ()
 main = do
-  putStrLn "\nHappy point of view on https://localhost:8080\n"
   runJSorWarp 8080 $ do
     t <- newTVarIO 0
     w <- currentWindowUnchecked
-    animation w t
+    _ <- forkIO $ threadDelay wait >> animation w t
     shpadoinkle id runSnabbdom 0 t view stage

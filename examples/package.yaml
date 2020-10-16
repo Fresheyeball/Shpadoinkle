@@ -129,6 +129,7 @@ executables:
       - ease
       - ghcjs-dom
       - stm
+      - unliftio
 
   widgets:
     main: Widgets.hs
