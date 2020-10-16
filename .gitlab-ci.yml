@@ -77,7 +77,7 @@ Shell for GHCJS 8.6 on Darwin:
 pages:
   stage: Documentation
   needs:
-  - Build for GHCJS 8.6 on Linux
+  - Build with GHCJS 8.6 on Linux
   script:
   - ./nix/build-pages.sh
   artifacts:
