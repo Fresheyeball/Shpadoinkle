@@ -57,7 +57,7 @@ in
       buildInputs = ghcTools ++ [ ack util.cannibalize ];
       shellHook = ''
         cat ${./etc/figlet}
-        ./hpackall.sh | grep generated
+        ./nix/hpackall.sh | grep generated
       '';
     };
 

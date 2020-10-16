@@ -43,7 +43,7 @@ Installing Nix on MacOS should work fine, but if you end up in a sticky situatio
 
 == Cachix
 
-Some of the work done with Nix includes deviations from the official Nix package set. As such, some dependencies are not cached on https://cache.nixos.org. Building these dependencies from source can be very slow. If you would like to avoid this wait, you can pull from our https://cachix.org/[Cachix] cache of pre-built dependencies.
+Some of the work done with Nix includes deviations from the official Nix package set. As such, some dependencies are not cached on https://cache.nixos.org. Building these dependencies from source can be very slow. If you would like to avoid this wait, you can pull from our https://cachix.org/[Cachix] cache of pre-built dependencies by executing the following:
 
 [source,bash]
 ----
@@ -51,4 +51,4 @@ nix-env -iA cachix -f https://cachix.org/api/v1/install
 cachix use shpadoinkle
 ----
 
-Now builds of Shpadoinkle will used cached dependencies from https://shpadoinkle.cachix.org/[shpadoinkle.cachix.org], which are kept up to date with `master` using GitLab CI.
+After executing the above, subsequent builds will use cached dependencies from https://shpadoinkle.cachix.org/[shpadoinkle.cachix.org], which are kept up to date with `master` using GitLab CI.
