@@ -58,12 +58,6 @@ Shell for GHCJS 8.6 on Darwin:
   script:
   - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
 
-Build Antora:
-  stage: Documentation
-  needs: []
-  script:
-  - nix-build docs --fallback
-
 # test-865-ghc:
 #   stage: test
 #   script:
