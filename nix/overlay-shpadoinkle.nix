@@ -163,8 +163,9 @@ in {
           "ghcid"
           "generic-lens-labels"
         ] // forThese unmarkBroken [
-          "category"
           "alg"
+          "dual"
+          "category"
         ]);
       });
     };
