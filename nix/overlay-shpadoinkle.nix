@@ -162,6 +162,8 @@ in {
           "beam-migrate"
           "ghcid"
           "generic-lens-labels"
+        ] // forThese unmarkBroken [
+          "category"
         ]);
       });
     };
