@@ -47,13 +47,13 @@ cradle:
       config:
         cradle:
           cabal:
-            component: "servant-crud-server"
+            component: "examples:servant-crud-server"
 
-    - path: "./examples/servant-crud"
+    - path: "./examples/servant-crud/"
       config:
         cradle:
           cabal:
-            component: "servant-crud-client"
+            component: "examples:servant-crud-client"
 
     - path: "./examples/Animation.hs"
       config:
@@ -74,12 +74,6 @@ cradle:
             component: "calculator"
 
     - path: "./examples/TODOMVC.hs"
-      config:
-        cradle:
-          cabal:
-            component: "TODOMVC"
-
-    - path: "./examples/TODOMVC"
       config:
         cradle:
           cabal:

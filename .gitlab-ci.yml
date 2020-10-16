@@ -1,74 +1,90 @@
 stages:
-  - build
-  - cachix
-  - pages
+  - Linux Build
+  - Darwin Build
+  - Linux Shell
+  - Darwin Shell
+  - Antora Documentation
+  - Push Artifacts
 
-build-linux-864-ghc:
-  stage: build
+Build with GHC 8.6.5 on Linux:
+  stage: Linux Build
+  needs: []
   script:
-  - nix-build --argstr compiler ghc864 --fallback
+  - nix-build --argstr compiler ghc865 --fallback
 
-build-linux-864-ghcjs:
-  stage: build
+Build with GHCJS 8.6 on Linux:
+  stage: Linux Build
+  needs: []
   script:
-  - nix-build --argstr compiler ghc864 --arg isJS true --fallback
+  - nix-build --argstr compiler ghc865 --arg isJS true --fallback
 
-build-darwin-864-ghc:
-  stage: build
+Build with GHC 8.6.5 on Darwin:
+  stage: Darwin Build
+  needs: []
   script:
-  - nix-build --argstr compiler ghc864 --argstr system x86_64-darwin --fallback
+  - nix-build --argstr compiler ghc865 --argstr system x86_64-darwin --fallback
 
-build-darwin-864-ghcjs:
-  stage: build
+Build with GHCJS 8.6 on Darwin:
+  stage: Darwin Build
+  needs: []
   script:
-  - nix-build --argstr compiler ghc864 --argstr system x86_64-darwin --arg isJS true --fallback
+  - nix-build --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
 
-shell-linux-864-ghc:
-  stage: build
+Shell for GHC 8.6.5 on Linux:
+  stage: Linux Shell
+  needs:
+  - Build with GHC 8.6.5 on Linux
   script:
-  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc864 --fallback
+  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc865 --fallback
 
-shell-linux-864-ghcjs:
-  stage: build
+Shell for GHCJS 8.6 on Linux:
+  stage: Linux Shell
+  needs:
+  - Build with GHCJS 8.6 on Linux
   script:
-  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc864 --arg isJS true --fallback
+  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc865 --arg isJS true --fallback
 
-shell-darwin-864-ghc:
-  stage: build
+Shell for GHC 8.6.5 on Darwin:
+  stage: Darwin Shell
+  needs:
+  - Build with GHC 8.6.5 on Darwin
   script:
-  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc864 --argstr system x86_64-darwin --fallback
+  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc865 --argstr system x86_64-darwin --fallback
 
-shell-darwin-864-ghcjs:
-  stage: build
+Shell for GHCJS 8.6 on Darwin:
+  stage: Darwin Shell
+  needs:
+  - Build with GHCJS 8.6 on Darwin
   script:
-  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc864 --argstr system x86_64-darwin --arg isJS true --fallback
+  - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
 
-antora:
-  stage: build
+Build Antora:
+  stage: Antora Documentation
+  needs: []
   script:
   - nix-build docs --fallback
 
-# test-864-ghc:
+# test-865-ghc:
 #   stage: test
 #   script:
-#   - nix-build test.nix --argstr compiler ghc864 --arg isJS false --fallback
+#   - nix-build test.nix --argstr compiler ghc865 --arg isJS false --fallback
 #   - rm -r result
 #   artifacts:
 #     untracked: true
 #
-# test-864-ghcjs:
+# test-865-ghcjs:
 #   stage: test
 #   script:
-#   - nix-build test.nix --argstr compiler ghc864 --arg isJS true --fallback
+#   - nix-build test.nix --argstr compiler ghc865 --arg isJS true --fallback
 #   - rm -r result
 #   artifacts:
 #     untracked: true
 
 pages:
-  stage: pages
+  stage: Push Artifacts
   needs:
-  - antora
-  - build-linux-864-ghcjs
+  - Build Antora
+  - Shell for GHCJS 8.6 on Linux
   script:
   - nix-build --arg isJS true -A Shpadoinkle-examples --fallback
 
@@ -89,17 +105,17 @@ pages:
   - docs
 
 
-cachix:
-  stage: cachix
+Upload to Cachix:
+  stage: Push Artifacts
   needs:
-  - build-linux-864-ghc
-  - build-linux-864-ghcjs
-  - build-darwin-864-ghc
-  - build-darwin-864-ghcjs
-  - shell-linux-864-ghc
-  - shell-linux-864-ghcjs
-  - shell-darwin-864-ghc
-  - shell-darwin-864-ghcjs
+  - Build with GHC 8.6.5 on Linux
+  - Build with GHCJS 8.6 on Linux
+  - Build with GHC 8.6.5 on Darwin
+  - Build with GHCJS 8.6 on Darwin
+  - Shell for GHC 8.6.5 on Linux
+  - Shell for GHCJS 8.6 on Linux
+  - Shell for GHC 8.6.5 on Darwin
+  - Shell for GHCJS 8.6 on Darwin
   script:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
   - cachix authtoken $AUTHTOKEN
