@@ -41,7 +41,7 @@ when:
         - servant-server    >= 0.16 && < 0.18
         - wai               >= 3.2.2 && < 3.3
         - wai-app-static    >= 3.1.6 && < 3.2
-        - warp              >= 3.2.28 && < 3.3
+        - warp              >= 3.2.28 && < 3.4
         - Shpadoinkle-backend-static
 
 

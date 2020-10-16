@@ -7,11 +7,10 @@
   chrome-rev = "71336116f3f78d3bb1f499bf4b88efcd8738a9cf";
 
 
-  jsaddle-src = super.fetchFromGitHub
-    { owner  = "ghcjs";
-      repo   = "jsaddle";
-      rev    = "d569be43f92b9b8c01dc3ee4c41401ab406a2076";
-      sha256 = "1m1xxy4l9ii91k1k504qkxh9k1ybprm1m66mkb9dqlwcpyhcccmv";
+  jsaddle-src = builtins.fetchGit
+    { url = https://github.com/ghcjs/jsaddle.git;
+      rev = "97273656e28790ab6e35c827f8086cf47bfbedca";
+      ref = "master";
     };
 
 
@@ -80,6 +79,7 @@
   });
 
 
+
 in {
 
 
@@ -87,13 +87,20 @@ in {
     url = "https://github.com/NixOS/nixpkgs/archive/${chrome-rev}.tar.gz";
     }) {}).google-chrome;
 
+
+
+
   haskell = super.haskell //
     { packages = super.haskell.packages //
       { "${util.compilerjs}" = with super.haskell.lib;
       let dontJS = if isJS then x: dontHaddock (dontCheck x) else id;
       in super.haskell.packages.${util.compilerjs}.override (old: {
+
         overrides = super.lib.composeExtensions (old.overrides or (_:_: {})) (hself: hsuper:
+
         let call = n: p: addFlags (hself.callCabal2nix n (gitignore p) {});
+            forThese = f: builtins.foldl' (acc: x: acc // { ${x} = f hsuper.${x}; }) {};
+
         in {
 
           Shpadoinkle                  = call "Shpadoinkle"                  ../core;
@@ -109,48 +116,53 @@ in {
           Shpadoinkle-isreal           = call "Shpadoinkle-isreal"           ../isreal;
           Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests)       {};
 
-          hashable             = dontJS hsuper.hashable;
-          comonad              = dontJS hsuper.comonad;
-
-          compactable          = doJailbreak hsuper.compactable;
-          beam-core            = doJailbreak hsuper.beam-core;
-          beam-migrate         = doJailbreak hsuper.beam-migrate;
           ease                 = hself.callCabal2nix "ease" ease {};
-          ghcid                = doJailbreak hsuper.ghcid;
           ghcjs-base-stub      = hself.callCabal2nix "ghcjs-base-stub" ghcjs-base-stub-src {};
-          generic-lens-labels  = doJailbreak hsuper.generic-lens-labels;
 
-          cryptohash-sha1      = dontJS hsuper.cryptohash-sha1;
-          cryptohash-md5       = dontJS hsuper.cryptohash-md5;
-          extra                = dontJS hsuper.extra;
-          email-validate       = dontJS hsuper.email-validate;
-          SHA                  = dontJS hsuper.SHA;
-          pureMD5              = dontJS hsuper.pureMD5;
-          hex                  = dontJS hsuper.hex;
-          unliftio             = dontJS hsuper.unliftio;
-          semigroupoids        = dontJS hsuper.semigroupoids;
-          megaparsec           = dontJS hsuper.megaparsec;
-          lens                 = dontJS hsuper.lens;
           hpack                = if isJS then super.haskell.packages.${compiler}.hpack else hsuper.hpack;
-          http-types           = dontJS hsuper.http-types;
-          silently             = dontJS hsuper.silently;
-          QuickCheck           = dontJS hsuper.QuickCheck;
-          tasty-quickcheck     = dontJS hsuper.tasty-quickcheck;
-          temporary            = dontJS hsuper.temporary;
-          hspec                = dontJS hsuper.hspec;
-          time-compat          = dontJS hsuper.time-compat;
-          scientific           = dontJS hsuper.scientific;
           servant              = dontJS    (hself.callCabal2nix "servant"              "${servant-src}/servant" {});
           servant-server       = dontCheck (hself.callCabal2nix "servant-server"       "${servant-src}/servant-server" {});
           servant-client       = dontCheck (hself.callCabal2nix "servant-client"       "${servant-src}/servant-client" {});
           servant-client-js    = hself.callCabal2nix "servant-client-js" servant-client-js-src {};
           servant-jsaddle      = dontCheck (hself.callCabal2nix "servant-jsaddle" "${servant-jsaddle-src}" {});
           snabbdom             = hself.callCabal2nix "snabbdom" snabbdom-src {};
-          jsaddle-warp         = doJailbreak (hself.callCabal2nix "jsaddle-warp"       "${jsaddle-src}/jsaddle-warp" {});
-          jsaddle              = doJailbreak (hself.callCabal2nix "jsaddle"            "${jsaddle-src}/jsaddle" {});
+          jsaddle-warp         = dontCheck (hself.callCabal2nix "jsaddle-warp"       "${jsaddle-src}/jsaddle-warp" {});
+          jsaddle              = dontCheck (hself.callCabal2nix "jsaddle"            "${jsaddle-src}/jsaddle" {});
 
           # Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
-        });
+        } // forThese dontJS [
+          "hashable"
+          "comonad"
+          "cryptohash-sha1"
+          "cryptohash-md5"
+          "extra"
+          "email-validate"
+          "SHA"
+          "pureMD5"
+          "hex"
+          "unliftio"
+          "semigroupoids"
+          "criterion"
+          "megaparsec"
+          "lens"
+          "http-types"
+          "text-short"
+          "silently"
+          "QuickCheck"
+          "tasty-quickcheck"
+          "temporary"
+          "hspec"
+          "time-compat"
+          "scientific"
+          "base-compat-batteries"
+          "Glob"
+        ] // forThese doJailbreak [
+          "compactable"
+          "beam-core"
+          "beam-migrate"
+          "ghcid"
+          "generic-lens-labels"
+        ]);
       });
     };
   };

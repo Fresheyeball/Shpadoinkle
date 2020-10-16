@@ -9,7 +9,6 @@
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TupleSections              #-}
@@ -52,8 +51,8 @@ module Shpadoinkle.Backend.ParDiff
 import           Control.Applicative
 import           Control.Compactable
 import           Control.Lens
-import           Control.Monad.Catch
 import           Control.Monad.Base
+import           Control.Monad.Catch
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Control
 import           Data.Align
@@ -66,11 +65,8 @@ import           Data.Once
 import           Data.Text
 import           Data.These
 import           Data.Traversable
-import           Data.UUID
 import           GHC.Generics
 import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, ( # ))
-import           NeatInterpolation
-import           System.Random
 import           UnliftIO
 
 import           Shpadoinkle                 hiding (h, name, props, text)
@@ -139,15 +135,15 @@ instance Show (ParVNode a) where
     ParTextNode _ t   -> "ParTextNode _ " <> show t
 
 
-data ParVProp a = ParVText Text | ParVListen UUID (RawNode -> RawEvent -> JSM (Continuation JSM a)) | ParVFlag Bool
+data ParVProp a = ParVText Text | ParVListen (RawNode -> RawEvent -> JSM (Continuation JSM a)) | ParVFlag Bool
   deriving (Generic)
 
 
 instance Show (ParVProp a) where
   show = \case
-    ParVText t     -> "ParVText " <> show t
-    ParVListen u _ -> "ParVListen " <> show u <>" _"
-    ParVFlag b     -> "ParVFlag " <> show b
+    ParVText   t -> "ParVText " <> show t
+    ParVListen _ -> "ParVListen _"
+    ParVFlag   b -> "ParVFlag " <> show b
 
 
 props :: Monad m => (m ~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
@@ -209,21 +205,19 @@ appendChild (RawNode raw) pn = do
 makeProp :: Monad m => (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
 makeProp toJSM i = \case
   PText t     -> return $ ParVText t
-  PListener m -> do
-    u <- liftIO randomIO
-    return . ParVListen u $ \x y -> hoist (toJSM . runParDiff i) <$> m x y
+  PListener m -> return . ParVListen $ \x y -> hoist (toJSM . runParDiff i) <$> m x y
   PFlag b     -> return $ ParVFlag b
 
 
 setup' :: JSM () -> JSM ()
 setup' cb = do
-  void $ eval @Text [text|
-      window.deleteProp = (k, obj) => {
-        delete obj[k]
-      }
-      window.container = document.createElement('div')
-      document.body.appendChild(container)
-    |]
+  void $ eval $ intercalate "\n"
+    [ " window.deleteProp = (k, obj) => {"
+    , "   delete obj[k]"
+    , " }"
+    , " window.container = document.createElement('div')"
+    , " document.body.appendChild(container)"
+    ]
   cb
 
 
@@ -279,9 +273,10 @@ managePropertyState i obj' old new' = void $ do
           (ParVFlag t')
                 | t /= t' -> setFlag obj' k t'
     -- new listener, set
-    That  (ParVListen _ h) -> voidJSM $ setListener i h obj' k
-    -- changed listener, set
-    These (ParVListen u _) (ParVListen u' h) | u /= u' -> voidJSM $ setListener i h obj' k
+    That  (ParVListen h)  -> voidJSM $ setListener i h obj' k
+    -- listeners are uncomparable in any useful way
+    These (ParVListen _)
+          (ParVListen h)  -> voidJSM $ setListener i h obj' k
     -- no change, do nothing
     These _ _              -> return ()
 
