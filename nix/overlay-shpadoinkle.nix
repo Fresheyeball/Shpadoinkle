@@ -164,6 +164,7 @@ in {
           "generic-lens-labels"
         ] // forThese unmarkBroken [
           "category"
+          "alg"
         ]);
       });
     };
