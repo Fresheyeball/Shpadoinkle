@@ -15,7 +15,7 @@ module Main where
 import           Control.Monad.IO.Class   (MonadIO (..))
 import           Data.ByteString.Lazy     as BSL (writeFile)
 import           Data.String              (fromString)
-import           Data.Text                as T (Text, unpack)
+import           Data.Text                as T (Text, intercalate, unpack)
 import           Network.Wai.Handler.Warp (run)
 import           Servant
 import qualified System.Directory         as Dir
@@ -64,12 +64,21 @@ static options snow = serveDirectoryWebApp $ getDir options snow </>
   "dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/swan-0.1.0.0/x/swan/build/swan/swan.jsexe/"
 
 
+welcome :: Text
+welcome = intercalate "\n"
+  [ "Isreal Swan is a microservice for processing haskell files, and serving GHCJS artifacts."
+  , "There is no UI."
+  , "To learn more please visit the README.md located here: https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/isreal/README.md"
+  ]
+
+
 api :: Int -> Options -> IO ()
 api port options = run port $ serve (Proxy @API) $ pure
   :<|> compile  options
   :<|> clean    options
   :<|> cleanAll options
   :<|> static   options
+  :<|> pure welcome
 
 
 main :: IO ()

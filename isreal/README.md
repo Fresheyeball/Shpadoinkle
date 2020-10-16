@@ -33,7 +33,8 @@ curl -X POST -H "Content-Type:application/octet-stream" --data-binary @Hello.hs 
 ```
 
 Notice **hello-token** in the URL. It's _on you_ to make this a unique token for your work,
-as the system is open-ended. Reusing this token will result in incremental rebuilds, which
+as the system is open-ended (any arbitrary (uri encoded) string is fine).
+Reusing this token will result in incremental rebuilds, which
 are much faster. Also please note, these spaces are ephemeral and will be deleted.
 
 The `curl` command will respond with `Either` an error message from the compiler or

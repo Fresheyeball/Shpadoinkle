@@ -52,3 +52,4 @@ type API = "echo" :> Capture "echo" Text :> Get '[PlainText] Text
    :<|> "serve"
      :> Capture "token" SnowToken
      :> Raw
+   :<|> Get '[PlainText] Text
