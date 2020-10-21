@@ -145,13 +145,28 @@ executables:
       - Shpadoinkle-lens
       - Shpadoinkle-widgets
 
+  throttle-and-debounce:
+    main: ThrottleAndDebounce.hs
+    other-modules: []
+    source-dirs: .
+    dependencies:
+     - text
+     - safe
+     - lens
+
+     - Shpadoinkle
+     - Shpadoinkle-console
+     - Shpadoinkle-html
+     - Shpadoinkle-backend-pardiff
+
   servant-crud-client:
-    main: Client.hs
+    main: Run/Client.hs
     source-dirs: ./servant-crud
     other-modules:
       - Types
       - Types.Prim
       - View
+      - Client
     dependencies:
       - aeson
       - bytestring
@@ -168,6 +183,7 @@ executables:
 
       - Shpadoinkle
       - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-backend-snabbdom
       - Shpadoinkle-html
       - Shpadoinkle-widgets
       - Shpadoinkle-router
@@ -190,12 +206,13 @@ executables:
           buildable: False
         else:
           buildable: True
-    main: Server.hs
+    main: Run/Server.hs
     source-dirs: ./servant-crud
     other-modules:
       - Types.Prim
       - Types
       - View
+      - Server
     dependencies:
       - aeson
       - bytestring
@@ -222,19 +239,52 @@ executables:
       - Shpadoinkle-backend-static
       - Shpadoinkle-lens
 
-  throttle-and-debounce:
-    main: ThrottleAndDebounce.hs
-    other-modules: []
-    source-dirs: .
+  servant-crud-dev:
+    when:
+      - condition: impl(ghcjs)
+        then:
+          buildable: False
+        else:
+          buildable: True
+    main: Run/Dev.hs
+    source-dirs: ./servant-crud
+    other-modules:
+      - Types.Prim
+      - Types
+      - View
+      - Client
+      - Server
     dependencies:
-     - text
-     - safe
-     - lens
+      - aeson
+      - bytestring
+      - beam-core
+      - beam-sqlite
+      - containers
+      - file-embed
+      - text
+      - lens
+      - stm
+      - mtl
+      - exceptions
+      - jsaddle
+      - unliftio
+      - sqlite-simple
+      - servant
+      - servant-server
+      - optparse-applicative
+      - wai
+      - wai-app-static
+      - warp
 
-     - Shpadoinkle
-     - Shpadoinkle-console
-     - Shpadoinkle-html
-     - Shpadoinkle-backend-pardiff
+      - Shpadoinkle
+      - Shpadoinkle-html
+      - Shpadoinkle-widgets
+      - Shpadoinkle-router
+      - Shpadoinkle-backend-static
+      - Shpadoinkle-backend-snabbdom
+      - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-lens
+
 
 
 git: https://gitlab.com/fresheyeball/Shpadoinkle.git

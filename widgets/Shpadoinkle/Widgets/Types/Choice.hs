@@ -1,6 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DefaultSignatures     #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -18,15 +17,22 @@
 module Shpadoinkle.Widgets.Types.Choice where
 
 
-import           Control.Applicative
-import           Control.Compactable
-import           Data.Aeson
+import           Control.Applicative (Alternative ((<|>)))
+import           Control.Compactable (Compactable (compact, filter, partition, separate))
+import           Data.Aeson          (FromJSON, ToJSON)
 import qualified Data.Foldable       as F
-import           Data.Kind
+import           Data.Kind           (Type)
 import qualified Data.List.NonEmpty  as NE
-import           Data.Maybe
-import           Data.Set            as Set
-import           GHC.Generics
+import           Data.Maybe          (fromMaybe)
+import           Data.Set            as Set (Set, delete, difference, elemAt,
+                                             empty, filter, findIndex, findMax,
+                                             findMin, foldr,
+                                             fromDistinctAscList, fromList,
+                                             insert, intersection, lookupGT,
+                                             lookupLT, lookupMax, lookupMin,
+                                             map, member, partition, singleton,
+                                             size, toList, valid)
+import           GHC.Generics        (Generic)
 
 
 data Pick = One | AtleastOne | Many

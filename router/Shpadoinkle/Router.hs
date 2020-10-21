@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes       #-}
+{-# LANGUAGE BangPatterns              #-}
 {-# LANGUAGE CPP                       #-}
 {-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE ExistentialQuantification #-}
@@ -11,7 +12,6 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
-{-# LANGUAGE TupleSections             #-}
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeOperators             #-}
@@ -45,39 +45,45 @@ module Shpadoinkle.Router (
     ) where
 
 
-import           Control.Applicative
-import           Control.Compactable           as C
-import           Control.Monad
-import           Control.Monad.IO.Class
-import           Data.Aeson
+import           Control.Applicative           (Alternative ((<|>)))
+import           Control.Compactable           as C (Compactable (compact, filter))
+import           Control.Monad                 (forever)
+import           Control.Monad.IO.Class        (MonadIO (liftIO))
+import           Data.Aeson                    (FromJSON, ToJSON, decode,
+                                                encode)
 import           Data.ByteString.Lazy          (fromStrict, toStrict)
-import           Data.Kind
+import           Data.Kind                     (Type)
 import           Data.Maybe                    (isJust)
-import           Data.Proxy
+import           Data.Proxy                    (Proxy (..))
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
 import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
-import           GHC.TypeLits
-import           GHCJS.DOM
+import           GHC.TypeLits                  (KnownSymbol, Symbol, symbolVal)
+import           GHCJS.DOM                     (currentWindowUnchecked,
+                                                syncPoint)
 import           GHCJS.DOM.EventM              (on)
-import           GHCJS.DOM.EventTargetClosures
-import           GHCJS.DOM.History
+import           GHCJS.DOM.EventTargetClosures (EventName, unsafeEventName)
+import           GHCJS.DOM.History             (pushState)
 import           GHCJS.DOM.Location            (getPathname, getSearch)
-import           GHCJS.DOM.PopStateEvent
+import           GHCJS.DOM.PopStateEvent       (PopStateEvent)
 import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
-import           GHCJS.DOM.Window
+import           GHCJS.DOM.Window              (Window, getHistory, getLocation)
 import           Language.Javascript.JSaddle   (fromJSVal, jsg)
-import           Servant.API                   hiding (uriPath, uriQuery)
+import           Servant.API
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)
-import           System.IO.Unsafe
+import           System.IO.Unsafe              (unsafePerformIO)
 import           UnliftIO.Concurrent           (MVar, forkIO, newEmptyMVar,
                                                 putMVar, takeMVar)
 import           UnliftIO.STM                  (TVar, newTVarIO)
 import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
-import           Shpadoinkle
+import           Shpadoinkle                   (Backend, Continuation, Html,
+                                                RawNode, type (~>), h, hoist,
+                                                kleisli, pur, shpadoinkle, text,
+                                                writeUpdate)
+import           Shpadoinkle.Router.HTML       (HTML, Spa)
 
 
 default (Text)
@@ -249,6 +255,9 @@ listenStateChange router handle = do
   _ <- forkIO . forever $ do
     liftIO $ takeMVar syncRoute
     getRoute w router $ maybe (return ()) handle
+    syncPoint
+    !() <- liftIO $ return ()
+    return ()
   return ()
 
 
@@ -360,3 +369,16 @@ instance HasRouter Raw where
     route = RView
     {-# INLINABLE route #-}
 
+instance HasRouter (f '[HTML] (Html m b)) where
+    type f '[HTML] (Html m b) :>> a = a
+
+    route :: r -> Router r
+    route = RView
+    {-# INLINABLE route #-}
+
+instance HasRouter (Spa m b) where
+    type Spa m b :>> a = a
+
+    route :: r -> Router r
+    route = RView
+    {-# INLINABLE route #-}

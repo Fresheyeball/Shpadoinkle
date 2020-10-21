@@ -44,11 +44,14 @@ module Shpadoinkle.Continuation (
 import           Control.Arrow                 (first)
 import qualified Control.Categorical.Functor   as F
 import           Control.Monad                 (liftM2, void)
-import           Control.Monad.Trans.Class
-import           Control.PseudoInverseCategory
+import           Control.Monad.Trans.Class     (MonadTrans (..))
+import           Control.PseudoInverseCategory (EndoIso (..))
+import           Data.Maybe                    (fromMaybe)
 import           GHC.Conc                      (retry)
-import           UnliftIO
-import           UnliftIO.Concurrent
+import           UnliftIO                      (MonadUnliftIO, TVar, atomically,
+                                                newTVarIO, readTVar, readTVarIO,
+                                                writeTVar)
+import           UnliftIO.Concurrent           (forkIO)
 
 
 -- | A Continuation builds up an
@@ -154,7 +157,7 @@ liftCMay' :: Applicative m => (a -> b -> b) -> (b -> Maybe a) -> Continuation m 
 liftCMay' f g (Pure h)     = Pure $ \x -> maybe x (flip f x . h) $ g x
 liftCMay' f g (Rollback r) = Rollback (liftCMay' f g r)
 liftCMay' f g (Continuation (h, i)) =
-  Continuation (\x -> maybe x (flip f x . h) $ g x, \x -> maybe (pure done) (fmap (liftCMay' f g) . i) $ g x)
+  Continuation (\x -> maybe x (flip f x . h) $ g x, maybe (pure done) (fmap (liftCMay' f g) . i) . g)
 
 
 -- | Given a lens, change the value type of @f@ by applying the lens in the Continuations inside @f@.
@@ -211,7 +214,7 @@ rightC = mapC rightC'
 
 -- | Transform a Continuation to work on 'Maybe's. If it encounters 'Nothing', then it cancels itself.
 maybeC' :: Applicative m => Continuation m a -> Continuation m (Maybe a)
-maybeC' (Pure f) = (Pure (fmap f))
+maybeC' (Pure f) = Pure (fmap f)
 maybeC' (Rollback r) = Rollback (maybeC' r)
 maybeC' (Continuation (f, g)) = Continuation . (fmap f,) $
   \case
@@ -227,9 +230,7 @@ maybeC = mapC maybeC'
 -- | Turn a @Maybe a@ updating function into an @a@ updating function which acts as
 --   the identity function when the input function outputs 'Nothing'.
 comaybe :: (Maybe a -> Maybe a) -> (a -> a)
-comaybe f x = case f (Just x) of
-  Nothing -> x
-  Just y  -> y
+comaybe f x = fromMaybe x . f $ Just x
 
 
 -- | Change the type of a Maybe-valued Continuation into the Maybe-wrapped type.
@@ -288,7 +289,7 @@ eitherC' f g = Continuation . (id,) $ \case
 --   of the coproduct selected by the input value used to create the structure.
 eitherC :: Monad m => Continuous f => (a -> f m a) -> (b -> f m b) -> Either a b -> f m (Either a b)
 eitherC l _ (Left x)  = mapC (\c -> eitherC' c (pur id)) (l x)
-eitherC _ r (Right x) = mapC (\c -> eitherC' (pur id) c) (r x)
+eitherC _ r (Right x) = mapC (eitherC' (pur id)) (r x)
 
 
 -- | Transform the type of a Continuation using an isomorphism.
@@ -314,9 +315,9 @@ instance Monad m => Semigroup (Continuation m a) where
   (Continuation (f, g)) <> (Continuation (h, i)) =
     Continuation (f.h, \x -> liftM2 (<>) (g x) (i x))
   (Continuation (f, g)) <> (Rollback h) =
-    Rollback (Continuation (f, (\x -> liftM2 (<>) (g x) (return h))))
+    Rollback (Continuation (f, \x -> liftM2 (<>) (g x) (return h)))
   (Rollback h) <> (Continuation (_, g)) =
-    Rollback (Continuation (id, \x -> liftM2 (<>) (return h) (g x)))
+    Rollback (Continuation (id, liftM2 (<>) (return h) . g))
   (Rollback f) <> (Rollback g) = Rollback (f <> g)
   (Pure f) <> (Pure g) = Pure (f.g)
   (Pure f) <> (Continuation (g,h)) = Continuation (f.g,h)

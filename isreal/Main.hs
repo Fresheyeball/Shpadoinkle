@@ -12,6 +12,7 @@
 module Main where
 
 
+import           Control.Monad            (unless)
 import           Control.Monad.IO.Class   (MonadIO (..))
 import           Data.ByteString.Lazy     as BSL (writeFile)
 import           Data.String              (fromString)
@@ -38,7 +39,7 @@ compile options@Options {..} snow (Code code) = liftIO $ do
   Dir.createDirectoryIfMissing False dir
   BSL.writeFile (dir </> "Main.hs") code
   isCabal <- Dir.doesFileExist $ dir </> "swan.cabal"
-  if isCabal then pure () else Dir.createFileLink (swan </> "swan.cabal") $ dir </> "swan.cabal"
+  unless isCabal $ Dir.createFileLink (swan </> "swan.cabal") $ dir </> "swan.cabal"
   Dir.setCurrentDirectory dir
   (exit, _, err) <- readCreateProcessWithExitCode (proc "cabal" ["build", "--ghcjs"]) ""
   return $ case exit of

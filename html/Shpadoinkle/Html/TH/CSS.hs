@@ -64,7 +64,7 @@ getAll css = unsafePerformIO $ do
 #else
 
 getAll :: ByteString -> [ByteString]
-getAll css = getAllTextMatches $ css =~ (selectors @ByteString)
+getAll css = getAllTextMatches $ css =~ selectors @ByteString
 
 #endif
 
@@ -89,7 +89,7 @@ toIdDec name = let
     n = mkName $ "id'" <> sanitize name'
   in
     [ SigD n
-      ((AppT (AppT (TupleT 2) (ConT ''Data.Text.Text)) (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a)))
+      (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text)) (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))
     , ValD (VarP n) (NormalB (AppE (AppE (VarE l) (LitE (StringL "id"))) (LitE (StringL name')))) []
     ]
 

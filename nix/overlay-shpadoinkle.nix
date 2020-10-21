@@ -93,13 +93,13 @@ in {
   haskell = super.haskell //
     { packages = super.haskell.packages //
       { "${util.compilerjs}" = with super.haskell.lib;
-      let dontJS = if isJS then x: dontHaddock (dontCheck x) else id;
-      in super.haskell.packages.${util.compilerjs}.override (old: {
+      super.haskell.packages.${util.compilerjs}.override (old: {
 
         overrides = super.lib.composeExtensions (old.overrides or (_:_: {})) (hself: hsuper:
 
-        let call = n: p: addFlags (hself.callCabal2nix n (gitignore p) {});
+        let call     = n: p: addFlags (hself.callCabal2nix n (gitignore p) {});
             forThese = f: builtins.foldl' (acc: x: acc // { ${x} = f hsuper.${x}; }) {};
+            dontJS   = if isJS then x: dontHaddock (dontCheck x) else id;
 
         in {
 
@@ -120,14 +120,14 @@ in {
           ghcjs-base-stub      = hself.callCabal2nix "ghcjs-base-stub" ghcjs-base-stub-src {};
 
           hpack                = if isJS then super.haskell.packages.${compiler}.hpack else hsuper.hpack;
-          servant              = dontJS    (hself.callCabal2nix "servant"              "${servant-src}/servant" {});
-          servant-server       = dontCheck (hself.callCabal2nix "servant-server"       "${servant-src}/servant-server" {});
-          servant-client       = dontCheck (hself.callCabal2nix "servant-client"       "${servant-src}/servant-client" {});
+          servant              = dontJS    (hself.callCabal2nix "servant"         "${servant-src}/servant" {});
+          servant-server       = dontCheck (hself.callCabal2nix "servant-server"  "${servant-src}/servant-server" {});
+          servant-client       = dontCheck (hself.callCabal2nix "servant-client"  "${servant-src}/servant-client" {});
           servant-client-js    = hself.callCabal2nix "servant-client-js" servant-client-js-src {};
           servant-jsaddle      = dontCheck (hself.callCabal2nix "servant-jsaddle" "${servant-jsaddle-src}" {});
           snabbdom             = hself.callCabal2nix "snabbdom" snabbdom-src {};
-          jsaddle-warp         = dontCheck (hself.callCabal2nix "jsaddle-warp"       "${jsaddle-src}/jsaddle-warp" {});
-          jsaddle              = dontCheck (hself.callCabal2nix "jsaddle"            "${jsaddle-src}/jsaddle" {});
+          jsaddle-warp         = dontCheck (hself.callCabal2nix "jsaddle-warp"    "${jsaddle-src}/jsaddle-warp" {});
+          jsaddle              = dontCheck (hself.callCabal2nix "jsaddle"         "${jsaddle-src}/jsaddle" {});
 
           # Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
         } // forThese dontJS [

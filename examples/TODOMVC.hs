@@ -11,16 +11,26 @@ module Main where
 
 import           Control.Lens                  hiding (view)
 import           Data.Generics.Labels          ()
-import           Data.String
+import           Data.String                   (IsString)
 import           Data.Text                     hiding (count, filter, length)
-import           GHC.Generics
+import           GHC.Generics                  (Generic)
 import           Prelude                       hiding (div, unwords)
-import           Shpadoinkle
-import           Shpadoinkle.Backend.Snabbdom
-import           Shpadoinkle.Html
-import           Shpadoinkle.Html.LocalStorage
-import           Shpadoinkle.Html.Memo
-import           Shpadoinkle.Lens
+import           Shpadoinkle                   (Html, JSM, readTVarIO,
+                                                shpadoinkle, text)
+import           Shpadoinkle.Backend.Snabbdom  (runSnabbdom, stage)
+import           Shpadoinkle.Html              (a, addStyle, autofocus, button,
+                                                button', checked, class', div,
+                                                div_, footer, for', form, h1_,
+                                                header, href, id', input',
+                                                label, li, li_, onBlur,
+                                                onChange, onClick, onDblclick,
+                                                onInput, onSubmit, p_,
+                                                placeholder, section, span,
+                                                strong_, type', ul, value)
+import           Shpadoinkle.Html.LocalStorage (manageLocalStorage)
+import           Shpadoinkle.Html.Memo         (memo)
+import           Shpadoinkle.Lens              (generalize)
+import           Shpadoinkle.Run               (runJSorWarp)
 
 
 default (Text)
@@ -105,7 +115,7 @@ toVisible v = case v of
 
 
 filterHtml :: Visibility -> Visibility -> Html m Visibility
-filterHtml = memo2 $ \cur item -> li_
+filterHtml = memo $ \cur item -> li_
   [ a (href "#" : onClick item
         : [class' ("selected", cur == item)]) [ text . pack $ show item ]
   ]

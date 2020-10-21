@@ -1,7 +1,6 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 
@@ -13,21 +12,22 @@
 module Shpadoinkle.Html.LocalStorage where
 
 
-import           Control.Monad
-import           Control.Monad.Trans.Maybe
-import           Data.Maybe
-import           Data.String
-import           Data.Text
-import           GHC.Generics
-import           GHCJS.DOM
-import           GHCJS.DOM.Types     hiding (Text)
-import           GHCJS.DOM.Storage
-import           GHCJS.DOM.Window
-import           Text.Read
-import           UnliftIO
-import           UnliftIO.Concurrent (forkIO)
+import           Control.Monad             (void)
+import           Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
+import           Data.Maybe                (fromMaybe)
+import           Data.String               (IsString)
+import           Data.Text                 (Text)
+import           GHC.Generics              (Generic)
+import           GHCJS.DOM                 (currentWindow)
+import           GHCJS.DOM.Storage         (getItem, setItem)
+import           GHCJS.DOM.Types           (MonadJSM, liftJSM)
+import           GHCJS.DOM.Window          (getLocalStorage)
+import           Text.Read                 (readMaybe)
+import           UnliftIO                  (MonadIO (liftIO), MonadUnliftIO,
+                                            TVar, newTVarIO)
+import           UnliftIO.Concurrent       (forkIO)
 
-import           Shpadoinkle         (shouldUpdate)
+import           Shpadoinkle               (shouldUpdate)
 
 
 -- | The key for a specific state kept in local storage
@@ -48,7 +48,7 @@ setStorage (LocalStorageKey k) m = do
 
 getStorage :: MonadJSM m => Read a => LocalStorageKey a -> m (Maybe a)
 getStorage (LocalStorageKey k) = runMaybeT $ do
-  w <- MaybeT $ currentWindow
+  w <- MaybeT currentWindow
   s <- MaybeT $ Just <$> getLocalStorage w
   MaybeT $ (>>= readMaybe) <$> getItem s k
 
