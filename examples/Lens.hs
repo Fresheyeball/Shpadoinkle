@@ -14,13 +14,13 @@ import           Data.Maybe                  (fromMaybe)
 import           Data.Text                   (Text, pack, unpack)
 import           GHC.Generics                (Generic)
 import           Safe                        (readMay)
-import           Shpadoinkle                 (Html, JSM, runJSorWarp, simple,
-                                              text)
+import           Shpadoinkle                 (Html, JSM, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (button, div_, for', getBody, id',
                                               input', label, onClick, onInput,
                                               value)
 import           Shpadoinkle.Lens            (onRecord, onSum)
+import           Shpadoinkle.Run             (runJSorWarp, simple)
 
 
 data Form = Form

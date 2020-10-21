@@ -38,6 +38,7 @@ when:
     else:
       dependencies:
         - jsaddle-warp >= 0.9.7 && < 0.20
+        - wai
 
 
 library:

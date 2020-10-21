@@ -45,7 +45,7 @@ view model = -- <1>
 
 That is it. If you can understand what is going on in the above example, you understand Shpadoinkle, it's that simple. There is no dispatch, no payloads, no event types, no giant update function, no networks of state managers, no templating, no special HTML syntax, no magic attributes, no digest cycle, and nothing fancy going on.
 
-In fact, the only part of Shpadoinkle that actually performs work is only about https://shpadoinkle.org/core/src/Shpadoinkle.Core.html#shpadoinkle[12 lines of code].
+In fact, the only part of Shpadoinkle that actually performs work is only about xref:packages/core.adoc#_shpadoinkle[12 lines of code].
 
 == Features
 

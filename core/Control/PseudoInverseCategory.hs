@@ -23,8 +23,8 @@ module Control.PseudoInverseCategory (
 
 
 import qualified Control.Categorical.Functor as F
-import           Control.Category
-import           Data.Functor.Identity
+import           Control.Category            (Category (..))
+import           Data.Functor.Identity       (Identity (..))
 import           Data.Tuple                  (swap)
 import           Prelude                     hiding (id, (.))
 
@@ -185,7 +185,7 @@ instance PIArrow EndoIso where
     (\(x,y) -> (g x, j y))
     (\(x,y) -> (h x, k y))
   pifan (EndoIso f g h) (EndoIso i j _) = EndoIso
-    (\x -> f (i x))
+    (f . i)
     (\x -> (g x, j x))
     (\(x,_) -> h x) -- it shouldn't matter which side we use to go back because we have isomorphisms
 

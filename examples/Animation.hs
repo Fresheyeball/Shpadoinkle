@@ -8,7 +8,7 @@ module Main where
 
 
 import           Control.Concurrent.STM                  (atomically, writeTVar)
-import           Control.Monad                           (void)
+import           Control.Monad                           (void, when)
 import           Control.Monad.IO.Class                  (MonadIO (liftIO))
 import           Data.Text                               (Text, pack)
 import           Ease                                    (bounceOut)
@@ -18,11 +18,11 @@ import           GHCJS.DOM.Window                        (Window,
                                                           requestAnimationFrame)
 import           Shpadoinkle                             (Html, JSM, TVar,
                                                           newTVarIO,
-                                                          runJSorWarp,
                                                           shpadoinkle)
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom, stage)
 import           Shpadoinkle.Html                        as H (div,
                                                                textProperty)
+import           Shpadoinkle.Run                         (runJSorWarp)
 import           UnliftIO.Concurrent                     (forkIO, threadDelay)
 
 
@@ -62,13 +62,12 @@ animation w t = void $ requestAnimationFrame w =<< go where
     let clock = clock' - (wait / 1000)
     liftIO . atomically $ writeTVar t clock
     r <- go
-    if clock < dur then void $ requestAnimationFrame w r else return ()
+    when (clock < dur) . void $ requestAnimationFrame w r
 
 
 main :: IO ()
-main = do
-  runJSorWarp 8080 $ do
-    t <- newTVarIO 0
-    w <- currentWindowUnchecked
-    _ <- forkIO $ threadDelay wait >> animation w t
-    shpadoinkle id runSnabbdom 0 t view stage
+main = runJSorWarp 8080 $ do
+  t <- newTVarIO 0
+  w <- currentWindowUnchecked
+  _ <- forkIO $ threadDelay wait >> animation w t
+  shpadoinkle id runSnabbdom 0 t view stage

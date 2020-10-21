@@ -1,7 +1,6 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE DerivingVia                #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -9,28 +8,31 @@
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
 
 module Types.Prim where
 
 
-import           Data.Aeson
-import           Data.String
-import           Data.Text
-import           Database.Beam
+import           Data.Aeson                       (FromJSON, ToJSON)
+import           Data.String                      (IsString)
+import           Data.Text                        (Text)
+import           GHC.Generics                     (Generic)
 
 #ifndef ghcjs_HOST_OS
-import           Database.Beam.Backend.SQL.SQL92
-import           Database.Beam.Sqlite
-import           Database.Beam.Sqlite.Syntax
-import           Database.SQLite.Simple.FromField
+import           Database.Beam                    (FromBackendRow,
+                                                   HasSqlEqualityCheck)
+import           Database.Beam.Backend.SQL.SQL92  (HasSqlValueSyntax (..),
+                                                   autoSqlValueSyntax)
+import           Database.Beam.Sqlite             (Sqlite)
+import           Database.Beam.Sqlite.Syntax      (SqliteValueSyntax)
+import           Database.SQLite.Simple.FromField (FromField (..))
 #endif
 
-import           Servant.API                      hiding (Description)
-import           Shpadoinkle.Widgets.Types
+import           Servant.API                      (FromHttpApiData,
+                                                   ToHttpApiData)
+import           Shpadoinkle                      (text)
+import           Shpadoinkle.Widgets.Types        (Humanize (..), Present (..))
 
 
 newtype SKU = SKU { unSKU :: Int  }
@@ -86,7 +88,7 @@ instance Monoid Operable where mempty = maxBound
 
 
 data Squadron = AwayTeam | StrikeForce | Scout
-  deriving (Eq, Ord, Enum, Bounded, Read, Show, Present, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Enum, Bounded, Read, Show, Generic, ToJSON, FromJSON)
 #ifndef ghcjs_HOST_OS
   deriving (FromBackendRow Sqlite)
 instance HasSqlValueSyntax be String => HasSqlValueSyntax be Squadron where sqlValueSyntax = autoSqlValueSyntax
@@ -105,6 +107,9 @@ instance Humanize Squadron where
     AwayTeam    -> "Away Team"
     StrikeForce -> "Strike Force"
     Scout       -> "Scouting"
+
+instance Present Squadron where
+  present = pure . text . humanize
 
 
 instance Humanize (Maybe Squadron) where

@@ -22,22 +22,22 @@ module Shpadoinkle.Widgets.Table.Lazy
   ) where
 
 
-import Prelude hiding (div)
+import           Prelude                     hiding (div)
 
-import Control.Arrow (second)
-import Data.Aeson
-import Data.Functor.Identity
-import Data.List (sortBy)
-import Data.Maybe (fromMaybe)
-import Data.Proxy
-import Data.Text hiding (filter, find, take)
-import GHC.Generics
+import           Control.Arrow               (second)
+import           Data.Aeson
+import           Data.Functor.Identity
+import           Data.List                   (sortBy)
+import           Data.Maybe                  (fromMaybe)
+import           Data.Proxy
+import           Data.Text                   hiding (filter, find, take)
+import           GHC.Generics
 
-import Language.Javascript.JSaddle hiding (JSM, MonadJSM)
-import Shpadoinkle
-import Shpadoinkle.Html (div)
-import Shpadoinkle.Widgets.Table
-import Shpadoinkle.Widgets.Types
+import           Language.Javascript.JSaddle hiding (JSM, MonadJSM)
+import           Shpadoinkle
+import           Shpadoinkle.Html            (div)
+import           Shpadoinkle.Widgets.Table
+import           Shpadoinkle.Widgets.Types
 
 default (Text)
 
@@ -88,9 +88,9 @@ instance Tabular a => Tabular (LazyTable a) where
     mapToLazyTable <$> toCell xs r c
   toCell _ FakeRow _ = []
   sortTable sc (LazyRow a) (LazyRow b) = sortTable (fromLazySortCol sc) a b
-  sortTable _ FakeRow FakeRow = EQ
-  sortTable _ _ FakeRow = LT
-  sortTable _ FakeRow _ = GT
+  sortTable _ FakeRow FakeRow          = EQ
+  sortTable _ _ FakeRow                = LT
+  sortTable _ FakeRow _                = GT
   ascendingIcon _ = mapToLazyTableSc $ ascendingIcon Proxy
   descendingIcon _ = mapToLazyTableSc $ descendingIcon Proxy
 
@@ -194,7 +194,7 @@ lazyTable theme tableHeight rowHeight@(AssumedRowHeight rowHeight')
   . mapFromLazyTableSc lazyTab
   $ viewWith lazyTheme lazyTab (SortCol (LazyColumn c) s)
   where
-    lazyTab@(LazyTable _ _ _ _ _ _ _) = toLazyTable tableHeight rowHeight scrollY xs sc
+    lazyTab@LazyTable {} = toLazyTable tableHeight rowHeight scrollY xs sc
 
     totalRows = countRows xs
 
@@ -207,12 +207,12 @@ lazyTable theme tableHeight rowHeight@(AssumedRowHeight rowHeight')
         runIdentity . props (Identity . (listenRaw "scroll" (debounceScroll scrollHandlerContainer) :))
       TbodyIsScrollable _ -> id
 
-    scrollHandlerContainer = \(RawNode n) _ ->
+    scrollHandlerContainer (RawNode n) _ =
       pur . second . const . CurrentScrollY . fromMaybe 0
         <$> (fromJSVal =<< n ! "scrollTop")
 
     scrollHandlerTbody :: RawNode -> RawEvent -> JSM (Continuation m (LazyTable a, SortCol (LazyTable a)))
-    scrollHandlerTbody = \(RawNode n) _ -> do
+    scrollHandlerTbody (RawNode n) _ = do
       sy <- CurrentScrollY . fromMaybe 0 <$> (fromJSVal =<< n ! "scrollTop")
       return . pur $ \(LazyTable t th rh _ rts sc' rs, sc'') -> (LazyTable t th rh sy rts sc' rs, sc'')
 

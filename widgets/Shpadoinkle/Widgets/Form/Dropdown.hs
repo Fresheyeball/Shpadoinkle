@@ -182,7 +182,7 @@ dropdown toTheme Config {..} x =
   , onClick $ act x
   , tabbable
   ] ++ _attrs) . _wrapper $
-  (_header $ selected x) ++
+  _header (selected x) ++
   [ _list $ (\y -> injectProps
     [ onMouseover $ consider' y x
     , onFocus     $ consider' y x

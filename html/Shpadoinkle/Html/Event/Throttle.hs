@@ -12,8 +12,7 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Text
 import           Data.Time.Clock
-import           GHC.Conc
-import           Shpadoinkle                 hiding (newTVarIO)
+import           Shpadoinkle
 
 
 newtype Throttle m a b = Throttle { runThrottle

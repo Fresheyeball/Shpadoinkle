@@ -7,10 +7,12 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeApplications           #-}
@@ -18,31 +20,58 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 
 module Types (module Types, module Types.Prim) where
 
 
-import           Control.Lens                      as Lens hiding (Context)
+import           Control.Lens                      as Lens (Identity,
+                                                            makeFieldsNoPrefix,
+                                                            makeLenses,
+                                                            makePrisms, view,
+                                                            (^.))
 import           Control.Lens.TH                   ()
-import           Control.Monad.Except
-import           Data.Aeson
-import           Data.Function
-import           Data.Maybe
-import           Data.Proxy
-import           Data.Text
-import           Database.Beam
+import           Control.Monad.Except              (MonadError (throwError),
+                                                    MonadTrans (..))
+import           Data.Aeson                        (FromJSON, ToJSON)
+import           Data.Function                     (on)
+import           Data.Maybe                        (fromMaybe)
+import           Data.Proxy                        (Proxy (Proxy))
+import           Data.Text                         (Text)
+import           Database.Beam                     (Beamable, Columnar,
+                                                    Database, DatabaseSettings,
+                                                    Generic, Nullable,
+                                                    Table (..), TableEntity,
+                                                    defaultDbSettings)
 
 import           Servant.API                       hiding (Description)
-import           Shpadoinkle
+import           Shpadoinkle                       (Html, MonadJSM)
 import qualified Shpadoinkle.Html                  as H
 import           Shpadoinkle.Router
-import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
-import           Shpadoinkle.Widgets.Table         as Table
-import           Shpadoinkle.Widgets.Types
-import           Shpadoinkle.Widgets.Validation
+import           Shpadoinkle.Router.HTML           (Spa)
+import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown (Dropdown)
+import           Shpadoinkle.Widgets.Table         as Table (Column, Row,
+                                                             Sort (ASC, DESC),
+                                                             SortCol (..),
+                                                             Tabular (Effect, sortTable, toCell, toRows))
+import           Shpadoinkle.Widgets.Types         (Field, Humanize (..),
+                                                    Hygiene (Clean),
+                                                    Input (Input, _value),
+                                                    Pick (AtleastOne, One),
+                                                    Present (present),
+                                                    Search (Search),
+                                                    Status (Edit, Errors, Valid),
+                                                    Validate (rules),
+                                                    fullOptions, fullOptionsMin)
+import           Shpadoinkle.Widgets.Validation    (between, nonMEmpty, nonZero,
+                                                    positive)
 
-import           Types.Prim
+import           Types.Prim                        (Description (..),
+                                                    Operable (..), SKU (..),
+                                                    SerialNumber (..),
+                                                    SpaceCraftId (..),
+                                                    Squadron (..))
 
 
 data SpaceCraftT f = SpaceCraft
@@ -176,14 +205,14 @@ type API = "api" :> "space-craft" :> Get '[JSON] [SpaceCraft]
       :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftId :> Delete '[JSON] ()
 
 
-type SPA = "app" :> "echo" :> QueryParam "echo" Text :> Raw
-      :<|> "app" :> "new"  :> Raw
-      :<|> "app" :> "edit" :> Capture "id" SpaceCraftId :> Raw
-      :<|> "app" :> QueryParam "search" Search :> Raw
-      :<|> Raw
+type SPA m = "app" :> "echo" :> QueryParam "echo" Text :> Spa m Text
+        :<|> "app" :> "new"  :> Spa m Frontend
+        :<|> "app" :> "edit" :> Capture "id" SpaceCraftId :> Spa m Frontend
+        :<|> "app" :> QueryParam "search" Search :> Spa m Frontend
+        :<|> Raw
 
 
-routes :: SPA :>> Route
+routes :: SPA m :>> Route
 routes = REcho
     :<|> RNew
     :<|> RExisting
@@ -195,12 +224,12 @@ deriving newtype instance ToHttpApiData   Search
 deriving newtype instance FromHttpApiData Search
 
 
-instance Routed SPA Route where
+instance Routed (SPA m) Route where
   redirect = \case
-    REcho t     -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> Raw)) ($ t)
-    RNew        -> Redirect (Proxy @("app" :> "new" :> Raw)) id
-    RExisting i -> Redirect (Proxy @("app" :> "edit" :> Capture "id" SpaceCraftId :> Raw)) ($ i)
-    RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> Raw)) ($ Just (_value s))
+    REcho t     -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> Spa m Text)) ($ t)
+    RNew        -> Redirect (Proxy @("app" :> "new" :> Spa m Frontend)) id
+    RExisting i -> Redirect (Proxy @("app" :> "edit" :> Capture "id" SpaceCraftId :> Spa m Frontend)) ($ i)
+    RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> Spa m Frontend)) ($ Just (_value s))
 
 
 class CRUDSpaceCraft m where
@@ -244,6 +273,7 @@ instance Tabular [SpaceCraft] where
 
   toRows = fmap SpaceCraftRow
 
+  toCell :: forall m. Effect [SpaceCraft] m => [SpaceCraft] -> Row [SpaceCraft] -> Column [SpaceCraft] -> [Html m [SpaceCraft]]
   toCell _ (SpaceCraftRow SpaceCraft {..}) = \case
     SKUT          -> present _sku
     DescriptionT  -> present _description
@@ -253,7 +283,7 @@ instance Tabular [SpaceCraft] where
     ToolsT        ->
       [ H.div "btn-group"
         [ H.button [ H.className "btn btn-sm btn-secondary",
-                     H.onClickM_ $ navigate @ SPA (RExisting _identity) ] [ "Edit" ]
+                     H.onClickM_ $ navigate @ (SPA m) (RExisting _identity) ] [ "Edit" ]
         , H.button [ H.className "btn btn-sm btn-secondary",
                      H.onClickM $ do
                        deleteSpaceCraft _identity
@@ -270,5 +300,3 @@ instance Tabular [SpaceCraft] where
     ToolsT        -> \_ _ -> EQ
     where f = case d of ASC -> id; DESC -> flip
           g l = compare `on` Lens.view l . unRow
-
-

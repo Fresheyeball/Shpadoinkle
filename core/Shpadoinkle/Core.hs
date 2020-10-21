@@ -1,15 +1,12 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE CPP                    #-}
-{-# LANGUAGE ExplicitNamespaces     #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE InstanceSigs           #-}
-{-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE LambdaCase             #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
@@ -50,35 +47,36 @@ module Shpadoinkle.Core (
   , type (~>)
   -- * The Shpadoinkle Primitive
   , shpadoinkle
-  -- ** Convenience Variants
-  , runJSorWarp
-  , fullPage
-  , fullPageJSM
-  , simple
   -- * Re-Exports
-  , JSM, MonadJSM, TVar, newTVarIO, readTVarIO
+  , JSM, MonadJSM
+  , module UnliftIO.STM
   ) where
 
 
-import           Control.Arrow                    (second)
-import qualified Control.Categorical.Functor      as F
-import           Control.Category                 ((.))
-import           Control.PseudoInverseCategory
-import           Data.Functor.Identity
-import           Data.Kind
-import           Data.String
-import           Data.Text
-import           GHCJS.DOM.Types                  (JSM, MonadJSM)
-import           Language.Javascript.JSaddle      (FromJSVal (..), JSVal,
-                                                   ToJSVal (..))
-import           Prelude                          hiding ((.))
-import           UnliftIO.STM                     (TVar, newTVarIO, readTVarIO)
-#ifndef ghcjs_HOST_OS
-import           Language.Javascript.JSaddle.Warp (run)
-#endif
+import           Control.Arrow                 (second)
+import qualified Control.Categorical.Functor   as F
+import           Control.Category              ((.))
+import           Control.PseudoInverseCategory (EndoIso (..),
+                                                HasHaskFunctors (fmapA),
+                                                PIArrow (piendo, piiso, pisecond),
+                                                PseudoInverseCategory (piinverse),
+                                                ToHask (piapply))
+import           Data.Functor.Identity         (Identity (Identity, runIdentity))
+import           Data.Kind                     (Type)
+import           Data.String                   (IsString (..))
+import           Data.Text                     (Text, pack)
+import           GHCJS.DOM.Types               (JSM, MonadJSM)
+import           Language.Javascript.JSaddle   (FromJSVal (..), JSVal,
+                                                ToJSVal (..))
+import           Prelude                       hiding ((.))
+import           UnliftIO.STM                  (TVar, atomically, modifyTVar,
+                                                newTVarIO, readTVar, readTVarIO,
+                                                retrySTM, writeTVar)
 
 
-import           Shpadoinkle.Continuation
+import           Shpadoinkle.Continuation      (Continuation, Continuous (..),
+                                                causes, constUpdate, eitherC,
+                                                hoist, impur, shouldUpdate)
 
 
 -- | This is the core type in Backend.
@@ -249,7 +247,7 @@ textProp = PText
 
 -- | Create an event listener property.
 listenerProp :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> Prop m a
-listenerProp f = PListener (\r e -> f r e)
+listenerProp = PListener
 {-# INLINE listenerProp #-}
 
 
@@ -480,75 +478,3 @@ shpadoinkle toJSM toM initial model view stage = do
     _ <- shouldUpdate (go c) n model
     return ()
 
-
--- | Wrapper around 'shpadoinkle' for full page apps
--- that do not need outside control of the territory
-fullPage
-  :: Backend b m a => Monad (b m) => Eq a
-  => (m ~> JSM)
-  -- ^ How do we get to JSM?
-  -> (TVar a -> b m ~> m)
-  -- ^ What backend are we running?
-  -> a
-  -- ^ What is the initial state?
-  -> (a -> Html (b m) a)
-  -- ^ How should the html look?
-  -> b m RawNode
-  -- ^ Where do we render?
-  -> JSM ()
-fullPage g f i view getStage = do
-  model <- newTVarIO i
-  shpadoinkle g f i model view getStage
-{-# INLINE fullPage #-}
-
-
--- | 'fullPageJSM' is a wrapper around 'shpadoinkle'
--- for full page apps that do not need outside control
--- of the territory, where actions are performed directly in JSM.
---
--- This set of assumptions is extremely common when starting
--- a new project.
-fullPageJSM
-  :: Backend b JSM a => Monad (b JSM) => Eq a
-  => (TVar a -> b JSM ~> JSM)
-  -- ^ What backend are we running?
-  -> a
-  -- ^ What is the initial state?
-  -> (a -> Html (b JSM) a)
-  -- ^ How should the html look?
-  -> b JSM RawNode
-  -- ^ Where do we render?
-  -> JSM ()
-fullPageJSM = fullPage id
-{-# INLINE fullPageJSM #-}
-
-
--- | Start the program!
---
--- This function works in GHC and GHCjs. I saved you from using C preprocessor directly. You're welcome.
-runJSorWarp :: Int -> JSM () -> IO ()
-#ifdef ghcjs_HOST_OS
-runJSorWarp _ = id
-{-# INLINE runJSorWarp #-}
-#else
-runJSorWarp = run
-{-# INLINE runJSorWarp #-}
-#endif
-
-
--- | Simple app
---
--- (a good starting place)
-simple
-  :: Backend b JSM a => Monad (b JSM) => Eq a
-  => (TVar a -> b JSM ~> JSM)
-  -- ^ What backend are we running?
-  -> a
-  -- ^ what is the initial state?
-  -> (a -> Html (b JSM) a)
-  -- ^ how should the html look?
-  -> b JSM RawNode
-  -- ^ where do we render?
-  -> JSM ()
-simple = fullPageJSM
-{-# INLINE simple #-}

@@ -7,10 +7,15 @@ module Shpadoinkle.Html.TH where
 
 import qualified Data.Char           as Char
 import qualified Data.Text
-import           Language.Haskell.TH
+import           Language.Haskell.TH (Body (NormalB), Clause (Clause),
+                                      Dec (FunD, SigD, ValD),
+                                      Exp (AppE, ListE, LitE, VarE),
+                                      Lit (StringL), Name, Pat (VarP), Q,
+                                      Type (AppT, ArrowT, ConT, ForallT, ListT, TupleT, VarT),
+                                      mkName)
 
 
-import           Shpadoinkle         hiding (h, name)
+import           Shpadoinkle         (Continuation, Html, Prop)
 
 
 capitalized :: String -> String
@@ -36,7 +41,7 @@ mkEventDSL evt = let
   in return
 
     [ SigD nameM (ForallT [] [ AppT (ConT ''Prelude.Monad) m ]
-      (AppT (AppT ArrowT (AppT m ((AppT (AppT ArrowT a) a))))
+      (AppT (AppT ArrowT (AppT m (AppT (AppT ArrowT a) a)))
         (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
          (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
 
@@ -107,7 +112,7 @@ mkIntProp = mkProp ''Int "textProperty"
 mkElement :: String -> Q [Dec]
 mkElement name = let
 
-    raw = filter (not . (== '\'')) name
+    raw = filter (/= '\'') name
     n   = mkName name
     n'  = mkName $ name ++ "'"
     n_  = mkName $ name ++  "_"

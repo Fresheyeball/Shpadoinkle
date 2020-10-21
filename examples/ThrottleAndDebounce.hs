@@ -7,11 +7,15 @@
 module Main where
 
 
-import           Control.Monad.IO.Class
+import           Control.Monad.IO.Class      (liftIO)
 import           Data.Text                   (Text, pack)
-import           Shpadoinkle
-import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Html
+import           Shpadoinkle                 (Html, JSM, newTVarIO, shpadoinkle,
+                                              text)
+import           Shpadoinkle.Backend.ParDiff (ParDiffT, runParDiff)
+import           Shpadoinkle.Html            (Debounce (..), Throttle (..),
+                                              button, debounce, div_, getBody,
+                                              input, onClick, onInput, throttle)
+import           Shpadoinkle.Run             (runJSorWarp)
 
 
 type Model = (Int, Text)

@@ -17,9 +17,10 @@ module Shpadoinkle.Lens (
   ) where
 
 
-import           Control.Lens
-import           Data.Maybe
-import           Shpadoinkle.Continuation
+import           Control.Lens             (Iso', Lens', Prism', Traversal', iso,
+                                           preview, prism, set, view)
+import           Data.Maybe               (fromMaybe)
+import           Shpadoinkle.Continuation (Continuous, liftC, liftCMay)
 
 
 generalize, onRecord :: forall f m s a. Functor m => Continuous f => Lens' s a -> f m a -> f m s

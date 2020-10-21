@@ -47,7 +47,7 @@ import           Shpadoinkle.Keyboard
 
 mkWithFormVal ::  (JSVal -> JSM v) -> Text -> JSString -> (v -> Continuation m a) -> (Text, Prop m a)
 mkWithFormVal valTo evt from f = listenRaw evt $ \(RawNode n) _ ->
-  return . f =<< liftJSM (valTo =<< unsafeGetProp from =<< valToObject n)
+  f <$> liftJSM (valTo =<< unsafeGetProp from =<< valToObject n)
 
 
 onInputC ::  (Text -> Continuation m a) -> (Text, Prop m a)
@@ -84,7 +84,7 @@ onOptionM_ f = onOptionC (causes . f)
 
 mkOnKey ::  Text -> (KeyCode -> Continuation m a) -> (Text, Prop m a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
-  return . f =<< liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
+  f <$> liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
 
 
 onKeyupC, onKeydownC, onKeypressC :: (KeyCode -> Continuation m a) -> (Text, Prop m a)

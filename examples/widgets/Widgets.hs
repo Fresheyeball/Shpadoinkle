@@ -14,19 +14,24 @@ module Main where
 
 import           Control.Lens                      hiding (view)
 import           Control.Monad.IO.Class            (liftIO)
-import           Data.Text
+import           Data.Text                         (Text, pack)
 import           Prelude                           hiding (div)
 
-import           Shpadoinkle
-import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle                       (Html, JSM, newTVarIO,
+                                                    shpadoinkle)
+import           Shpadoinkle.Backend.ParDiff       (runParDiff)
 import           Shpadoinkle.Html                  as H (a, button, class', div,
                                                          div_, href, id', link',
                                                          rel, textProperty,
                                                          type')
-import           Shpadoinkle.Html.Utils
-import           Shpadoinkle.Lens
+import           Shpadoinkle.Html.Utils            (getBody)
+import           Shpadoinkle.Lens                  (generalize)
+import           Shpadoinkle.Run                   (runJSorWarp)
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
-import           Shpadoinkle.Widgets.Types
+import           Shpadoinkle.Widgets.Types         (Humanize (..), Pick (..),
+                                                    Present (..), Selected,
+                                                    Toggle (..), fullOptions,
+                                                    fullset, withOptions')
 
 
 default (Text)

@@ -31,6 +31,7 @@ import           Shpadoinkle                       (Html, MonadJSM, text)
 import qualified Shpadoinkle.Html                  as H
 import           Shpadoinkle.Lens
 import           Shpadoinkle.Router                (navigate, toHydration)
+import           Shpadoinkle.Run                   (Env (Dev, Prod))
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown (Dropdown (..),
                                                                 Theme (..),
                                                                 defConfig,
@@ -96,9 +97,9 @@ intControl l msg errs ef = formGroup
   [ H.label [ H.for' hName, H.class' "col-sm-2 col-form-label" ] [ text msg ]
   , H.div "col-sm-10" $
     [ ef <% l $ Input.integral
-      $ [ H.name' hName, H.step "1", H.min "0"
-        , H.class' ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
-        ]
+      [ H.name' hName, H.step "1", H.min "0"
+      , H.class' ("form-control":controlClass (errs ^. l) (ef ^. l .hygiene))
+      ]
     ]
     <> invalid (errs ^. l) (ef ^. l . hygiene)
   ] where hName = toHtmlName msg
@@ -108,7 +109,7 @@ selectControl
   :: forall p x m a
    . MonadJSM m => Control (Dropdown p)
   => Considered p ~ Maybe => Consideration ConsideredChoice p
-  => Present (Selected p x) => Ord x
+  => Present (Selected p x) => Ord x => Present x
   => (forall v. Lens' (a v) (Field v Text (Dropdown p) x))
   -> Text -> a 'Errors -> a 'Edit -> Html m (a 'Edit)
 selectControl l msg errs ef = formGroup
@@ -124,16 +125,16 @@ selectControl l msg errs ef = formGroup
       [ H.class' [ ("dropdown", True)
                  , ("show", _toggle == Open) ]
       ]
-    , _header  = \cs -> pure $ H.button
+    , _header  = pure . H.button
       [ H.class' ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
       , H.type' "button"
-      ] (present cs)
+      ] . present
     , _list    = H.div
       [ H.class' [ ("dropdown-menu", True)
                  , ("show", _toggle == Open) ]
       ]
-    , _item    = const $ H.a' [ H.className "dropdown-item"
-                              , H.textProperty "style" "cursor:pointer" ]
+    , _item    = H.a [ H.className "dropdown-item"
+                     , H.textProperty "style" "cursor:pointer" ] . present
     }
 
 
@@ -152,7 +153,7 @@ toHtmlName :: Text -> Text
 toHtmlName = toLower . replace " " "-"
 
 
-editForm :: (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> SpaceCraftUpdate 'Edit -> Html m (SpaceCraftUpdate 'Edit)
+editForm :: forall m. (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> SpaceCraftUpdate 'Edit -> Html m (SpaceCraftUpdate 'Edit)
 editForm mid ef = H.div_
 
   [ intControl    @SKU                   sku         "SKU"           errs ef
@@ -163,7 +164,7 @@ editForm mid ef = H.div_
   , H.div "d-flex flex-row justify-content-end"
 
     [ H.button
-      [ H.onClickM_ . navigate @SPA $ RList mempty
+      [ H.onClickM_ . navigate @(SPA m) $ RList mempty
       , H.class' "btn btn-secondary"
       ] [ "Cancel" ]
 
@@ -173,7 +174,7 @@ editForm mid ef = H.div_
          Just up -> do
            case mid of Nothing  -> () <$ createSpaceCraft up
                        Just sid -> updateSpaceCraft sid up
-           navigate @SPA (RList mempty)
+           navigate @(SPA m) (RList mempty)
       , H.class' "btn btn-primary"
       , H.disabled $ isNothing isValid
       ] [ "Save" ]
@@ -214,7 +215,7 @@ fuzzy = flip (^.) <$>
   ]
 
 
-view :: (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
+view :: forall m. (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
 view fe = case fe of
 
   MList r -> onSum _MList $ H.div "container-fluid"
@@ -225,7 +226,7 @@ view fe = case fe of
              ]
        [ r <% search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
        , H.div "input-group-append mr-3"
-         [ H.button [ H.onClickM_ $ navigate @SPA RNew, H.class' "btn btn-primary" ] [ "Register" ]
+         [ H.button [ H.onClickM_ $ navigate @(SPA m) RNew, H.class' "btn btn-primary" ] [ "Register" ]
          ]
        ]
      ]
@@ -244,14 +245,14 @@ view fe = case fe of
 
   MEcho t -> H.div_
     [ maybe (text "Erie silence") text t
-    , H.a [ H.onClickM_ . navigate @SPA $ RList mempty ] [ "Go To Space Craft Roster" ]
+    , H.a [ H.onClickM_ . navigate @(SPA m) $ RList mempty ] [ "Go To Space Craft Roster" ]
     ]
 
   M404 -> text "404"
 
 
-template :: Frontend -> Html m a -> Html m a
-template fe stage = H.html_
+template :: Env -> Frontend -> Html m a -> Html m a
+template ev fe stage = H.html_
   [ H.head_
     [ H.link'
       [ H.rel "stylesheet"
@@ -259,9 +260,14 @@ template fe stage = H.html_
       ]
     , H.meta [ H.charset "ISO-8859-1" ] []
     , toHydration fe
-    , H.script [ H.src "/all.js" ] []
+    , H.script [ H.src $ entrypoint ev ] []
     ]
   , H.body_
     [ stage
     ]
   ]
+
+
+entrypoint :: Env -> Text
+entrypoint Dev  = "/jsaddle.js"
+entrypoint Prod = "/all.min.js"

@@ -10,25 +10,38 @@
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
 
-module Main where
+module Server where
 
 
-import           Control.Monad.Reader
-import           Data.FileEmbed
-import           Data.Proxy
-import           Data.Text.Encoding
-import           Database.Beam
-import           Database.Beam.Sqlite
-import           Database.SQLite.Simple
-import           Network.Wai
-import           Network.Wai.Handler.Warp
-import           Options.Applicative
+import           Control.Monad.Reader      (MonadIO, MonadReader (..),
+                                            ReaderT (..), liftIO)
+import           Data.FileEmbed            (embedFile)
+import           Data.Proxy                (Proxy (..))
+import           Data.Text.Encoding        (decodeUtf8)
+import           Database.Beam             (all_, default_, delete, filter_,
+                                            insert, insertExpressions,
+                                            primaryKey, runDelete,
+                                            runSelectReturningList,
+                                            runSelectReturningOne, runUpdate,
+                                            save, select, val_, (==.))
+import           Database.Beam.Sqlite      (SqliteM, runBeamSqlite,
+                                            runInsertReturningList)
+import           Database.SQLite.Simple    (Connection, Query (..), execute_,
+                                            open)
+import           Network.Wai               (Application)
+import           Network.Wai.Handler.Warp  (run)
+import           Options.Applicative       (Parser, ParserInfo, auto,
+                                            execParser, fullDesc, header,
+                                            helper, info, long, metavar, option,
+                                            progDesc, short, showDefault,
+                                            strOption, value, (<**>))
 import           Servant.API
-import           Servant.Server
+import           Servant.Server            (Server, hoistServer, serve)
 
-import           Shpadoinkle
+import           Shpadoinkle               (JSM, type (~>))
 import           Shpadoinkle.Router        (MonadJSM)
-import           Shpadoinkle.Router.Server
+import           Shpadoinkle.Router.Server (serveUI)
+import           Shpadoinkle.Run           (Env (Prod))
 
 import           Types
 import           View
@@ -90,8 +103,8 @@ instance CRUDSpaceCraft App where
         [ SpaceCraft default_ (val_ _sku) (val_ _description) (val_ _serial) (val_ _squadron) (val_ _operable) ]
 
 
-app :: Connection -> FilePath -> Application
-app conn root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
+app :: Env -> Connection -> FilePath -> Application
+app ev conn root = serve (Proxy @ (API :<|> SPA App)) $ serveApi :<|> serveSpa
   where
 
   serveApi :: Server API
@@ -102,15 +115,21 @@ app conn root = serve (Proxy @ (API :<|> SPA)) $ serveApi :<|> serveSpa
     :<|> createSpaceCraft
     :<|> deleteSpaceCraft
 
-  serveSpa :: Server SPA
-  serveSpa = serveUI @ SPA root
+  serveSpa :: Server (SPA App)
+  serveSpa = serveUI @ (SPA App) root
     (\r -> toHandler conn $ do
-      i <- start r; return . template i $ view @ Noop i) routes
+      i <- start r; return . template ev i $ view @ Noop i) routes
+
+
+application :: Env -> FilePath -> IO Application
+application ev assets = do
+  conn <- open "roster.db"
+  execute_ conn . Query $ decodeUtf8 $(embedFile "./servant-crud/migrate.sql")
+  return $ app ev conn assets
 
 
 main :: IO ()
 main = do
   Options {..} <- execParser options
-  conn <- open "roster.db"
-  execute_ conn . Query $ decodeUtf8 $(embedFile "./servant-crud/migrate.sql")
-  run port $ app conn assets
+  run port =<< application Prod assets
+

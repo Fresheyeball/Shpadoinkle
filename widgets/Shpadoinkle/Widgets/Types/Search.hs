@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveAnyClass             #-}
-{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -10,14 +8,15 @@
 module Shpadoinkle.Widgets.Types.Search where
 
 
-import           Data.Aeson
-import           Data.Foldable     as F
+import           Data.Aeson        (FromJSON, ToJSON)
+import           Data.Foldable     as F (Foldable (foldl'))
 import           Data.List         (sort)
 import           Data.Maybe        (mapMaybe)
-import           Data.String
-import           Data.Text
-import           GHC.Generics
-import           Text.EditDistance
+import           Data.String       (IsString)
+import           Data.Text         (Text, isInfixOf, splitOn, strip, toLower,
+                                    unpack)
+import           GHC.Generics      (Generic)
+import           Text.EditDistance (defaultEditCosts, levenshteinDistance)
 
 
 newtype Search = Search { unSearch :: Text }
@@ -36,8 +35,8 @@ instance Eq       a => Ord    (Levenshtiened a) where
 
 
 mkLevenshtiened :: Text -> Search -> a -> Levenshtiened a
-mkLevenshtiened  t (Search s) x =
-  Levenshtiened (EditDistance $ levenshteinDistance defaultEditCosts (prep s) (prep t)) x
+mkLevenshtiened  t (Search s) =
+  Levenshtiened . EditDistance $ levenshteinDistance defaultEditCosts (prep s) (prep t)
   where prep = unpack . strip
 
 

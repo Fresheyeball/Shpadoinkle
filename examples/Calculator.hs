@@ -1,18 +1,19 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TemplateHaskell   #-}
 
 
 module Main where
 
 
-import           Data.Maybe
-import           Data.Text
-import           Safe
-import           Shpadoinkle
-import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Html
+import           Data.Maybe                  (fromMaybe)
+import           Data.Text                   (Text, pack, unpack)
+import           Safe                        (readMay)
+import           Shpadoinkle                 (Html, liftC, text)
+import           Shpadoinkle.Backend.ParDiff (runParDiff)
+import           Shpadoinkle.Html            (div_, getBody, input', onInput,
+                                              onOption, option, select, value)
+import           Shpadoinkle.Run             (runJSorWarp, simple)
 
 
 data Model = Model
@@ -62,9 +63,9 @@ num x = input'
 
 view :: Functor m => Model -> Html m Model
 view model = div_
-  [ liftC (\l m -> m { left      = l }) left      $ num (left model)
-  , liftC (\o m -> m { operation = o }) operation $ opSelect
-  , liftC (\r m -> m { right     = r }) right     $ num (right model)
+  [ liftC (\l m -> m { left      = l }) left    $ num (left model)
+  , liftC (\o m -> m { operation = o }) operation opSelect
+  , liftC (\r m -> m { right     = r }) right   $ num (right model)
   , text $ " = " <> pack (show $ opFunction
       (operation model) (left model) (right model))
   ]

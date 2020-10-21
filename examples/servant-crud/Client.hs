@@ -6,26 +6,26 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
 
-module Main where
+module Client where
 
 
 import           Control.Monad.Catch         (MonadThrow)
 import           Control.Monad.Reader        (MonadIO)
 import           Data.Proxy                  (Proxy (..))
-import           Language.Javascript.JSaddle (askJSM, runJSM)
+import           Language.Javascript.JSaddle (JSM, askJSM, runJSM)
+#ifndef ghcjs_HOST_OS
+import           Language.Javascript.JSaddle (MonadJSM)
+#endif
 import           Servant.API                 ((:<|>) (..))
-import           Shpadoinkle
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html.Utils      (getBody)
 import           Shpadoinkle.Router          (fullPageSPA, withHydration)
-#ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Router          (MonadJSM)
-#endif
 import           Shpadoinkle.Router.Client   (client, runXHR)
 import           UnliftIO                    (MonadUnliftIO (..), UnliftIO (..))
 
-import           Types
-import           View
+import           Types                       (API, CRUDSpaceCraft (..), SPA,
+                                              routes)
+import           View                        (start, view)
 
 
 newtype App a = App { runApp :: JSM a }
@@ -53,10 +53,4 @@ instance CRUDSpaceCraft App where
 
 
 app :: JSM ()
-app = fullPageSPA @ SPA runApp runParDiff (withHydration start) view getBody start routes
-
-
-main :: IO ()
-main = do
-  putStrLn "running app"
-  runJSorWarp 8080 app
+app = fullPageSPA @ (SPA JSM) runApp runParDiff (withHydration start) view getBody start routes

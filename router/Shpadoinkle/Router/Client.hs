@@ -15,15 +15,22 @@ module Shpadoinkle.Router.Client
   ) where
 
 
-import           Control.Monad (join)
-import           Control.Monad.Catch
-import           Data.Maybe
-import           Data.Text
-import           Language.Javascript.JSaddle hiding (JSM)
-import           Servant.Client.JS
-import           Text.Read
-import           GHCJS.DOM.Types hiding (Text)
-import           UnliftIO
+import           Control.Monad.Catch         (MonadThrow (throwM))
+import           Data.Maybe                  (fromMaybe)
+import           Data.Text                   (Text)
+import           GHCJS.DOM.Types             (JSM)
+import           Language.Javascript.JSaddle (FromJSVal (fromJSVal), jsg, (!))
+import           Servant.Client.JS           (BaseUrl (..), ClientEnv (..),
+                                              ClientError (..), ClientM (..),
+                                              EmptyClient (..), HasClient (..),
+                                              InvalidBaseUrlException, Response,
+                                              ResponseF (..), Scheme (..),
+                                              StreamingResponse, client,
+                                              parseBaseUrl, runClientM,
+                                              showBaseUrl,
+                                              withStreamingRequestJSM)
+import           Text.Read                   (readMaybe)
+import           UnliftIO                    (MonadIO (liftIO))
 
 default (Text)
 
@@ -34,15 +41,15 @@ runXHR m = do -- TODO cache the base url or make it optional
   loc <- jsg ("window" :: Text) >>= (! ("location" :: Text))
   protocol <- mapProtocol <$> (loc ! ("protocol" :: Text) >>= fromJSVal)
   hostname <- fromMaybe "localhost" <$> (loc ! ("hostname" :: Text) >>= fromJSVal)
-  port <- fromMaybe (defaultPort protocol) . join . fmap readMaybe <$> (loc ! ("port" :: Text) >>= fromJSVal)
+  port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) <$> (loc ! ("port" :: Text) >>= fromJSVal)
   runXHR' m . ClientEnv $ BaseUrl protocol hostname port ""
   where mapProtocol :: Maybe String -> Scheme
         mapProtocol (Just "https:") = Https
-        mapProtocol _ = Http
+        mapProtocol _               = Http
 
         defaultPort :: Scheme -> Int
         defaultPort Https = 443
-        defaultPort Http = 80
+        defaultPort Http  = 80
 
 -- | Run the ClientM from Servant as an XHR request with a customized base URL.
 runXHR' :: ClientM a -> ClientEnv -> JSM a

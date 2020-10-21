@@ -28,14 +28,16 @@ module Shpadoinkle.Console (
   ) where
 
 
-import           Control.Lens
+import           Control.Lens                ((^.))
 import           Data.Aeson                  (ToJSON, encode)
-import           Data.Kind
-import           Data.String
-import           Data.Text
+import           Data.Kind                   (Constraint, Type)
+import           Data.String                 (IsString)
+import           Data.Text                   (Text, pack)
 import           Data.Text.Lazy              (toStrict)
-import           Data.Text.Lazy.Encoding
-import           Language.Javascript.JSaddle hiding (startTime)
+import           Data.Text.Lazy.Encoding     (decodeUtf8)
+import           Language.Javascript.JSaddle (JSContextRef, JSM,
+                                              ToJSVal (toJSVal), askJSM, js1,
+                                              js2, jsg, runJSM)
 import           Prelude                     hiding (log)
 import           System.IO.Unsafe            (unsafePerformIO)
 

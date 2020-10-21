@@ -7,12 +7,6 @@ cradle:
           cabal:
             component: "test:unit"
 
-    - path: "./widgets/"
-      config:
-        cradle:
-          cabal:
-            component: "widgets"
-
     - path: "./core/"
       config:
         cradle:
@@ -25,11 +19,35 @@ cradle:
           cabal:
             component: "lens"
 
+    - path: "./backends/snabbdom"
+      config:
+        cradle:
+          cabal:
+            component: "backends/snabbdom"
+
+    - path: "./backends/pardiff"
+      config:
+        cradle:
+          cabal:
+            component: "backends/pardiff"
+
+    - path: "./backends/static"
+      config:
+        cradle:
+          cabal:
+            component: "backends/static"
+
     - path: "./router/"
       config:
         cradle:
           cabal:
             component: "router"
+
+    - path: "./console/"
+      config:
+        cradle:
+          cabal:
+            component: "console"
 
     - path: "./html/"
       config:
@@ -37,11 +55,71 @@ cradle:
           cabal:
             component: "html"
 
+    - path: "./widgets/"
+      config:
+        cradle:
+          cabal:
+            component: "widgets"
+
     - path: "./isreal/"
       config:
         cradle:
           cabal:
             component: "isreal"
+
+    - path: "./examples/TODOMVC.hs"
+      config:
+        cradle:
+          cabal:
+            component: "examples:todomvc"
+
+    - path: "./examples/Lens.hs"
+      config:
+        cradle:
+          cabal:
+            component: "examples:lens"
+
+    - path: "./examples/Counter.hs"
+      config:
+        cradle:
+          cabal:
+            component: "examples:counter"
+
+    - path: "./examples/Calculator.hs"
+      config:
+        cradle:
+          cabal:
+            component: "examples:calculator"
+
+    - path: "./examples/CalculatorIE.hs"
+      config:
+        cradle:
+          cabal:
+            component: "examples:calculator-ie"
+
+    - path: "./examples/Animation.hs"
+      config:
+        cradle:
+          cabal:
+            component: "examples:animation"
+
+    - path: "./examples/widgets/Widgets.hs"
+      config:
+        cradle:
+          cabal:
+            component: "examples:widgets"
+
+    - path: "./examples/ThrottleAndDebounce.hs"
+      config:
+        cradle:
+          cabal:
+            component: "examples:throttle-and-debounce"
+
+    - path: "./examples/servant-crud/Dev.hs"
+      config:
+        cradle:
+          cabal:
+            component: "examples:servant-crud-dev"
 
     - path: "./examples/servant-crud/Server.hs"
       config:
@@ -55,26 +133,3 @@ cradle:
           cabal:
             component: "examples:servant-crud-client"
 
-    - path: "./examples/Animation.hs"
-      config:
-        cradle:
-          cabal:
-            component: "animation"
-
-    - path: "./examples/Counter.hs"
-      config:
-        cradle:
-          cabal:
-            component: "counter"
-
-    - path: "./examples/Calculator.hs"
-      config:
-        cradle:
-          cabal:
-            component: "calculator"
-
-    - path: "./examples/TODOMVC.hs"
-      config:
-        cradle:
-          cabal:
-            component: "TODOMVC"

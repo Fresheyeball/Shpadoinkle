@@ -4,15 +4,15 @@
 module Main where
 
 
-import           Control.Monad.IO.Class      (liftIO)
 import           Data.Text                   (pack)
 import           Prelude                     hiding (span)
 
-import           Shpadoinkle
-import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle                 (Html, JSM, text)
+import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (br'_, button, div_, h2_, id',
                                               onClick, span)
 import           Shpadoinkle.Html.Utils
+import           Shpadoinkle.Run             (runJSorWarp, simple)
 
 
 view :: Int -> Html m Int
@@ -27,9 +27,7 @@ view count = div_
 
 
 app :: JSM ()
-app = do
-  model <- liftIO $ newTVarIO 0
-  shpadoinkle id runParDiff 0 model view getBody
+app = simple runParDiff 0 view getBody
 
 
 main :: IO ()

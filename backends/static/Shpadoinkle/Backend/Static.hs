@@ -10,11 +10,11 @@
 module Shpadoinkle.Backend.Static ( renderStatic ) where
 
 
-import           Control.Compactable
+import           Control.Compactable (Compactable (fmapMaybe))
 import           Data.Monoid         ((<>))
-import           Data.Text
+import           Data.Text           (Text, null, unwords)
 
-import           Shpadoinkle         hiding (name, props, text)
+import           Shpadoinkle         (Html, Prop, cataH, cataProp)
 
 
 -- | Render as @Text@

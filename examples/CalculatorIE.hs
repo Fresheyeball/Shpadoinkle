@@ -6,7 +6,6 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeApplications       #-}
@@ -14,18 +13,22 @@
 
 module Main where
 
-import           Control.Lens
-import           Data.Aeson
-import           Data.FileEmbed
+import           Control.Lens                (Iso', Prism', from, iso,
+                                              makeFieldsNoPrefix, prism', re,
+                                              to, (%~), (&), (.~), (?~), (^.),
+                                              (^..), (^?))
+import           Data.Aeson                  (ToJSON)
+import           Data.FileEmbed              (embedFile)
 import           Data.List                   as L
 import           Data.List.Split             as L
-import           Data.Text
-import           Data.Text.Encoding
+import           Data.Text                   (Text, pack)
+import           Data.Text.Encoding          (decodeUtf8)
 import           GHC.Generics                (Generic)
-import           Shpadoinkle
-import           Shpadoinkle.Backend.ParDiff
-import           Shpadoinkle.Console
+import           Shpadoinkle                 (Html, liftC)
+import           Shpadoinkle.Backend.ParDiff (runParDiff)
+import           Shpadoinkle.Console         (askJSM, trapper)
 import           Shpadoinkle.Html            as H
+import           Shpadoinkle.Run             (runJSorWarp, simple)
 
 default (ClassList)
 
@@ -173,7 +176,7 @@ numberpad m = H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
 
 operations :: Functor m => Model -> Html m Model
 operations x = H.div "operate" $ (\o' -> liftC (\o _ -> x
-  & operation .~ Just (Operation o (x ^. current))
+  & operation ?~ Operation o (x ^. current)
   & current .~ noEntry) (const o')
   $ operate (x ^? operation . traverse . operator) o') <$> ([minBound .. maxBound] :: [Operator])
 
@@ -202,4 +205,4 @@ main = runJSorWarp 8080 $ do
   setTitle "Calculator"
   ctx <- askJSM
   addInlineStyle $ decodeUtf8 $(embedFile "./CalculatorIE.css")
-  Shpadoinkle.simple runParDiff initial (Main.view . trapper @ToJSON ctx) getBody
+  simple runParDiff initial (Main.view . trapper @ToJSON ctx) getBody

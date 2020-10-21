@@ -11,11 +11,8 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TupleSections              #-}
-{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -48,28 +45,45 @@ module Shpadoinkle.Backend.ParDiff
   ) where
 
 
-import           Control.Applicative
-import           Control.Compactable
-import           Control.Lens
-import           Control.Monad.Base
-import           Control.Monad.Catch
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Control
-import           Data.Align
-import           Data.Foldable
-import           Data.Kind
+import           Control.Applicative         (Alternative)
+import           Control.Compactable         (Compactable (traverseMaybe))
+import           Control.Lens                ((^.))
+import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
+import           Control.Monad.Catch         (MonadCatch, MonadThrow)
+import           Control.Monad.Reader        (MonadIO, MonadReader (ask),
+                                              MonadTrans (..), ReaderT (..),
+                                              guard, void)
+import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
+                                              MonadTransControl,
+                                              defaultLiftBaseWith,
+                                              defaultRestoreM)
+import           Data.Align                  (Semialign (align))
+import           Data.Foldable               (traverse_)
+import           Data.Kind                   (Type)
 import           Data.Map                    (Map)
 import qualified Data.Map                    as M
 import           Data.Monoid                 ((<>))
-import           Data.Once
-import           Data.Text
-import           Data.These
-import           Data.Traversable
-import           GHC.Generics
-import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, ( # ))
-import           UnliftIO
+import           Data.Once                   (Once, newOnce, runOnce)
+import           Data.Text                   (Text, intercalate)
+import           Data.These                  (These (That, These, This))
+import           Data.Traversable            (for)
+import           GHC.Generics                (Generic)
+import           Language.Javascript.JSaddle (FromJSVal (fromJSValUnchecked),
+                                              MakeObject (makeObject), Object,
+                                              ToJSString (toJSString),
+                                              ToJSVal (toJSVal), eval, fun, js1,
+                                              js2, jsg, jsg2, liftJSM,
+                                              strictEqual, unsafeGetProp,
+                                              unsafeSetProp)
+import           UnliftIO                    (MonadUnliftIO (..), TVar,
+                                              UnliftIO (UnliftIO, unliftIO),
+                                              withUnliftIO)
 
-import           Shpadoinkle                 hiding (h, name, props, text)
+import           Shpadoinkle                 (Backend (..), Continuation,
+                                              Html (..), JSM, MonadJSM,
+                                              Prop (..), RawEvent (RawEvent),
+                                              RawNode (RawNode), type (~>),
+                                              hoist, writeUpdate)
 
 
 default (Text)
