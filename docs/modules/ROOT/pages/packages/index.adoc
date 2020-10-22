@@ -8,8 +8,8 @@ Shpadoinkle is segregated into several packages that compose together or can be 
 xref:packages/core.adoc[Core] ({gitlab}/core[Gitlab], {hackage}[Hackage], https://shpadoinkle.org/core[Haddock])::
 This stores the core types and logic for Shpadoinkle.
 
-xref:packages/html.adoc[Html] ({gitlab}/html[Gitlab], {hackage}-html[Hackage], https://shpadoinkle.org/html[Haddock])::
-A template-generated DSL defining HTML tags, Properties, and Events. It includes some related Utilities like keyboard support.
+xref:packages/backends.adoc[Snabbdom Backend] ({gitlab}/backends/snabbdom[Gitlab], {hackage}-backend-snabbdom[Hackage], https://shpadoinkle.org/backend-snabbdom[Haddock])::
+Binding to the high performance Snabbdom.js Virtual DOM library written in JavaScript.
 
 xref:packages/backends.adoc[Static Backend] ({gitlab}/static[Gitlab], {hackage}-backend-static[Hackage], https://shpadoinkle.org/backend-static[Haddock])::
 Takes Shpadoinkle Html and renders it as a static HTML string.
@@ -17,8 +17,17 @@ Takes Shpadoinkle Html and renders it as a static HTML string.
 xref:packages/backends.adoc[ParDiff Backend] ({gitlab}/backends/pardiff[Gitlab], {hackage}-backend-pardiff[Hackage], https://shpadoinkle.org/backend-pardiff[Haddock])::
 Canonical Virtual DOM written in Haskell, and based on Alignable Functors.
 
-xref:packages/backends.adoc[Snabbdom Backend] ({gitlab}/backends/snabbdom[Gitlab], {hackage}-backend-snabbdom[Hackage], https://shpadoinkle.org/backend-snabbdom[Haddock])::
-Binding to the high performance Snabbdom.js Virtual DOM library written in JavaScript.
+xref:packages/console.adoc[Console] ({gitlab}/console[Gitlab], {hackage}-console[Hackage], https://shpadoinkle.org/console[Haddock])::
+Support for the native JavaScript browser console.
+
+Developer Tools ({gitlab}/developer-tools[Gitlab])::
+Chrome extension to support Shpadoinkle debugging.
+
+xref:packages/lens.adoc[Lens] ({gitlab}/lens[Gitlab], {hackage}-lens[Hackage], https://shpadoinkle.org/lens[Haddock])::
+Lens combinators for ergonomic composing of heterogeneous components, and after-the-fact modification of views.
+
+xref:packages/html.adoc[Html] ({gitlab}/html[Gitlab], {hackage}-html[Hackage], https://shpadoinkle.org/html[Haddock])::
+A template-generated DSL defining HTML tags, Properties, and Events. It includes some related Utilities like keyboard support.
 
 xref:packages/router.adoc[Router] ({gitlab}/router[Gitlab], {hackage}-router[Hackage], https://shpadoinkle.org/router[Haddock])::
  Single Page Application (SPA) router based on https://docs.servant.dev/en/stable/[Servant].
@@ -26,11 +35,8 @@ xref:packages/router.adoc[Router] ({gitlab}/router[Gitlab], {hackage}-router[Hac
 xref:packages/widgets.adoc[Widgets] ({gitlab}/widgets[Gitlab], {hackage}-widgets[Hackage], https://shpadoinkle.org/widgets[Haddock])::
 Logical types and structures for common UI components, along with batteries-included implementations.
 
-xref:packages/lens.adoc[Lens] ({gitlab}/lens[Gitlab], {hackage}-lens[Hackage], https://shpadoinkle.org/lens[Haddock])::
-Lens combinators for ergonomic composing of heterogeneous components, and after-the-fact modification of views.
-
-xref:packages/console.adoc[Console] ({gitlab}/console[Gitlab], {hackage}-console[Hackage], https://shpadoinkle.org/console[Haddock])::
-Support for the native JavaScript browser console.
-
 Examples ({gitlab}/examples[Gitlab])::
 Small applications of Shpadoinkle to illustrate programming patterns.
+
+Isreal ({gitlab}/isreal[Gitlab])::
+Microservice to support playgrounds (Snowman as a service)

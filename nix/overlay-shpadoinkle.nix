@@ -104,30 +104,33 @@ in {
         in {
 
           Shpadoinkle                  = call "Shpadoinkle"                  ../core;
+
           Shpadoinkle-backend-snabbdom = call "Shpadoinkle-backend-snabbdom" ../backends/snabbdom;
           Shpadoinkle-backend-static   = call "Shpadoinkle-backend-static"   ../backends/static;
           Shpadoinkle-backend-pardiff  = call "Shpadoinkle-backend-pardiff"  ../backends/pardiff;
           Shpadoinkle-console          = call "Shpadoinkle-console"          ../console;
+          Shpadoinkle-developer-tools  = call "Shpadoinkle-developer-tools"  ../developer-tools;
           Shpadoinkle-lens             = call "Shpadoinkle-lens"             ../lens;
           Shpadoinkle-html             = call "Shpadoinkle-html"             ../html;
           Shpadoinkle-router           = call "Shpadoinkle-router"           ../router;
           Shpadoinkle-widgets          = call "Shpadoinkle-widgets"          ../widgets;
+
+          Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests) {};
           Shpadoinkle-examples         = call "Shpadoinkle-examples"         ../examples;
+
           Shpadoinkle-isreal           = call "Shpadoinkle-isreal"           ../isreal;
-          Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests)       {};
 
           ease                 = hself.callCabal2nix "ease" ease {};
           ghcjs-base-stub      = hself.callCabal2nix "ghcjs-base-stub" ghcjs-base-stub-src {};
-
           hpack                = if isJS then super.haskell.packages.${compiler}.hpack else hsuper.hpack;
-          servant              = dontJS    (hself.callCabal2nix "servant"         "${servant-src}/servant" {});
+          servant              = dontJS    (hself.callCabal2nix "servant"         "${servant-src}/servant"        {});
           servant-server       = dontCheck (hself.callCabal2nix "servant-server"  "${servant-src}/servant-server" {});
           servant-client       = dontCheck (hself.callCabal2nix "servant-client"  "${servant-src}/servant-client" {});
           servant-client-js    = hself.callCabal2nix "servant-client-js" servant-client-js-src {};
-          servant-jsaddle      = dontCheck (hself.callCabal2nix "servant-jsaddle" "${servant-jsaddle-src}" {});
+          servant-jsaddle      = dontCheck (hself.callCabal2nix "servant-jsaddle" "${servant-jsaddle-src}"        {});
           snabbdom             = hself.callCabal2nix "snabbdom" snabbdom-src {};
-          jsaddle-warp         = dontCheck (hself.callCabal2nix "jsaddle-warp"    "${jsaddle-src}/jsaddle-warp" {});
-          jsaddle              = dontCheck (hself.callCabal2nix "jsaddle"         "${jsaddle-src}/jsaddle" {});
+          jsaddle-warp         = dontCheck (hself.callCabal2nix "jsaddle-warp"    "${jsaddle-src}/jsaddle-warp"   {});
+          jsaddle              = dontCheck (hself.callCabal2nix "jsaddle"         "${jsaddle-src}/jsaddle"        {});
 
           # Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
         } // forThese dontJS [

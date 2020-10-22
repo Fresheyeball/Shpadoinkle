@@ -24,15 +24,17 @@ module Shpadoinkle.Widgets.Types.Form
   ) where
 
 
-import           Control.Applicative
-import           Control.Monad.Except
-import           Data.Aeson
-import           Data.Kind
-import           Data.String
-import           Data.Text                      hiding (empty)
+import           Control.Applicative            (Alternative (empty),
+                                                 Applicative (liftA2),
+                                                 Const (Const, getConst))
+import           Control.Monad.Except           (MonadError (..))
+import           Data.Aeson                     (FromJSON, ToJSON)
+import           Data.Kind                      (Type)
+import           Data.String                    (IsString)
+import           Data.Text                      (Text)
 import           GHC.Generics
 
-import           Shpadoinkle.Widgets.Types.Core
+import           Shpadoinkle.Widgets.Types.Core (Hygiene)
 
 
 data Input a = Input
