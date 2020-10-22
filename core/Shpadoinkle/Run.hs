@@ -11,6 +11,7 @@ module Shpadoinkle.Run (
   -- * Live Reloads
   Env(..), Port
 #ifndef ghcjs_HOST_OS
+  , liveWithBackend
   , live
 #endif
   -- ** Convenience Variants
@@ -30,7 +31,7 @@ import           Shpadoinkle                            (Backend, Html, RawNode,
 
 
 import           Language.Javascript.JSaddle.Warp       (run)
-import           Language.Javascript.JSaddle.WebSockets (debugOr)
+import           Language.Javascript.JSaddle.WebSockets (debug, debugOr)
 import           Network.Wai                            (Application)
 
 
@@ -40,7 +41,7 @@ import           Network.Wai                            (Application)
 -- @
 --   ghcid -c "cabal repl dev" -W -T "Main.main"
 -- @
-live
+liveWithBackend
   :: Port
   -- ^ Port to server the live server
   -> JSM ()
@@ -48,7 +49,22 @@ live
   -> IO Application
   -- ^ Server API
   -> IO ()
-live port frontend server = debugOr port frontend =<< server
+liveWithBackend port frontend server = debugOr port frontend =<< server
+
+
+-- | Serve jsaddle warp frontend.
+-- This is useful for live reloads for development purposes.
+-- For example:
+-- @
+--   ghcid -c "cabal repl" -W -T "Main.dev"
+-- @
+live
+  :: Port
+  -- ^ Port to server the live server
+  -> JSM ()
+  -- ^ Frontend application
+  -> IO ()
+live = debug
 
 
 #endif
