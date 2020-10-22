@@ -1,23 +1,11 @@
 cradle:
   multi:
 
-    - path: "./widgets/tests/Test.hs"
-      config:
-        cradle:
-          cabal:
-            component: "test:unit"
-
     - path: "./core/"
       config:
         cradle:
           cabal:
             component: "core"
-
-    - path: "./lens/"
-      config:
-        cradle:
-          cabal:
-            component: "lens"
 
     - path: "./backends/snabbdom"
       config:
@@ -37,17 +25,23 @@ cradle:
           cabal:
             component: "backends/static"
 
-    - path: "./router/"
-      config:
-        cradle:
-          cabal:
-            component: "router"
-
     - path: "./console/"
       config:
         cradle:
           cabal:
             component: "console"
+
+    - path: "./developer-tools"
+      config:
+        cradle:
+          cabal:
+            component: "developer-tools"
+
+    - path: "./lens/"
+      config:
+        cradle:
+          cabal:
+            component: "lens"
 
     - path: "./html/"
       config:
@@ -55,17 +49,23 @@ cradle:
           cabal:
             component: "html"
 
+    - path: "./router/"
+      config:
+        cradle:
+          cabal:
+            component: "router"
+
+    - path: "./widgets/tests/Test.hs"
+      config:
+        cradle:
+          cabal:
+            component: "test:unit"
+
     - path: "./widgets/"
       config:
         cradle:
           cabal:
             component: "widgets"
-
-    - path: "./isreal/"
-      config:
-        cradle:
-          cabal:
-            component: "isreal"
 
     - path: "./examples/TODOMVC.hs"
       config:
@@ -133,3 +133,8 @@ cradle:
           cabal:
             component: "examples:servant-crud-client"
 
+    - path: "./isreal/"
+      config:
+        cradle:
+          cabal:
+            component: "isreal"

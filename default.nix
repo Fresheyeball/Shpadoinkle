@@ -25,14 +25,17 @@ in
 
       inherit (haskell.packages.${util.compilerjs})
         Shpadoinkle
+
         Shpadoinkle-backend-snabbdom
         Shpadoinkle-backend-static
         Shpadoinkle-backend-pardiff
         Shpadoinkle-console
+        Shpadoinkle-developer-tools
         Shpadoinkle-lens
         Shpadoinkle-html
         Shpadoinkle-router
         Shpadoinkle-widgets
+
         Shpadoinkle-tests;
         Shpadoinkle-examples = (if optimizeJS then util.doCannibalize else id)
           haskell.packages.${util.compilerjs}.Shpadoinkle-examples;

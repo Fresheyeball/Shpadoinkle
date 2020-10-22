@@ -5,6 +5,7 @@ p core
 p backends/static
 p backends/snabbdom
 p backends/pardiff
+p developer-tools
 p console
 p html
 p router

@@ -1,0 +1,67 @@
+name:         Shpadoinkle-developer-tools
+license:      BSD3
+license-file: LICENSE
+version:      0.0.0.1
+author:       Isaac Shapira
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+synopsis:     Chrome extension to aide in development
+description:  A chrome extension to make developing Shpadoinkle applications easier
+
+
+ghc-options:
+    - -Wall
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+ghcjs-options:
+    - -Wall
+    - -Wcompat
+    - -fno-warn-missing-home-modules
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+    - -dedupe
+
+
+extra-source-files:
+  - README.md
+
+
+dependencies:
+    - base >= 4.12.0 && < 4.16
+    - containers
+    - jsaddle
+    - lens
+    - unliftio
+    - stm
+    - text
+    - time
+
+    - Shpadoinkle
+    - Shpadoinkle-html
+    - Shpadoinkle-backend-pardiff
+
+
+executables:
+
+  devtools:
+    main: Main.hs
+    other-modules:
+      - Shpadoinkle.DeveloperTools
+    source-dirs: .
+    dependencies:
+      - text
+      - stm
+
+
+
+git: https://gitlab.com/fresheyeball/Shpadoinkle.git

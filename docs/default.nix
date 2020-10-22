@@ -53,7 +53,7 @@ stdenv.mkDerivation {
 
     ln -s $src/docs docs
     ln -s $src/.git .git
-    ln -s $src/docs/antora-playbook.yml antora-playbook.yml
+    ln -s $src/antora-playbook.yml antora-playbook.yml
     ln -s ${theme} theme
 
     echo Building docs...
