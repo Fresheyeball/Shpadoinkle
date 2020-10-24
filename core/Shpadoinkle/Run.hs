@@ -7,13 +7,11 @@
 
 module Shpadoinkle.Run (
   -- * Agnostic Run
-  runJSorWarp,
+  runJSorWarp
   -- * Live Reloads
-  Env(..), Port
-#ifndef ghcjs_HOST_OS
+  , Env(..), Port
   , liveWithBackend
   , live
-#endif
   -- ** Convenience Variants
   , fullPage
   , fullPageJSM
@@ -65,6 +63,17 @@ live
   -- ^ Frontend application
   -> IO ()
 live = debug
+
+
+#else
+
+
+live :: Port -> JSM () -> IO ()
+live = error "Live reloads require GHC"
+
+
+liveWithBackend :: Port -> JSM () -> IO Application -> IO ()
+liveWithBackend = error "Live reloads require GHC"
 
 
 #endif

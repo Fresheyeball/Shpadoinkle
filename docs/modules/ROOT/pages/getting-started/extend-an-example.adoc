@@ -1,6 +1,6 @@
 = Extend an example
 
-The easiest way to try out Shpadoinkle is to extend one of the examples.
+This is the way to try out one of the examples. However the easiest way to try out Shpadoinkle is to build a https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[Snowman].
 
 [source,bash]
 ----
@@ -11,6 +11,9 @@ cd Shpadoinkle
 == Building Examples
 
 Shpadoinkle works with both https://gitlab.haskell.org/ghc/ghc[GHC] and https://github.com/ghcjs/ghcjs[GHCjs].
+
+[CAUTION]
+Building from source can take a long time. If you run with `nix-build` it's highly recommended you use xref:getting-started/index.adoc#_cachix[Cachix].
 
 === GHCjs
 

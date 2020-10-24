@@ -1,11 +1,5 @@
 = Getting Started
 
-
-* xref:getting-started/extend-an-example.adoc[Extend an Example]
-* xref:getting-started/adding-to-your-project.adoc[Adding to a Project]
-
-Shpadoinkle is built with Nix, but you can build however you like. `stack` and `cabal` are supported with or without Nix.
-
 [TIP]
 .⛄
 ====
@@ -15,6 +9,11 @@ The fastest way to start a new Shpadoinkle project is to build a https://gitlab.
 bash <( curl https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/raw/master/generator.sh )
 ----
 ====
+
+* xref:getting-started/extend-an-example.adoc[Extend an Example]
+* xref:getting-started/adding-to-your-project.adoc[Adding to a Project]
+
+Shpadoinkle is built with Nix, but you can build however you like. `stack` and `cabal` are supported with or without Nix.
 
 == Nix
 
@@ -39,7 +38,6 @@ nix --version
 [NOTE]
 .MacOS
 Installing Nix on MacOS should work fine, but if you end up in a sticky situation, https://medium.com/@robinbb/install-nix-on-macos-catalina-ca8c03a225fc[this article may help.] You can also refer to https://nixos.org/manual/nix/stable/#sect-macos-installation[the official manual] for more information about Nix.
-
 
 == Cachix
 
