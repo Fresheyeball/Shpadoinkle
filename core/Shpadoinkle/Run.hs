@@ -68,6 +68,9 @@ live = debug
 #else
 
 
+data Application
+
+
 live :: Port -> JSM () -> IO ()
 live = error "Live reloads require GHC"
 
