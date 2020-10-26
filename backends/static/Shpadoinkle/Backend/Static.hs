@@ -61,4 +61,4 @@ renderProp name = cataProp renderTextProp renderListener renderFlag
         renderFlag False = Nothing
         lice = \case
           "className" -> "class"
-          x -> x
+          x           -> x

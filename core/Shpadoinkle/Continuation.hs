@@ -140,8 +140,8 @@ instance Continuous Continuation where
 
 -- | Given a natural transformation, change a Continuation's underlying functor.
 hoist :: Functor m => (forall b. m b -> n b) -> Continuation m a -> Continuation n a
-hoist _ (Pure f) = Pure f
-hoist f (Rollback r) = Rollback (hoist f r)
+hoist _ (Pure f)              = Pure f
+hoist f (Rollback r)          = Rollback (hoist f r)
 hoist f (Continuation (g, h)) = Continuation . (g,) $ \x -> f $ hoist f <$> h x
 
 
@@ -218,7 +218,7 @@ maybeC' (Pure f) = Pure (fmap f)
 maybeC' (Rollback r) = Rollback (maybeC' r)
 maybeC' (Continuation (f, g)) = Continuation . (fmap f,) $
   \case
-    Just x -> maybeC' <$> g x
+    Just x  -> maybeC' <$> g x
     Nothing -> pure (Rollback done)
 
 
@@ -348,8 +348,8 @@ writeUpdate' h model f = do
 writeUpdate :: MonadUnliftIO m => TVar a -> Continuation m a -> m ()
 writeUpdate model = \case
   Continuation (f,g) -> void . forkIO $ writeUpdate' f model g
-  Pure f -> atomically $ writeTVar model =<< f <$> readTVar model
-  Rollback f -> writeUpdate model f
+  Pure f             -> atomically $ writeTVar model =<< f <$> readTVar model
+  Rollback f         -> writeUpdate model f
 
 
 -- | Execute a fold by watching a state variable and executing the next

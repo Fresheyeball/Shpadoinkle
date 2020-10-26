@@ -34,7 +34,7 @@ withHover f s@(_,x) = runIdentity . props
 togHygiene :: Toggle -> Hygiene
 togHygiene = \case
   Closed x -> x
-  _ -> Dirty
+  _        -> Dirty
 
 
 instance Enum Toggle where
@@ -54,11 +54,11 @@ instance Bounded Toggle where
 
 instance Semigroup Toggle where
   Closed x <> Closed y = Closed (x <> y)
-  Closed Clean <> x = x
-  x <> Closed Clean = x
-  Closed Dirty <> _ = Closed Dirty
-  _ <> Closed Dirty = Closed Dirty
-  _ <> _ = Open
+  Closed Clean <> x    = x
+  x <> Closed Clean    = x
+  Closed Dirty <> _    = Closed Dirty
+  _ <> Closed Dirty    = Closed Dirty
+  _ <> _               = Open
 
 
 instance Monoid Toggle where

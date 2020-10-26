@@ -178,7 +178,7 @@ dropdown toTheme Config {..} x =
     Enter     -> act x
     UpArrow   -> considerPrev x
     DownArrow -> considerNext x
-    _ -> x
+    _         -> x
   , onClick $ act x
   , tabbable
   ] ++ _attrs) . _wrapper $

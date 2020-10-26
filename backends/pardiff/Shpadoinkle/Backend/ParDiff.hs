@@ -82,8 +82,8 @@ import           UnliftIO                    (MonadUnliftIO (..), TVar,
 import           Shpadoinkle                 (Backend (..), Continuation,
                                               Html (..), JSM, MonadJSM,
                                               Prop (..), RawEvent (RawEvent),
-                                              RawNode (RawNode), type (~>),
-                                              hoist, writeUpdate)
+                                              RawNode (RawNode), hoist,
+                                              type (~>), writeUpdate)
 
 
 default (Text)

@@ -59,9 +59,9 @@ noEntry = Whole []
 
 instance Show Entry where
   show = let asChar = traverse . re charDigit in \case
-    Whole xs        -> xs ^.. asChar
+    Whole xs   -> xs ^.. asChar
     xs :<.> ys -> xs ^.. asChar <> "." <> ys ^.. asChar
-    Negate e        -> '-' : show e
+    Negate e   -> '-' : show e
 
 frac :: Iso' Entry Double
 frac = iso toFrac fromFrac where
@@ -151,7 +151,7 @@ calcResult x = x
 neg :: Entry -> Entry
 neg = \case
   Negate e -> e
-  e -> Negate e
+  e        -> Negate e
 
 readout :: Model -> Html m a
 readout x = H.div "readout" $

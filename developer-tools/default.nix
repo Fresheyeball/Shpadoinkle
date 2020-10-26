@@ -3,7 +3,6 @@
 }:
 let
 
-
   pkgs = import ../nix/pkgs.nix {
     inherit compiler chan; isJS = true; };
 
@@ -25,5 +24,3 @@ in pkgs.runCommand "Shpadoinkle-developer-tools" {}
     cp ${./inject.js}     $out/inject.js
     cp ${dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js $out/all.js
   ''
-
-

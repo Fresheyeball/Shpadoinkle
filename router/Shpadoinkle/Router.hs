@@ -80,8 +80,8 @@ import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
 import           Shpadoinkle                   (Backend, Continuation, Html,
-                                                RawNode, type (~>), h, hoist,
-                                                kleisli, pur, shpadoinkle, text,
+                                                RawNode, h, hoist, kleisli, pur,
+                                                shpadoinkle, text, type (~>),
                                                 writeUpdate)
 import           Shpadoinkle.Router.HTML       (HTML, Spa)
 
@@ -275,7 +275,7 @@ fromRouter queries segs = \case
     RQueryParamR sym f ->
        case lookup (T.pack $ symbolVal sym) queries of
             Nothing -> Nothing
-            Just t -> fromRouter queries segs =<< f <$> parseQueryParamMaybe t
+            Just t  -> fromRouter queries segs =<< f <$> parseQueryParamMaybe t
     RQueryParams sym f ->
         fromRouter queries segs . f . compact $ parseQueryParamMaybe . snd <$> C.filter
             (\(k, _) -> k == T.pack (symbolVal sym))
