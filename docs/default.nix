@@ -9,14 +9,7 @@ let
 
   util = import ../nix/util.nix {};
 
-in
-stdenv.mkDerivation {
-
-  name         = "documentation";
-
-  buildInputs  = [ antora ];
-
-  src          = util.gitignore [
+  src = util.gitignore [
     "*.md"
     "*.nix"
     "*/**.hs"
@@ -28,40 +21,45 @@ stdenv.mkDerivation {
     "*.md"
   ] ../.;
 
+in
+stdenv.mkDerivation {
+
+  name         = "Shpadoinkle-documentation";
+
+  buildInputs  = [ antora inotify-tools git ];
 
   shellHook    = ''
-    rm -rf theme
-    ln -s ${theme} theme
-    cat ${../etc/figlet}
-    function serve-docs(){
+    SHPADOINKLE_TOP="$(git rev-parse --show-toplevel)"
+    SHPADOINKLE_DOCS="$SHPADOINKLE_TOP"/docs
+    cat "$SHPADOINKLE_TOP"/etc/figlet
+    rm -rf "$SHPADOINKLE_DOCS"/theme
+    ln -s ${theme} "$SHPADOINKLE_DOCS"/theme
+    function serve-docs() (
+      set -euo pipefail
       echo "Building initial docs..."
+      cd "$SHPADOINKLE_DOCS"
       antora antora-playbook
       echo "Serving on port 8080..."
       ${haskellPackages.wai-app-static}/bin/warp -d public -p 8080 &
       echo "Watching for changes..."
-      while inotifywait -e modify -r docs; do antora antora-playbook; done
-    }
+      while inotifywait -e modify -r .; do antora antora-playbook; done
+    )
     echo ""
     echo "Build and serve docs by running"
     echo "serve-docs"
   '';
 
-
   buildCommand = ''
-    mkdir $out
-    export HOME=$PWD
-
-    ln -s $src/docs docs
-    ln -s $src/.git .git
-    ln -s $src/antora-playbook.yml antora-playbook.yml
-    ln -s ${theme} theme
-
-    echo Building docs...
-
+    set -euo pipefail
+    mkdir "$out"
+    HOME="$PWD"
+    export HOME
+    cp -r "${src}"/. .
+    chmod +w ./docs
+    ln -s "${theme}" ./docs/theme
+    cd docs
     antora antora-playbook
-    cp -r public/* $out
+    cp -r public/. "$out"
   '';
 
-
 }
-
