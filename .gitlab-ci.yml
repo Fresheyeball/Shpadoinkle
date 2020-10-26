@@ -7,37 +7,37 @@ stages:
   - Antora Documentation
   - Push Artifacts
 
-Lint Haskell Source:
+Check Style:
   stage: Lint
   needs: []
   script:
-  - nix/lint.sh
+  - nix/style-check.sh
 
 Build with GHC 8.6.5 on Linux:
   stage: Linux Build
   needs:
-  - Lint Haskell Source
+  - Check Style
   script:
   - nix-build --argstr compiler ghc865 --fallback
 
 Build with GHCJS 8.6 on Linux:
   stage: Linux Build
   needs:
-  - Lint Haskell Source
+  - Check Style
   script:
   - nix-build --argstr compiler ghc865 --arg isJS true --fallback
 
 Build with GHC 8.6.5 on Darwin:
   stage: Darwin Build
   needs:
-  - Lint Haskell Source
+  - Check Style
   script:
   - nix-build --argstr compiler ghc865 --argstr system x86_64-darwin --fallback
 
 Build with GHCJS 8.6 on Darwin:
   stage: Darwin Build
   needs:
-  - Lint Haskell Source
+  - Check Style
   script:
   - nix-build --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
 
@@ -72,7 +72,7 @@ Shell for GHCJS 8.6 on Darwin:
 Build Antora:
   stage: Antora Documentation
   needs:
-  - Lint Haskell Source
+  - Check Style
   script:
   - nix-build docs --fallback
 
