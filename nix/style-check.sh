@@ -10,5 +10,7 @@ if [ -z "$(git status --porcelain)" ]; then
 else
     echo "Style errors detected:"
     git --no-pager diff
+    echo "\n"
+    echo "\tPlease run nix/style-check.sh to auto format the code and commit changes."
     exit 1
 fi
