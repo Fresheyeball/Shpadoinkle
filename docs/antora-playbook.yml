@@ -4,13 +4,13 @@ site:
   start_page: docs::index.adoc
 content:
   sources:
-    - url: .
+    - url: ..
       start_path: ./docs
       branches: HEAD
 ui:
   bundle:
     url: ./theme
-  supplemental_files: ./docs/ui
+  supplemental_files: ./ui
 asciidoc:
   attributes:
     experimental: ''
