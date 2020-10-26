@@ -5,7 +5,9 @@ packages: core
         , backends/static
         , console
         , developer-tools
+        , disembodied
         , lens
+        , marketing
         , html
         , router
         , widgets

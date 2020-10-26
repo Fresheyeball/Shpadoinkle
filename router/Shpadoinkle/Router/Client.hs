@@ -5,8 +5,10 @@
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 {-# OPTIONS_GHC -Wno-type-defaults              #-}
 
+
 -- | Helper for querying the server from client side code using a derived client.
 -- This module exists to save you from having to use CPP yourself.
+
 
 module Shpadoinkle.Router.Client
   ( runXHR
@@ -32,6 +34,7 @@ import           Servant.Client.JS           (BaseUrl (..), ClientEnv (..),
 import           Text.Read                   (readMaybe)
 import           UnliftIO                    (MonadIO (liftIO))
 
+
 default (Text)
 
 
@@ -50,6 +53,7 @@ runXHR m = do -- TODO cache the base url or make it optional
         defaultPort :: Scheme -> Int
         defaultPort Https = 443
         defaultPort Http  = 80
+
 
 -- | Run the ClientM from Servant as an XHR request with a customized base URL.
 runXHR' :: ClientM a -> ClientEnv -> JSM a

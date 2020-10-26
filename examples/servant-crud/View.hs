@@ -31,7 +31,7 @@ import           Shpadoinkle                       (Html, MonadJSM, text)
 import qualified Shpadoinkle.Html                  as H
 import           Shpadoinkle.Lens
 import           Shpadoinkle.Router                (navigate, toHydration)
-import           Shpadoinkle.Run                   (Env (Dev, Prod))
+import           Shpadoinkle.Run                   (Env, entrypoint)
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown (Dropdown (..),
                                                                 Theme (..),
                                                                 defConfig,
@@ -268,6 +268,3 @@ template ev fe stage = H.html_
   ]
 
 
-entrypoint :: Env -> Text
-entrypoint Dev  = "/jsaddle.js"
-entrypoint Prod = "/all.min.js"

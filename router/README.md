@@ -24,10 +24,10 @@ and route canonically.
 
 ```haskell
 -- The accepted URIs
-type SPA
-  =            "echo" :> QueryParam "echo" Text :> Raw
-  :<|> "v2" :> "echo" :> QueryParam "echo" Text :> Raw
-  :<|> "home" :> Raw
+type SPA m
+  =            "echo" :> QueryParam "echo" Text :> View m ()
+  :<|> "v2" :> "echo" :> QueryParam "echo" Text :> View m ()
+  :<|> "home" :> View m ()
 
 -- The routes that can be rendered
 data Route
@@ -35,7 +35,7 @@ data Route
   | Home
 
 -- Surjection from URIs to routes
-routes :: SPA :>> Route
+routes :: SPA m :>> Route
 routes
   =    REcho
   :<|> REcho

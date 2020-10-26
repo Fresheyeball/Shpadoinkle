@@ -5,11 +5,13 @@ p core
 p backends/static
 p backends/snabbdom
 p backends/pardiff
-p developer-tools
 p console
+p developer-tools
+p disembodied
 p html
 p router
 p lens
+p marketing
 p widgets
 p examples
 p tests

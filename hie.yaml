@@ -37,11 +37,29 @@ cradle:
           cabal:
             component: "developer-tools"
 
+    - path: "./disembodied"
+      config:
+        cradle:
+          cabal:
+            component: "disembodied"
+
     - path: "./lens/"
       config:
         cradle:
           cabal:
             component: "lens"
+
+    - path: "./marketing/Shpadoinkle/Marketing/Disembodied.hs"
+      config:
+        cradle:
+          cabal:
+            component: "marketing:disembodied"
+
+    - path: "./marketing/"
+      config:
+        cradle:
+          cabal:
+            component: "marketing:run"
 
     - path: "./html/"
       config:

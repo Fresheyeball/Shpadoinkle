@@ -4,7 +4,7 @@ stages:
   - Darwin Build
   - Linux Shell
   - Darwin Shell
-  - Antora Documentation
+  - Documentation
   - Push Artifacts
 
 Check Style:
@@ -70,11 +70,20 @@ Shell for GHCJS 8.6 on Darwin:
   - nix-build -A Shpadoinkle-examples.env --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
 
 Build Antora:
-  stage: Antora Documentation
+  stage: Documentation
   needs:
   - Check Style
   script:
   - nix-build docs --fallback
+
+Build Marketing:
+  stage: Documentation
+  needs:
+  - Check Style
+  - Build with GHCJS 8.6 on Linux
+  - Build with GHC 8.6.5 on Linux
+  script:
+  - nix-build marketing --fallback
 
 # test-865-ghc:
 #   stage: test
@@ -96,6 +105,7 @@ pages:
   stage: Push Artifacts
   needs:
   - Build Antora
+  - Build Marketing
   - Build with GHCJS 8.6 on Linux
   script:
   - ./nix/build-pages.sh

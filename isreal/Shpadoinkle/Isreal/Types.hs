@@ -1,5 +1,7 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -17,7 +19,7 @@ import           Data.Aeson           (FromJSON, ToJSON)
 import           Data.ByteString.Lazy (ByteString)
 import           Data.Text            (Text)
 import           GHC.Generics         (Generic)
-import           Servant
+import           Servant.API
 
 
 data Options = Options
@@ -36,7 +38,8 @@ deriving instance MimeRender   OctetStream Code
 
 
 newtype SnowToken = SnowToken Text
-  deriving (Eq, Ord, Show, Generic, FromHttpApiData)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving newtype (ToJSON, FromJSON, FromHttpApiData, ToHttpApiData)
 
 
 type API = "echo" :> Capture "echo" Text :> Get '[PlainText] Text

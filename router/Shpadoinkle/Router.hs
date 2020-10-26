@@ -33,7 +33,7 @@ module Shpadoinkle.Router (
     -- * Classes
     HasRouter(..), Routed(..)
     -- * Types
-    , Redirect(..), Router(..)
+    , Redirect(..), Router(..), View, HTML
     -- * Shpadoinkle with SPA
     , fullPageSPAC, fullPageSPA
     -- * Navigation
@@ -69,7 +69,11 @@ import           GHCJS.DOM.PopStateEvent       (PopStateEvent)
 import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
 import           GHCJS.DOM.Window              (Window, getHistory, getLocation)
 import           Language.Javascript.JSaddle   (fromJSVal, jsg)
-import           Servant.API
+import           Servant.API                   (Capture, FromHttpApiData,
+                                                HasLink (..), IsElem, QueryFlag,
+                                                QueryParam, QueryParam',
+                                                QueryParams, Raw, Required,
+                                                type (:<|>) (..), type (:>))
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)
 import           System.IO.Unsafe              (unsafePerformIO)
@@ -83,7 +87,22 @@ import           Shpadoinkle                   (Backend, Continuation, Html,
                                                 RawNode, h, hoist, kleisli, pur,
                                                 shpadoinkle, text, type (~>),
                                                 writeUpdate)
-import           Shpadoinkle.Router.HTML       (HTML, Spa)
+
+#ifndef ghcjs_HOST_OS
+
+
+import qualified Data.ByteString.Lazy          as BSL
+import qualified Data.List.NonEmpty            as NE
+import qualified Network.HTTP.Media            as M
+import           Servant                       (Application, HasServer, Tagged)
+import qualified Servant                       as S
+import           Servant.API                   (Accept (contentTypes),
+                                                MimeRender (..))
+
+import           Shpadoinkle.Backend.Static    (renderStatic)
+
+
+#endif
 
 
 default (Text)
@@ -127,6 +146,7 @@ withHydration s r = do
   case decode . fromStrict . encodeUtf8 =<< i of
     Just fe -> return fe
     _       -> s r
+
 
 -- | When using server-side rendering, you may benefit from seeding the page with
 -- data. This function returns a script tag that makes a global variable "initState"
@@ -216,7 +236,6 @@ fullPageSPA :: forall layout b a r m
   -- ^ how shall we relate urls to routes?
   -> JSM ()
 fullPageSPA a b c v g s = fullPageSPAC @layout a b c v g (fmap (pur . const) . s)
-
 
 
 -- | ?foo=bar&baz=qux -> [("foo","bar"),("baz","qux")]
@@ -376,9 +395,44 @@ instance HasRouter (f '[HTML] (Html m b)) where
     route = RView
     {-# INLINABLE route #-}
 
-instance HasRouter (Spa m b) where
-    type Spa m b :>> a = a
+instance HasRouter (View m b) where
+    type View m b :>> a = a
 
     route :: r -> Router r
     route = RView
     {-# INLINABLE route #-}
+
+
+#ifndef ghcjs_HOST_OS
+
+
+instance Accept HTML where
+    contentTypes _ =
+      "text" M.// "html" M./: ("charset", "utf-8") NE.:|
+      ["text" M.// "html"]
+
+
+instance MimeRender HTML (Html m a) where
+  mimeRender _ =  BSL.fromStrict . encodeUtf8 . renderStatic
+
+
+instance HasServer (View m a) context where
+  type ServerT (View m a) m' = Tagged m' Application
+  route _                   = S.route          (Proxy @Raw)
+  hoistServerWithContext _  = S.hoistServerWithContext (Proxy @Raw)
+
+
+#endif
+
+
+-- | A Mime type for rendering Html as "text/html"
+data HTML :: Type
+
+
+-- | Servant terminal for Shpadoinkle views (recommended)
+data View :: (Type -> Type) -> Type -> Type
+
+
+instance HasLink (View m a) where
+  type MkLink (View m a) b = b
+  toLink toA _ = toA
