@@ -24,23 +24,23 @@ data Remote e a
 instance Applicative (Remote e) where
   pure = Success
   Success f <*> Success x = Success (f x)
-  Failure e <*> _ = Failure e
-  _ <*> Failure e = Failure e
-  Loading <*> _   = Loading
-  _ <*> Loading   = Loading
-  NotAsked <*> _  = NotAsked
-  _ <*> NotAsked  = NotAsked
+  Failure e <*> _         = Failure e
+  _ <*> Failure e         = Failure e
+  Loading <*> _           = Loading
+  _ <*> Loading           = Loading
+  NotAsked <*> _          = NotAsked
+  _ <*> NotAsked          = NotAsked
 
 
 instance Alternative (Remote e) where
    empty = NotAsked
    x@(Success _) <|> _ = x
-   _ <|> x = x
+   _ <|> x             = x
 
 
 instance Semigroup a => Semigroup (Remote e a) where
   Success x <> Success y = Success (x <> y)
-  x <> y = x <|> y
+  x <> y                 = x <|> y
 
 
 instance Semigroup a => Monoid (Remote e a) where

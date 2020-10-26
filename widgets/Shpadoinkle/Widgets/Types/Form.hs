@@ -90,21 +90,21 @@ data Validated e a = Validated a | Invalid e [e]
 
 
 instance Semigroup (Validated e a) where
-  Validated a <> Validated _ = Validated a
-  Validated _ <> x = x
-  x <> Validated _ = x
+  Validated a <> Validated _   = Validated a
+  Validated _ <> x             = x
+  x <> Validated _             = x
   Invalid x xs <> Invalid y ys = Invalid x (xs <> (y:ys))
 
 
 instance Applicative (Validated e) where
   Validated f <*> Validated a = Validated (f a)
-  Invalid x xs <*> _ = Invalid x xs
-  _ <*> Invalid x xs = Invalid x xs
+  Invalid x xs <*> _          = Invalid x xs
+  _ <*> Invalid x xs          = Invalid x xs
   pure = Validated
 
 
 instance Monad (Validated e) where
-  Validated a >>= f = f a
+  Validated a >>= f  = f a
   Invalid x xs >>= _ = Invalid x xs
 
 

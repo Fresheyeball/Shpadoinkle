@@ -45,24 +45,16 @@ import           Database.Beam                     (Beamable, Columnar,
                                                     Table (..), TableEntity,
                                                     defaultDbSettings)
 
-import Servant.API
-    ( FromHttpApiData,
-      ToHttpApiData,
-      type (:<|>)(..),
-      Capture,
-      JSON,
-      QueryParam,
-      Raw,
-      ReqBody,
-      type (:>),
-      Delete,
-      Get,
-      Post,
-      Put )
+import           Servant.API                       (Capture, Delete,
+                                                    FromHttpApiData, Get, JSON,
+                                                    Post, Put, QueryParam, Raw,
+                                                    ReqBody, ToHttpApiData,
+                                                    type (:<|>) (..), type (:>))
 import           Shpadoinkle                       (Html, MonadJSM)
 import qualified Shpadoinkle.Html                  as H
-import Shpadoinkle.Router
-    ( navigate, HasRouter(type (:>>)), Redirect(Redirect), Routed(..) )
+import           Shpadoinkle.Router                (HasRouter (type (:>>)),
+                                                    Redirect (Redirect),
+                                                    Routed (..), navigate)
 import           Shpadoinkle.Router.HTML           (Spa)
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown (Dropdown)
 import           Shpadoinkle.Widgets.Table         as Table (Column, Row,

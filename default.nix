@@ -19,7 +19,7 @@ in
     util = import ./nix/util.nix { inherit compiler isJS; };
     docker = import ./examples/servant-crud/docker.nix { inherit compiler chan; };
 
-    ghcTools = with haskell.packages.${compiler}; [ cabal-install ghcid hpack ];
+    ghcTools = with haskell.packages.${compiler}; [ cabal-install ghcid hpack pkgs.stylish-haskell ];
 
     packages = {
 

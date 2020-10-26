@@ -29,7 +29,7 @@ data Hygiene = Clean | Dirty
 
 instance Semigroup Hygiene where
   Clean <> Clean = Clean
-  _ <> _ = Dirty
+  _ <> _         = Dirty
 
 
 instance Monoid Hygiene where

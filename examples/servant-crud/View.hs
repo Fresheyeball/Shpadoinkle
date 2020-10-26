@@ -201,7 +201,7 @@ tableCfg = mempty
   { tableProps = const . const . pure $ H.class' "table table-striped table-bordered"
   , tdProps    = const . const . const $ \case
       ToolsT -> [ H.width 1 ]
-      _ -> "align-middle"
+      _      -> "align-middle"
   }
 
 

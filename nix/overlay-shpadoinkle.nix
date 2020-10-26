@@ -61,6 +61,14 @@
   };
 
 
+  stylish-haskell-src = self.fetchFromGitHub {
+    owner = "jaspervdj";
+    repo = "stylish-haskell";
+    rev = "v0.12.2.0";
+    sha256 = "1jc844x8v93xgnl6fjrk31gb2zr96nxbqmgmnc4hdfhfyajh5y7w";
+  };
+
+
   gitignore = util.gitignore
       [ ".git"
         "*.ghc*"
@@ -81,12 +89,13 @@
 
 
 in {
-
+  # stylish haskell binary is outside of package set becase we're interested only in the binary,
+  inherit ((import stylish-haskell-src {}).stylish-haskell.components.exes)
+    stylish-haskell;
 
   google-chrome = (import (builtins.fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/${chrome-rev}.tar.gz";
     }) {}).google-chrome;
-
 
 
 

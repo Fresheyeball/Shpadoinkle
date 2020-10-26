@@ -34,7 +34,8 @@ import           Data.FileEmbed
 import           Data.Text
 import           Data.Traversable
 import           GHCJS.DOM.Types             (JSM, MonadJSM, liftJSM)
-import           Language.Javascript.JSaddle hiding (( # ), JSM, MonadJSM, liftJSM)
+import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, liftJSM,
+                                              (#))
 import           Prelude                     hiding (id, (.))
 import           UnliftIO.STM                (TVar)
 
@@ -122,7 +123,7 @@ instance (MonadJSM m, Eq a) => Backend (SnabbdomT a) m a where
       rn <- mrn
       ins <- toJSVal =<< function (\_ _ -> \case
         [n] -> void $ jsg2 "potato" n rn
-        _ -> return ())
+        _   -> return ())
       unsafeSetProp "insert" ins hook
       hoo <- toJSVal hook
       unsafeSetProp "hook" hoo o

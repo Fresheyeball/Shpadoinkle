@@ -37,7 +37,8 @@ import           Servant.API
 import           Servant.Server                 (HasServer (ServerT), Server,
                                                  Tagged (Tagged))
 import           Servant.Server.StaticFiles     (serveDirectoryWith)
-import           WaiAppStatic.Types             (File (..), LookupResult (LRFile, LRNotFound),
+import           WaiAppStatic.Types             (File (..),
+                                                 LookupResult (LRFile, LRNotFound),
                                                  MaxAge (MaxAgeSeconds), Piece,
                                                  toPieces)
 

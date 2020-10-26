@@ -139,8 +139,8 @@ type Props' m a = [(Text, Prop m a)]
 hoistHtml :: Functor m => (m ~> n) -> Html m a -> Html n a
 hoistHtml f = \case
   Node t ps cs -> Node t (fmap (hoistProp f) <$> ps) (hoistHtml f <$> cs)
-  Potato p -> Potato p
-  TextNode t -> TextNode t
+  Potato p     -> Potato p
+  TextNode t   -> TextNode t
 {-# INLINE hoistHtml #-}
 
 
@@ -263,9 +263,9 @@ cataProp :: (Text -> b)
          -> (Bool -> b)
          -> Prop m a -> b
 cataProp f g h' = \case
-  PText t -> f t
+  PText t     -> f t
   PListener l -> g l
-  PFlag b -> h' b
+  PFlag b     -> h' b
 
 
 -- | Construct an HTML element JSX-style.
@@ -290,7 +290,7 @@ text = TextNode
 props :: Applicative f => ([(Text, Prop m a)] -> f [(Text, Prop m a)]) -> Html m a -> f (Html m a)
 props inj = \case
   Node t ps cs -> (\ps' -> Node t ps' cs) <$> inj ps
-  t -> pure t
+  t            -> pure t
 {-# INLINE props #-}
 
 
@@ -298,7 +298,7 @@ props inj = \case
 children :: Applicative f => ([Html m a] -> f [Html m a]) -> Html m a -> f (Html m a)
 children inj = \case
   Node t ps cs -> Node t ps <$> inj cs
-  t -> pure t
+  t            -> pure t
 {-# INLINE children #-}
 
 
@@ -306,7 +306,7 @@ children inj = \case
 name :: Applicative f => (Text -> f Text) -> Html m a -> f (Html m a)
 name inj = \case
   Node t ps cs -> (\t' -> Node t' ps cs) <$> inj t
-  t -> pure t
+  t            -> pure t
 {-# INLINE name #-}
 
 
@@ -314,7 +314,7 @@ name inj = \case
 textContent :: Applicative f => (Text -> f Text) -> Html m a -> f (Html m a)
 textContent inj = \case
   TextNode t -> TextNode <$> inj t
-  n -> pure n
+  n          -> pure n
 {-# INLINE textContent #-}
 
 
@@ -331,8 +331,8 @@ cataH :: (Text -> [(Text, Prop m a)] -> [b] -> b)
       -> Html m a -> b
 cataH f g h' = \case
   Node t ps cs -> f t ps (cataH f g h' <$> cs)
-  Potato p -> g p
-  TextNode t -> h' t
+  Potato p     -> g p
+  TextNode t   -> h' t
 
 
 -- | Natural Transformation
