@@ -1,8 +1,9 @@
-{-# LANGUAGE CPP              #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE KindSignatures   #-}
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE TypeOperators    #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE KindSignatures    #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TypeOperators     #-}
 
 
 module Shpadoinkle.Run (
@@ -16,9 +17,11 @@ module Shpadoinkle.Run (
   , fullPage
   , fullPageJSM
   , simple
+  , entrypoint
   ) where
 
 
+import           Data.Text                              (Text)
 import           GHCJS.DOM.Types                        (JSM)
 import           Shpadoinkle                            (Backend, Html, RawNode,
                                                          TVar, newTVarIO,
@@ -159,3 +162,8 @@ simple
   -> JSM ()
 simple = fullPageJSM
 {-# INLINE simple #-}
+
+
+entrypoint :: Env -> Text
+entrypoint Dev  = "/jsaddle.js"
+entrypoint Prod = "/all.min.js"

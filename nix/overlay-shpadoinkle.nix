@@ -119,7 +119,9 @@ in {
           Shpadoinkle-backend-pardiff  = call "Shpadoinkle-backend-pardiff"  ../backends/pardiff;
           Shpadoinkle-console          = call "Shpadoinkle-console"          ../console;
           Shpadoinkle-developer-tools  = call "Shpadoinkle-developer-tools"  ../developer-tools;
+          Shpadoinkle-disembodied      = call "Shpadoinkle-disembodied"      ../disembodied;
           Shpadoinkle-lens             = call "Shpadoinkle-lens"             ../lens;
+          Shpadoinkle-marketing        = call "Shpadoinkle-marketing"        ../marketing;
           Shpadoinkle-html             = call "Shpadoinkle-html"             ../html;
           Shpadoinkle-router           = call "Shpadoinkle-router"           ../router;
           Shpadoinkle-widgets          = call "Shpadoinkle-widgets"          ../widgets;

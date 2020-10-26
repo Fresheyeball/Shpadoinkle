@@ -1,0 +1,83 @@
+name:         Shpadoinkle-marketing
+license:      BSD3
+license-file: LICENSE
+author:       Isaac Shapira
+version:      0.0.0.1
+maintainer:   fresheyeball@protonmail.com
+category:     Web
+build-type:   Simple
+synopsis:     Shpadoinkle splash page
+description:
+  This is the splash page to be hosted at shapadoinkle.org,
+  making the case for adoption of the Shpadoinkle programming model.
+
+
+ghc-options:
+    - -Wall
+    - -Wcompat
+    - -fwarn-redundant-constraints
+    - -fwarn-incomplete-uni-patterns
+    - -fwarn-tabs
+    - -fwarn-incomplete-record-updates
+    - -fwarn-identities
+
+
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+
+dependencies:
+    - base >= 4.12.0 && < 4.16
+    - text >= 1.2.3 && < 1.3
+    - aeson
+    - time
+    - random
+    - servant
+    - exceptions
+    - unliftio
+    - lens
+    - generic-lens
+
+    - Shpadoinkle
+    - Shpadoinkle-router
+    - Shpadoinkle-html
+    - Shpadoinkle-isreal
+    - Shpadoinkle-lens
+
+
+executables:
+  run:
+    main: Shpadoinkle/Marketing/Run.hs
+    other-modules:
+      - Shpadoinkle.Marketing.Types
+      - Shpadoinkle.Marketing.View
+    source-dirs: .
+    dependencies:
+      - Shpadoinkle-backend-snabbdom
+
+    when:
+      - condition: impl(ghcjs)
+        then:
+          dependencies:
+            - servant-client-js
+        else:
+          dependencies:
+            - servant-client
+            - servant-server
+
+  disembodied:
+    when:
+      - condition: impl(ghcjs)
+        then:
+          buildable: False
+        else:
+          buildable: True
+    main: Shpadoinkle/Marketing/Disembodied.hs
+    other-modules:
+      - Shpadoinkle.Marketing.Types
+      - Shpadoinkle.Marketing.View
+    source-dirs: .
+    dependencies:
+      - Shpadoinkle-disembodied
+

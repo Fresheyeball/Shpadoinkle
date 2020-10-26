@@ -54,8 +54,7 @@ import           Shpadoinkle                       (Html, MonadJSM)
 import qualified Shpadoinkle.Html                  as H
 import           Shpadoinkle.Router                (HasRouter (type (:>>)),
                                                     Redirect (Redirect),
-                                                    Routed (..), navigate)
-import           Shpadoinkle.Router.HTML           (Spa)
+                                                    Routed (..), View, navigate)
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown (Dropdown)
 import           Shpadoinkle.Widgets.Table         as Table (Column, Row,
                                                              Sort (ASC, DESC),
@@ -211,10 +210,10 @@ type API = "api" :> "space-craft" :> Get '[JSON] [SpaceCraft]
       :<|> "api" :> "space-craft" :> ReqBody '[JSON] SpaceCraftId :> Delete '[JSON] ()
 
 
-type SPA m = "app" :> "echo" :> QueryParam "echo" Text :> Spa m Text
-        :<|> "app" :> "new"  :> Spa m Frontend
-        :<|> "app" :> "edit" :> Capture "id" SpaceCraftId :> Spa m Frontend
-        :<|> "app" :> QueryParam "search" Search :> Spa m Frontend
+type SPA m = "app" :> "echo" :> QueryParam "echo" Text :> View m Text
+        :<|> "app" :> "new"  :> View m Frontend
+        :<|> "app" :> "edit" :> Capture "id" SpaceCraftId :> View m Frontend
+        :<|> "app" :> QueryParam "search" Search :> View m Frontend
         :<|> Raw
 
 
@@ -232,10 +231,10 @@ deriving newtype instance FromHttpApiData Search
 
 instance Routed (SPA m) Route where
   redirect = \case
-    REcho t     -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> Spa m Text)) ($ t)
-    RNew        -> Redirect (Proxy @("app" :> "new" :> Spa m Frontend)) id
-    RExisting i -> Redirect (Proxy @("app" :> "edit" :> Capture "id" SpaceCraftId :> Spa m Frontend)) ($ i)
-    RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> Spa m Frontend)) ($ Just (_value s))
+    REcho t     -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> View m Text)) ($ t)
+    RNew        -> Redirect (Proxy @("app" :> "new" :> View m Frontend)) id
+    RExisting i -> Redirect (Proxy @("app" :> "edit" :> Capture "id" SpaceCraftId :> View m Frontend)) ($ i)
+    RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> View m Frontend)) ($ Just (_value s))
 
 
 class CRUDSpaceCraft m where

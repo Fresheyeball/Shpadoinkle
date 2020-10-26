@@ -44,8 +44,7 @@ import           WaiAppStatic.Types             (File (..),
 
 import           Shpadoinkle                    (Html)
 import           Shpadoinkle.Backend.Static     (renderStatic)
-import           Shpadoinkle.Router             (HasRouter (..))
-import           Shpadoinkle.Router.HTML        (Spa)
+import           Shpadoinkle.Router             (HasRouter (..), View)
 
 
 -- | Helper to serve a 'ByteString' as a file from the web application interface.
@@ -140,12 +139,12 @@ instance ServeRouter Raw r m a where
   serveUI root view = serveDirectoryWith . defaultSPAServerSettings root . view
   {-# INLINABLE serveUI #-}
 
-instance ServeRouter (Spa n b) r m a where
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> Spa n b :>> r -> Server (Spa n b)
+instance ServeRouter (View n b) r m a where
+  serveUI :: FilePath -> (r -> IO (Html m a)) -> View n b :>> r -> Server (View n b)
   serveUI root view = serveDirectoryWithSpa . defaultSPAServerSettings root . view
   {-# INLINABLE serveUI #-}
 
 
-serveDirectoryWithSpa :: StaticSettings -> ServerT (Spa m a) n
+serveDirectoryWithSpa :: StaticSettings -> ServerT (View m a) n
 serveDirectoryWithSpa = Tagged . staticApp
 #endif

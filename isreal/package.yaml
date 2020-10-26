@@ -32,25 +32,40 @@ dependencies:
     - aeson
     - bytestring
     - containers
-    - directory
-    - filepath
-    - process
-    - servant
-    - servant-server
-    - warp
     - text
+    - servant
 
 
 library:
   source-dirs: .
   exposed-modules:
     - Shpadoinkle.Isreal.Types
+  other-modules: []
+  when:
+    - condition: impl(ghcjs)
+      then:
+        dependencies: []
+      else:
+        dependencies:
+          - servant-server
 
 
 executables:
   isreal:
+    when:
+      - condition: impl(ghcjs)
+        then:
+          buildable: False
+        else:
+          buildable: True
     main: Main.hs
     source-dirs: .
+    dependencies:
+      - servant-server
+      - directory
+      - filepath
+      - process
+      - warp
 
 
 git: https://gitlab.com/fresheyeball/Shpadoinkle.git

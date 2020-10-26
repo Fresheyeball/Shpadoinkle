@@ -12,16 +12,16 @@ module Client where
 import           Control.Monad.Catch         (MonadThrow)
 import           Control.Monad.Reader        (MonadIO)
 import           Data.Proxy                  (Proxy (..))
-import           Language.Javascript.JSaddle (JSM, askJSM, runJSM)
+import           Shpadoinkle                 (JSM, MonadUnliftIO (..),
+                                              UnliftIO (..), askJSM, runJSM)
 #ifndef ghcjs_HOST_OS
-import           Language.Javascript.JSaddle (MonadJSM)
+import           Shpadoinkle                 (MonadJSM)
 #endif
 import           Servant.API                 ((:<|>) (..))
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html.Utils      (getBody)
 import           Shpadoinkle.Router          (fullPageSPA, withHydration)
 import           Shpadoinkle.Router.Client   (client, runXHR)
-import           UnliftIO                    (MonadUnliftIO (..), UnliftIO (..))
 
 import           Types                       (API, CRUDSpaceCraft (..), SPA,
                                               routes)

@@ -1,9 +1,6 @@
 nix-build -A Shpadoinkle.doc
 cp -r result-doc/share/doc/Shpadoinkle*/html public/core
 
-nix-build -A Shpadoinkle-lens.doc
-cp -r result-doc/share/doc/Shpadoinkle-lens*/html public/lens
-
 nix-build -A Shpadoinkle-backend-pardiff.doc
 cp -r result-doc/share/doc/Shpadoinkle-backend-pardiff-*/html public/backend-pardiff
 
@@ -16,6 +13,12 @@ cp -r result-doc/share/doc/Shpadoinkle-backend-static-*/html public/backend-stat
 nix-build -A Shpadoinkle-console.doc
 cp -r result-doc/share/doc/Shpadoinkle-console-*/html public/console
 
+nix-build -A Shpadoinkle-disembodied.doc
+cp -r result-doc/share/doc/Shpadoinkle-disembodied-*/html public/disembodied
+
+nix-build -A Shpadoinkle-lens.doc
+cp -r result-doc/share/doc/Shpadoinkle-lens*/html public/lens
+
 nix-build -A Shpadoinkle-html.doc
 cp -r result-doc/share/doc/Shpadoinkle-html-*/html public/html
 
@@ -24,3 +27,6 @@ cp -r result-doc/share/doc/Shpadoinkle-router-*/html public/router
 
 nix-build -A Shpadoinkle-widgets.doc
 cp -r result-doc/share/doc/Shpadoinkle-widgets-*/html public/widgets
+
+nix-build -A Shpadoinkle-isreal.doc
+cp -r result-doc/share/doc/Shpadoinkle-isreal-*/html public/isreal

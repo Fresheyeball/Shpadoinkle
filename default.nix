@@ -21,6 +21,8 @@ in
 
     ghcTools = with haskell.packages.${compiler}; [ cabal-install ghcid hpack pkgs.stylish-haskell ];
 
+    cannibal = if optimizeJS then util.doCannibalize else id;
+
     packages = {
 
       inherit (haskell.packages.${util.compilerjs})
@@ -35,14 +37,15 @@ in
         Shpadoinkle-html
         Shpadoinkle-router
         Shpadoinkle-widgets
+        Shpadoinkle-isreal
 
         Shpadoinkle-tests;
-        Shpadoinkle-examples = (if optimizeJS then util.doCannibalize else id)
-          haskell.packages.${util.compilerjs}.Shpadoinkle-examples;
+        Shpadoinkle-examples  = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-examples;
+        Shpadoinkle-marketing = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-marketing;
 
     } // (
       if !isJS then { inherit (haskell.packages.${util.compilerjs})
-        Shpadoinkle-isreal;
+        Shpadoinkle-disembodied;
       } else {}
     );
 

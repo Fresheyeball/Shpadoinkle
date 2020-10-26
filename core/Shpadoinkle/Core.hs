@@ -48,7 +48,7 @@ module Shpadoinkle.Core (
   -- * The Shpadoinkle Primitive
   , shpadoinkle
   -- * Re-Exports
-  , JSM, MonadJSM
+  , JSM, MonadJSM, askJSM, runJSM, MonadUnliftIO(..), UnliftIO(..)
   , module UnliftIO.STM
   ) where
 
@@ -67,8 +67,10 @@ import           Data.String                   (IsString (..))
 import           Data.Text                     (Text, pack)
 import           GHCJS.DOM.Types               (JSM, MonadJSM)
 import           Language.Javascript.JSaddle   (FromJSVal (..), JSVal,
-                                                ToJSVal (..))
+                                                ToJSVal (..), askJSM, runJSM)
 import           Prelude                       hiding ((.))
+import           UnliftIO                      (MonadUnliftIO (..),
+                                                UnliftIO (..))
 import           UnliftIO.STM                  (TVar, atomically, modifyTVar,
                                                 newTVarIO, readTVar, readTVarIO,
                                                 retrySTM, writeTVar)
