@@ -23,6 +23,9 @@ Support for the native JavaScript browser console.
 Developer Tools ({gitlab}/developer-tools[Gitlab])::
 Chrome extension to support Shpadoinkle debugging.
 
+Disembodied ({gitlab}/disembodied[Gitlab], https://shpadoinkle.org/disembodied[Haddock])::
+Static site generation for Shpadoinkle views.
+
 xref:packages/lens.adoc[Lens] ({gitlab}/lens[Gitlab], {hackage}-lens[Hackage], https://shpadoinkle.org/lens[Haddock])::
 Lens combinators for ergonomic composing of heterogeneous components, and after-the-fact modification of views.
 
@@ -38,5 +41,5 @@ Logical types and structures for common UI components, along with batteries-incl
 Examples ({gitlab}/examples[Gitlab])::
 Small applications of Shpadoinkle to illustrate programming patterns.
 
-Isreal ({gitlab}/isreal[Gitlab])::
+Isreal ({gitlab}/isreal[Gitlab], https://shpadoinkle.org/isreal[Haddock])::
 Microservice to support playgrounds (Snowman as a service)
