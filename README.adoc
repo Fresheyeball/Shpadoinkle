@@ -43,6 +43,12 @@ The easiest way to start a new Shpadoinkle project is to build a https://gitlab.
 
 You can see an example of Shpadoinkle in the popular http://todomvc.com/[TODOMVC] running https://shpadoinkle.org/examples/todomvc.jsexe[here], compiled from the code located https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/TODOMVC.hs[here].
 
+== Code Contribution
+
+Code formatting is enforced by CI check.
+To reformat code according to project style guide run `nix/style-check.sh` and commit
+the changes either from within or outside of `nix-shell`.
+
 == Hackage Matrix
 
 [options="header"]
