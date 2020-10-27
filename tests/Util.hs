@@ -52,6 +52,7 @@ isJS = isInfixOf "js" . pack
 
 lock :: MVar ()
 lock = unsafePerformIO $ newMVar ()
+{-# NOINLINE lock #-}
 
 
 serve :: String -> IO () -> IO ()
@@ -145,4 +146,3 @@ expectClass e t = attr e "class" >>= equals (Just t)
 
 times :: Applicative m => Int -> m () -> m ()
 times i m = () <$ traverse (const m) [1..i]
-

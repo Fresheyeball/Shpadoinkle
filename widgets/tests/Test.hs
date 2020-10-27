@@ -203,3 +203,6 @@ main = hspec $ do
   describe "Dropdown" $ do
     selectionProps      @Dropdown
     deselectionPropsOne @Dropdown
+
+{-# ANN module "HLint: ignore Monoid law, right identity" #-}
+{-# ANN module "HLint: ignore Monoid law, left identity"  #-}

@@ -2,5 +2,5 @@
 }:
 with pkgs;
 mkShell {
-  buildInputs = [ stylish-haskell ];
+  buildInputs = [ stylish-haskell hlint ];
 }

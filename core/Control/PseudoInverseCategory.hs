@@ -24,6 +24,7 @@ module Control.PseudoInverseCategory (
 
 import qualified Control.Categorical.Functor as F
 import           Control.Category            (Category (..))
+import           Data.Bifunctor              (bimap, first, second)
 import           Data.Functor.Identity       (Identity (..))
 import           Data.Tuple                  (swap)
 import           Prelude                     hiding (id, (.))
@@ -178,14 +179,13 @@ instance PseudoInverseCategory EndoIso where
 instance PIArrow EndoIso where
   piiso = EndoIso id
   piendo f = EndoIso f id id
-  pifirst (EndoIso f g h) = EndoIso (\(x,y)->(f x,y)) (\(x,y)->(g x,y)) (\(x,y)->(h x,y))
-  pisecond (EndoIso f g h) = EndoIso (\(x,y)->(x,f y)) (\(x,y)->(x,g y)) (\(x,y)->(x,h y))
+  pifirst (EndoIso f g h) = EndoIso (first f) (first g) (first h)
+  pisecond (EndoIso f g h) = EndoIso (second f) (second g) (second h)
   pisplit (EndoIso f g h) (EndoIso i j k) = EndoIso
-    (\(x,y) -> (f x, i y))
-    (\(x,y) -> (g x, j y))
-    (\(x,y) -> (h x, k y))
+    (bimap f i)
+    (bimap g j)
+    (bimap h k)
   pifan (EndoIso f g h) (EndoIso i j _) = EndoIso
     (f . i)
     (\x -> (g x, j x))
     (\(x,_) -> h x) -- it shouldn't matter which side we use to go back because we have isomorphisms
-

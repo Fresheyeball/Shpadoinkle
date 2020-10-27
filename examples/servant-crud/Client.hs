@@ -54,3 +54,5 @@ instance CRUDSpaceCraft App where
 
 app :: JSM ()
 app = fullPageSPA @ (SPA JSM) runApp runParDiff (withHydration start) view getBody start routes
+
+{-# ANN module "HLint: ignore Use fewer imports" #-}

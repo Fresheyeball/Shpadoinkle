@@ -1,5 +1,4 @@
 {-# LANGUAGE AllowAmbiguousTypes       #-}
-{-# LANGUAGE BangPatterns              #-}
 {-# LANGUAGE CPP                       #-}
 {-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE ExistentialQuantification #-}
@@ -69,11 +68,21 @@ import           GHCJS.DOM.PopStateEvent       (PopStateEvent)
 import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
 import           GHCJS.DOM.Window              (Window, getHistory, getLocation)
 import           Language.Javascript.JSaddle   (fromJSVal, jsg)
+#ifndef ghcjs_HOST_OS
+import           Servant.API                   (Accept (contentTypes), Capture,
+                                                FromHttpApiData, HasLink (..),
+                                                IsElem, MimeRender (..),
+                                                QueryFlag, QueryParam,
+                                                QueryParam', QueryParams, Raw,
+                                                Required, type (:<|>) (..),
+                                                type (:>))
+#else
 import           Servant.API                   (Capture, FromHttpApiData,
                                                 HasLink (..), IsElem, QueryFlag,
                                                 QueryParam, QueryParam',
                                                 QueryParams, Raw, Required,
                                                 type (:<|>) (..), type (:>))
+#endif
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)
 import           System.IO.Unsafe              (unsafePerformIO)
@@ -96,8 +105,6 @@ import qualified Data.List.NonEmpty            as NE
 import qualified Network.HTTP.Media            as M
 import           Servant                       (Application, HasServer, Tagged)
 import qualified Servant                       as S
-import           Servant.API                   (Accept (contentTypes),
-                                                MimeRender (..))
 
 import           Shpadoinkle.Backend.Static    (renderStatic)
 
@@ -275,7 +282,7 @@ listenStateChange router handle = do
     liftIO $ takeMVar syncRoute
     getRoute w router $ maybe (return ()) handle
     syncPoint
-    !() <- liftIO $ return ()
+    () <- liftIO $ return ()
     return ()
   return ()
 
@@ -294,7 +301,7 @@ fromRouter queries segs = \case
     RQueryParamR sym f ->
        case lookup (T.pack $ symbolVal sym) queries of
             Nothing -> Nothing
-            Just t  -> fromRouter queries segs =<< f <$> parseQueryParamMaybe t
+            Just t  -> fromRouter queries segs . f =<< parseQueryParamMaybe t
     RQueryParams sym f ->
         fromRouter queries segs . f . compact $ parseQueryParamMaybe . snd <$> C.filter
             (\(k, _) -> k == T.pack (symbolVal sym))
