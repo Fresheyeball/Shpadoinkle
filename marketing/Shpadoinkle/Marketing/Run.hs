@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE ExplicitNamespaces         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -14,30 +15,38 @@ import           Control.Monad.IO.Class       (MonadIO (..))
 import           Data.Proxy                   (Proxy (..))
 import           Data.Text                    (Text, pack)
 import           Data.Time                    (getCurrentTime)
-import           Servant.API
+import           Servant.API                  (type (:<|>) ((:<|>)))
 import           System.Random                (Random (randomRIO))
 #ifndef ghcjs_HOST_OS
 import           Servant.Server               (serve)
 #endif
 
+#ifndef ghcjs_HOST_OS
+import           Shpadoinkle                  (JSM, MonadJSM,
+                                               MonadUnliftIO (..),
+                                               UnliftIO (..), askJSM, runJSM)
+#else
 import           Shpadoinkle                  (JSM, MonadUnliftIO (..),
                                                UnliftIO (..), askJSM, runJSM)
+#endif
 import           Shpadoinkle.Backend.Snabbdom (runSnabbdom, stage)
 import           Shpadoinkle.Isreal.Types     as Swan (API, Code, CompileError,
                                                        SnowToken (..))
 import           Shpadoinkle.Router           (fullPageSPA, withHydration)
 import           Shpadoinkle.Router.Client    (ClientM, client, runXHR)
-import           Shpadoinkle.Run              (runJSorWarp)
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle                  (MonadJSM)
 import           Shpadoinkle.Router.Server    (serveUI)
-import           Shpadoinkle.Run              (Env (Dev), liveWithBackend)
+import           Shpadoinkle.Run              (Env (Dev), liveWithBackend,
+                                               runJSorWarp)
+#else
+import           Shpadoinkle.Run              (runJSorWarp)
 #endif
 
 import           Shpadoinkle.Marketing.Types  (SPA, Swan (..), routes)
-import           Shpadoinkle.Marketing.View   (start, view)
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Marketing.View   (template)
+import           Shpadoinkle.Marketing.View   (start, template, view)
+#else
+import           Shpadoinkle.Marketing.View   (start, view)
 #endif
 
 

@@ -23,7 +23,6 @@ import           Data.Aeson          (FromJSON, ToJSON)
 import qualified Data.Foldable       as F
 import           Data.Kind           (Type)
 import qualified Data.List.NonEmpty  as NE
-import           Data.Maybe          (fromMaybe)
 import           Data.Set            as Set (Set, delete, difference, elemAt,
                                              empty, filter, findIndex, findMax,
                                              findMin, foldr,
@@ -386,7 +385,7 @@ instance Consideration ConsideredChoice 'One where
 instance Consideration ConsideredChoice 'AtleastOne where
   consider x = ConsideredChoice x . maybe id Shpadoinkle.Widgets.Types.Choice.insert x . _choice
   consider' = consider @ConsideredChoice @'AtleastOne . Just
-  choose (ConsideredChoice x xs) = ConsideredChoice Nothing . fromMaybe xs $ select xs <$> x
+  choose (ConsideredChoice x xs) = ConsideredChoice Nothing (maybe xs (select xs) x)
   choice = _choice
   considered = _consideration
   shrug (ConsideredChoice _ xs) = ConsideredChoice Nothing xs

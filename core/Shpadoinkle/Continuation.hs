@@ -1,4 +1,3 @@
-{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -317,7 +316,7 @@ instance Monad m => Semigroup (Continuation m a) where
   (Continuation (f, g)) <> (Rollback h) =
     Rollback (Continuation (f, \x -> liftM2 (<>) (g x) (return h)))
   (Rollback h) <> (Continuation (_, g)) =
-    Rollback (Continuation (id, liftM2 (<>) (return h) . g))
+    Rollback (Continuation (id, fmap (h <>) . g))
   (Rollback f) <> (Rollback g) = Rollback (f <> g)
   (Pure f) <> (Pure g) = Pure (f.g)
   (Pure f) <> (Continuation (g,h)) = Continuation (f.g,h)
@@ -338,7 +337,7 @@ writeUpdate' h model f = do
   m <- f (h i)
   case m of
     Continuation (g,gs) -> writeUpdate' (g.h) model gs
-    Pure g -> atomically $ writeTVar model =<< g.h <$> readTVar model
+    Pure g -> atomically (writeTVar model . g . h =<< readTVar model)
     Rollback gs -> writeUpdate' id model (const (return gs))
 
 
@@ -348,7 +347,7 @@ writeUpdate' h model f = do
 writeUpdate :: MonadUnliftIO m => TVar a -> Continuation m a -> m ()
 writeUpdate model = \case
   Continuation (f,g) -> void . forkIO $ writeUpdate' f model g
-  Pure f             -> atomically $ writeTVar model =<< f <$> readTVar model
+  Pure f             -> atomically (writeTVar model . f =<< readTVar model)
   Rollback f         -> writeUpdate model f
 
 

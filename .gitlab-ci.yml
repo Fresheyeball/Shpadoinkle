@@ -13,10 +13,17 @@ Check Style:
   script:
   - nix/style-check.sh
 
+Hlint:
+  stage: Lint
+  needs: []
+  script:
+  - nix-shell nix/lint.nix --run 'hlint .'
+
 Build with GHC 8.6.5 on Linux:
   stage: Linux Build
   needs:
   - Check Style
+  - Hlint
   script:
   - nix-build --argstr compiler ghc865 --fallback
 
@@ -24,6 +31,7 @@ Build with GHCJS 8.6 on Linux:
   stage: Linux Build
   needs:
   - Check Style
+  - Hlint
   script:
   - nix-build --argstr compiler ghc865 --arg isJS true --fallback
 
@@ -31,6 +39,7 @@ Build with GHC 8.6.5 on Darwin:
   stage: Darwin Build
   needs:
   - Check Style
+  - Hlint
   script:
   - nix-build --argstr compiler ghc865 --argstr system x86_64-darwin --fallback
 
@@ -38,6 +47,7 @@ Build with GHCJS 8.6 on Darwin:
   stage: Darwin Build
   needs:
   - Check Style
+  - Hlint
   script:
   - nix-build --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
 
@@ -73,6 +83,7 @@ Build Antora:
   stage: Documentation
   needs:
   - Check Style
+  - Hlint
   script:
   - nix-build docs --fallback
 

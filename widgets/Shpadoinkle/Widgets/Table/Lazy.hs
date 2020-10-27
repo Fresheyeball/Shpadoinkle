@@ -56,7 +56,7 @@ newtype RowsToShow = RowsToShow Int
 data instance (Row (LazyTable a)) = LazyRow (Row a) | FakeRow
 
 
-data instance (Column (LazyTable a)) = LazyColumn (Column a)
+newtype instance (Column (LazyTable a)) = LazyColumn (Column a)
 
 
 instance Humanize (Column a) => Humanize (Column (LazyTable a)) where

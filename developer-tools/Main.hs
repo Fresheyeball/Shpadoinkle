@@ -41,15 +41,17 @@ type Model = Map UTCTime History
 
 
 listenForOutput :: TVar Model -> JSM ()
-listenForOutput model = void $ jsg "chrome" ^. js "runtime" ^. js "onMessage" ^. js1 "addListener" (fun $ \_ _ args -> do
+listenForOutput model = void $ jsg "chrome" ^. (js "runtime" . js "onMessage" . js1 "addListener" (fun $ \ _ _ args -> do
   let x = Prelude.head args
   t <- x ^. js "type"
   isRight <- strictEqual t "shpadoinkle_output_state"
   when isRight $ do
     msg <- x ^. js "msg"
     now <- liftIO getCurrentTime
-    history <- History . fromMaybe (error "how could this not be a string") <$> fromJSVal msg
-    atomically . modifyTVar model $ insert now history)
+    history <- History
+                 . fromMaybe (error "how could this not be a string")
+                 <$> fromJSVal msg
+    atomically . modifyTVar model $ insert now history))
 
 
 row :: MonadJSM m => UTCTime -> History -> Html m a
@@ -61,13 +63,13 @@ row k history = li [ onClickM . liftJSM $ id <$ sendHistory history ]
 
 sendHistory :: History -> JSM ()
 sendHistory (History history) = void $ do
-  tabId <- jsg "chrome" ^. js "devtools" ^. js "inspectedWindow" ^. js "tabId"
+  tabId <- jsg "chrome" ^. (js "devtools" . js "inspectedWindow" . js "tabId")
 
   msg <- obj
   (msg <# "type") "shpadoinkle_set_state"
   (msg <# "msg") history
 
-  void $ jsg "chrome" ^. js "tabs" ^. js2 "sendMessage" tabId msg
+  void $ jsg "chrome" ^. (js "tabs" . js2 "sendMessage" tabId msg)
 
 
 panel :: MonadJSM m => Model -> Html m Model
@@ -84,4 +86,3 @@ app = do
 
 main :: IO ()
 main = runJSorWarp 8080 app
-

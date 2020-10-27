@@ -49,6 +49,15 @@ Code formatting is enforced by CI check.
 To reformat code according to project style guide run `nix/style-check.sh` and commit
 the changes either from within or outside of `nix-shell`.
 
+CI is also enforcing https://hackage.haskell.org/package/hlint[HLint] rules.
+To run hlint locally use:
+
+```
+$ nix-shell nix/lint.nix --run 'hlint .'
+```
+
+Correct version of hlint is also available within `nix-shell`.
+
 == Hackage Matrix
 
 [options="header"]

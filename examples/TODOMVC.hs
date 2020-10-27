@@ -160,9 +160,8 @@ listFooter model = footer "footer" $
     ]
   , ul "filters" $ generalize #visibility .
       filterHtml (visibility model) <$> [minBound..maxBound]
-  ] ++ (if count Complete (tasks model) == 0 then [] else
-  [ button [ class' "clear-completed", onClick $ clearComplete model ] [ "Clear completed" ]
-  ])
+  ] ++ [ button [class' "clear-completed", onClick $ clearComplete model] ["Clear completed"]
+       | count Complete (tasks model) /= 0 ]
 
 
 

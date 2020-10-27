@@ -145,8 +145,8 @@ mkGlobalKey :: Text -> (KeyCode -> JSM ()) -> JSM ()
 mkGlobalKey n t = do
   d <- makeObject =<< jsg ("window" :: Text)
   f <- toJSVal . fun $ \_ _ -> \case
-    e:_ -> t =<<
-      fmap round (valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
+    e:_ -> (t . round) =<<
+      (valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
     _ -> return ()
   unsafeSetProp (toJSString $ "on" <> n) f d
 

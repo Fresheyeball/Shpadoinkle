@@ -3,6 +3,10 @@
 
   util = import ./util.nix { inherit compiler isJS; };
 
+  nixpkgs-unstable = builtins.fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/84d74ae9c9cbed73274b8e4e00be14688ffc93fe.tar.gz";
+  };
+
 
   chrome-rev = "71336116f3f78d3bb1f499bf4b88efcd8738a9cf";
 
@@ -92,6 +96,9 @@ in {
   # stylish haskell binary is outside of package set becase we're interested only in the binary,
   inherit ((import stylish-haskell-src {}).stylish-haskell.components.exes)
     stylish-haskell;
+
+  hlint = with (import nixpkgs-unstable {});
+    haskell.lib.justStaticExecutables haskellPackages.hlint;
 
   google-chrome = (import (builtins.fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/${chrome-rev}.tar.gz";
