@@ -34,6 +34,7 @@ Build with GHCJS 8.6 on Linux:
   - Hlint
   script:
   - nix-build --argstr compiler ghc865 --arg isJS true --fallback
+  - nix-build isreal/swan-shell.nix
 
 Build with GHC 8.6.5 on Darwin:
   stage: Darwin Build
