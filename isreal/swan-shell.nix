@@ -1,4 +1,4 @@
-{ chan ? "e1843646b04fb564abf6330a9432a76df3269d2f"
+{ chan ? "5272327b81ed355bbed5659b8d303cf2979b6953"
 }:
 let
   overlay = self: super: {
@@ -15,12 +15,13 @@ let
     url = "https://github.com/NixOS/nixpkgs/archive/${chan}.tar.gz";
   }) {
     overlays = [
-      (import ../nix/overlay.nix { compiler = "ghc864"; isJS = true; })
+      (import ../nix/overlay.nix { compiler = "ghc865"; isJS = true; })
       overlay
     ];
   };
 in
 with pkgs.haskell.packages; ghcjs86.shellFor {
-  packages = _: [ ghcjs86.swan ];
-  buildInputs = [ ghc864.cabal-install ];
+  packages    = _: [ ghcjs86.swan ];
+  buildInputs = [ ghc865.cabal-install ];
+  withHoogle  = true;
 }

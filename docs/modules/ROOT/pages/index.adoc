@@ -15,6 +15,7 @@ https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a purely functional 
 * xref:getting-started/index.adoc[Getting Started]
 * xref:packages/index.adoc[Packages]
 * xref:tutorial/index.adoc[Tutorial]
+* https://hoogle.shpadoinkle.org[Hoogle]
 
 The core idea here is to model user interfaces as functions with type:
 
