@@ -1,0 +1,39 @@
+cabal-version:       >=1.10
+name:                swan
+version:             0.1.0.0
+build-type:          Simple
+
+executable swan
+  main-is:             Main.hs
+  extensions:          OverloadedStrings
+                     , MultiParamTypeClasses
+                     , GeneralizedNewtypeDeriving
+                     , TypeApplications
+                     , DeriveGeneric
+                     , DataKinds
+                     , KindSignatures
+                     , ScopedTypeVariables
+  build-depends:       base >=4.12 && <4.16
+                     , transformers
+                     , lens
+                     , generic-lens
+                     , containers
+                     , text
+                     , bytestring
+                     , compactable
+                     , ease
+                     , these
+                     , mtl
+                     , jsaddle
+                     , ghcjs-base
+                     , ghcjs-dom
+                     , time
+                     , Shpadoinkle
+                     , Shpadoinkle-html
+                     , Shpadoinkle-lens
+                     , Shpadoinkle-console
+                     , Shpadoinkle-backend-pardiff
+                     , Shpadoinkle-backend-static
+                     , Shpadoinkle-backend-snabbdom
+                     , Shpadoinkle-widgets
+  default-language:  Haskell2010
