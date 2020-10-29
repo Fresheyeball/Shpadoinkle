@@ -4,8 +4,7 @@ let
   cfg       = config.services.shpadoinkle-isreal;
   chan      = "5272327b81ed355bbed5659b8d303cf2979b6953";
   pkgs      = import ../nix/pkgs.nix { inherit chan; isJS = false; compiler = "ghc865"; };
-  isreal    = pkgs.haskell.packages.ghc865.Shpadoinkle-isreal;
-  cabal     = pkgs.haskell.packages.ghc865.cabal-install;
+  inherit (pkgs.haskell.packages.ghc865) Shpadoinkle-isreal cabal-install;
   swan      = import ./swan-shell.nix {};
   transmute = y: xs: map (x: "${x}=${y.${x}}") xs;
   buildPath = y: xs: pkgs.lib.strings.concatStringsSep ":"
@@ -17,6 +16,10 @@ in {
 
     port   = mkOption {
       default = 8080;
+    };
+
+    hoogle   = mkOption {
+      default = 8998;
     };
 
     workspace = mkOption {
@@ -50,7 +53,12 @@ in {
       script = ''
         rm -rf $HOME
         mkdir -p $HOME
-        ${isreal}/bin/isreal
+
+        echo "serving hoogle on port ${toString cfg.hoogle}"
+        hoogle server --local --port=${toString cfg.hoogle} &
+
+        echo "starting Isreal Swan"
+        ${Shpadoinkle-isreal}/bin/isreal
       '';
 
     };
