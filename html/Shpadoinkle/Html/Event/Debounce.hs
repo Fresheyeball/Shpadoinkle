@@ -14,7 +14,6 @@ import           Control.Monad.IO.Class
 import           Data.Maybe
 import           Data.Text
 import           Data.Time.Clock
-import           GHCJS.DOM.Types        (JSM, MonadJSM, liftJSM)
 import           Shpadoinkle
 import           UnliftIO.Concurrent
 

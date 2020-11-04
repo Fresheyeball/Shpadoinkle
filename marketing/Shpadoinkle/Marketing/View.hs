@@ -1,29 +1,121 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedLabels  #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedLabels    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module Shpadoinkle.Marketing.View where
 
 
-import           Control.Lens                (to, (^.))
-import           Data.Generics.Labels        ()
-import           Data.Text                   (pack)
+import           Control.Lens                       (to, (.~), (^.))
+import           Data.Generics.Labels               ()
+import           Data.String
+import           Data.Text                          (pack)
 
-import           Shpadoinkle                 (Html, text)
-import           Shpadoinkle.Html            as H (body_, charset, h1_, h2_,
-                                                   head_, href, html_, link',
-                                                   meta, rel, script, src)
-import           Shpadoinkle.Lens            (onSum)
-import           Shpadoinkle.Router          (toHydration)
-import           Shpadoinkle.Run             (Env, entrypoint)
+import           Shpadoinkle                        (Html, MonadJSM, text)
+import           Shpadoinkle.Html                   as H
+import           Shpadoinkle.Lens                   (onRecord, onSum)
+import qualified Shpadoinkle.Marketing.Tailwind     as T
+import           Shpadoinkle.Router                 (toHydration)
+import           Shpadoinkle.Run                    (Env, entrypoint)
+import qualified Shpadoinkle.Widgets.Form.Input     as I
+import           Shpadoinkle.Widgets.Types          (Search (..))
 
-import           Shpadoinkle.Marketing.Types (Comparison (Comparison),
-                                              Frontend (..), Home, Route (..))
+import           Shpadoinkle.Marketing.Types
+import           Shpadoinkle.Marketing.Types.Hoogle
 
 
-home :: Home -> Html m Home
-home _ = h1_ [ "Home page" ]
+domain :: IsString s => s
+domain = "https://shpadoinkle.org"
+
+
+hero :: Html m a
+hero =
+  H.div
+    [ class' $ T.w_full <> T.bg_gray_900 <> T.p_10
+            <> T.text_center <> T.text_white
+    ]
+    [ h1
+      [ class' $ T.uppercase <> T.tracking_widest <> T.text_6xl <> T.font_thin
+      ]
+      [ "Shpadoinkle"
+      ]
+    , h2 [ class' T.text_2xl ]
+      [ "I think I know precisely what I mean" ]
+    , button [ class' $ T.px_3 <> T.py_2 <> T.my_5 <> T.bg_blue_500 ] [ "Get Started" ]
+    ]
+
+
+pitch :: Html m a
+pitch =
+  H.div
+    [ class' $ T.mx_auto <> T.text_white <> T.max_w_3xl <> T.my_5
+            <> T.flex <> T.space_x_4 <> T.justify_between
+    ]
+    [ H.div
+      [ class' $ T.bg_gray_900 <> T.p_4 <> "w-1/3" ]
+      [ h3_ [ "Declarative" ]
+      , "Because types!"
+      ]
+
+    , H.div
+      [ class' $ T.bg_gray_900 <> T.p_4 <> "w-1/3" ]
+      [ h3_ [ "Modular" ]
+      , "Because packages!"
+      ]
+
+    , H.div
+      [ class' $ T.bg_gray_900 <> T.p_4 <> "w-1/3" ]
+      [ h3_ [ "Performant" ]
+      , "Because simple!"
+      ]
+    ]
+
+
+top :: Hooglable m => MonadJSM m => Hoogle -> Html m Hoogle
+top hoo =
+  header
+    [ class' $ T.bg_gray_900 <> T.py_2 <> T.px_5
+    ]
+    [ H.div
+      [ class' $ T.text_center <> T.flex
+              <> T.items_center <> T.justify_between <> T.max_w_3xl
+              <> T.mx_auto
+      ]
+      [ img' $ let d = 50 in [ src "/static/logo.png", width d, height d ]
+      , nav [ class' $ T.text_white <> T.flex <> T.space_x_4 ]
+        [ a [ href $ domain <> "/docs/index.html" ] [ "Docs" ]
+        , a [ href $ domain <> "/docs/tutorial/index.html" ] [ "Tutorial" ]
+        , a [ href "" ] [ "Community" ]
+        , hoogleWidget hoo
+        ]
+      ]
+    ]
+
+
+hoogleWidget :: forall m. Hooglable m => MonadJSM m => Home -> Html m Home
+hoogleWidget h =
+  H.div
+  [ onInputM (query . Search) ]
+  [ onRecord #search $ I.search [] (search h)
+  , H.div [ class' T.p_2 ] $ targetWidget <$> targets h
+  ]
+ where
+   query :: Search -> m (Home -> Home)
+   query ss = (#targets .~) <$> findTargets ss
+
+
+targetWidget :: Target -> Html m a
+targetWidget _ = text ""
+
+
+home :: Hooglable m => MonadJSM m => Home -> Html m Home
+home h = section_
+  [ top h
+  , hero
+  , pitch
+  ]
 
 
 comparisons :: Comparison -> Html m Comparison
@@ -34,7 +126,7 @@ fourOhFour :: Html m a
 fourOhFour = h2_ [ "404" ]
 
 
-view :: Applicative m => Frontend -> Html m Frontend
+view :: Hooglable m => MonadJSM m => Frontend -> Html m Frontend
 view = \case
   HomeM x       -> #_HomeM       `onSum` home x
   ComparisonM x -> #_ComparisonM `onSum` comparisons x
@@ -46,7 +138,11 @@ template ev fe v = H.html_
   [ H.head_
     [ H.link'
       [ H.rel "stylesheet"
-      , H.href "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css"
+      , H.href "/static/tailwind.min.css"
+      ]
+    , H.link'
+      [ H.rel "stylesheet"
+      , H.href "/static/style.css"
       ]
     , H.meta [ H.charset "ISO-8859-1" ] []
     , toHydration fe
@@ -60,6 +156,6 @@ template ev fe v = H.html_
 
 start :: Applicative m => Route -> m Frontend
 start = \case
-  HomeR         -> pure $ HomeM ()
+  HomeR         -> pure $ HomeM mempty
   ComparisonR f -> pure . ComparisonM $ Comparison f Nothing
   FourOhFourR   -> pure FourOhFourM
