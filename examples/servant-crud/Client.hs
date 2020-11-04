@@ -12,10 +12,12 @@ module Client where
 import           Control.Monad.Catch         (MonadThrow)
 import           Control.Monad.Reader        (MonadIO)
 import           Data.Proxy                  (Proxy (..))
+#ifndef ghcjs_HOST_OS
+import           Shpadoinkle                 (JSM, MonadJSM, MonadUnliftIO (..),
+                                              UnliftIO (..), askJSM, runJSM)
+#else
 import           Shpadoinkle                 (JSM, MonadUnliftIO (..),
                                               UnliftIO (..), askJSM, runJSM)
-#ifndef ghcjs_HOST_OS
-import           Shpadoinkle                 (MonadJSM)
 #endif
 import           Servant.API                 ((:<|>) (..))
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
@@ -54,5 +56,3 @@ instance CRUDSpaceCraft App where
 
 app :: JSM ()
 app = fullPageSPA @ (SPA JSM) runApp runParDiff (withHydration start) view getBody start routes
-
-{-# ANN module "HLint: ignore Use fewer imports" #-}

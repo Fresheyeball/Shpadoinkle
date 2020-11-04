@@ -10,43 +10,52 @@
 module Main where
 
 
-import           Control.Monad.Catch          (MonadThrow)
-import           Control.Monad.IO.Class       (MonadIO (..))
-import           Data.Proxy                   (Proxy (..))
-import           Data.Text                    (Text, pack)
-import           Data.Time                    (getCurrentTime)
-import           Servant.API                  (type (:<|>) ((:<|>)))
-import           System.Random                (Random (randomRIO))
+import           Control.Monad.Catch                (MonadThrow)
+import           Control.Monad.IO.Class             (MonadIO (..))
+import           Data.Proxy                         (Proxy (..))
+import           Data.Text                          (Text, pack)
+import           Data.Time                          (getCurrentTime)
+import           Servant.API                        (type (:<|>) ((:<|>)))
+import           System.Random                      (Random (randomRIO))
 #ifndef ghcjs_HOST_OS
-import           Servant.Server               (serve)
+import           Servant.Server                     (serve)
 #endif
 
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle                  (JSM, MonadJSM,
-                                               MonadUnliftIO (..),
-                                               UnliftIO (..), askJSM, runJSM)
+import           Shpadoinkle                        (JSM, MonadJSM,
+                                                     MonadUnliftIO (..),
+                                                     UnliftIO (..), askJSM,
+                                                     runJSM)
 #else
-import           Shpadoinkle                  (JSM, MonadUnliftIO (..),
-                                               UnliftIO (..), askJSM, runJSM)
+import           Shpadoinkle                        (JSM, MonadUnliftIO (..),
+                                                     UnliftIO (..), askJSM,
+                                                     runJSM)
 #endif
-import           Shpadoinkle.Backend.Snabbdom (runSnabbdom, stage)
-import           Shpadoinkle.Isreal.Types     as Swan (API, Code, CompileError,
-                                                       SnowToken (..))
-import           Shpadoinkle.Router           (fullPageSPA, withHydration)
-import           Shpadoinkle.Router.Client    (ClientM, client, runXHR)
+import           Shpadoinkle.Backend.Snabbdom       (runSnabbdom, stage)
+import           Shpadoinkle.Isreal.Types           as Swan (API, Code,
+                                                             CompileError,
+                                                             SnowToken (..))
+import           Shpadoinkle.Router                 (fullPageSPA, withHydration)
+import           Shpadoinkle.Router.Client          (BaseUrl (..),
+                                                     ClientEnv (..), ClientM,
+                                                     Scheme (Https), client,
+                                                     runXHR, runXHR')
+import           Shpadoinkle.Widgets.Types          (Search (..))
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Router.Server    (serveUI)
-import           Shpadoinkle.Run              (Env (Dev), liveWithBackend,
-                                               runJSorWarp)
+import           Shpadoinkle.Router.Server          (serveUI)
+import           Shpadoinkle.Run                    (Env (Dev), liveWithBackend,
+                                                     runJSorWarp)
 #else
-import           Shpadoinkle.Run              (runJSorWarp)
+import           Shpadoinkle.Run                    (runJSorWarp)
 #endif
 
-import           Shpadoinkle.Marketing.Types  (SPA, Swan (..), routes)
+import           Shpadoinkle.Marketing.Types        (Hooglable (..), HoogleAPI,
+                                                     SPA, Swan (..), routes)
+import           Shpadoinkle.Marketing.Types.Hoogle (Target)
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Marketing.View   (start, template, view)
+import           Shpadoinkle.Marketing.View         (start, template, view)
 #else
-import           Shpadoinkle.Marketing.View   (start, view)
+import           Shpadoinkle.Marketing.View         (start, view)
 #endif
 
 
@@ -70,10 +79,18 @@ instance Swan App where
   clean   t   = App . runXHR $ cleanM   t
 
 
+instance Hooglable App where
+  findTargets s = App . runXHR' (findTargetsM s) . ClientEnv $ BaseUrl Https "hoogle.shpadoinkle.org" 443 ""
+
+
 compileM :: SnowToken -> Code -> ClientM (Either CompileError Text)
 cleanM   :: SnowToken -> ClientM Text
 (_ :<|> compileM :<|> cleanM :<|> _)
   = client (Proxy @ Swan.API)
+
+
+findTargetsM :: Search -> ClientM [Target]
+findTargetsM (Search s) = client (Proxy @ HoogleAPI) (Just "json") (Just s) (Just 1) (Just 7)
 
 
 app :: JSM ()
@@ -87,8 +104,8 @@ main = runJSorWarp 8080 app
 #ifndef ghcjs_HOST_OS
 
 dev :: IO ()
-dev = liveWithBackend 8080 app . pure $ serve (Proxy @ (SPA IO)) $ serveUI @ (SPA IO) "./static" (\r -> do
+dev = liveWithBackend 8080 app . pure $ serve (Proxy @ (SPA IO)) $ serveUI @ (SPA IO) "." (\r -> do
   x <- start r
-  return $ template @IO Dev x (view x)) routes
+  return $ template @App Dev x (view x)) routes
 
 #endif

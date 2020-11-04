@@ -6,15 +6,16 @@
 module Shpadoinkle.Widgets.Form.Input where
 
 
-import           Data.Coerce
-import           Data.Text
-import           Data.Text.Read
+import           Data.Coerce                      (Coercible, coerce)
+import           Data.Text                        (Text, pack)
+import           Data.Text.Read                   (double)
 
-import           Shpadoinkle                      hiding (text)
-import           Shpadoinkle.Html                 as Html
-import           Shpadoinkle.Widgets.Types.Core
-import           Shpadoinkle.Widgets.Types.Form   as Form
-import           Shpadoinkle.Widgets.Types.Search
+import           Shpadoinkle                      (Html, Prop)
+import           Shpadoinkle.Html                 as Html (input, onInput,
+                                                           type', value)
+import           Shpadoinkle.Widgets.Types.Core   (Hygiene (Dirty))
+import           Shpadoinkle.Widgets.Types.Form   as Form (Input (Input, _value))
+import           Shpadoinkle.Widgets.Types.Search (Search (Search))
 
 
 type Config m a = [(Text, Prop m (Input a))]

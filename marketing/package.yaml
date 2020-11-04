@@ -38,19 +38,25 @@ dependencies:
     - unliftio
     - lens
     - generic-lens
+    - generic-monoid
+    - mtl
 
     - Shpadoinkle
     - Shpadoinkle-router
     - Shpadoinkle-html
     - Shpadoinkle-isreal
     - Shpadoinkle-lens
+    - Shpadoinkle-widgets
 
 
 executables:
   run:
     main: Shpadoinkle/Marketing/Run.hs
     other-modules:
+      - Shpadoinkle.Marketing.Tailwind
       - Shpadoinkle.Marketing.Types
+      - Shpadoinkle.Marketing.Types.Hoogle
+      - Shpadoinkle.Marketing.Style
       - Shpadoinkle.Marketing.View
     source-dirs: .
     dependencies:
@@ -75,7 +81,10 @@ executables:
           buildable: True
     main: Shpadoinkle/Marketing/Disembodied.hs
     other-modules:
+      - Shpadoinkle.Marketing.Tailwind
       - Shpadoinkle.Marketing.Types
+      - Shpadoinkle.Marketing.Types.Hoogle
+      - Shpadoinkle.Marketing.Style
       - Shpadoinkle.Marketing.View
     source-dirs: .
     dependencies:

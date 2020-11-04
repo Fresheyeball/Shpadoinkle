@@ -12,6 +12,7 @@ module Shpadoinkle.Run (
   -- * Live Reloads
   , Env(..), Port
   , liveWithBackend
+  , liveWithStatic
   , live
   -- ** Convenience Variants
   , fullPage
@@ -34,6 +35,8 @@ import           Shpadoinkle                            (Backend, Html, RawNode,
 import           Language.Javascript.JSaddle.Warp       (run)
 import           Language.Javascript.JSaddle.WebSockets (debug, debugOr)
 import           Network.Wai                            (Application)
+import           Network.Wai.Application.Static         (defaultFileServerSettings,
+                                                         staticApp)
 
 
 -- | Serve a web server and a jsaddle warp frontend at the same time.
@@ -68,6 +71,19 @@ live
 live = debug
 
 
+-- | Serve jsaddle warp frontend with a static file server.
+liveWithStatic
+  :: Port
+  -- ^ Port to serve the live server
+  -> JSM ()
+  -- ^ Frontend application
+  -> FilePath
+  -- ^ Path to static files
+  -> IO ()
+liveWithStatic port frontend =
+  liveWithBackend port frontend . pure . staticApp . defaultFileServerSettings
+
+
 #else
 
 
@@ -76,6 +92,10 @@ data Application
 
 live :: Port -> JSM () -> IO ()
 live = error "Live reloads require GHC"
+
+
+liveWithStatic :: Port -> JSM () -> FilePath -> IO ()
+liveWithStatic = error "Live reloads require GHC"
 
 
 liveWithBackend :: Port -> JSM () -> IO Application -> IO ()

@@ -13,7 +13,6 @@ const cdnjs = x => "https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.4/" + x;
 addScript(cdnjs("snabbdom.min.js"));
 addScript(cdnjs("snabbdom-class.min.js"));
 addScript(cdnjs("snabbdom-props.min.js"));
-addScript(cdnjs("snabbdom-style.min.js"));
 addScript(cdnjs("snabbdom-attributes.min.js"));
 addScript(cdnjs("snabbdom-eventlisteners.min.js"));
 addScript(cdnjs("h.min.js"));

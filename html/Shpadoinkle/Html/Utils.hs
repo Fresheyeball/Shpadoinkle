@@ -9,20 +9,27 @@ module Shpadoinkle.Html.Utils where
 
 
 import           Control.Monad      (forM_)
-import           Data.Text          hiding (empty)
-import           GHCJS.DOM
-import           GHCJS.DOM.Document as Doc
-import           GHCJS.DOM.Element
-import           GHCJS.DOM.Node
+import           Data.Text          (Text)
+import           GHCJS.DOM          (currentDocumentUnchecked)
+import           GHCJS.DOM.Document as Doc (createElement, createTextNode,
+                                            getBodyUnsafe, getHeadUnsafe,
+                                            setTitle)
+import           GHCJS.DOM.Element  (setAttribute, setInnerHTML)
+import           GHCJS.DOM.Node     (appendChild)
 import           GHCJS.DOM.Types    (ToJSString, liftJSM, toJSVal)
 
-import           Shpadoinkle
+import           Shpadoinkle        (JSM, MonadJSM, RawNode (RawNode))
 
 
 default (Text)
 
 
-addStyle :: MonadJSM m => Text -> m ()
+-- | Add a stylesheet to the page via @link@ tag.
+addStyle
+  :: MonadJSM m
+  => Text
+  -- ^ The URI for the @href@ attribute
+  -> m ()
 addStyle x = do
   doc <- currentDocumentUnchecked
   link <- createElement doc "link"

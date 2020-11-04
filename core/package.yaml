@@ -11,6 +11,7 @@ description:
   Shpadoinkle is an abstract frontend programming model, with one-way data flow, and a single source of truth.
   This module provides a parsimonious implementation of Shpadoinkle with few implementation details.
 
+
 ghc-options:
     - -Wall
     - -Wcompat
@@ -39,6 +40,8 @@ when:
       dependencies:
         - jsaddle-warp >= 0.9.7 && < 0.20
         - wai
+        - warp
+        - wai-app-static
 
 
 library:

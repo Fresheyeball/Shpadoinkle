@@ -13,6 +13,7 @@
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
@@ -29,15 +30,22 @@ module Shpadoinkle.Backend.Snabbdom
 
 
 import           Control.Category
+import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
+import           Control.Monad.Catch         (MonadCatch, MonadThrow)
 import           Control.Monad.Reader
+import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
+                                              MonadTransControl,
+                                              defaultLiftBaseWith,
+                                              defaultRestoreM)
 import           Data.FileEmbed
 import           Data.Text
 import           Data.Traversable
-import           GHCJS.DOM.Types             (JSM, MonadJSM, liftJSM)
 import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, liftJSM,
                                               (#))
 import           Prelude                     hiding (id, (.))
-import           UnliftIO.STM                (TVar)
+import           UnliftIO                    (MonadUnliftIO (..), TVar,
+                                              UnliftIO (UnliftIO, unliftIO),
+                                              withUnliftIO)
 
 import           Shpadoinkle                 hiding (children, name, props)
 
@@ -51,7 +59,17 @@ instance FromJSVal SnabVNode where fromJSVal = return . Just . SnabVNode
 
 
 newtype SnabbdomT model m a = Snabbdom { unSnabbdom :: ReaderT (TVar model) m a }
-  deriving (Functor, Applicative, Monad, MonadIO, MonadReader (TVar model), MonadTrans)
+  deriving
+  ( Functor
+  , Applicative
+  , Monad
+  , MonadIO
+  , MonadReader (TVar model)
+  , MonadTrans
+  , MonadTransControl
+  , MonadThrow
+  , MonadCatch
+  )
 
 
 #ifndef ghcjs_HOST_OS
@@ -59,24 +77,50 @@ deriving instance MonadJSM m => MonadJSM (SnabbdomT model m)
 #endif
 
 
+instance MonadBase n m => MonadBase n (SnabbdomT model m) where
+  liftBase = liftBaseDefault
+
+
+instance MonadBaseControl n m => MonadBaseControl n (SnabbdomT model m) where
+  type StM (SnabbdomT model m) a = ComposeSt (SnabbdomT model) m a
+  liftBaseWith = defaultLiftBaseWith
+  restoreM = defaultRestoreM
+
+
+instance MonadUnliftIO m => MonadUnliftIO (SnabbdomT r m) where
+  {-# INLINE askUnliftIO #-}
+  askUnliftIO = Snabbdom . ReaderT $ \r ->
+                withUnliftIO $ \u ->
+                return (UnliftIO (unliftIO u . flip runReaderT r . unSnabbdom))
+  {-# INLINE withRunInIO #-}
+  withRunInIO inner =
+    Snabbdom . ReaderT $ \r ->
+    withRunInIO $ \run' ->
+    inner (run' . flip runReaderT r . unSnabbdom)
+
+
 -- | 'SnabbdomT' is a @newtype@ of 'ReaderT', this is the 'runReaderT' equivalent.
-runSnabbdom :: TVar model -> SnabbdomT model m a -> m a
+runSnabbdom :: TVar model -> SnabbdomT model m ~> m
 runSnabbdom t (Snabbdom r) = runReaderT r t
 
 
 props :: Monad m => (m ~> JSM) -> TVar a -> [(Text, Prop (SnabbdomT a m) a)] -> JSM Object
 props toJSM i xs = do
   o <- create
-  a <- create
-  e <- create
-  c <- create
+  propsObj     <- create
+  listenersObj <- create
+  classesObj   <- create
+  attrsObj     <- create
   void $ xs `for` \(k, p) -> case p of
     PText t -> do
       t' <- toJSVal t
       true <- toJSVal True
       case k of
-        "className" | t /= "" -> forM_ (split (== ' ') t) $ \u -> unsafeSetProp (toJSString u) true c
-        _                     -> unsafeSetProp (toJSString k) t' a
+        "className" | t /= "" -> forM_ (split (== ' ') t) $ \u -> unsafeSetProp (toJSString u) true classesObj
+        "style"     | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
+        "type"      | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
+        "autofocus" | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
+        _                     -> unsafeSetProp (toJSString k) t' propsObj
     PListener f -> do
       f' <- toJSVal . fun $ \_ _ -> \case
         [] -> return ()
@@ -84,17 +128,19 @@ props toJSM i xs = do
           rn <- unsafeGetProp "target" =<< valToObject ev
           x <- f (RawNode rn) (RawEvent ev)
           writeUpdate i $ hoist (toJSM . runSnabbdom i) x
-      unsafeSetProp (toJSString k) f' e
+      unsafeSetProp (toJSString k) f' listenersObj
     PFlag b -> do
       f <- toJSVal b
-      unsafeSetProp (toJSString k) f a
+      unsafeSetProp (toJSString k) f propsObj
 
-  p <- toJSVal a
-  l <- toJSVal e
-  k <- toJSVal c
+  p <- toJSVal propsObj
+  l <- toJSVal listenersObj
+  k <- toJSVal classesObj
+  a <- toJSVal attrsObj
   unsafeSetProp "props" p o
   unsafeSetProp "class" k o
   unsafeSetProp "on"    l o
+  unsafeSetProp "attrs" a o
   return o
 
 
