@@ -20,6 +20,9 @@ ghc-options:
     - -fwarn-tabs
     - -fwarn-incomplete-record-updates
     - -fwarn-identities
+    - -rtsopts
+    - -O2
+    - -threaded
 
 
 extra-source-files:
