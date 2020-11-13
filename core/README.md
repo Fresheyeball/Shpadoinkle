@@ -8,8 +8,7 @@
 [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle)
 [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle)
 
-Shpadoinkle is a programming model for UI development, oriented around simplicity,
-performance, and ergonomics.
+Shpadoinkle is a Haskell UI programming paradigm.
 
 ## The core concept
 

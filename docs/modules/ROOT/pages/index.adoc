@@ -10,7 +10,7 @@ image::logo.png[Eddie is loved forever,150,150,id="logo"]
 
 '''
 
-https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a purely functional user interface library, focused on simplicity, performance, and ergonomics.
+https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a Haskell UI programming paradigm.
 
 * xref:getting-started/index.adoc[Getting Started]
 * xref:packages/index.adoc[Packages]
