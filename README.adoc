@@ -4,7 +4,6 @@ image::docs/modules/ROOT/assets/images/logo.png[Eddie is loved forever,150,150]
 🤠 ⟶ 🥔 🤠
 
 [.text-center]
-==== I think I know precisely what I mean...
 
 https://gitlab.com/fresheyeball/Shpadoinkle/commits/master[image:https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg[pipeline
 status]]
@@ -16,8 +15,7 @@ http://hoogle.shpadoinkle.org[image:https://img.shields.io/badge/-Hoogle-lightgr
 
 = Shpadoinkle
 
-https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is an abstract frontend programming model, with one way data flow, and a single source of truth.
-Currently builds and runs with *ghc 8.6.x* and *ghcjs 8.6.x*.
+https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a Haskell UI programming paradigm.
 
 == Documentation
 
