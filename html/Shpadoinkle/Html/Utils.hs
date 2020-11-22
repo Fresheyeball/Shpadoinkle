@@ -8,17 +8,19 @@
 module Shpadoinkle.Html.Utils where
 
 
-import           Control.Monad      (forM_)
-import           Data.Text          (Text)
-import           GHCJS.DOM          (currentDocumentUnchecked)
-import           GHCJS.DOM.Document as Doc (createElement, createTextNode,
-                                            getBodyUnsafe, getHeadUnsafe,
-                                            setTitle)
-import           GHCJS.DOM.Element  (setAttribute, setInnerHTML)
-import           GHCJS.DOM.Node     (appendChild)
-import           GHCJS.DOM.Types    (ToJSString, liftJSM, toJSVal)
+import           Control.Monad                  (forM_)
+import           Data.Text                      (Text)
+import           GHCJS.DOM                      (currentDocumentUnchecked)
+import           GHCJS.DOM.Document             as Doc (createElement,
+                                                        createTextNode,
+                                                        getBodyUnsafe,
+                                                        getHeadUnsafe, setTitle)
+import           GHCJS.DOM.Element              (setAttribute, setInnerHTML)
+import           GHCJS.DOM.Node                 (appendChild)
+import           GHCJS.DOM.NonElementParentNode (getElementById)
+import           GHCJS.DOM.Types                (ToJSString, liftJSM, toJSVal)
 
-import           Shpadoinkle        (JSM, MonadJSM, RawNode (RawNode))
+import           Shpadoinkle                    (MonadJSM, RawNode (RawNode))
 
 
 default (Text)
@@ -62,8 +64,8 @@ getBody = do
   liftJSM $ RawNode <$> toJSVal body
 
 
-addMeta :: [(Text, Text)] -> JSM ()
-addMeta ps = do
+addMeta :: MonadJSM m => [(Text, Text)] -> m ()
+addMeta ps = liftJSM $ do
   doc <- currentDocumentUnchecked
   tag <- createElement doc ("meta" :: Text)
   forM_ ps $ uncurry (setAttribute tag)
@@ -71,8 +73,17 @@ addMeta ps = do
   () <$ appendChild headRaw tag
 
 
-addScriptSrc :: Text -> JSM ()
-addScriptSrc src = do
+createDivWithId :: MonadJSM m => Text -> m ()
+createDivWithId did = liftJSM $ do
+  doc <- currentDocumentUnchecked
+  tag <- createElement doc ("div" :: Text)
+  setAttribute tag "id" did
+  body <- Doc.getHeadUnsafe doc
+  () <$ appendChild body tag
+
+
+addScriptSrc :: MonadJSM m => Text -> m ()
+addScriptSrc src = liftJSM $ do
   doc <- currentDocumentUnchecked
   tag <- createElement doc ("script" :: Text)
   setAttribute tag ("src" :: Text) src
@@ -80,8 +91,8 @@ addScriptSrc src = do
   () <$ appendChild headRaw tag
 
 
-addScriptText :: Text -> JSM ()
-addScriptText js = do
+addScriptText :: MonadJSM m => Text -> m ()
+addScriptText js = liftJSM $ do
   doc <- currentDocumentUnchecked
   tag <- createElement doc ("script" :: Text)
   setAttribute tag ("type" :: Text) ("text/javascript" :: Text)
@@ -89,6 +100,12 @@ addScriptText js = do
   jsn <- createTextNode doc js
   _ <- appendChild tag jsn
   () <$ appendChild headRaw tag
+
+
+getById :: MonadJSM m => Text -> m RawNode
+getById did = liftJSM $ do
+  doc <- currentDocumentUnchecked
+  fmap RawNode . toJSVal =<< getElementById doc did
 
 
 treatEmpty :: Foldable f => Functor f => a -> (f a -> a) -> (b -> a) -> f b -> a

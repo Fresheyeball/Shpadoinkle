@@ -12,7 +12,6 @@ packages: core
         , router
         , widgets
 
-        , tests
         , examples
 
         , isreal
