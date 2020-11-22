@@ -34,7 +34,7 @@ module Shpadoinkle.Router (
     -- * Types
     , Redirect(..), Router(..), View, HTML
     -- * Shpadoinkle with SPA
-    , fullPageSPAC, fullPageSPA
+    , fullPageSPAC, fullPageSPA, fullPageSPA'
     -- * Navigation
     , navigate
     -- * Rehydration
@@ -88,7 +88,8 @@ import           Servant.Links                 (Link, URI (..), linkURI,
 import           System.IO.Unsafe              (unsafePerformIO)
 import           UnliftIO.Concurrent           (MVar, forkIO, newEmptyMVar,
                                                 putMVar, takeMVar)
-import           UnliftIO.STM                  (TVar, newTVarIO)
+import           UnliftIO.STM                  (TVar, atomically, newTVarIO,
+                                                writeTVar)
 import           Web.HttpApiData               (parseQueryParamMaybe,
                                                 parseUrlPieceMaybe)
 
@@ -243,6 +244,48 @@ fullPageSPA :: forall layout b a r m
   -- ^ how shall we relate urls to routes?
   -> JSM ()
 fullPageSPA a b c v g s = fullPageSPAC @layout a b c v g (fmap (pur . const) . s)
+
+
+-- | This method wraps @shpadoinkle@ providing for a convenient entrypoint
+-- for single page applications. It wires together your normal @shpadoinkle@
+-- app components with a function to respond to route changes, and the route mapping
+-- itself.
+{-# ANN fullPageSPA' ("HLint: ignore Reduce duplication" :: String) #-}
+fullPageSPA' :: forall layout b a r m
+   . HasRouter layout
+  => Backend b m a
+  => Monad (b m)
+  => Eq a
+  => Functor m
+  => (m ~> JSM)
+  -- ^ how do we get to JSM?
+  -> (TVar a -> b m ~> m)
+  -- ^ what backend are we running?
+  -> TVar a
+  -- ^ where do we store the state?
+  -> (r -> m a)
+  -- ^ what is the initial state?
+  -> (a -> Html (b m) a)
+  -- ^ how should the html look?
+  -> b m RawNode
+  -- ^ where do we render?
+  -> (r -> m (Continuation m a))
+  -- ^ listen for route changes
+  -> layout :>> r
+  -- ^ how shall we relate urls to routes?
+  -> JSM ()
+fullPageSPA' toJSM backend model i' view getStage onRoute routes = do
+  let router = route @layout @r routes
+  window <- currentWindowUnchecked
+  getRoute window router $ \case
+    Nothing -> return ()
+    Just r -> do
+      i <- toJSM $ i' r
+      atomically $ writeTVar model i
+      _ <- listenStateChange router $ writeUpdate model . kleisli . const
+           . (fmap (hoist toJSM) . toJSM) . onRoute
+      shpadoinkle toJSM backend i model view getStage
+      syncPoint
 
 
 -- | ?foo=bar&baz=qux -> [("foo","bar"),("baz","qux")]

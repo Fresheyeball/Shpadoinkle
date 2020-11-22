@@ -42,6 +42,7 @@ dependencies:
     - unliftio
     - ghcjs-dom
     - jsaddle          >= 0.9.7 && < 0.20
+    - raw-strings-qq
 
     - Shpadoinkle
 
@@ -67,6 +68,7 @@ library:
     - Shpadoinkle.Html.LocalStorage
     - Shpadoinkle.Html.TH
     - Shpadoinkle.Html.TH.CSS
+    - Shpadoinkle.WebWorker
     - Shpadoinkle.Keyboard
   source-dirs: .
 
