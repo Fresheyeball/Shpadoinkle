@@ -8,7 +8,7 @@ The fastest way to start a new Shpadoinkle project is to build a https://gitlab.
 
 [source,bash]
 ----
-bash <( curl https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/raw/master/generator.sh )
+bash <( curl -sSL https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/raw/master/generator.sh )
 ----
 
 Once you have your new project you can get live reloads with the following command:
