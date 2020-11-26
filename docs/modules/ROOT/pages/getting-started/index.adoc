@@ -4,18 +4,20 @@ Shpadoinkle is built with Nix, but you can build however you like. `stack` and `
 
 == ⛄ Snowman
 
-The fastest way to start a new Shpadoinkle project is to build a https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[Snowman]. The following command will setup a new "hello world" project for you.
+The fastest way to start a new Shpadoinkle project is to build a
+https://gitlab.com/robinbb/Shpadoinkle-snowman/[Snowman].
+The following command will setup a new "hello world" project for you.
 
 [source,bash]
 ----
-bash <( curl -sSL https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/raw/master/generator.sh )
+bash <( curl -sSL https://gitlab.com/robinbb/Shpadoinkle-snowman/-/raw/master/generate )
 ----
 
 Once you have your new project you can get live reloads with the following command:
 
 [source,bash]
 ----
-nix-shell --command "ghcid --command 'cabal repl' -W -T Main.dev"
+nix-shell --command "cd haskell && ghcid --command 'cabal repl' -W -T Main.dev"
 ----
 
 This will use `nix-shell` to setup a development environment for you, then execute `ghcid` inside the environment to watch your files, and execute `Main.dev` inside a repl. You can see results at `http://localhost:8080`. Of course you must have <<Nix>> installed for `nix-shell` to work.

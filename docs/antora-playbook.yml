@@ -1,6 +1,6 @@
 site:
   title: Shpadoinkle Documentation
-  url: https://shpadoinkle.org
+  url: /
   start_page: docs::index.adoc
 content:
   sources:
@@ -20,7 +20,7 @@ asciidoc:
     stem: true
     icons: font
     gitlab: https://gitlab.com/fresheyeball/Shpadoinkle/-/tree/master
-    snowman: https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman
+    snowman: https://gitlab.com/robinbb/Shpadoinkle-snowman/
     hackage: https://hackage.haskell.org/package/Shpadoinkle
 output:
   dir: ./public

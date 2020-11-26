@@ -7,7 +7,7 @@ Here we will build a simple calculator, following pioneers of the space http://w
 
 == Hello World
 
-Let's get a basic "Hello World" app up (this is provided if you are building a snowman). Luckily that is not too hard (but not too easy either):
+Let's start with a "Hello World" app. Luckily that is not too hard (but not too easy either):
 
 [source,haskell]
 ----

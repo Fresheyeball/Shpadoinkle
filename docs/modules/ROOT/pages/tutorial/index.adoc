@@ -9,7 +9,7 @@ Skip to:
 
 == Setup
 
-It is recommended you start by building a Snowman. The {snowman}[Snowman] is a minimal "Hello World" example repo where you can build a Shpadoinkle application. This project should work with any system capable of compiling code with https://www.haskell.org/ghc/[GHC]. This project is built with Nix but `stack` is also supported.
+It is recommended you start by building a {snowman}[Snowman] - a minimal "Hello World" example repo where you can build a Shpadoinkle application. This project should work with any system capable of compiling code with https://www.haskell.org/ghc/[GHC]. This project is built with Nix but `stack` is also supported.
 
 === Nix
 
