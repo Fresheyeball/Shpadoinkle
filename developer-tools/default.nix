@@ -6,7 +6,7 @@ let
   pkgs = import ../nix/pkgs.nix {
     inherit compiler chan; isJS = true; };
 
-  util = import ../nix/util.nix {};
+  util = import ../nix/util.nix { inherit pkgs; };
 
   dev  = import ../default.nix {
     pack = "Shpadoinkle-developer-tools";

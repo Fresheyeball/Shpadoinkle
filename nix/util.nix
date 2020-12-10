@@ -1,6 +1,5 @@
-{ compiler ? "", isJS ? false }:
-let pkgs = import <nixpkgs> {};
-in rec
+{ pkgs, compiler ? "", isJS ? false }:
+rec
 { compilerjs = if isJS then "ghcjs${builtins.substring 3 2 compiler}" else compiler;
   gitignore = (pkgs.callPackage (pkgs.fetchFromGitHub
     { owner = "siers";
