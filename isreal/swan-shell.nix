@@ -15,7 +15,7 @@ let
     url = "https://github.com/NixOS/nixpkgs/archive/${chan}.tar.gz";
   }) {
     overlays = [
-      (import ../nix/overlay.nix { compiler = "ghc865"; isJS = true; })
+      (import ../nix/overlay.nix { inherit chan; compiler = "ghc865"; isJS = true; })
       overlay
     ];
   };
