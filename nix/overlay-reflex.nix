@@ -10,8 +10,6 @@
   haskellOverlaysPost ? []
 }: self: super: let
 
-  util = import ./util.nix { inherit compiler isJS; };
-
   # Makes sure that old `overrides` from a previous call to `override` are not
   # forgotten, but composed. Do this by overriding `override` and passing a
   # function which takes the old argument set and combining it. What a tongue
@@ -21,6 +19,7 @@
   };
 
   nixpkgs = super;
+  util = import ./util.nix { inherit compiler isJS; pkgs = nixpkgs; };
   lib = nixpkgs.lib;
   haskellLib = nixpkgs.haskell.lib;
 

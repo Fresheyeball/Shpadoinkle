@@ -7,7 +7,7 @@
 let
   pkgs   = import ../nix/pkgs.nix { inherit compiler system chan; isJS = false;  };
   pkgsJS = import ../nix/pkgs.nix { inherit compiler system chan; isJS = true;   };
-  util   = import ../nix/util.nix { inherit compiler; isJS = true; };
+  util   = import ../nix/util.nix { inherit pkgs compiler; isJS = true; };
   opti = if optimize then util.doCannibalize else (x: x);
   file = if optimize then "all.min.js" else "all.js";
 in

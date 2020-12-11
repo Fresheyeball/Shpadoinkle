@@ -1,4 +1,7 @@
-{ chan ? "20.03" }: with import ../nix/pkgs.nix { inherit chan; };
+{ chan ? "20.03" }:
+let pkgs = import ../nix/pkgs.nix { inherit chan; };
+in
+with pkgs;
 let
 
   theme = fetchurl {
@@ -7,7 +10,7 @@ let
   };
 
 
-  util = import ../nix/util.nix {};
+  util = import ../nix/util.nix { inherit pkgs; };
 
   src = util.gitignore [
     "*.md"
