@@ -13,4 +13,3 @@
 ** xref:packages/html.adoc[Html]
 ** xref:packages/router.adoc[Router]
 ** xref:packages/widgets.adoc[Widgets]
-* https://hoogle.shpadoinkle.org[Hoogle]
