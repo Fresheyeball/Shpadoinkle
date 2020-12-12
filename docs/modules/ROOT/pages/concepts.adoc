@@ -4,18 +4,22 @@
 
 Shpadoinkle is a new way to program user interfaces with Haskell.
 
-The core idea here is to model user interfaces as functions with type:
+The core idea here is to model user interfaces as functions with this type:
 
 [source,haskell]
 ----
 view :: Model -> Html m Model
 ----
 
-This lets you describe the view as a pure function predicated on the current
-application state. It also suggests that changes to application state are
-dictated by the view.
+Here, `Model` is a data type representing your application's state.
 
-Here is a simple example that displays a counter:
+The `view` is a function that defines how to (visually) represent your
+application's state.
+
+Changes to application state are dictated by the view.
+
+Here is a simple example. It displays an integer. The integer can be
+incremented by clicking a button.
 
 [source,haskell]
 ----
@@ -29,15 +33,12 @@ view model = -- <1>
   ]
 ----
 
-<1> The function receives the current application state (which is just an `Int`)
-<2> Shows the current state to the user in a text node
-<3> When the user clicks the `<button>` it is added to the model
+<1> The function receives the current application state (which is just an
+    `Int`).
+<2> Shows the current state to the user in a text DOM node.
+<3> When the user clicks the `<button>`, 1 is added to the model.
 
-That is it. If you can understand what is going on in the above example, you
-understand Shpadoinkle, it's that simple. There is no dispatch, no payloads, no
+That's it. If you can understand what is going on in the above example, you
+understand Shpadoinkle. It's that simple. There is no dispatch, no payloads, no
 event types, no giant update function, no networks of state managers, no
-templating, no special HTML syntax, no magic attributes, no digest cycle, and
-nothing fancy going on.
-
-In fact, the only part of Shpadoinkle that actually performs work is only about
-xref:packages/core.adoc#_shpadoinkle[12 lines of code].
+templating, no special HTML syntax, no magic attributes, and no digest cycle.

@@ -1,9 +1,13 @@
 = Calculator
 
-Here we will build a simple calculator, following pioneers of the space http://weblog.luite.com/wordpress/?p=127[Luite Stegemann], https://reflex-frp.org/tutorial[Ryan Trinkle], and https://keera.co.uk/2020/05/28/building-a-reactive-calculator-in-haskell-1-5/[Ivan Perez].
+Here we will build a simple calculator, following pioneers of the space
+http://weblog.luite.com/wordpress/?p=127[Luite Stegemann],
+https://reflex-frp.org/tutorial[Ryan Trinkle], and
+https://keera.co.uk/2020/05/28/building-a-reactive-calculator-in-haskell-1-5/[Ivan Perez].
 
-* xref:tutorial/index.adoc[<- See part 1, Basic concepts]
-* xref:tutorial/immediate-execution.adoc[Go to part 3: Immediate execution ->]
+* xref:tutorial/index.adoc[<- Part 1, Basic concepts]
+* xref:tutorial/immediate-execution.adoc[Part 3: Immediate execution ->]
+* xref:tutorial/composing.adoc[Part 4, Composing HTML Elements ->]
 
 == Hello World
 
