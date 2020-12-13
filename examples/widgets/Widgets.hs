@@ -13,19 +13,20 @@ module Main where
 
 
 import           Control.Lens                      hiding (view)
-import           Control.Monad.IO.Class            (liftIO)
+import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Data.Text                         (Text, pack)
 import           Prelude                           hiding (div)
 
 import           Shpadoinkle                       (Html, JSM, newTVarIO,
                                                     shpadoinkle)
-import           Shpadoinkle.Backend.ParDiff       (runParDiff)
+-- import           Shpadoinkle.Backend.ParDiff       (runParDiff)
+import           Shpadoinkle.Backend.Snabbdom      (runSnabbdom)
 import           Shpadoinkle.Html                  as H (a, button, class', div,
                                                          div_, href, id', link',
                                                          rel, textProperty,
                                                          type')
 import           Shpadoinkle.Html.Utils            (getBody)
-import           Shpadoinkle.Lens                  (generalize)
+import           Shpadoinkle.Lens                  (onRecord)
 import           Shpadoinkle.Run                   (runJSorWarp)
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
 import           Shpadoinkle.Widgets.Types         (Humanize (..), Pick (..),
@@ -56,11 +57,11 @@ data Model = Model
 makeLenses ''Model
 
 
-view :: Monad m => Model -> Html m Model
+view :: MonadIO m => Model -> Html m Model
 view m = div_
   [ link' [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ]
-  , generalize pickOne $ dropdown bootstrap defConfig { _attrs = [ id' "One" ] } (_pickOne m)
-  , generalize pickAtleastOne $ dropdown bootstrap defConfig { _attrs = [ id' "AtleastOne" ] } (_pickAtleastOne m)
+  , onRecord pickOne        $ dropdown bootstrap defConfig { _attrs = [ id' "One" ] } (_pickOne m)
+  , onRecord pickAtleastOne $ dropdown bootstrap defConfig { _attrs = [ id' "AtleastOne" ] } (_pickAtleastOne m)
   ]
   where
   bootstrap :: Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
@@ -91,7 +92,7 @@ initial = Model fullOptions $ minBound `withOptions'` fullset
 app :: JSM ()
 app = do
   model <- liftIO $ newTVarIO initial
-  shpadoinkle id runParDiff initial model view getBody
+  shpadoinkle id runSnabbdom initial model view getBody
 
 
 main :: IO ()

@@ -10,12 +10,17 @@ module Shpadoinkle.Html.Event.Debounce
   ) where
 
 
-import           Control.Monad.IO.Class
-import           Data.Maybe
-import           Data.Text
-import           Data.Time.Clock
-import           Shpadoinkle
-import           UnliftIO.Concurrent
+import           Control.Monad.IO.Class (MonadIO (..))
+import           Data.Maybe             (fromMaybe)
+import           Data.Text              (Text)
+import           Data.Time.Clock        (NominalDiffTime, getCurrentTime)
+import           Shpadoinkle            (Continuation, JSM, MonadJSM, Prop,
+                                         RawEvent, RawNode, atomically,
+                                         bakedProp, cataProp, dataProp, done,
+                                         flagProp, kleisli, liftJSM,
+                                         listenerProp, newTVarIO, readTVar,
+                                         textProp, writeTVar)
+import           UnliftIO.Concurrent    (threadDelay)
 
 
 newtype Debounce m a b = Debounce { runDebounce
@@ -47,4 +52,5 @@ debounce :: MonadJSM m => MonadIO n
          -> n (Debounce m a b)
 debounce duration = do
   db <- debounceRaw duration
-  return . Debounce $ \g x -> let (attr, p) = g x in (attr, cataProp textProp (listenerProp . db) flagProp p)
+  return . Debounce $ \g x -> let (attr, p) = g x in (attr,
+     cataProp dataProp textProp flagProp (listenerProp . db) bakedProp p)

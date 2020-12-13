@@ -7,7 +7,6 @@ packages: core
         , developer-tools
         , disembodied
         , lens
-        , marketing
         , html
         , router
         , widgets

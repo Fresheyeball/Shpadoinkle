@@ -167,7 +167,7 @@ dropdown ::
   ( Considered p ~ Maybe
   , Consideration Dropdown p
   , Consideration ConsideredChoice p
-  , Ord a
+  , Ord a, Monad m
   ) => (Dropdown p a -> Theme m p a)
     -> Config m -> Dropdown p a -> Html m (Dropdown p a)
 dropdown toTheme Config {..} x =
@@ -180,6 +180,7 @@ dropdown toTheme Config {..} x =
     DownArrow -> considerNext x
     _         -> x
   , onClick $ act x
+  , onClickAwayM $ pure close
   , tabbable
   ] ++ _attrs) . _wrapper $
   _header (selected x) ++

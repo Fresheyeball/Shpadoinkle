@@ -25,6 +25,8 @@ module Shpadoinkle.Console (
   , table
   -- ** Time Measurement
   , TimeLabel(..), time, timeEnd
+  -- * Re-exports
+  , ToJSVal, ToJSON
   ) where
 
 
@@ -35,9 +37,9 @@ import           Data.String                 (IsString)
 import           Data.Text                   (Text, pack)
 import           Data.Text.Lazy              (toStrict)
 import           Data.Text.Lazy.Encoding     (decodeUtf8)
-import           Language.Javascript.JSaddle (JSContextRef, JSM,
+import           Language.Javascript.JSaddle (JSContextRef, MonadJSM,
                                               ToJSVal (toJSVal), askJSM, js1,
-                                              js2, jsg, runJSM)
+                                              js2, jsg, liftJSM, runJSM)
 import           Prelude                     hiding (log)
 import           System.IO.Unsafe            (unsafePerformIO)
 
@@ -65,13 +67,13 @@ default (Text)
    in that the console will render with nice expand/collapse object exploration features.
 -}
 class LogJS (c :: Type -> Constraint) where
-  logJS :: c a => Text -> a -> JSM ()
+  logJS :: MonadJSM m => c a => Text -> a -> m ()
 
 
 -- | Logs against 'ToJSON' will be encoded via 'Aeson' then parsed using
 -- native <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse JSON.parse> before being sent to the console.
 instance LogJS ToJSON where
-  logJS t a = do
+  logJS t a = liftJSM $ do
     console <- jsg "console"
     json    <- jsg "JSON"
     parsed  <- json ^. js1 "parse" (toStrict . decodeUtf8 $ encode a)
@@ -80,14 +82,14 @@ instance LogJS ToJSON where
 
 -- | Logs against 'Show' will be converted to a 'String' before being sent to the console.
 instance LogJS Show where
-  logJS t a = do
+  logJS t a = liftJSM $ do
     console <- jsg "console"
     () <$ console ^. js1 t (pack $ show a)
 
 
 -- | Logs against 'ToJSVal' will be converted to a 'JSVal' before being sent to the console.
 instance LogJS ToJSVal where
-  logJS t a = do
+  logJS t a = liftJSM $ do
     console <- jsg "console"
     () <$ console ^. js1 t (toJSVal a)
 
@@ -121,48 +123,48 @@ instance Trapper ToJSVal
   other console methods. This will only have an effect if the 'Bool' provided to 'assert' is 'False'.
 -}
 class Assert (c :: Type -> Constraint) where
-  assert :: c a => Bool -> a -> JSM ()
+  assert :: MonadJSM m => c a => Bool -> a -> m ()
 
 instance Assert ToJSON where
-  assert b x = do
+  assert b x = liftJSM $ do
     console <- jsg "console"
     json <- jsg "JSON"
     parsed <- json ^. js1 "parse" (toStrict . decodeUtf8 $ encode x)
     () <$ console ^. js2 "assert" (toJSVal b) parsed
 
 instance Assert Show where
-  assert b x = do
+  assert b x = liftJSM $ do
     console <- jsg "console"
     () <$ console ^. js2 "assert" (toJSVal b) (pack $ show x)
 
 instance Assert ToJSVal where
-  assert b x = do
+  assert b x = liftJSM $ do
     console <- jsg "console"
     () <$ console ^. js2 "assert" (toJSVal b) (toJSVal x)
 
 
 -- | Log a list of JSON objects to the console where it will rendered as a table using <https://developer.mozilla.org/en-US/docs/Web/API/Console/table console.table>
-table :: ToJSON a => [a] -> JSM ()
+table :: MonadJSM m => ToJSON a => [a] -> m ()
 table = logJS @ToJSON "table"
 
 
 -- | Log to the console using <https://developer.mozilla.org/en-US/docs/Web/API/Console/log console.log>
-log :: forall c a. LogJS c => c a => a -> JSM ()
+log :: forall c a m. MonadJSM m => LogJS c => c a => a -> m ()
 log = logJS @c "log"
 
 
 -- | Log with the "warn" log level using <https://developer.mozilla.org/en-US/docs/Web/API/Console/warn console.warn>
-warn :: forall c a. LogJS c => c a => a -> JSM ()
+warn :: forall c a m. MonadJSM m => LogJS c => c a => a -> m ()
 warn = logJS @c "warn"
 
 
 -- | Log with the "info" log level using <https://developer.mozilla.org/en-US/docs/Web/API/Console/info console.info>
-info :: forall c a. LogJS c => c a => a -> JSM ()
+info :: forall c a m. MonadJSM m => LogJS c => c a => a -> m ()
 info = logJS @c "info"
 
 
 -- | Log with the "debug" log level using <https://developer.mozilla.org/en-US/docs/Web/API/Console/debug console.debug>
-debug :: forall c a. LogJS c => c a => a -> JSM ()
+debug :: forall c a m. MonadJSM m => LogJS c => c a => a -> m ()
 debug = logJS @c "debug"
 
 
@@ -172,14 +174,14 @@ newtype TimeLabel = TimeLabel { unTimeLabel :: Text }
 
 
 -- | Start a timer using <https://developer.mozilla.org/en-US/docs/Web/API/Console/time console.time>
-time :: TimeLabel -> JSM ()
-time (TimeLabel l) = do
+time :: MonadJSM m => TimeLabel -> m ()
+time (TimeLabel l) = liftJSM $ do
   console <- jsg "console"
   () <$ console ^. js1 "time" l
 
 
 -- | End a timer and print the milliseconds elapsed since it started using <https://developer.mozilla.org/en-US/docs/Web/API/Console/timeEnd console.timeEnd>
-timeEnd :: TimeLabel -> JSM ()
-timeEnd (TimeLabel l) = do
+timeEnd :: MonadJSM m => TimeLabel -> m ()
+timeEnd (TimeLabel l) = liftJSM $ do
   console <- jsg "console"
   () <$ console ^. js1 "timeEnd" l

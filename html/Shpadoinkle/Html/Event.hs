@@ -1,9 +1,11 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeApplications    #-}
 
 
 -- | This module provides a DSL of Events found on HTML elements.
@@ -35,10 +37,15 @@
 module Shpadoinkle.Html.Event where
 
 
+import           Control.Concurrent.STM      (retry)
+import           Control.Lens                ((^.))
 import           Control.Monad               (msum, void)
+import           Control.Monad.IO.Class      (liftIO)
 import           Data.Text
 import           GHCJS.DOM.Types             hiding (Text)
 import           Language.Javascript.JSaddle hiding (JSM, liftJSM, toJSString)
+import           UnliftIO.Concurrent         (forkIO)
+import           UnliftIO.STM
 
 import           Shpadoinkle
 import           Shpadoinkle.Html.TH
@@ -139,6 +146,44 @@ onSubmitM = onSubmitC . impur
 
 onSubmitM_ :: Monad m => m () -> (Text, Prop m a)
 onSubmitM_ = onSubmitC . causes
+
+
+onClickAwayC :: Continuation m a -> (Text, Prop m a)
+onClickAwayC c =
+  ( "onclickaway"
+  , PPotato $ \(RawNode elm) -> liftJSM $ do
+
+     (notify, twas) <- liftIO $ (,) <$> newTVarIO 0 <*> newTVarIO (0 :: Int)
+
+     void $ jsg ("document" :: Text) ^. js2 ("addEventListener" :: Text) ("click" :: Text)
+        (fun $ \_ _ -> \case
+          evt:_ -> void . forkIO $ do
+
+            target   <- evt ^. js ("target" :: Text)
+            onTarget <- fromJSVal =<< elm ^. js1 ("contains" :: Text) target
+            case onTarget of
+              Just False -> atomically $ modifyTVar notify (+ 1)
+              _          -> return ()
+
+          [] -> pure ())
+
+     return $ do
+       new' <- readTVar notify
+       old  <- readTVar twas
+       if new' == old then retry else c <$ writeTVar twas new'
+  )
+
+
+onClickAway :: a -> (Text, Prop m a)
+onClickAway = onClickAwayC . constUpdate
+
+
+onClickAwayM :: Monad m => m (a -> a) -> (Text, Prop m a)
+onClickAwayM = onClickAwayC . impur
+
+
+onClickAwayM_ :: Monad m => m () -> (Text, Prop m a)
+onClickAwayM_ = onClickAwayC . causes
 
 
 mkGlobalKey :: Text -> (KeyCode -> JSM ()) -> JSM ()

@@ -8,6 +8,7 @@
 {-# LANGUAGE InstanceSigs           #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE PartialTypeSignatures  #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TupleSections          #-}
@@ -27,7 +28,7 @@ module Shpadoinkle.Core (
   -- * Base Types
   Html(..), Prop(..)
   -- ** Prop Constructors
-  , textProp, listenerProp, flagProp
+  , dataProp, flagProp, textProp, listenerProp, bakedProp
   -- *** Listeners
   , listenRaw, listen, listenM, listenM_, listenC, listener
   -- ** Html Constructors
@@ -71,9 +72,9 @@ import           Language.Javascript.JSaddle   (FromJSVal (..), JSVal,
 import           Prelude                       hiding ((.))
 import           UnliftIO                      (MonadUnliftIO (..),
                                                 UnliftIO (..))
-import           UnliftIO.STM                  (TVar, atomically, modifyTVar,
-                                                newTVarIO, readTVar, readTVarIO,
-                                                retrySTM, writeTVar)
+import           UnliftIO.STM                  (STM, TVar, atomically,
+                                                modifyTVar, newTVarIO, readTVar,
+                                                readTVarIO, retrySTM, writeTVar)
 
 
 import           Shpadoinkle.Continuation      (Continuation, Continuous (..),
@@ -105,8 +106,14 @@ data Html :: (Type -> Type) -> Type -> Type where
 -- node in JavaScript. If you wish to add attributes, you may do so
 -- by setting its corresponding property.
 data Prop :: (Type -> Type) -> Type -> Type where
+  -- | A data property, these do NOT appear in static rendering
+  PData :: JSVal -> Prop m a
   -- | A text property
   PText :: Text -> Prop m a
+  -- | A boolean property
+  PFlag :: Bool -> Prop m a
+  -- | Bake a custom property
+  PPotato :: (RawNode -> JSM (STM (Continuation m a))) -> Prop m a
   -- | Event listeners are provided with the 'RawNode' target, and the 'RawEvent', and may perform
   -- a monadic action such as a side effect. This is the one and only place where you may
   -- introduce a custom monadic action. The JSM to compute the Continuation must be
@@ -116,10 +123,6 @@ data Prop :: (Type -> Type) -> Type -> Type where
   -- and that may not be the case if the code to compute the Continuation of some
   -- listener is blocking.
   PListener :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> Prop m a
-  -- | A boolean property works as a flag:
-  -- for example @("disabled", PFlag False)@ has no effect,
-  -- while @("disabled", PFlag True)@ will add the @disabled@ attribute.
-  PFlag :: Bool -> Prop m a
 
 
 -- | Construct a listener from its name and a simple monadic event handler.
@@ -138,7 +141,7 @@ type Props' m a = [(Text, Prop m a)]
 
 -- | If you can provide a Natural Transformation from one Functor to another
 -- then you may change the action of 'Html'.
-hoistHtml :: Functor m => (m ~> n) -> Html m a -> Html n a
+hoistHtml :: Functor m => Functor n => (m ~> n) -> Html m a -> Html n a
 hoistHtml f = \case
   Node t ps cs -> Node t (fmap (hoistProp f) <$> ps) (hoistHtml f <$> cs)
   Potato p     -> Potato p
@@ -150,9 +153,11 @@ hoistHtml f = \case
 -- then you may change the action of 'Prop'.
 hoistProp :: Functor m => (m ~> n) -> Prop m a -> Prop n a
 hoistProp f = \case
-  PListener g -> PListener (\x y -> hoist f <$> g x y)
+  PListener g -> PListener $ \x -> fmap (hoist f) . g x
+  PData t     -> PData t
   PText t     -> PText t
-  PFlag b     -> PFlag b
+  PFlag t     -> PFlag t
+  PPotato p   -> PPotato $ fmap (fmap (hoist f)) . p
 {-# INLINE hoistProp #-}
 
 
@@ -193,13 +198,20 @@ instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
     where f' :: EndoIso (Continuation m a) (Continuation m b)
           f' = F.map f
 
+          mapFwd :: Prop m a -> Prop m b
+          mapFwd (PData t)     = PData t
           mapFwd (PText t)     = PText t
-          mapFwd (PListener g) = PListener (\r e -> piapply f' <$> g r e)
-          mapFwd (PFlag b)     = PFlag b
+          mapFwd (PFlag t)     = PFlag t
+          mapFwd (PListener g) = PListener $ \r e -> piapply f' <$> g r e
+          mapFwd (PPotato p)   = PPotato $ fmap (fmap (piapply f')) . p
 
-          mapBack (PText t) = PText t
-          mapBack (PListener g) = PListener (\r e -> piapply (piinverse f') <$> g r e)
-          mapBack (PFlag b) = PFlag b
+
+          mapBack :: Prop m b -> Prop m a
+          mapBack (PData t)     = PData t
+          mapBack (PText t)     = PText t
+          mapBack (PFlag t)     = PFlag t
+          mapBack (PListener g) = PListener $ \r e -> piapply (piinverse f') <$> g r e
+          mapBack (PPotato b)   = PPotato $ fmap (fmap (piapply (piinverse f'))) . b
   {-# INLINE map #-}
 
 
@@ -235,10 +247,18 @@ instance Continuous MapProps where
 --   lens to convert the types of the Continuations which it contains
 --   if it is a listener.
 instance Continuous Prop where
+  mapC _ (PData t)     = PData t
   mapC _ (PText t)     = PText t
-  mapC f (PListener g) = PListener (\r e -> f <$> g r e)
   mapC _ (PFlag b)     = PFlag b
+  mapC f (PListener g) = PListener $ \r -> fmap f . g r
+  mapC f (PPotato b)   = PPotato $ fmap (fmap f) . b
   {-# INLINE mapC #-}
+
+
+-- | Create a data property.
+dataProp :: JSVal -> Prop m a
+dataProp = PData
+{-# INLINE dataProp #-}
 
 
 -- | Create a text property.
@@ -247,27 +267,38 @@ textProp = PText
 {-# INLINE textProp #-}
 
 
+flagProp :: Bool -> Prop m a
+flagProp = PFlag
+{-# INLINE flagProp #-}
+
+
 -- | Create an event listener property.
 listenerProp :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> Prop m a
 listenerProp = PListener
 {-# INLINE listenerProp #-}
 
 
--- | Create a boolean property.
-flagProp :: Bool -> Prop m a
-flagProp = PFlag
-{-# INLINE flagProp #-}
+-- | Create a delicious proptato.
+bakedProp :: (RawNode -> JSM (STM (Continuation m a))) -> Prop m a
+bakedProp = PPotato
+{-# INLINE bakedProp #-}
 
 
 -- | Transform a p-algebra into a p-catamorphism. This is like polymorphic pattern matching.
-cataProp :: (Text -> b)
-         -> ((RawNode -> RawEvent -> JSM (Continuation m a)) -> b)
-         -> (Bool -> b)
-         -> Prop m a -> b
-cataProp f g h' = \case
-  PText t     -> f t
-  PListener l -> g l
-  PFlag b     -> h' b
+cataProp
+  :: (JSVal -> b)
+  -> (Text -> b)
+  -> (Bool -> b)
+  -> ((RawNode -> RawEvent -> JSM (Continuation m a)) -> b)
+  -> ((RawNode -> JSM (STM (Continuation m a))) -> b)
+  -> Prop m a
+  -> b
+cataProp d t f l p = \case
+  PData     x -> d x
+  PText     x -> t x
+  PFlag     x -> f x
+  PListener x -> l x
+  PPotato   x -> p x
 
 
 -- | Construct an HTML element JSX-style.
