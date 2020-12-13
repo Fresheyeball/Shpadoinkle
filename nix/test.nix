@@ -3,7 +3,7 @@ let pkgs = import ./pkgs.nix { inherit compiler isJS chan; }; in with pkgs; with
 
 
   packages = import ../default.nix { inherit compiler isJS chan; };
-  util     = import ./util.nix     { inherit compiler isJS; };
+  util     = import ./util.nix     { inherit pkgs compiler isJS; };
 
 
 in runCommand "${util.compilerjs}-test" {
