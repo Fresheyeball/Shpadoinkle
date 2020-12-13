@@ -53,10 +53,14 @@ renderProps = Data.Text.unwords . fmapMaybe (uncurry renderProp)
 
 
 renderProp :: Text -> Prop m a -> Maybe Text
-renderProp name = cataProp renderTextProp renderListener renderFlag
+renderProp name = cataProp
+  (const Nothing)
+  renderTextProp
+  renderFlag
+  (const Nothing)
+  (const Nothing)
 
   where renderTextProp t = Just $ lice name <> "=\"" <> t <> "\""
-        renderListener _ = Nothing
         renderFlag True  = Just name
         renderFlag False = Nothing
         lice = \case
