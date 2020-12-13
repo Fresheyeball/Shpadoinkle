@@ -10,13 +10,13 @@
 
 let
   pkgs = import ./nix/pkgs.nix { inherit compiler isJS system chan; };
+  util = import ./nix/util.nix { inherit pkgs compiler isJS; };
 in
   with pkgs; with lib;
 
   let
     optimizeJS = optimize && isJS && !inNixShell;
 
-    util = import ./nix/util.nix { inherit compiler isJS; };
     docker = import ./examples/servant-crud/docker.nix { inherit compiler chan; };
 
     ghcTools = with haskell.packages.${compiler};
