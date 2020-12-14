@@ -1,6 +1,4 @@
-:page-role: home
-
-= Shpadoinkle Concepts
+= Concepts
 
 Shpadoinkle is a new way to program user interfaces with Haskell.
 
@@ -24,7 +22,7 @@ view model = -- <1>
   div []
   [ text $ pack $ show model -- <2>
   , button
-    [ onClick (model + 1) ] -- <3>
+    [ onClick (+ 1) ] -- <3>
     [ text "Increment" ]
   ]
 ----
