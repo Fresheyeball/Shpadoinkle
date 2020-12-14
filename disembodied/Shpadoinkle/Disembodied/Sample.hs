@@ -27,11 +27,11 @@ newtype Context = Context
   { siteName :: Text }
 
 
-about :: MonadJSM m => Int -> Context -> Html m Int
-about x ctx =
+about :: MonadJSM m => Context -> Html m Int
+about ctx =
   h1_ [ text $ "about us at " <> siteName ctx
       , button
-        [ onClick (x + 1) ]
+        [ onClick (+ 1) ]
         [ "Increment" ]
       ]
 
@@ -41,7 +41,7 @@ home = h1_ [ "home" ]
 
 
 site :: MonadJSM m => SiteSpec Context (Pages m)
-site = about 0 :<|> const home
+site = about :<|> const home
 
 
 makeSite :: IO ()
