@@ -1,7 +1,5 @@
 = Extend an example
 
-This is the way to try out one of the examples. However the easiest way to try out Shpadoinkle is to build a https://gitlab.com/fresheyeball/Shpadoinkle-snowman/-/tree/master#snowman[Snowman].
-
 [source,bash]
 ----
 git clone https://gitlab.com/fresheyeball/Shpadoinkle.git

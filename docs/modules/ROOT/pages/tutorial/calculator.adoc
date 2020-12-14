@@ -7,7 +7,7 @@ Here we will build a simple calculator, following pioneers of the space http://w
 
 == Hello World
 
-Let's get a basic "Hello World" app up (this is provided if you are building a snowman). Luckily that is not too hard (but not too easy either):
+Let's start with a "Hello World" app. Luckily that is not too hard (but not too easy either):
 
 [source,haskell]
 ----
@@ -41,7 +41,7 @@ To start, we will need a simple single number input:
 num :: Int -> Html m Int
 num x = input'
  [ value . pack $ show x -- <1>
- , onInput (fromMaybe 0 . readMay . unpack) -- <2>
+ , onInput (const . fromMaybe 0 . readMay . unpack) -- <2>
  ]
 ----
 
@@ -106,7 +106,7 @@ We will use a traditional Html `<select>` element to let the user pick the opera
 [source,haskell]
 ----
 opSelect :: Html m Operation
-opSelect = select [ onOption $ read . unpack ] -- <1>
+opSelect = select [ onOption $ const . read . unpack ] -- <1>
   $ opOption <$> [ minBound .. maxBound ]
   where
     opOption o = option
