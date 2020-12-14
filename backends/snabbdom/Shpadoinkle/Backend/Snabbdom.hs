@@ -46,6 +46,7 @@ import           Prelude                     hiding (id, (.))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
+import           UnliftIO.Concurrent         (forkIO)
 
 import           Shpadoinkle                 hiding (children, name, props)
 
@@ -111,7 +112,24 @@ props toJSM i xs = do
   listenersObj <- create
   classesObj   <- create
   attrsObj     <- create
+  hooksObj     <- create
   void $ xs `for` \(k, p) -> case p of
+    PData d -> unsafeSetProp (toJSString k) d propsObj
+    PPotato pot -> do
+      f' <- toJSVal . fun $ \_ _ ->
+        let
+          g vnode = do
+            vnode' <- valToObject vnode
+            stm <- pot . RawNode =<< unsafeGetProp "elm" vnode'
+            let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i)
+            void $ forkIO go
+        in \case
+          [vnode]    -> g vnode
+          [_, vnode] -> g vnode
+          _          -> return ()
+      unsafeSetProp "insert" f' hooksObj
+      unsafeSetProp "update" f' hooksObj
+
     PText t -> do
       t' <- toJSVal t
       true <- toJSVal True
@@ -121,6 +139,7 @@ props toJSM i xs = do
         "type"      | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
         "autofocus" | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
         _                     -> unsafeSetProp (toJSString k) t' propsObj
+
     PListener f -> do
       f' <- toJSVal . fun $ \_ _ -> \case
         [] -> return ()
@@ -129,18 +148,21 @@ props toJSM i xs = do
           x <- f (RawNode rn) (RawEvent ev)
           writeUpdate i $ hoist (toJSM . runSnabbdom i) x
       unsafeSetProp (toJSString k) f' listenersObj
+
     PFlag b -> do
       f <- toJSVal b
       unsafeSetProp (toJSString k) f propsObj
 
-  p <- toJSVal propsObj
-  l <- toJSVal listenersObj
-  k <- toJSVal classesObj
-  a <- toJSVal attrsObj
-  unsafeSetProp "props" p o
-  unsafeSetProp "class" k o
-  unsafeSetProp "on"    l o
-  unsafeSetProp "attrs" a o
+  p  <- toJSVal propsObj
+  l  <- toJSVal listenersObj
+  k  <- toJSVal classesObj
+  a  <- toJSVal attrsObj
+  h' <- toJSVal hooksObj
+  unsafeSetProp "props" p  o
+  unsafeSetProp "class" k  o
+  unsafeSetProp "on"    l  o
+  unsafeSetProp "attrs" a  o
+  unsafeSetProp "hook"  h' o
   return o
 
 

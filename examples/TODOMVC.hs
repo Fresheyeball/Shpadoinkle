@@ -116,7 +116,7 @@ toVisible v = case v of
 
 filterHtml :: Visibility -> Visibility -> Html m Visibility
 filterHtml = memo $ \cur item -> li_
-  [ a (href "#" : onClick item
+  [ a (href "#" : onClick (const item)
         : [class' ("selected", cur == item)]) [ text . pack $ show item ]
   ]
 
@@ -135,18 +135,18 @@ taskView m = memo $ \(Task (Description d) c tid) ->
   [ div "view"
     [ input' [ type' "checkbox"
              , class' "toggle"
-             , onChange $ toggleCompleted tid m
+             , onChange $ toggleCompleted tid
              , checked $ c == Complete
              ]
-    , label [ onDblclick $ toggleEditing (Just tid) m ] [ text d ]
-    , button' [ class' "destroy", onClick $ removeTask tid m ]
+    , label [ onDblclick $ toggleEditing (Just tid) ] [ text d ]
+    , button' [ class' "destroy", onClick $ removeTask tid ]
     ]
-  , form [ onSubmit $ toggleEditing Nothing m ]
+  , form [ onSubmit $ toggleEditing Nothing ]
     [ input' [ class' "edit"
              , value d
-             , onInput $ ($ m) . updateTaskDescription tid . Description
+             , onInput $ updateTaskDescription tid . Description
              , autofocus True
-             , onBlur $ toggleEditing Nothing m
+             , onBlur $ toggleEditing Nothing
              ]
     ]
   ]
@@ -160,7 +160,7 @@ listFooter model = footer "footer" $
     ]
   , ul "filters" $ generalize #visibility .
       filterHtml (visibility model) <$> [minBound..maxBound]
-  ] ++ [ button [class' "clear-completed", onClick $ clearComplete model] ["Clear completed"]
+  ] ++ [ button [class' "clear-completed", onClick clearComplete ] ["Clear completed"]
        | count Complete (tasks model) /= 0 ]
 
 
@@ -174,10 +174,10 @@ info = footer "info"
 
 
 newTaskForm :: Model -> Html m Model
-newTaskForm model = form [ class' "todo-form", onSubmit (appendItem model) ]
+newTaskForm model = form [ class' "todo-form", onSubmit appendItem ]
   [ input' [ class' "new-todo"
            , value . unDescription $ current model
-           , onInput $ ($ model) . (#current .~) . Description
+           , onInput $ (#current .~) . Description
            , placeholder "What needs to be done?" ]
   ]
 
@@ -186,9 +186,9 @@ todoList :: Model -> Html m Model
 todoList model = ul "todo-list" $ taskView model <$> visibility model `toVisible` tasks model
 
 
-toggleAllBtn :: Model -> [Html m Model]
-toggleAllBtn model =
-  [ input' [ id' "toggle-all", class' "toggle-all", type' "checkbox", onChange $ toggleAll model ]
+toggleAllBtn :: [Html m Model]
+toggleAllBtn =
+  [ input' [ id' "toggle-all", class' "toggle-all", type' "checkbox", onChange toggleAll ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
@@ -199,7 +199,7 @@ view model = div_
     header "header"
       [ h1_ [ "todos" ], newTaskForm model ]
     : htmlIfTasks model
-    [ section "main" $ toggleAllBtn model <> [ todoList model ]
+    [ section "main" $ toggleAllBtn <> [ todoList model ]
     , listFooter model
     ]
   , info

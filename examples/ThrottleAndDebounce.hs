@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections       #-}
 
 
 module Main where
 
 
+import           Control.Arrow               (first, second)
 import           Control.Monad.IO.Class      (liftIO)
 import           Data.Text                   (Text, pack)
 import           Shpadoinkle                 (Html, JSM, newTVarIO, shpadoinkle,
@@ -25,21 +25,21 @@ type App = ParDiffT Model JSM
 
 
 data Control m = Control
-  (Debounce m Model Model)
-  (Debounce m (Text -> Model) Model)
-  (Throttle m Model Model)
-  (Throttle m (Text -> Model) Model)
+  (Debounce m (Model -> Model) Model)
+  (Debounce m (Text -> Model -> Model) Model)
+  (Throttle m (Model -> Model) Model)
+  (Throttle m (Text -> Model -> Model) Model)
 
 
 view :: Control m -> Model -> Html m Model
 view (Control debouncer1 debouncer2 throttler1 throttler2) (count, txt) = div_
   [ text ("Count: " <> pack (show count))
-  , div_ [ button [ onClick (count+1, txt) ] [ text "Increment" ] ]
-  , div_ [ button [ runThrottle throttler1 onClick (count+1, txt) ] [ text "Increment (throttle)" ] ]
-  , div_ [ button [ runDebounce debouncer1 onClick (count+1, txt) ] [ text "Increment (debounce)" ] ]
-  , div_ [ text "Debounced input", input [ runDebounce debouncer2 onInput (count,) ] [ ] ]
+  , div_ [ button [ onClick $ first (+ 1) ] [ text "Increment" ] ]
+  , div_ [ button [ runThrottle throttler1 onClick $ first (+ 1) ] [ text "Increment (throttle)" ] ]
+  , div_ [ button [ runDebounce debouncer1 onClick $ first (+ 1) ] [ text "Increment (debounce)" ] ]
+  , div_ [ text "Debounced input", input [ runDebounce debouncer2 onInput $ second . const ] [ ] ]
   , div_ [ text txt ]
-  , div_ [ text "Throttled input", input [ runThrottle throttler2 onInput (count,) ] [ ] ]
+  , div_ [ text "Throttled input", input [ runThrottle throttler2 onInput $ second . const ] [ ] ]
   ]
 
 

@@ -23,7 +23,7 @@ module Shpadoinkle.Continuation (
   -- ** Hoist
   , hoist
   -- * Forgetting
-  , voidC', voidC, forgetC, forgetC'
+  , voidC', voidC, forgetC
   -- * Lifts
   , liftC', liftCMay', liftC, liftCMay
   -- * Utilities
@@ -130,7 +130,7 @@ runContinuation' f (Pure g) _ = return (g.f)
 -- | @f@ is a Functor to Hask from the category where the objects are
 --   Continuation types and the morphisms are functions.
 class Continuous f where
-  mapC :: Functor m => Functor n => (Continuation m a -> Continuation n b) -> f m a -> f n b
+  mapC :: (Continuation m a -> Continuation m b) -> f m a -> f m b
 
 
 instance Continuous Continuation where
@@ -182,13 +182,8 @@ voidC = mapC voidC'
 
 
 -- | Forget about the Continuations.
-forgetC :: Monad m => Monad n => Continuous f => f m a -> f n b
+forgetC :: Continuous f => f m a -> f m b
 forgetC = mapC (const done)
-
-
--- | Forget about the Continuations without changing the monad. This can be easier on type inference compared to forgetC.
-forgetC' :: Monad m => Continuous f => f m a -> f m b
-forgetC' = forgetC
 
 
 --- | Change the type of a Continuation by applying it to the left coordinate of a tuple.

@@ -171,7 +171,7 @@ viewWith Theme {..} xs s@(SortCol sorton sortorder) =
         Just (PText sty) -> M.toList (M.insert "style" (textProp $ sty <> "; display: none") pMap)
         _ -> M.toList (M.insert "style" (textProp "display: none") pMap)
 
-  cth_ c = th (thProps xs s c) . pure . Html.a [ second rightC . onClick $ toggleSort c s ]
+  cth_ c = th (thProps xs s c) . pure . Html.a [ second rightC . onClick $ toggleSort c ]
          . mappend [ text (humanize c) ] . pure $
           if c == sorton then
             case sortorder of ASC -> ascendingIcon Proxy; DESC -> descendingIcon Proxy
