@@ -35,13 +35,13 @@ form f = div_
   , onRecord #name $ input'
     [ id' "name"
     , value $ f ^. #name
-    , onInput id
+    , onInput const
     ]
   , label [ for' "age" ] [ "Age" ]
   , onRecord #age $ input'
     [ id' "age"
     , value . pack . show $ f ^. #age
-    , onInput $ fromMaybe 0 . readMay . unpack
+    , onInput $ const . fromMaybe 0 . readMay . unpack
     ]
   ]
 
@@ -53,7 +53,7 @@ newtype Counter = Counter Int
 counter :: Counter -> Html m Counter
 counter c = div_
   [ label [ for' "counter" ] [ text . pack $ show c ]
-  , button [ id' "counter", onClick $ c + 1 ] [ "Increment" ]
+  , button [ id' "counter", onClick (+ 1) ] [ "Increment" ]
   ]
 
 
@@ -67,11 +67,11 @@ view :: Applicative m => Model -> Html m Model
 view = \case
   MCounter c -> div_
     [ onSum #_MCounter $ counter c
-    , button [ onClick . MForm $ Form "" 18 ] [ "Go to Form" ]
+    , button [ onClick . const. MForm $ Form "" 18 ] [ "Go to Form" ]
     ]
   MForm f    -> div_
     [ onSum #_MForm $ form f
-    , button [ onClick $ MCounter 0 ] [ "Go to Counter" ]
+    , button [ onClick . const $ MCounter 0 ] [ "Go to Counter" ]
     ]
 
 

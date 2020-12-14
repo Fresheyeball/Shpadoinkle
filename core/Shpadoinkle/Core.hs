@@ -78,8 +78,8 @@ import           UnliftIO.STM                  (STM, TVar, atomically,
 
 
 import           Shpadoinkle.Continuation      (Continuation, Continuous (..),
-                                                causes, constUpdate, eitherC,
-                                                hoist, impur, shouldUpdate)
+                                                causes, eitherC, hoist, impur,
+                                                pur, shouldUpdate)
 
 
 -- | This is the core type in Backend.
@@ -113,6 +113,8 @@ data Prop :: (Type -> Type) -> Type -> Type where
   -- | A boolean property
   PFlag :: Bool -> Prop m a
   -- | Bake a custom property
+  -- The STM Monad will be called recursively.
+  -- The semantics here is roughly an event stream of continuations.
   PPotato :: (RawNode -> JSM (STM (Continuation m a))) -> Prop m a
   -- | Event listeners are provided with the 'RawNode' target, and the 'RawEvent', and may perform
   -- a monadic action such as a side effect. This is the one and only place where you may
@@ -413,8 +415,8 @@ listenC k = listenRaw k . const . const . return
 
 
 -- | Construct a listener from its 'Text' name and an output value.
-listen :: Text -> a -> (Text, Prop m a)
-listen k = listenC k . constUpdate
+listen :: Text -> (a -> a) -> (Text, Prop m a)
+listen k = listenC k . pur
 {-# INLINE listen #-}
 
 

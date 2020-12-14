@@ -24,7 +24,7 @@ type Config m a = [(Text, Prop m (Input a))]
 mkInput :: Text -> (Text -> a) -> (a -> Text) -> Config m a -> Input a -> Html m (Input a)
 mkInput t to from attrs inp = Html.input
   ( Html.value (from $ Form._value inp)
-  : Html.onInput (Input Dirty . to)
+  : Html.onInput (\x _ -> Input Dirty $ to x)
   : Html.type' t
   : attrs ) []
 

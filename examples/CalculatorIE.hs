@@ -110,13 +110,13 @@ makeFieldsNoPrefix ''Model
 initial :: Model
 initial = Model noEntry Nothing
 
-digit :: Model -> Digit -> Html m Model
-digit m d = button [ onClick $ m & current %~ applyDigit d, class' $ "d" <> d' ] [ text d' ]
+digit :: Digit -> Html m Model
+digit d = button [ onClick $ current %~ applyDigit d, class' $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
 operate :: Maybe Operator -> Operator -> Html m Operator
 operate active o = button
-  [ onClick o, class' ("active" :: Text, Just o == active) ]
+  [ onClick $ const o, class' ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
 
 applyDigit :: Digit -> Entry -> Entry
@@ -165,14 +165,14 @@ readout x = H.div "readout" $
            ]
 
 clear :: Html m Model
-clear  = button [ class' "clear", onClick initial ] [ "AC" ]
+clear  = button [ class' "clear", onClick $ const initial ] [ "AC" ]
 
-posNeg :: Model -> Html m Model
-posNeg x = button [ class' "posNeg", onClick (x & current %~ neg) ] [ "-/+" ]
+posNeg :: Html m Model
+posNeg = button [ class' "posNeg", onClick $ current %~ neg ] [ "-/+" ]
 
-numberpad :: Model -> Html m Model
-numberpad m = H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
-  digit m <$> [minBound .. pred maxBound]
+numberpad :: Html m Model
+numberpad = H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
+  digit <$> [minBound .. pred maxBound]
 
 operations :: Functor m => Model -> Html m Model
 operations x = H.div "operate" $ (\o' -> liftC (\o _ -> x
@@ -180,22 +180,22 @@ operations x = H.div "operate" $ (\o' -> liftC (\o _ -> x
   & current .~ noEntry) (const o')
   $ operate (x ^? operation . traverse . operator) o') <$> ([minBound .. maxBound] :: [Operator])
 
-dot :: Model -> Html m Model
-dot x = button [ onClick $ x & current %~ addDecimal ] [ "." ]
+dot :: Html m Model
+dot = button [ onClick $ current %~ addDecimal ] [ "." ]
 
-equals :: Model -> Html m Model
-equals x = button [ class' "equals", onClick $ calcResult x ] [ "=" ]
+equals :: Html m Model
+equals = button [ class' "equals", onClick calcResult ] [ "=" ]
 
 view :: Monad m => Model -> Html m Model
 view m = H.div "calculator"
   [ readout m
   , H.div "buttons"
-    [ clear, posNeg m, operations m
-    , numberpad m
+    [ clear, posNeg, operations m
+    , numberpad
     , H.div "zerodot"
-      [ digit m Zero
-      , dot m
-      , equals m
+      [ digit Zero
+      , dot
+      , equals
       ]
     ]
   ]
