@@ -4,60 +4,32 @@
 
 image::logo.png[Eddie is loved forever,150,150,id="logo"]
 
-++++
-<br/>
-++++
 
-'''
+https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a new way to
+program user interfaces with Haskell.
 
-https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a Haskell UI programming paradigm.
+To begin using it, go to 
+xref:getting-started/index.adoc[Getting Started].
 
-* xref:getting-started/index.adoc[Getting Started]
-* xref:packages/index.adoc[Packages]
-* xref:tutorial/index.adoc[Tutorial]
-* https://hoogle.shpadoinkle.org[Hoogle]
 
-The core idea here is to model user interfaces as functions with type:
+Fast::
 
-[source,haskell]
-----
-view :: Model -> Html m Model
-----
-
-This lets you describe the view as a pure function predicated on the current application state. It also suggests that changes to application state are dictated by the view.
-
-Here is a simple example, which displays a counter:
-
-[source,haskell]
-----
-view :: Int -> Html m Int
-view model = -- <1>
-  div []
-  [ text $ pack $ show model -- <2>
-  , button
-    [ onClick (model + 1) ] -- <3>
-    [ text "Increment" ]
-  ]
-----
-
-<1> The function receives the current application state (which is just an `Int`)
-<2> Shows the current state to the user in a text node
-<3> When the user clicks the `<button>` it is added to the model
-
-That is it. If you can understand what is going on in the above example, you understand Shpadoinkle, it's that simple. There is no dispatch, no payloads, no event types, no giant update function, no networks of state managers, no templating, no special HTML syntax, no magic attributes, no digest cycle, and nothing fancy going on.
-
-In fact, the only part of Shpadoinkle that actually performs work is only about xref:packages/core.adoc#_shpadoinkle[12 lines of code].
-
-== Features
-
-High Performance::
-By not doing much work, Shpadoinkle is quite fast. The rendering backend is modular, so you can always take advantage of the latest work done on virtual DOM rendering. When faster techniques are available, you can adopt them easily.
+Shpadoinkle is fast because it does little work. The renderer is modular, so
+you can always benefit from the latest advances in virtual DOM rendering.
 
 Declarative::
-Shpadoinkle is high-level code, and rarely mentions low-level details. Developers do not have to worry about causality or when DOM nodes get replaced.
+
+Your Shpadoinkle code is high-level. You need not worry about low-level
+details, causality, or when DOM nodes get replaced.
 
 Composable::
-There is no need to wire model updates to locations in the DOM by elaborate passing of messages and payloads. Components are highly composable. Impedances in types for subcomponents are resolved with nothing more than `fmap` (typically with some lenses).
+
+With Shpadoinkle, there is no need to associate model update code with DOM
+locations. This avoids elaborate passing of messages and payloads. Components
+are highly composable.
 
 Reliable::
-By keeping UI composition pure, runtime errors don't occur in practice. Code is easy to test as model updates are typically pure functions, and HTML output is transparent.
+
+Shpadoinkle UIs are composed of components with no side-effects. So, runtime
+errors are exceedingly rare. Code is easy to test because model updates are
+pure functions.
