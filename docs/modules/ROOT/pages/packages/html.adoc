@@ -45,7 +45,7 @@ Event listeners each get named functions:
 
 [source,haskell]
 ----
-onClick :: a -> (Text, Prop m a)
+onClick :: (a -> a) -> (Text, Prop m a)
 onClickM :: Monad m => m (a -> a) -> (Text, Prop m a)
 onClickM_ :: Monad m => m () -> (Text, Prop m a)
 onClickC :: Continuation m a -> (Text, Prop m a)
@@ -60,10 +60,10 @@ div.addEventListener("click", () => model++);
 
 [source,haskell]
 ----
-div' [ onClick (model + 1) ]
+div' [ onClick (+ 1) ]
 ----
 
-You will also note that synchronous handlers take an `a` and asynchronous handlers are `m (a -> a)`. This is because your Monadic action may be asynchronous and the state of the application may have changed during that time. The returned function `(a -> a)` will be applied as a state update to whatever that state is once the action completes. Should you need to query the state of the running application in the middle of asynchronous processing, use a `Continuation m a`.
+You will also note that synchronous handlers take an `(a -> a)` and asynchronous handlers are `m (a -> a)`. This is because your Monadic action may be asynchronous and the state of the application may have changed during that time. The returned function `(a -> a)` will be applied as a state update to whatever that state is once the action completes. Should you need to query the state of the running application in the middle of asynchronous processing, use a `Continuation m a`.
 
 === Affordances
 
@@ -71,7 +71,7 @@ Some listeners provide extra information. For example:
 
 [source,haskell]
 ----
-onInput :: (Text -> a) -> (Text, Prop m a)
+onInput :: (Text -> a -> a) -> (Text, Prop m a)
 ----
 
 where the `Text` will be the current value of the input element, preventing us from having to write low-level code to extract the value.
