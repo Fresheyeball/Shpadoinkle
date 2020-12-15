@@ -179,15 +179,14 @@ dropdown toTheme Config {..} x =
     UpArrow   -> considerPrev
     DownArrow -> considerNext
     _         -> id
-  , onClick act
   , onClickAway close
+  , onClick act
   , tabbable
   ] ++ _attrs) . _wrapper $
   _header (selected x) ++
   [ _list $ (\y -> injectProps
     [ onMouseover (consider' y)
     , onFocus     (consider' y)
-    , onClick     (`select'` y)
     , tabbable
     ] . _item $ y) <$> toList (unselected x)
   ]
