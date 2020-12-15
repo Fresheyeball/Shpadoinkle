@@ -12,18 +12,21 @@
 module Main where
 
 
+import           Control.Concurrent                (threadDelay)
 import           Control.Lens                      hiding (view)
-import           Control.Monad.IO.Class            (MonadIO, liftIO)
+import           Control.Monad.IO.Class            (liftIO)
 import           Data.Text                         (Text, pack)
 import           Prelude                           hiding (div)
 
-import           Shpadoinkle                       (Html, JSM, newTVarIO,
+import           Shpadoinkle                       (Html, JSM, MonadJSM,
+                                                    liftJSM, newTVarIO,
                                                     shpadoinkle)
 -- import           Shpadoinkle.Backend.ParDiff       (runParDiff)
 import           Shpadoinkle.Backend.Snabbdom      (runSnabbdom)
 import           Shpadoinkle.Html                  as H (a, button, class', div,
                                                          div_, href, id', link',
-                                                         rel, textProperty,
+                                                         onClick, onClickM, rel,
+                                                         text, textProperty,
                                                          type')
 import           Shpadoinkle.Html.Utils            (getBody)
 import           Shpadoinkle.Lens                  (onRecord)
@@ -53,15 +56,29 @@ instance Humanize (Maybe Cheese) where
 data Model = Model
   { _pickOne        :: Dropdown 'One Cheese
   , _pickAtleastOne :: Dropdown 'AtleastOne Cheese
+  , _concTest       :: Int
   } deriving (Eq, Show)
 makeLenses ''Model
 
 
-view :: MonadIO m => Model -> Html m Model
+conc :: MonadJSM m => Int -> Html m Int
+conc x = div_
+  [ text . pack $ show x
+  , button
+    [ onClick (+ 1)
+    , onClickM . liftJSM $ do
+      liftIO $ threadDelay 3000000
+      return (* 3)
+    ] [ text "TEST" ]
+  ]
+
+
+view :: MonadJSM m => Model -> Html m Model
 view m = div_
   [ link' [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ]
   , onRecord pickOne        $ dropdown bootstrap defConfig { _attrs = [ id' "One" ] } (_pickOne m)
   , onRecord pickAtleastOne $ dropdown bootstrap defConfig { _attrs = [ id' "AtleastOne" ] } (_pickAtleastOne m)
+  , onRecord concTest $ conc $ _concTest m
   ]
   where
   bootstrap :: Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
@@ -86,7 +103,7 @@ view m = div_
 
 
 initial :: Model
-initial = Model fullOptions $ minBound `withOptions'` fullset
+initial = Model fullOptions (minBound `withOptions'` fullset) 4
 
 
 app :: JSM ()

@@ -64,6 +64,8 @@ import           Control.PseudoInverseCategory (EndoIso (..),
                                                 ToHask (piapply))
 import           Data.Functor.Identity         (Identity (Identity, runIdentity))
 import           Data.Kind                     (Type)
+import           Data.List                     (foldl')
+import           Data.Map                      (alter, toList)
 import           Data.String                   (IsString (..))
 import           Data.Text                     (Text, pack)
 import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
@@ -125,6 +127,26 @@ data Prop :: (Type -> Type) -> Type -> Type where
   -- and that may not be the case if the code to compute the Continuation of some
   -- listener is blocking.
   PListener :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> Prop m a
+
+
+-- | Ensure all prop keys are unique.
+-- Collisions for Data, Text, Flags, and Potatoes are last write wins
+-- Collisions for Listeners are Continuation Semigroup operations
+nubProps :: Monad m => Html m a -> Html m a
+nubProps = mapPropsRecursive $ toList . foldl' f mempty
+  where
+  f acc (t,p) = alter (Just . g t p) t acc
+  g k new old = case (new, old) of
+    (PText t, Just (PText t')) | k == "className" -> PText $ t <> " " <> t'
+    (PListener l, Just (PListener l')) -> PListener $
+      \raw evt -> mappend <$> l raw evt <*> l' raw evt
+    _ -> new
+
+
+mapPropsRecursive :: ([(Text, Prop m a)] -> [(Text, Prop m a)]) -> Html m a -> Html m a
+mapPropsRecursive f = \case
+  Node t ps cs -> Node t (f ps) (mapPropsRecursive f <$> cs)
+  x            -> x
 
 
 -- | Construct a listener from its name and a simple monadic event handler.
@@ -501,13 +523,13 @@ shpadoinkle toJSM toM initial model view stage = do
 
     go :: RawNode -> VNode b m -> a -> JSM (VNode b m)
     go c n a = j $ do
-      !m  <- interpret toJSM (view a)
+      !m  <- interpret toJSM . nubProps $ view a
       patch c (Just n) m
 
   setup @b @m @a $ do
     (c,n) <- j $ do
       c <- stage
-      n <- interpret toJSM (view initial)
+      n <- interpret toJSM . nubProps $ view initial
       _ <- patch c Nothing n
       return (c,n)
     _ <- shouldUpdate (go c) n model
