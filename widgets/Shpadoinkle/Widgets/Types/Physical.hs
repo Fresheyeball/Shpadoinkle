@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE LambdaCase     #-}
+{-# LANGUAGE TupleSections  #-}
 
 
 module Shpadoinkle.Widgets.Types.Physical where
@@ -25,10 +26,10 @@ data Hover = MouseOver | MouseOut
 withHover
   :: ((Hover, a) -> Html m (Hover, a))
   ->  (Hover, a) -> Html m (Hover, a)
-withHover f s@(_,x) = runIdentity . props
-  (Identity . mappend [ onMouseenter (MouseOver, x)
-                      , onMouseleave (MouseOut,  x)
-                      ]) $ f s
+withHover f = runIdentity . props
+  (Identity . mappend [ onMouseenter $ (MouseOver, ) . snd
+                      , onMouseleave $ (MouseOut,  ) . snd
+                      ]) . f
 
 
 togHygiene :: Toggle -> Hygiene

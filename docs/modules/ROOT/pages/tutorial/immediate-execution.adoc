@@ -32,7 +32,7 @@ Now that we can marshal between the Haskell representation and one we can show o
 [source,haskell]
 ----
 digit :: Digit -> Html m Digit
-digit d = button [ onClick d -- <1>
+digit d = button [ onClick $ const d -- <1>
                  , className $ "d" <> d' -- <2>
                  ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
@@ -159,7 +159,7 @@ instance Show Operator where
 
 operate :: Maybe Operator -> Operator -> Html m Operator
 operate active o = button
-  [ onClick o -- <1>
+  [ onClick (const o) -- <1>
   , className ("active", Just o == active) -- <2>
   ] [ text . pack $ show o ]
 ----
@@ -230,7 +230,7 @@ Resets the calculator to the `initial` state.
 [source,haskell]
 ----
 clear :: Html m Model
-clear  = button [ class' "clear", onClick initial ] [ "AC" ]
+clear  = button [ class' "clear", onClick $ const initial ] [ "AC" ]
 ----
 
 === Negate
@@ -239,8 +239,8 @@ Negates the current entry. Phrased on the button as [-/+].
 
 [source,haskell]
 ----
-posNeg :: Model -> Html m Model
-posNeg x = button [ class' "posNeg", onClick (x & current %~ neg) ] [ "-/+" ]
+posNeg :: Html m Model
+posNeg = button [ class' "posNeg", onClick (current %~ neg) ] [ "-/+" ]
 ----
 
 === Numberpad
@@ -266,8 +266,8 @@ A button to apply adding a decimal point to the current entry.
 
 [source,haskell]
 ----
-dot :: Model -> Html m Model
-dot x = button [ onClick $ x & current %~ addDecimal ] [ "." ]
+dot :: Html m Model
+dot = button [ onClick $ current %~ addDecimal ] [ "." ]
 ----
 
 === Arithmetic
@@ -317,8 +317,8 @@ Based on the above examples, you should be able to see what is going on in this 
 
 [source,haskell]
 ----
-equals :: Model -> Html m Model
-equals x = button [ class' "equals", onClick $ calcResult x ] [ "=" ]
+equals :: Html m Model
+equals = button [ class' "equals", onClick calcResult ] [ "=" ]
 ----
 
 == The View
@@ -331,12 +331,12 @@ view :: Model -> Html Model
 view x = H.div "calculator"
   [ readout x
   , H.div "buttons"
-    [ clear, posNeg x , operations x
-    , putDigit <$> numberpad
+    [ clear, posNeg, operations x
+    , numberpad
     , H.div "zerodot"
-      [ putDigit <$> digit Zero, dot x , equals x ]
+      [ digit Zero, dot, equals ]
     ]
-  ] where putDigit d = x & current %~ applyDigit d
+  ]
 ----
 
 And we are done.

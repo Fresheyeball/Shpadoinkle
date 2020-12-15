@@ -55,7 +55,7 @@ opText = \case
 
 
 opSelect :: Html m Operation
-opSelect = select [ onOption $ read . unpack ]
+opSelect = select [ onOption $ const . read . unpack ]
   $ opOption <$> [minBound..maxBound]
   where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 
@@ -63,7 +63,7 @@ opSelect = select [ onOption $ read . unpack ]
 num :: Int -> Html m Int
 num x = input'
   [ value . pack $ show x
-  , onInput $ fromMaybe 0 . readMay . unpack
+  , onInput $ const . fromMaybe 0 . readMay . unpack
   ]
 
 

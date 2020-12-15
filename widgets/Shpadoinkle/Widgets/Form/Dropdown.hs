@@ -175,18 +175,19 @@ dropdown toTheme Config {..} x =
     Theme {..} = toTheme x
   in injectProps
   ([onKeyup $ \case
-    Enter     -> act x
-    UpArrow   -> considerPrev x
-    DownArrow -> considerNext x
-    _         -> x
-  , onClick $ act x
+    Enter     -> act
+    UpArrow   -> considerPrev
+    DownArrow -> considerNext
+    _         -> id
+  , onClick act
+  , onClickAway close
   , tabbable
   ] ++ _attrs) . _wrapper $
   _header (selected x) ++
   [ _list $ (\y -> injectProps
-    [ onMouseover $ consider' y x
-    , onFocus     $ consider' y x
-    , onClick     $ select' x y
+    [ onMouseover (consider' y)
+    , onFocus     (consider' y)
+    , onClick     (`select'` y)
     , tabbable
     ] . _item $ y) <$> toList (unselected x)
   ]

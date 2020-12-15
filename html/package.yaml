@@ -43,6 +43,7 @@ dependencies:
     - ghcjs-dom
     - jsaddle          >= 0.9.7 && < 0.20
     - raw-strings-qq
+    - lens
 
     - Shpadoinkle
 

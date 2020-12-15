@@ -1,9 +1,11 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeApplications    #-}
 
 
 -- | This module provides a DSL of Events found on HTML elements.
@@ -35,10 +37,15 @@
 module Shpadoinkle.Html.Event where
 
 
+import           Control.Concurrent.STM      (retry)
+import           Control.Lens                ((^.))
 import           Control.Monad               (msum, void)
+import           Control.Monad.IO.Class      (liftIO)
 import           Data.Text
 import           GHCJS.DOM.Types             hiding (Text)
 import           Language.Javascript.JSaddle hiding (JSM, liftJSM, toJSString)
+import           UnliftIO.Concurrent         (forkIO)
+import           UnliftIO.STM
 
 import           Shpadoinkle
 import           Shpadoinkle.Html.TH
@@ -54,8 +61,8 @@ onInputC ::  (Text -> Continuation m a) -> (Text, Prop m a)
 onInputC = mkWithFormVal valToText "input" "value"
 
 
-onInput :: (Text -> a) -> (Text, Prop m a)
-onInput f = onInputC (constUpdate . f)
+onInput :: (Text -> a -> a) -> (Text, Prop m a)
+onInput f = onInputC (pur . f)
 
 
 onInputM :: Monad m => (Text -> m (a -> a)) -> (Text, Prop m a)
@@ -70,8 +77,8 @@ onOptionC ::  (Text -> Continuation m a) -> (Text, Prop m a)
 onOptionC = mkWithFormVal valToText "change" "value"
 
 
-onOption :: (Text -> a) -> (Text, Prop m a)
-onOption f = onOptionC (constUpdate . f)
+onOption :: (Text -> a -> a) -> (Text, Prop m a)
+onOption f = onOptionC (pur . f)
 
 
 onOptionM :: Monad m => (Text -> m (a -> a)) -> (Text, Prop m a)
@@ -91,10 +98,10 @@ onKeyupC, onKeydownC, onKeypressC :: (KeyCode -> Continuation m a) -> (Text, Pro
 onKeyupC    = mkOnKey "keyup"
 onKeydownC  = mkOnKey "keydown"
 onKeypressC = mkOnKey "keypress"
-onKeyup, onKeydown, onKeypress  :: (KeyCode -> a) -> (Text, Prop m a)
-onKeyup    f = onKeyupC    (constUpdate . f)
-onKeydown  f = onKeydownC  (constUpdate . f)
-onKeypress f = onKeypressC (constUpdate . f)
+onKeyup, onKeydown, onKeypress  :: (KeyCode -> a -> a) -> (Text, Prop m a)
+onKeyup    f = onKeyupC    (pur . f)
+onKeydown  f = onKeydownC  (pur . f)
+onKeypress f = onKeypressC (pur . f)
 onKeyupM, onKeydownM, onKeypressM :: Monad m => (KeyCode -> m (a -> a)) -> (Text, Prop m a)
 onKeyupM    f = onKeyupC    (impur . f)
 onKeydownM  f = onKeydownC  (impur . f)
@@ -109,8 +116,8 @@ onCheckC ::  (Bool -> Continuation m a) -> (Text, Prop m a)
 onCheckC = mkWithFormVal valToBool "change" "checked"
 
 
-onCheck :: (Bool -> a) -> (Text, Prop m a)
-onCheck f = onCheckC (constUpdate . f)
+onCheck :: (Bool -> a -> a) -> (Text, Prop m a)
+onCheck f = onCheckC (pur . f)
 
 
 onCheckM :: Monad m => (Bool -> m (a -> a)) -> (Text, Prop m a)
@@ -129,8 +136,8 @@ onSubmitC :: Continuation m a -> (Text, Prop m a)
 onSubmitC m = listenRaw "submit" $ \_ e -> preventDefault e >> return m
 
 
-onSubmit :: a -> (Text, Prop m a)
-onSubmit = onSubmitC . constUpdate
+onSubmit :: (a -> a) -> (Text, Prop m a)
+onSubmit = onSubmitC . pur
 
 
 onSubmitM :: Monad m => m (a -> a) -> (Text, Prop m a)
@@ -139,6 +146,44 @@ onSubmitM = onSubmitC . impur
 
 onSubmitM_ :: Monad m => m () -> (Text, Prop m a)
 onSubmitM_ = onSubmitC . causes
+
+
+onClickAwayC :: Continuation m a -> (Text, Prop m a)
+onClickAwayC c =
+  ( "onclickaway"
+  , PPotato $ \(RawNode elm) -> liftJSM $ do
+
+     (notify, twas) <- liftIO $ (,) <$> newTVarIO 0 <*> newTVarIO (0 :: Int)
+
+     void $ jsg ("document" :: Text) ^. js2 ("addEventListener" :: Text) ("click" :: Text)
+        (fun $ \_ _ -> \case
+          evt:_ -> void . forkIO $ do
+
+            target   <- evt ^. js ("target" :: Text)
+            onTarget <- fromJSVal =<< elm ^. js1 ("contains" :: Text) target
+            case onTarget of
+              Just False -> atomically $ modifyTVar notify (+ 1)
+              _          -> return ()
+
+          [] -> pure ())
+
+     return $ do
+       new' <- readTVar notify
+       old  <- readTVar twas
+       if new' == old then retry else c <$ writeTVar twas new'
+  )
+
+
+onClickAway :: (a -> a) -> (Text, Prop m a)
+onClickAway = onClickAwayC . pur
+
+
+onClickAwayM :: Monad m => m (a -> a) -> (Text, Prop m a)
+onClickAwayM = onClickAwayC . impur
+
+
+onClickAwayM_ :: Monad m => m () -> (Text, Prop m a)
+onClickAwayM_ = onClickAwayC . causes
 
 
 mkGlobalKey :: Text -> (KeyCode -> JSM ()) -> JSM ()

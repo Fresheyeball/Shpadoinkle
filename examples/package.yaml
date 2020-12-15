@@ -141,6 +141,7 @@ executables:
 
       - Shpadoinkle
       - Shpadoinkle-backend-pardiff
+      - Shpadoinkle-backend-snabbdom
       - Shpadoinkle-html
       - Shpadoinkle-lens
       - Shpadoinkle-widgets

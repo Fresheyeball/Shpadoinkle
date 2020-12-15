@@ -67,7 +67,7 @@ mkEventDSL evt = let
     , SigD name
       (ForallT []
         []
-        (AppT (AppT ArrowT a)
+        (AppT (AppT ArrowT (AppT (AppT ArrowT a) a))
           (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
            (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
 

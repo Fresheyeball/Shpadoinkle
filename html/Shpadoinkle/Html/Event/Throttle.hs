@@ -8,11 +8,16 @@ module Shpadoinkle.Html.Event.Throttle
   ) where
 
 
-import           Control.Monad
-import           Control.Monad.IO.Class
-import           Data.Text
-import           Data.Time.Clock
-import           Shpadoinkle
+import           Control.Monad          (when)
+import           Control.Monad.IO.Class (MonadIO (..))
+import           Data.Text              (Text)
+import           Data.Time.Clock        (NominalDiffTime, diffUTCTime,
+                                         getCurrentTime)
+import           Shpadoinkle            (Continuation, JSM, Prop, RawEvent,
+                                         RawNode, atomically, bakedProp,
+                                         cataProp, dataProp, done, flagProp,
+                                         listenerProp, newTVarIO, readTVar,
+                                         textProp, writeTVar)
 
 
 newtype Throttle m a b = Throttle { runThrottle
@@ -48,4 +53,4 @@ throttle duration = do
   f <- throttleRaw duration
   return . Throttle $ \g x ->
     let (attr, p) = g x
-    in (attr, cataProp textProp (listenerProp . f) flagProp p)
+    in (attr, cataProp dataProp textProp flagProp (listenerProp . f) bakedProp p)

@@ -69,8 +69,8 @@ import           Data.These                  (These (That, These, This))
 import           Data.Traversable            (for)
 import           GHC.Generics                (Generic)
 import           Language.Javascript.JSaddle (FromJSVal (fromJSValUnchecked),
-                                              MakeObject (makeObject), Object,
-                                              ToJSString (toJSString),
+                                              JSVal, MakeObject (makeObject),
+                                              Object, ToJSString (toJSString),
                                               ToJSVal (toJSVal), eval, fun, js1,
                                               js2, jsg, jsg2, liftJSM,
                                               strictEqual, unsafeGetProp,
@@ -78,6 +78,8 @@ import           Language.Javascript.JSaddle (FromJSVal (fromJSValUnchecked),
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
+import           UnliftIO.Concurrent         (forkIO)
+import           UnliftIO.STM                (STM, atomically)
 
 import           Shpadoinkle                 (Backend (..), Continuation,
                                               Html (..), JSM, MonadJSM,
@@ -149,12 +151,19 @@ instance Show (ParVNode a) where
     ParTextNode _ t   -> "ParTextNode _ " <> show t
 
 
-data ParVProp a = ParVText Text | ParVListen (RawNode -> RawEvent -> JSM (Continuation JSM a)) | ParVFlag Bool
-  deriving (Generic)
+data ParVProp a
+  = ParVText Text
+  | ParVData JSVal
+  | ParVListen (RawNode -> RawEvent -> JSM (Continuation JSM a))
+  | ParVFlag Bool
+  | ParVPotato (RawNode -> JSM (STM (Continuation JSM a)))
+  deriving Generic
 
 
 instance Show (ParVProp a) where
   show = \case
+    ParVData   _ -> "ParVData _"
+    ParVPotato _ -> "ParVPotato _"
     ParVText   t -> "ParVText " <> show t
     ParVListen _ -> "ParVListen _"
     ParVFlag   b -> "ParVFlag " <> show b
@@ -168,6 +177,8 @@ props toJSM i ps (RawNode raw) = do
 
 prop :: Monad m => (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
 prop toJSM i raw k = \case
+  PData d     -> setProp' raw k d
+  PPotato p   -> setProptado i (fmap (fmap (hoist (toJSM . runParDiff i))) . p) raw
   PText t     -> setProp' raw k t
   PListener f -> setListener i (\x y -> hoist (toJSM . runParDiff i)
                                          <$> f x y) raw k
@@ -182,6 +193,14 @@ setProp' raw' k t = do
   t' <- toJSVal t
   b <- strictEqual old t'
   if b then return () else unsafeSetProp (toJSString k) t' raw'
+
+
+setProptado :: forall a. TVar a -> (RawNode -> JSM (STM (Continuation JSM a))) -> Object -> JSM ()
+setProptado i f o = do
+  elm <- RawNode <$> toJSVal o
+  stm <- f elm
+  let go = atomically stm >>= writeUpdate i >> go
+  void $ forkIO go
 
 
 setListener :: TVar a -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -> Object -> Text -> JSM ()
@@ -219,6 +238,8 @@ appendChild (RawNode raw) pn = do
 makeProp :: Monad m => (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
 makeProp toJSM i = \case
   PText t     -> return $ ParVText t
+  PData t     -> return $ ParVData t
+  PPotato p   -> return . ParVPotato $ fmap (fmap (hoist (toJSM . runParDiff i))) . p
   PListener m -> return . ParVListen $ \x y -> hoist (toJSM . runParDiff i) <$> m x y
   PFlag b     -> return $ ParVFlag b
 
@@ -274,6 +295,8 @@ managePropertyState i obj' old new' = void $ do
       "checked"   -> voidJSM $ setProp' obj' k =<< toJSVal False
       "disabled"  -> voidJSM $ obj' ^. js1 "removeAttribute" "disabled"
       _           -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
+    That  (ParVPotato p)   -> voidJSM $ p . RawNode =<< toJSVal obj'
+    That  (ParVData j)     -> voidJSM $ setProp' obj' k j
     -- new text prop, set
     That  (ParVText t)     -> voidJSM $ setProp' obj' k =<< toJSVal t
     -- changed text prop, set

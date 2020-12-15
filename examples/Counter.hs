@@ -19,10 +19,10 @@ view :: Int -> Html m Int
 view count = div_
   [ h2_ [ "Counter Example" ]
   , "The current count is: "
-  , span [ id' "out" ] [ text (pack $ show count) ]
+  , span [ id' "out" ] [ text . pack $ show count ]
   , br'_, br'_
-  , button [ onClick $ count - 1 ] [ "Decrement" ]
-  , button [ onClick $ count + 1 ] [ "Increment" ]
+  , button [ onClick $ subtract 1 ] [ "Decrement" ]
+  , button [ onClick (+ 1)        ] [ "Increment" ]
   ]
 
 

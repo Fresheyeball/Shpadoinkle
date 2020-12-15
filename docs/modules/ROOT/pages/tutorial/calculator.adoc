@@ -48,7 +48,7 @@ To start, we will need a simple single number input:
 num :: Int -> Html m Int
 num x = input'
  [ value . pack $ show x -- <1>
- , onInput (fromMaybe 0 . readMay . unpack) -- <2>
+ , onInput (const . fromMaybe 0 . readMay . unpack) -- <2>
  ]
 ----
 
@@ -116,7 +116,7 @@ We will use a traditional Html `<select>` element to let the user pick the opera
 [source,haskell]
 ----
 opSelect :: Html m Operation
-opSelect = select [ onOption $ read . unpack ] -- <1>
+opSelect = select [ onOption $ const . read . unpack ] -- <1>
   $ opOption <$> [ minBound .. maxBound ]
   where
     opOption o = option
