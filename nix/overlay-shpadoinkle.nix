@@ -90,6 +90,11 @@
   });
 
 
+  addDev = x: super.haskell.lib.overrideCabal x (drv: {
+    buildFlags = ["--ghc-options" "-DEV"];
+  });
+
+
 
 in {
   # stylish haskell binary is outside of package set becase we're interested only in the binary,
@@ -124,7 +129,7 @@ in {
           Shpadoinkle-backend-static   = call "Shpadoinkle-backend-static"   ../backends/static;
           Shpadoinkle-backend-pardiff  = call "Shpadoinkle-backend-pardiff"  ../backends/pardiff;
           Shpadoinkle-console          = call "Shpadoinkle-console"          ../console;
-          Shpadoinkle-developer-tools  = call "Shpadoinkle-developer-tools"  ../developer-tools;
+          Shpadoinkle-developer-tools  = addDev (call "Shpadoinkle-developer-tools"  ../developer-tools);
           Shpadoinkle-disembodied      = call "Shpadoinkle-disembodied"      ../disembodied;
           Shpadoinkle-lens             = call "Shpadoinkle-lens"             ../lens;
           Shpadoinkle-marketing        = call "Shpadoinkle-marketing"        ../marketing;
