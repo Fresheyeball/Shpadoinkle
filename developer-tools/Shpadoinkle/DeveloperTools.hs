@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP                  #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE RankNTypes           #-}
 #ifdef EV
-{-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}

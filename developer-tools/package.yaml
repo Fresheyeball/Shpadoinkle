@@ -18,19 +18,6 @@ ghc-options:
     - -fwarn-tabs
     - -fwarn-incomplete-record-updates
     - -fwarn-identities
-    - -DEV
-
-
-ghcjs-options:
-    - -Wall
-    - -Wcompat
-    - -fno-warn-missing-home-modules
-    - -fwarn-redundant-constraints
-    - -fwarn-incomplete-uni-patterns
-    - -fwarn-tabs
-    - -fwarn-incomplete-record-updates
-    - -fwarn-identities
-    - -dedupe
 
 
 extra-source-files:
@@ -61,6 +48,17 @@ library:
 executables:
 
   devtools:
+    ghcjs-options:
+        - -Wall
+        - -Wcompat
+        - -fno-warn-missing-home-modules
+        - -fwarn-redundant-constraints
+        - -fwarn-incomplete-uni-patterns
+        - -fwarn-tabs
+        - -fwarn-incomplete-record-updates
+        - -fwarn-identities
+        - -dedupe
+        - -O2
     main: Main.hs
     other-modules:
       - Shpadoinkle.DeveloperTools
