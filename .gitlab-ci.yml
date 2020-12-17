@@ -39,7 +39,8 @@ Build with GHCJS 8.6 on Linux:
   - mkdir developer-tools
   - cp -r devtools/* developer-tools
   artifacts:
-    paths: developer-tools
+    paths:
+    - developer-tools
 
 Build with GHC 8.6.5 on Darwin:
   stage: Darwin Build
