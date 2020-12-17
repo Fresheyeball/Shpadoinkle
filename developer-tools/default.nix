@@ -1,4 +1,4 @@
-{ compiler ? "ghc864"
+{ compiler ? "ghc865"
 , chan ? "e1843646b04fb564abf6330a9432a76df3269d2f"
 }:
 let
@@ -6,12 +6,9 @@ let
   pkgs = import ../nix/pkgs.nix {
     inherit compiler chan; isJS = true; };
 
-  util = import ../nix/util.nix { inherit pkgs; };
+  util = import ../nix/util.nix { inherit pkgs compiler; isJS = true; };
 
-  dev  = import ../default.nix {
-    pack = "Shpadoinkle-developer-tools";
-    inherit compiler chan; isJS = true; };
-
+  dev  = pkgs.haskell.packages.${util.compilerjs};
 
 in pkgs.runCommand "Shpadoinkle-developer-tools" {}
   ''

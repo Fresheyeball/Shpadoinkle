@@ -30,6 +30,7 @@ ghcjs-options:
     - -fwarn-incomplete-record-updates
     - -fwarn-identities
     - -dedupe
+    - -O2
 
 
 extra-source-files:
