@@ -35,6 +35,11 @@ Build with GHCJS 8.6 on Linux:
   script:
   - nix-build --argstr compiler ghc865 --arg isJS true --fallback
   - nix-build isreal/swan-shell.nix
+  - nix-build developer-tools/default.nix -o devtools
+  - mkdir developer-tools
+  - cp -r devtools/* developer-tools
+  artifacts:
+    paths: developer-tools
 
 Build with GHC 8.6.5 on Darwin:
   stage: Darwin Build

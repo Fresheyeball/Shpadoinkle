@@ -61,6 +61,7 @@ executables:
     source-dirs: .
     dependencies:
       - Shpadoinkle-backend-snabbdom
+      - Shpadoinkle-developer-tools
 
     when:
       - condition: impl(ghcjs)
