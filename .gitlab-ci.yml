@@ -36,8 +36,8 @@ Build with GHCJS 8.6 on Linux:
   - nix-build --argstr compiler ghc865 --arg isJS true --fallback
   - nix-build isreal/swan-shell.nix
   - nix-build developer-tools/default.nix -o devtools
-  - mkdir developer-tools
-  - cp -r devtools/* developer-tools
+  - mkdir chrome-extension
+  - cp -r devtools/* chrome-extension
   artifacts:
     paths:
     - developer-tools
