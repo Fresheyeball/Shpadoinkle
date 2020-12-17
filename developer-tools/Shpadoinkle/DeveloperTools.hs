@@ -1,9 +1,11 @@
 {-# LANGUAGE CPP                  #-}
+{-# LANGUAGE RankNTypes           #-}
+#ifdef EV
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+#endif
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 
