@@ -20,18 +20,6 @@ ghc-options:
     - -fwarn-identities
 
 
-ghcjs-options:
-    - -Wall
-    - -Wcompat
-    - -fno-warn-missing-home-modules
-    - -fwarn-redundant-constraints
-    - -fwarn-incomplete-uni-patterns
-    - -fwarn-tabs
-    - -fwarn-incomplete-record-updates
-    - -fwarn-identities
-    - -dedupe
-
-
 extra-source-files:
   - README.md
 
@@ -51,9 +39,26 @@ dependencies:
     - Shpadoinkle-backend-pardiff
 
 
+library:
+  source-dirs: .
+  exposed-modules:
+      - Shpadoinkle.DeveloperTools
+
+
 executables:
 
   devtools:
+    ghcjs-options:
+        - -Wall
+        - -Wcompat
+        - -fno-warn-missing-home-modules
+        - -fwarn-redundant-constraints
+        - -fwarn-incomplete-uni-patterns
+        - -fwarn-tabs
+        - -fwarn-incomplete-record-updates
+        - -fwarn-identities
+        - -dedupe
+        - -O2
     main: Main.hs
     other-modules:
       - Shpadoinkle.DeveloperTools
