@@ -40,7 +40,7 @@ Build with GHCJS 8.6 on Linux:
   - cp -r devtools/* chrome-extension
   artifacts:
     paths:
-    - developer-tools
+    - chrome-extension
 
 Build with GHC 8.6.5 on Darwin:
   stage: Darwin Build
