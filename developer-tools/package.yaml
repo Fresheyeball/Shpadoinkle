@@ -33,6 +33,7 @@ dependencies:
     - stm
     - text
     - time
+    - pretty-show
 
     - Shpadoinkle
     - Shpadoinkle-html

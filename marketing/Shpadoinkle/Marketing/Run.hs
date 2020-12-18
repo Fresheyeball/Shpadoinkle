@@ -23,19 +23,21 @@ import           Servant.Server                     (serve)
 
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle                        (JSM, MonadJSM,
-                                                     MonadUnliftIO (..),
+                                                     MonadUnliftIO (..), TVar,
                                                      UnliftIO (..), askJSM,
+                                                     constUpdate, newTVarIO,
                                                      runJSM)
 #else
 import           Shpadoinkle                        (JSM, MonadUnliftIO (..),
-                                                     UnliftIO (..), askJSM,
-                                                     runJSM)
+                                                     TVar, UnliftIO (..),
+                                                     askJSM, newTVarIO, runJSM)
 #endif
 import           Shpadoinkle.Backend.Snabbdom       (runSnabbdom, stage)
 import           Shpadoinkle.Isreal.Types           as Swan (API, Code,
                                                              CompileError,
                                                              SnowToken (..))
-import           Shpadoinkle.Router                 (fullPageSPA, withHydration)
+import           Shpadoinkle.Router                 (fullPageSPA',
+                                                     withHydration)
 import           Shpadoinkle.Router.Client          (BaseUrl (..),
                                                      ClientEnv (..), ClientM,
                                                      Scheme (Https), client,
@@ -49,8 +51,11 @@ import           Shpadoinkle.Run                    (Env (Dev), liveWithBackend,
 import           Shpadoinkle.Run                    (runJSorWarp)
 #endif
 
-import           Shpadoinkle.Marketing.Types        (Hooglable (..), HoogleAPI,
-                                                     SPA, Swan (..), routes)
+import           Shpadoinkle.DeveloperTools
+import           Shpadoinkle.Marketing.Types        (Frontend, Hooglable (..),
+                                                     HoogleAPI,
+                                                     Route (FourOhFourR), SPA,
+                                                     Swan (..), routes)
 import           Shpadoinkle.Marketing.Types.Hoogle (Target)
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle.Marketing.View         (start, template, view)
@@ -94,7 +99,10 @@ findTargetsM (Search s) = client (Proxy @ HoogleAPI) (Just "json") (Just s) (Jus
 
 
 app :: JSM ()
-app = fullPageSPA @ (SPA JSM) runApp runSnabbdom (withHydration start) view stage start routes
+app = do
+  model :: TVar Frontend <- newTVarIO =<< start FourOhFourR
+  withDeveloperTools model
+  fullPageSPA' @(SPA JSM) runApp runSnabbdom model (withHydration start) view stage (fmap constUpdate . start) routes
 
 
 main :: IO ()

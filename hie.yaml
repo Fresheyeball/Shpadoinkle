@@ -37,6 +37,12 @@ cradle:
           cabal:
             component: "developer-tools"
 
+    - path: "./developer-tools/Main.hs"
+      config:
+        cradle:
+          cabal:
+            component: "developer-tools:devtools"
+
     - path: "./disembodied"
       config:
         cradle:

@@ -1,5 +1,6 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -12,21 +13,21 @@ import           Control.Monad               (void, when)
 import           Control.Monad.IO.Class      (liftIO)
 import           Data.Map                    as Map (Map, insert, toList)
 import           Data.Maybe                  (fromMaybe)
-import           Data.Text                   (Text, pack)
+import           Data.Text                   (Text, pack, unpack)
 import           Data.Time                   (UTCTime, defaultTimeLocale,
                                               formatTime, getCurrentTime)
 import           Language.Javascript.JSaddle (FromJSVal (fromJSVal), JSM,
                                               JSString, MonadJSM, fun, js, js1,
                                               js2, jsg, liftJSM, obj,
                                               strictEqual, (<#))
-import           Prelude                     hiding (span)
+import           Prelude                     hiding (div, span)
+import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
                                               newTVarIO)
 
-import           Shpadoinkle                 (Html, shpadoinkle, text)
+import           Shpadoinkle                 (Html, flagProp, shpadoinkle, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
-import           Shpadoinkle.Html            (getBody, h1_, li, onClickM, span,
-                                              ul_)
+import           Shpadoinkle.Html
 import           Shpadoinkle.Run             (runJSorWarp)
 
 
@@ -55,9 +56,12 @@ listenForOutput model = void $ jsg "chrome" ^. (js "runtime" . js "onMessage" . 
 
 
 row :: MonadJSM m => UTCTime -> History -> Html m a
-row k history = li [ onClickM . liftJSM $ id <$ sendHistory history ]
-  [ span "time" [ text . pack $ formatTime defaultTimeLocale "%H:%M" k ]
-  , span "val"  [ text $ unHistory history ]
+row k history = div "record"
+  [ span [ onClickM . liftJSM $ id <$ sendHistory history
+         , className "time"
+         ]
+         [ text . pack $ formatTime defaultTimeLocale "%X" k ]
+  , span "val"  [ maybe (text "failed to parse value") prettyHtml $ Pretty.parseValue $ unpack $ unHistory history ]
   ]
 
 
@@ -72,9 +76,32 @@ sendHistory (History history) = void $ do
   void $ jsg "chrome" ^. (js "tabs" . js2 "sendMessage" tabId msg)
 
 
+prettyHtml :: Pretty.Value -> Html m a
+prettyHtml = \case
+  Pretty.Con con [] -> div "con-uniary" $ string con
+  Pretty.Con con slots -> details [ className "con-wrap", ("open", flagProp False) ]
+    [ summary "con" $ string con
+    , div "con-children" $ prettyHtml <$> slots
+    ]
+  Pretty.Rec rec fields ->
+    details [ className "rec-wrap" ]
+    [ summary "rec" $ string rec
+    , dl "rec" $ (\((n, v), i) ->
+        [ dt_ $ string $ n <> " = "
+        , dd_ $ [ prettyHtml v ]
+        ]) =<< fields
+    ]
+  Pretty.String s -> div "string" $ string s
+  Pretty.Float n -> div "float" $ string n
+  Pretty.Integer n -> div "integer" $ string n
+  Pretty.Char c -> div "char" $ string c
+  _ -> text "NOT YET"
+  where string = pure . text . pack
+
+
 panel :: MonadJSM m => Model -> Html m Model
 panel m | m == mempty = h1_ [ "No State Yet" ]
-panel m = ul_ $ uncurry row <$> toList m
+panel m = div_ $ uncurry row <$> toList m
 
 
 app :: JSM ()
