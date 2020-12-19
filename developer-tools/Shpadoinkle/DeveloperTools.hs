@@ -31,6 +31,7 @@ withDeveloperTools x = do
   i' <- readTVarIO x
   y  <- newTVarIO i'
   outputState i'
+  syncPoint
   listenForSetState x
   () <$ forkIO (f y)
   where
