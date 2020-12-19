@@ -1,0 +1,150 @@
+:root {
+  --seam: 2px;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  color: rgb(244, 244, 244);
+  font-size: 12px;
+  font-family: Consolas, Lucida Console, Courier New, monospace;
+}
+
+.con-children {
+  padding-left: 8px;
+  margin: var(--seam);
+}
+
+.time {
+  padding: var(--seam) 8px;
+  margin: var(--seam) 0;
+  background: rgba(255, 255, 255, 0.1);
+  width: 210px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0);
+}
+
+.time.active {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.time span {
+  flex-grow: 1;
+}
+
+.sync-button {
+  width: 100%;
+  margin: 0;
+  padding: 4px;
+}
+
+.history {
+  margin: var(--seam);
+}
+
+.sync-button.sync {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+button {
+  border-radius: 4px;
+  color: rgb(244, 244, 244);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.2);
+  margin-left: var(--seam);
+  font-size: 12px;
+  padding: 0 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.clear {
+  width: 100%;
+  display: block;
+  text-align: center;
+  text-decoration: underline;
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+summary {
+  outline: none !important;
+  cursor: pointer;
+}
+
+.con,
+.con-uniary,
+summary.rec {
+  color: #e5c07b;
+}
+
+dl.rec {
+  padding-left: 16px;
+  margin: var(--seam);
+}
+
+dt {
+  margin-top: var(--seam);
+  color: #56b6c2;
+}
+
+dd {
+  margin-inline-start: 0;
+  padding: var(--seam);
+}
+
+.string,
+.char {
+  color: #e06c75;
+}
+
+.float,
+.integer {
+  color: #f44747;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+li {
+  margin-top: 2px;
+}
+
+.wrapper {
+  display: flex;
+  min-height: 100%;
+  width: 100%;
+  flex-direction: row;
+}
+
+.current-state {
+  flex-grow: 1;
+  padding: var(--seam);
+}
+
+.depth-0 {
+  background: rgba(255, 255, 255, 0);
+}
+.depth-1,
+.depth-2,
+.depth-3,
+.depth-4,
+.depth-5,
+.depth-6,
+.depth-7,
+.depth-8,
+.depth-9 {
+  background: rgba(255, 255, 255, 0.03);
+  padding: var(--seam);
+}

@@ -35,7 +35,7 @@ deriving instance MimeRender   OctetStream Code
 
 
 newtype SnowToken = SnowToken Text
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Ord, Read, Show, Generic)
   deriving newtype (ToJSON, FromJSON, FromHttpApiData, ToHttpApiData)
 
 

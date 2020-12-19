@@ -21,7 +21,7 @@ data Target = Target
     ,targetType    :: String -- ^ One of package, module or empty string
     ,targetItem    :: String -- ^ HTML span of the item, using @\<s0\>@ for the name and @\<s1\>@ onwards for arguments
     ,targetDocs    :: String -- ^ HTML documentation to show, a sequence of block level elements
-    } deriving (Show,Eq,Ord)
+    } deriving (Show,Read,Eq,Ord)
 
 
 instance ToJSON Target where

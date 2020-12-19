@@ -52,6 +52,7 @@ executables:
       - containers
       - generic-lens
       - lens
+      - pretty-show
 
       - Shpadoinkle
       - Shpadoinkle-html
