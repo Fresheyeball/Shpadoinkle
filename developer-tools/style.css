@@ -1,0 +1,71 @@
+body {
+  color: white;
+}
+
+.con-children {
+  padding-left: 8px;
+  margin: 4px;
+}
+
+.time {
+  padding: 4px;
+  margin: 4px;
+  background: #5c6370;
+}
+
+.con,
+.con-uniary,
+summary.rec {
+  color: #e5c07b;
+}
+
+dl.rec {
+  padding-left: 16px;
+  margin: 4px;
+}
+
+dt {
+  color: #56b6c2;
+}
+
+dd {
+  margin-inline-start: 0;
+  padding-left: 8px;
+  padding-top: 4px;
+}
+
+.string,
+.char {
+  color: #e06c75;
+}
+
+.float,
+.integer {
+  color: #f44747;
+}
+
+ul {
+  margin: 0;
+  padding-left: 8px;
+  list-style-type: none;
+}
+
+li {
+  margin-top: 2px;
+}
+
+.depth-0 {
+  background: rgba(255, 255, 255, 0);
+}
+.depth-1,
+.depth-2,
+.depth-3,
+.depth-4,
+.depth-5,
+.depth-6,
+.depth-7,
+.depth-8,
+.depth-9 {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px;
+}

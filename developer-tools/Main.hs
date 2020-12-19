@@ -57,11 +57,11 @@ listenForOutput model = void $ jsg "chrome" ^. (js "runtime" . js "onMessage" . 
 
 row :: MonadJSM m => UTCTime -> History -> Html m a
 row k history = div "record"
-  [ span [ onClickM . liftJSM $ id <$ sendHistory history
-         , className "time"
-         ]
-         [ text . pack $ formatTime defaultTimeLocale "%X" k ]
-  , span "val"  [ maybe (text "failed to parse value") prettyHtml $ Pretty.parseValue $ unpack $ unHistory history ]
+  [ div [ onClickM . liftJSM $ id <$ sendHistory history
+        , className "time"
+        ]
+        [ text . pack $ formatTime defaultTimeLocale "%X" k ]
+  , div "val"  [ maybe (text "failed to parse value") (prettyHtml 0) $ Pretty.parseValue $ unpack $ unHistory history ]
   ]
 
 
@@ -76,27 +76,31 @@ sendHistory (History history) = void $ do
   void $ jsg "chrome" ^. (js "tabs" . js2 "sendMessage" tabId msg)
 
 
-prettyHtml :: Pretty.Value -> Html m a
-prettyHtml = \case
+prettyHtml :: Int -> Pretty.Value -> Html m a
+prettyHtml depth = \case
   Pretty.Con con [] -> div "con-uniary" $ string con
   Pretty.Con con slots -> details [ className "con-wrap", ("open", flagProp False) ]
     [ summary "con" $ string con
-    , div "con-children" $ prettyHtml <$> slots
+    , div (withDepth "con-children") $ prettyHtml (depth + 1) <$> slots
     ]
   Pretty.Rec rec fields ->
-    details [ className "rec-wrap" ]
+    details (withDepth "rec-wrap")
     [ summary "rec" $ string rec
-    , dl "rec" $ (\((n, v), i) ->
+    , dl "rec" $ (\(n, v)->
         [ dt_ $ string $ n <> " = "
-        , dd_ $ [ prettyHtml v ]
+        , dd_ [ prettyHtml (depth + 1) v ]
         ]) =<< fields
     ]
-  Pretty.String s -> div "string" $ string s
-  Pretty.Float n -> div "float" $ string n
+  Pretty.Tuple xs  -> prettyHtml depth $ Pretty.Con "(,)" xs
+  Pretty.List []   -> prettyHtml depth $ Pretty.Con "[]" []
+  Pretty.List xs   -> ul "list" $ li_.pure.prettyHtml (depth +1) <$> xs
+  Pretty.String ss -> div "string" $ string ss
+  Pretty.Float n   -> div "float" $ string n
   Pretty.Integer n -> div "integer" $ string n
-  Pretty.Char c -> div "char" $ string c
+  Pretty.Char c    -> div "char" $ string c
   _ -> text "NOT YET"
   where string = pure . text . pack
+        withDepth x = [ class' [ x, "depth-" <> pack (show depth) ] ]
 
 
 panel :: MonadJSM m => Model -> Html m Model
