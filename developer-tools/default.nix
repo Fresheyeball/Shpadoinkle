@@ -20,5 +20,5 @@ in pkgs.runCommand "Shpadoinkle-developer-tools" {}
     cp ${./icon.png}      $out/icon.png
     cp ${./inject.js}     $out/inject.js
     cp ${./style.css}     $out/style.css
-    cp ${dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js $out/all.js
+    cp ${util.doCannibalize dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js $out/all.js
   ''
