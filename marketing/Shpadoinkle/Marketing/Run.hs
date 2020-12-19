@@ -30,7 +30,8 @@ import           Shpadoinkle                        (JSM, MonadJSM,
 #else
 import           Shpadoinkle                        (JSM, MonadUnliftIO (..),
                                                      TVar, UnliftIO (..),
-                                                     askJSM, newTVarIO, runJSM)
+                                                     askJSM, constUpdate,
+                                                     newTVarIO, runJSM)
 #endif
 import           Shpadoinkle.Backend.Snabbdom       (runSnabbdom, stage)
 import           Shpadoinkle.Isreal.Types           as Swan (API, Code,
