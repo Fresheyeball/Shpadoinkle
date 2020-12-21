@@ -12,14 +12,13 @@ let
 
 in pkgs.runCommand "Shpadoinkle-developer-tools.zip" {}
   ''
-    mkdir temp
-    cp ${./manifest.json} temp/manifest.json
-    cp ${./main.html}     temp/main.html
-    cp ${./main.js}       temp/main.js
-    cp ${./panel.html}    temp/panel.html
-    cp ${./icon.png}      temp/icon.png
-    cp ${./inject.js}     temp/inject.js
-    cp ${./style.css}     temp/style.css
-    cp ${util.doCannibalize dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js temp/all.js
-    ${pkgs.zip}/bin/zip -r $out temp
+    cp ${./manifest.json} ./manifest.json
+    cp ${./main.html}     ./main.html
+    cp ${./main.js}       ./main.js
+    cp ${./panel.html}    ./panel.html
+    cp ${./icon.png}      ./icon.png
+    cp ${./inject.js}     ./inject.js
+    cp ${./style.css}     ./style.css
+    cp ${util.doCannibalize dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js ./all.js
+    ${pkgs.zip}/bin/zip -r $out *
   ''
