@@ -1,8 +1,8 @@
 {
-  "name": "Shpadoinkle developer tools",
-  "description": "Developer tooling for Shpadoinkle apps",
-  "author": "Isaac Shapira fresheyeball@protonmail.com",
-  "version": "0.0.0",
+  "name": "",
+  "description": "",
+  "author": "",
+  "version": "",
   "manifest_version": 2,
   "devtools_page": "main.html",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self';",
