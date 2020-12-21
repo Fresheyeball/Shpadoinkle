@@ -37,6 +37,7 @@ Build with GHCJS 8.6 on Linux:
   - nix-build isreal/swan-shell.nix
   - nix-build developer-tools -o devtools
   - cp devtools Shpadoinkle-developer-tools.zip
+  - rm devtools
   - rm result*
   artifacts:
     untracked: true
