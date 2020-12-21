@@ -35,12 +35,10 @@ Build with GHCJS 8.6 on Linux:
   script:
   - nix-build --argstr compiler ghc865 --arg isJS true --fallback
   - nix-build isreal/swan-shell.nix
-  - nix-build developer-tools/default.nix -o devtools
-  - mkdir chrome-extension
-  - cp -r devtools/* chrome-extension
+  - nix-build developer-tools/default.nix -o Shpadoinkle-developer-tools.zip
   artifacts:
     paths:
-    - chrome-extension
+    - Shpadoinkle-developer-tools.zip
 
 Build with GHC 8.6.5 on Darwin:
   stage: Darwin Build

@@ -10,15 +10,16 @@ let
 
   dev  = pkgs.haskell.packages.${util.compilerjs};
 
-in pkgs.runCommand "Shpadoinkle-developer-tools" {}
+in pkgs.runCommand "Shpadoinkle-developer-tools.zip" {}
   ''
-    mkdir $out
-    cp ${./manifest.json} $out/manifest.json
-    cp ${./main.html}     $out/main.html
-    cp ${./main.js}       $out/main.js
-    cp ${./panel.html}    $out/panel.html
-    cp ${./icon.png}      $out/icon.png
-    cp ${./inject.js}     $out/inject.js
-    cp ${./style.css}     $out/style.css
-    cp ${util.doCannibalize dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js $out/all.js
+    mkdir temp
+    cp ${./manifest.json} temp/manifest.json
+    cp ${./main.html}     temp/main.html
+    cp ${./main.js}       temp/main.js
+    cp ${./panel.html}    temp/panel.html
+    cp ${./icon.png}      temp/icon.png
+    cp ${./inject.js}     temp/inject.js
+    cp ${./style.css}     temp/style.css
+    cp ${util.doCannibalize dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js temp/all.js
+    ${pkgs.zip}/bin/zip -r $out temp
   ''
