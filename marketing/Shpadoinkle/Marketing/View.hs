@@ -39,7 +39,7 @@ hero =
     [ h1
       [ class' $ T.uppercase <> T.tracking_widest <> T.text_6xl <> T.font_thin
       ]
-      [ "Shpadoinkle"
+      [ "Shpadoinkle!"
       ]
     , h2 [ class' T.text_2xl ]
       [ "I think I know precisely what I mean" ]
