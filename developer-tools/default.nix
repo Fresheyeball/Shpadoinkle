@@ -3,6 +3,13 @@
 }:
 let
 
+  chrome-webstore =
+    { name        = "Shpadoinkle Developer Tools";
+      description = "Time travel debugging for Shpadoinkle";
+      author      = "Isaac Shapira";
+      version     = "0.0.1";
+    };
+
   pkgs = import ../nix/pkgs.nix {
     inherit compiler chan; isJS = true; };
 
@@ -10,15 +17,21 @@ let
 
   dev  = pkgs.haskell.packages.${util.compilerjs};
 
-in pkgs.runCommand "Shpadoinkle-developer-tools" {}
+  patch-manifest = with chrome-webstore; ''
+    ${pkgs.jq}/bin/jq '.name = "${name}" | .description = "${description}" | .version = "${version}" | .author = "${author}"' < manifest.json > manifest-tmp.json
+    mv manifest-tmp.json manifest.json
+  '';
+
+in pkgs.runCommand "Shpadoinkle-developer-tools.zip" {}
   ''
-    mkdir $out
-    cp ${./manifest.json} $out/manifest.json
-    cp ${./main.html}     $out/main.html
-    cp ${./main.js}       $out/main.js
-    cp ${./panel.html}    $out/panel.html
-    cp ${./icon.png}      $out/icon.png
-    cp ${./inject.js}     $out/inject.js
-    cp ${./style.css}     $out/style.css
-    cp ${util.doCannibalize dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js $out/all.js
+    cp ${./manifest.json} ./manifest.json
+    cp ${./main.html}     ./main.html
+    cp ${./main.js}       ./main.js
+    cp ${./panel.html}    ./panel.html
+    cp ${./icon.png}      ./icon.png
+    cp ${./inject.js}     ./inject.js
+    cp ${./style.css}     ./style.css
+    ${patch-manifest}
+    cp ${util.doCannibalize dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js ./all.js
+    ${pkgs.zip}/bin/zip -r $out *
   ''
