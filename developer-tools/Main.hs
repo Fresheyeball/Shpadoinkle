@@ -108,6 +108,9 @@ prettyHtml depth = \case
         , dd_ [ prettyHtml (depth + 1) v ]
         ]) =<< fields
     ]
+  Pretty.InfixCons _ _ -> text "Infix Constructors are not currently supported"
+  Pretty.Neg x     -> div "neg" [ "¬", prettyHtml depth x ]
+  Pretty.Ratio n d -> div "ratio" [ prettyHtml depth n, "/", prettyHtml depth d ]
   Pretty.Tuple xs  -> prettyHtml depth $ Pretty.Con "(,)" xs
   Pretty.List []   -> prettyHtml depth $ Pretty.Con "[]" []
   Pretty.List xs   -> ul "list" $ li_.pure.prettyHtml (depth +1) <$> xs
@@ -115,7 +118,6 @@ prettyHtml depth = \case
   Pretty.Float n   -> div "float" $ string n
   Pretty.Integer n -> div "integer" $ string n
   Pretty.Char c    -> div "char" $ string c
-  _ -> text "NOT YET"
   where string = pure . text . pack
         withDepth x = [ class' [ x, "depth-" <> pack (show depth) ] ]
 
