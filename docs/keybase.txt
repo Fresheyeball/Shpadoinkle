@@ -1,0 +1,56 @@
+==================================================================
+https://keybase.io/fresheyeball
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of https://Shpadoinkle.org
+  * I am fresheyeball (https://keybase.io/fresheyeball) on keybase.
+  * I have a public key ASAW_kJQ9MCVx8q5IgY7_oKz8GSy8M9M5M9J3-RsGZIv3wo
+
+To do so, I am signing this object:
+
+{
+  "body": {
+    "key": {
+      "eldest_kid": "0120fd5f1b1e1b7d8163fe90b4c426b1f7dff5c9878b1a35b29bf5ccb6d5071d7e2b0a",
+      "host": "keybase.io",
+      "kid": "012016fe4250f4c095c7cab922063bfe82b3f064b2f0cf4ce4cf49dfe46c19922fdf0a",
+      "uid": "0d25a821296d8aa10b2cb6e7e4ae2119",
+      "username": "fresheyeball"
+    },
+    "merkle_root": {
+      "ctime": 1608662200,
+      "hash": "a666500fc01da0b494570a409ed1769a644356ea2374091c8e85397f9a2a9264201fc1fda1ff58fefe4865db2e2b919501e485362d7894aec1bc245150697f2e",
+      "hash_meta": "fd81b897c1bb0f717ad189419ecd7fb36c75a267214658180f92d0656703ccb6",
+      "seqno": 18478745
+    },
+    "service": {
+      "entropy": "gYF78QZ9uOBHqTVnQG9iVYQa",
+      "hostname": "Shpadoinkle.org",
+      "protocol": "https:"
+    },
+    "type": "web_service_binding",
+    "version": 2
+  },
+  "client": {
+    "name": "keybase.io go client",
+    "version": "5.5.0"
+  },
+  "ctime": 1608662236,
+  "expire_in": 504576000,
+  "prev": "3f992af92bb272af327eb0c6073215fff99769b586349bd4b1e1225a94d1f240",
+  "seqno": 85,
+  "tag": "signature"
+}
+
+which yields the signature:
+
+hKRib2R5hqhkZXRhY2hlZMOpaGFzaF90eXBlCqNrZXnEIwEgFv5CUPTAlcfKuSIGO/6Cs/BksvDPTOTPSd/kbBmSL98Kp3BheWxvYWTESpcCVcQgP5kq+Suycq8yfrDGBzIV//mXabWGNJvUseEiWpTR8kDEIESkpF0/VJ8NRvYmPapgDKgMe0nb7KE+57mvfwefMmT1AgHCo3NpZ8RAIUlGGlR6ml7TB8lEsC0tR3bZBaXSsD+FuW04Yee6CV+iMeuYVJm6DGW2h3z9YekCR9sJ1FbaT9tWrZhVOyPyCahzaWdfdHlwZSCkaGFzaIKkdHlwZQildmFsdWXEIB9v/kUGkEacZ6ELj2ONn5hxdX2DzhY/U1ZHf0pfI7E4o3RhZ80CAqd2ZXJzaW9uAQ==
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/fresheyeball
+
+==================================================================

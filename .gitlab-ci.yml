@@ -42,7 +42,6 @@ Build with GHCJS 8.6 on Linux:
   artifacts:
     untracked: true
 
-
 Build with GHC 8.6.5 on Darwin:
   stage: Darwin Build
   needs:
