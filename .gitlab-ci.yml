@@ -34,7 +34,21 @@ Build with GHCJS 8.6 on Linux:
   - Hlint
   script:
   - nix-build --argstr compiler ghc865 --arg isJS true --fallback
+
+Swan Shell on Linux:
+  stage: Linux Build
+  needs:
+  - Check Style
+  - Hlint
+  script:
   - nix-build isreal/swan-shell.nix
+
+Developer Tools on Linux:
+  stage: Linux Build
+  needs:
+  - Check Style
+  - Hlint
+  script:
   - nix-build developer-tools -o devtools
   - cp devtools Shpadoinkle-developer-tools.zip
   - rm devtools
