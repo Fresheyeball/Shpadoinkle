@@ -52,7 +52,6 @@ Developer Tools on Linux:
   - nix-build developer-tools -o devtools
   - cp devtools Shpadoinkle-developer-tools.zip
   - rm devtools
-  - rm result*
   artifacts:
     untracked: true
 
