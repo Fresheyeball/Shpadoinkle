@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedLabels    #-}
@@ -8,7 +9,7 @@
 module Shpadoinkle.Marketing.View where
 
 
-import           Control.Lens                       (to, (.~), (^.))
+import           Control.Lens                       (to, (<>~), (^.))
 import           Data.Generics.Labels               ()
 import           Data.String
 import           Data.Text                          (pack)
@@ -19,8 +20,10 @@ import           Shpadoinkle.Lens                   (onRecord, onSum)
 import qualified Shpadoinkle.Marketing.Tailwind     as T
 import           Shpadoinkle.Router                 (toHydration)
 import           Shpadoinkle.Run                    (Env, entrypoint)
+import           Shpadoinkle.Widgets.Form.Dropdown
 import qualified Shpadoinkle.Widgets.Form.Input     as I
-import           Shpadoinkle.Widgets.Types          (Search (..))
+import           Shpadoinkle.Widgets.Types          (Pick (One), Search (..),
+                                                     withOptions)
 
 import           Shpadoinkle.Marketing.Types
 import           Shpadoinkle.Marketing.Types.Hoogle
@@ -99,15 +102,23 @@ hoogleWidget h =
   H.div
   [ onInputM (query . Search) ]
   [ onRecord #search $ I.search [] (search h)
-  , H.div [ class' T.p_2 ] $ targetWidget <$> targets h
+  , onRecord #targets $ H.div [ class' T.p_2 ] [ dropdown theme defConfig $ targets h ]
   ]
+
  where
-   query :: Search -> m (Home -> Home)
-   query ss = (#targets .~) <$> findTargets ss
+
+ query :: Search -> m (Home -> Home)
+ query ss = do
+   ts <- findTargets ss
+   return $ #targets <>~ Nothing `withOptions` ts
+
+
+ theme :: Dropdown 'One Target -> Theme m 'One Target
+ theme _ = Theme H.div_ (const mempty) H.div_ targetWidget
 
 
 targetWidget :: Target -> Html m a
-targetWidget _ = text ""
+targetWidget = div' . pure . innerHTML . pack . targetItem
 
 
 home :: Hooglable m => MonadJSM m => Home -> Html m Home

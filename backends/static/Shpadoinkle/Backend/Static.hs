@@ -11,10 +11,10 @@ module Shpadoinkle.Backend.Static ( renderStatic ) where
 
 
 import           Control.Compactable (Compactable (fmapMaybe))
-import           Data.Monoid         ((<>))
+import           Data.Monoid         (mconcat, (<>))
 import           Data.Text           (Text, null, unwords)
 
-import           Shpadoinkle         (Html, Prop, cataH, cataProp)
+import           Shpadoinkle         (Html, Prop (PText), cataH, cataProp)
 
 
 -- | Render as @Text@
@@ -34,9 +34,17 @@ isSelfClosing = flip elem
   , "img", "input", "link", "meta", "param", "source", "track" ]
 
 
+innerHTML :: Text
+innerHTML = "innerHTML"
+
+
 renderWrapping :: Text -> [(Text, Prop m a)] -> [Text] -> Text
-renderWrapping tag props cs = renderOpening tag props <> ">"
-  <> mconcat cs <> "</" <> tag <> ">"
+renderWrapping tag props cs =
+  renderOpening tag props <> ">"
+  <> (case innerHTML `lookup` props of
+        Just (PText html) -> html
+        _                 -> mconcat cs)
+  <> "</" <> tag <> ">"
 
 
 renderSelfClosing :: Text -> [(Text, Prop m a)] -> Text
@@ -59,10 +67,11 @@ renderProp name = cataProp
   renderFlag
   (const Nothing)
   (const Nothing)
-
-  where renderTextProp t = Just $ lice name <> "=\"" <> t <> "\""
-        renderFlag True  = Just name
-        renderFlag False = Nothing
-        lice = \case
-          "className" -> "class"
-          x           -> x
+  where
+  renderTextProp t | t == innerHTML = Nothing
+                   | otherwise      = Just $ lice name <> "=\"" <> t <> "\""
+  renderFlag True  = Just name
+  renderFlag False = Nothing
+  lice = \case
+    "className" -> "class"
+    x           -> x

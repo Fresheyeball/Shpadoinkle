@@ -89,7 +89,7 @@ $(msum <$> mapM mkTextProp
   , "max", "min", "step", "wrap", "target", "download", "hreflang", "media", "ping", "shape", "coords"
   , "alt", "preload", "poster", "name'", "kind'", "srclang", "sandbox", "srcdoc", "align"
   , "headers", "scope", "datetime", "pubdate", "manifest", "contextmenu", "draggable"
-  , "dropzone", "itemprop", "charset", "content", "property"
+  , "dropzone", "itemprop", "charset", "content", "property", "innerHTML"
   ])
 
 $(msum <$> mapM mkIntProp
