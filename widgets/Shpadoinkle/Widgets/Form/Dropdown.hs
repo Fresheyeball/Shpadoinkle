@@ -125,10 +125,10 @@ instance Consideration ConsideredChoice p => Consideration Dropdown p where
 
 
 data Theme m p b = Theme
-    { _wrapper :: forall a . [Html m a]  -> Html m a
+    { _wrapper :: forall a . [Html m a]   ->  Html m a
     , _header  :: forall a . Selected p b -> [Html m a]
-    , _list    :: forall a . [Html m a]  -> Html m a
-    , _item    :: forall a . b            -> Html m a
+    , _list    :: forall a . [Html m a]   ->  Html m a
+    , _item    :: forall a . b            ->  Html m a
     }
 
 

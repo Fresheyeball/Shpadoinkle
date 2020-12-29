@@ -314,9 +314,16 @@ instance (Ord a, Considered p ~ Maybe, Semigroup (Choice p a))
     => Semigroup (ConsideredChoice p a) where
   ConsideredChoice c cc <> ConsideredChoice c' cc' = ConsideredChoice (c <|> c') (cc <> cc')
 
+instance (Ord a, Considered p ~ Maybe, Monoid (Choice p a))
+    => Monoid (ConsideredChoice p a) where
+      mempty = ConsideredChoice Nothing mempty
+
 instance {-# OVERLAPPING #-} (Ord a) => Semigroup (ConsideredChoice 'Many a) where
   ConsideredChoice c cc <> ConsideredChoice c' cc' = ConsideredChoice (c <> c') (cc <> cc')
 
+instance {-# OVERLAPPING #-} (Ord a)
+    => Monoid (ConsideredChoice 'Many a) where
+      mempty = ConsideredChoice mempty mempty
 
 type family Considered (p :: Pick) :: Type -> Type where
   Considered 'One        = Maybe
