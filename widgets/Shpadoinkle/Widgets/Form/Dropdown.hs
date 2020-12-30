@@ -12,6 +12,7 @@
 {-# LANGUAGE RecordWildCards           #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE StandaloneDeriving        #-}
+{-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE UndecidableInstances      #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -101,12 +102,12 @@ instance SetLike (ConsideredChoice p) => SetLike (Dropdown p) where
 
 
 instance Consideration ConsideredChoice p => Selection Dropdown p where
+  toSelected' _ x = toSelected @ConsideredChoice @p x
   select  (Dropdown c t) x = close $ Dropdown (select c x) t
-  select' (Dropdown c t) x = close $ Dropdown (select' c x) t
   unselected = unselected . _considered
   selected   = selected . _considered
   withOptions x xs  = Dropdown (x `withOptions` xs) mempty
-  withOptions' x xs = Dropdown (x `withOptions'` xs) mempty
+  retain (Dropdown c t) (Dropdown c' t') = Dropdown (retain c c') (t <> t')
 
 
 instance (Consideration ConsideredChoice p, Deselection ConsideredChoice p)

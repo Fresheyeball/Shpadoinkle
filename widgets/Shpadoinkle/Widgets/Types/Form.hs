@@ -18,7 +18,7 @@
 
 
 module Shpadoinkle.Widgets.Types.Form
-  (module Shpadoinkle.Widgets.Types.Form
+  ( module Shpadoinkle.Widgets.Types.Form
   ) where
 
 
@@ -44,7 +44,7 @@ data Input a = Input
 class Control g where
   type Val g a :: Type
   type Val g a = a
-  hygiene :: Applicative f => (Hygiene -> f Hygiene) -> g a -> f (g a)
+  hygiene ::  Applicative f => (Hygiene -> f Hygiene) -> g a -> f (g a)
   value   :: (Applicative f, Ord a) => (Val g a -> f (Val g a)) -> g a -> f (g a)
 
 

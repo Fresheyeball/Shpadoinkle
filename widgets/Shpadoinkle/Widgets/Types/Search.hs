@@ -45,7 +45,7 @@ forgivingly (Search (strip -> "")) _ = True
 forgivingly (Search s) haystack = Prelude.all test . splitOn " " $ strip s
   where test ""     = False
         test needle = forgive needle `isInfixOf` forgive haystack
-        forgive = toLower . strip
+        forgive     = toLower . strip
 
 
 concatFuzzy :: [a -> Text] -> a -> Text
