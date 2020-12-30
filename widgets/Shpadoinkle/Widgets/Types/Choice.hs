@@ -23,6 +23,7 @@ import           Data.Aeson          (FromJSON, ToJSON)
 import qualified Data.Foldable       as F
 import           Data.Kind           (Type)
 import qualified Data.List.NonEmpty  as NE
+import           Data.Proxy
 import           Data.Set            as Set (Set, delete, difference, elemAt,
                                              empty, filter, findIndex, findMax,
                                              findMin, foldr,
@@ -69,17 +70,20 @@ instance (Bounded a, Enum a) => Enum (Choice 'AtleastOne a) where
 
 
 instance Foldable (Choice 'One)         where foldr f x (Choice y xs) = Set.foldr f (Prelude.foldr f x y) xs
-instance Foldable (Choice 'AtleastOne)  where foldr f x (Choice y xs)  = Set.foldr f (f y x) xs
-instance Foldable (Choice 'Many)        where foldr f x (Choice y xs)  = Set.foldr f (Set.foldr f x y) xs
+instance Foldable (Choice 'AtleastOne)  where foldr f x (Choice y xs) = Set.foldr f               (f y x) xs
+instance Foldable (Choice 'Many)        where foldr f x (Choice y xs) = Set.foldr f     (Set.foldr f x y) xs
 
 
-instance Ord a => Semigroup (Choice 'One a)  where
-  Choice (Just x) _ <> Choice _ ys | Set.member x ys = Choice (Just x) ys
-  _                 <> y           = y
-instance Ord a => Semigroup (Choice 'AtleastOne a)  where Choice x _ <> Choice y ys = if Set.member x ys then Choice x ys else Choice y ys
-instance Ord a => Semigroup (Choice 'Many a) where Choice x _ <> Choice y ys = Choice (Set.intersection x ys <> y) ys
-instance Ord a => Monoid    (Choice 'One  a) where mempty = noselection (mempty :: Set a)
-instance Ord a => Monoid    (Choice 'Many a) where mempty = noselection (mempty :: Set a)
+instance (Semigroup a, Ord a) => Semigroup (Choice 'One a)
+  where Choice x xs <> Choice y ys = Choice (x <> y) (xs <> ys)
+
+instance (Semigroup a, Ord a) => Semigroup (Choice 'AtleastOne a)
+  where Choice x xs <> Choice y ys = Choice (x <> y) (xs <> ys)
+
+instance (Semigroup a, Ord a) => Semigroup (Choice 'Many a)
+  where Choice x xs <> Choice y ys = Choice (x <> y) (xs <> ys)
+instance (Semigroup a, Ord a) => Monoid    (Choice 'One  a) where mempty = noselection (mempty :: Set a)
+instance (Semigroup a, Ord a) => Monoid    (Choice 'Many a) where mempty = noselection (mempty :: Set a)
 
 
 instance Compactable (Choice 'One) where
@@ -98,7 +102,7 @@ instance Compactable (Choice 'Many) where
 
 -- | Laws:
 -- @
--- if toSet a == toSet b then a == b -- toSet is injective
+-- a == b ==> toSet a == toSet b -- toSet is injective
 -- toSet (smap f s) == fmap f (toSet s)
 -- if valid s then Set.valid (toSet s)
 -- @
@@ -109,26 +113,30 @@ class SetLike f where
 
 instance SetLike Set where
   toSet = id
+  {-# INLINE toSet #-}
   smap  = Set.map
+  {-# INLINE smap #-}
   valid = Set.valid
 
 instance SetLike Maybe where
   toSet = maybe mempty Set.singleton
+  {-# INLINE toSet #-}
   smap  = fmap
+  {-# INLINE smap #-}
   valid = const True
 
 instance SetLike (Choice 'One) where
-  toSet (Choice x xs) = toSet x <> xs
+  toSet (Choice x xs)  = toSet x <> xs
   smap f (Choice x xs) = Choice (f <$> x)     (Set.map f xs)
-  valid (Choice _ xs) = Set.valid xs
+  valid (Choice _ xs)  = Set.valid xs
 
 instance SetLike (Choice 'AtleastOne) where
-  toSet (Choice x xs) = Set.singleton x <> xs
+  toSet (Choice x xs)  = Set.singleton x <> xs
   smap f (Choice x xs) = Choice (f x)         (Set.map f xs)
   valid (Choice _ xs)  = Set.valid xs
 
 instance SetLike (Choice 'Many) where
-  toSet (Choice x xs) = toSet x <> xs
+  toSet (Choice x xs)  = toSet x <> xs
   smap f (Choice x xs) = Choice (Set.map f x) (Set.map f xs)
   valid (Choice x xs)  = Set.valid x && Set.valid xs
 
@@ -137,37 +145,63 @@ ftoSet :: (Ord a, Foldable g) => g a -> Set a
 ftoSet = Set.fromList . F.toList
 
 
+class    PickToSet (p :: Pick) where pickToSet :: Ord a => Selected p a -> Set a
+instance PickToSet 'One        where pickToSet = toSet
+instance PickToSet 'AtleastOne where pickToSet = Set.singleton
+instance PickToSet 'Many       where pickToSet = toSet
+
+
 class SetLike (f p) => Selection f (p :: Pick) where
-  select       :: Ord a => f p a -> Selected p a -> f p a
-  select'      :: Ord a => f p a -> a -> f p a
-  unselected   :: Ord a => f p a -> Set a
-  selected     :: Ord a => f p a -> Selected p a
-  withOptions  :: (Foldable g, Ord a) => Selected p a -> g a -> f p a
-  withOptions' :: (Foldable g, Ord a) => a -> g a -> f p a
+  toSelected'   :: Proxy (f p) -> a -> Selected p a
+  select        :: Ord a => f p a -> Selected p a -> f p a
+  unselected    :: Ord a => f p a -> Set a
+  selected      :: Ord a => f p a -> Selected p a
+  withOptions   :: (Foldable g, Ord a) => Selected p a -> g a -> f p a
+  retain        :: Ord a => f p a -> f p a -> f p a
+
+
+select' :: forall f (p :: Pick) a. (Selection f p, Ord a) => f p a -> a -> f p a
+select' c = select c . (toSelected @f @p)
+
+
+withOptions' :: forall f (p :: Pick) a g. (Selection f p, Ord a, Foldable g) => a -> g a -> f p a
+withOptions' = withOptions . toSelected @f @p
+
+
+toSelected :: forall f (p :: Pick) a. (Selection f p) => a -> Selected p a
+toSelected = toSelected' (Proxy @(f p))
+
+
+retain' :: (Ord a, Deselection f p, Foldable g) => f p a -> g a -> f p a
+retain' xs = retain xs . noselection
+
 
 instance Selection Choice 'One where
+  toSelected' _ = Just
   select (Choice w xs) y = Choice y (toSet w <> toSet y <> xs)
-  select' c = select c . Just
   unselected (Choice x xs) = maybe xs (`Set.delete` xs) x
   selected = _selected
   withOptions x (ftoSet -> xs) = Choice x $ maybe xs (`Set.insert` xs) x
-  withOptions' = withOptions . Just
+  retain (Choice w _) xs = case w of
+    Just x | Set.member x (toSet xs) -> w `withOptions` xs; _ -> xs
+
 
 instance Selection Choice 'AtleastOne where
+  toSelected' _ = id
   select (Choice _ xs) y = Choice y (Set.insert y xs)
-  select' = select
   unselected (Choice x xs) = Set.delete x xs
   selected = _selected
   withOptions x (ftoSet -> xs) = Choice x (Set.insert x xs)
-  withOptions' = withOptions
+  retain (Choice w _) xs = if Set.member w (toSet xs) then w `withOptions` xs else xs
+
 
 instance Selection Choice 'Many where
+  toSelected' _ = Set.singleton
   select (Choice x xs) y = Choice (y <> x) (y <> xs)
-  select' c = select c . Set.singleton
   unselected (Choice x xs) = Set.difference xs x
   selected = _selected
   withOptions x (ftoSet -> xs) = Choice x (x <> xs)
-  withOptions' = withOptions . Set.singleton
+  retain (Choice x _) (Choice y ys) = Choice (Set.intersection x ys <> y) ys
 
 
 class Selection f p => Deselection f (p :: Pick) where
@@ -318,12 +352,13 @@ instance (Ord a, Considered p ~ Maybe, Monoid (Choice p a))
     => Monoid (ConsideredChoice p a) where
       mempty = ConsideredChoice Nothing mempty
 
-instance {-# OVERLAPPING #-} (Ord a) => Semigroup (ConsideredChoice 'Many a) where
+instance {-# OVERLAPPING #-} (Semigroup a, Ord a) => Semigroup (ConsideredChoice 'Many a) where
   ConsideredChoice c cc <> ConsideredChoice c' cc' = ConsideredChoice (c <> c') (cc <> cc')
 
-instance {-# OVERLAPPING #-} (Ord a)
+instance {-# OVERLAPPING #-} (Semigroup a, Ord a)
     => Monoid (ConsideredChoice 'Many a) where
       mempty = ConsideredChoice mempty mempty
+
 
 type family Considered (p :: Pick) :: Type -> Type where
   Considered 'One        = Maybe
@@ -347,21 +382,25 @@ instance SetLike (ConsideredChoice 'Many) where
 
 instance (Considered p ~ Maybe, SetLike (ConsideredChoice p), Selection Choice p)
     => Selection ConsideredChoice p where
+  toSelected' _     = toSelected @Choice @p
   select  (ConsideredChoice c xs) x = ConsideredChoice c (select xs x)
-  select' (ConsideredChoice c xs) x = ConsideredChoice c (select' xs x)
   unselected        = unselected . _choice
   selected          = selected . _choice
   withOptions  x xs = ConsideredChoice Nothing (x `withOptions` xs)
-  withOptions' x xs = ConsideredChoice Nothing (x `withOptions'` xs)
+  retain  (ConsideredChoice c xs) ys@(ConsideredChoice c' (Choice y ys')) =
+    ConsideredChoice (case c of Just x | Set.member x (toSet ys) -> c; _ -> c') (retain xs $ case c' of
+      Nothing  -> Choice y ys'
+      Just c'' -> Choice y $ Set.insert c'' ys')
 
 
 instance SetLike (ConsideredChoice 'Many) => Selection ConsideredChoice 'Many where
+  toSelected' _     = toSelected @Choice @'Many
   select  (ConsideredChoice c xs) x = ConsideredChoice c (select xs x)
-  select' (ConsideredChoice c xs) x = ConsideredChoice c (select' xs x)
   unselected        = unselected . _choice
   selected          = selected . _choice
   withOptions  x xs = ConsideredChoice mempty (x `withOptions` xs)
-  withOptions' x xs = ConsideredChoice mempty (x `withOptions'` xs)
+  retain  (ConsideredChoice x xs) ys@(ConsideredChoice y ys')  =
+    ConsideredChoice (Set.intersection x (toSet ys) <> y) (retain xs ys')
 
 
 instance Selection ConsideredChoice 'One => Deselection ConsideredChoice 'One where

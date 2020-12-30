@@ -23,6 +23,16 @@ data Hover = MouseOver | MouseOut
   deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, ToJSON, FromJSON)
 
 
+instance Semigroup Hover where
+  MouseOver <> _ = MouseOver
+  _ <> MouseOver = MouseOver
+  _ <> _         = MouseOut
+
+
+instance Monoid Hover where
+  mempty = MouseOut
+
+
 withHover
   :: ((Hover, a) -> Html m (Hover, a))
   ->  (Hover, a) -> Html m (Hover, a)
@@ -35,7 +45,7 @@ withHover f = runIdentity . props
 togHygiene :: Toggle -> Hygiene
 togHygiene = \case
   Closed x -> x
-  _        -> Dirty
+  Open     -> Dirty
 
 
 instance Enum Toggle where

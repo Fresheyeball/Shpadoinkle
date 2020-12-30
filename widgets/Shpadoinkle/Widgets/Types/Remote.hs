@@ -33,6 +33,8 @@ instance Applicative (Remote e) where
 instance Alternative (Remote e) where
    empty = NotAsked
    x@(Success _) <|> _ = x
+   NotAsked <|> x      = x
+   x <|> NotAsked      = x
    _ <|> x             = x
 
 

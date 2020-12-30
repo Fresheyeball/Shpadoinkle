@@ -24,6 +24,10 @@ data Target = Target
     } deriving (Show,Read,Eq,Ord)
 
 
+instance Semigroup Target where
+  x <> _ = x
+
+
 instance ToJSON Target where
     toJSON (Target a b c d e f) = object [
       ("url" :: T.Text, toJSON a),
