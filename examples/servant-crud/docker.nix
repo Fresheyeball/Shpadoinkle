@@ -1,9 +1,8 @@
 { compiler ? "ghc864"
-, chan ? "e1843646b04fb564abf6330a9432a76df3269d2f"
+, chan ? (import ../../nix/chan.nix)
 }:
 let
-  pkgs = import ../../nix/pkgs.nix { inherit compiler chan; };
-  inherit (import ../../nix/util.nix { inherit pkgs compiler; isJS = true; }) compilerjs;
+  inherit (import ../../nix/util.nix { inherit compiler; isJS = true; pkgs = pkgsJS; }) compilerjs;
   pkgsJS  = import ../../nix/pkgs.nix { inherit compiler chan; isJS = true; };
   pkgsGHC = import ../../nix/pkgs.nix { inherit compiler chan; isJS = false; };
   client  = pkgsJS.haskell.packages.${compilerjs}.Shpadoinkle-examples + "/bin/servant-crud-client.jsexe/";

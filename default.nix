@@ -1,7 +1,7 @@
 { isJS ? false
 , compiler ? "ghc865"
 , pack ? "all"
-, chan ? "5272327b81ed355bbed5659b8d303cf2979b6953"
+, chan ? (import ./nix/chan.nix)
 , withHoogle ? false
 , extra ? (_: b: b)
 , optimize ? true

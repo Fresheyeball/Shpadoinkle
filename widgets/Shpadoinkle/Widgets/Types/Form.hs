@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes        #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DefaultSignatures          #-}
 {-# LANGUAGE DeriveAnyClass             #-}
@@ -31,6 +32,9 @@ import           Data.Kind                      (Type)
 import           Data.String                    (IsString)
 import           Data.Text                      (Text)
 import           GHC.Generics
+#ifdef TESTING
+import           Test.QuickCheck                (Arbitrary (..), elements)
+#endif
 
 import           Shpadoinkle.Widgets.Types.Core (Hygiene)
 
@@ -39,6 +43,11 @@ data Input a = Input
   { _hygiene :: Hygiene
   , _value   :: a
   } deriving (Eq, Ord, Show, Read, Functor, Traversable, Foldable, Generic, ToJSON, FromJSON)
+
+
+#ifdef TESTING
+instance Arbitrary a => Arbitrary (Input a) where arbitrary = Input <$> arbitrary <*> arbitrary
+#endif
 
 
 class Control g where
@@ -177,3 +186,11 @@ class Validate (f :: Status -> Type) where
   getValid = fmap to . validg . from
 
   rules :: f 'Rules
+
+
+#ifdef TESTING
+instance (Arbitrary a, Arbitrary b) => Arbitrary (Validated a b) where
+  arbitrary = do
+    (e, es, a) <- (,,) <$> arbitrary <*> arbitrary <*> arbitrary
+    elements [ Validated  a, Invalid  e es ]
+#endif

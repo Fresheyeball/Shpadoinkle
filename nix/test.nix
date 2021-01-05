@@ -1,4 +1,4 @@
-{ compiler ? "ghc864", chan ? "e1843646b04fb564abf6330a9432a76df3269d2f", isJS ? true }:
+{ compiler ? "ghc864", chan ? (import ./chan.nix), isJS ? true }:
 let pkgs = import ./pkgs.nix { inherit compiler isJS chan; }; in with pkgs; with lib; let
 
 

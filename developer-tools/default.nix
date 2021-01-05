@@ -1,5 +1,5 @@
 { compiler ? "ghc865"
-, chan ? "e1843646b04fb564abf6330a9432a76df3269d2f"
+, chan ? (import ../nix/chan.nix)
 }:
 let
 
