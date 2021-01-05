@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                       #-}
 {-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
@@ -12,7 +13,6 @@
 {-# LANGUAGE RecordWildCards           #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE StandaloneDeriving        #-}
-{-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE UndecidableInstances      #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -26,6 +26,9 @@ import           Data.Aeson
 import           Data.Text
 import           GHC.Generics
 import           Prelude                   hiding (div)
+#ifdef TESTING
+import           Test.QuickCheck           (Arbitrary (..))
+#endif
 
 
 import           Shpadoinkle
@@ -101,8 +104,7 @@ instance SetLike (ConsideredChoice p) => SetLike (Dropdown p) where
   valid (Dropdown c _) = valid c
 
 
-instance Consideration ConsideredChoice p => Selection Dropdown p where
-  toSelected' _ x = toSelected @ConsideredChoice @p x
+instance (Consideration ConsideredChoice p, PickToSelected p) => Selection Dropdown p where
   select  (Dropdown c t) x = close $ Dropdown (select c x) t
   unselected = unselected . _considered
   selected   = selected . _considered
@@ -116,9 +118,8 @@ instance (Consideration ConsideredChoice p, Deselection ConsideredChoice p)
   deselect (Dropdown c t) = close $ Dropdown (deselect c) t
 
 
-instance Consideration ConsideredChoice p => Consideration Dropdown p where
+instance (Consideration ConsideredChoice p, PickToConsidered p) => Consideration Dropdown p where
   consider  x (Dropdown c t) = Dropdown (consider x c) t
-  consider' x (Dropdown c t) = Dropdown (consider' x c) t
   choose (Dropdown c t) = Dropdown (choose c) t
   choice (Dropdown c _) = choice c
   considered (Dropdown c _) = considered c
@@ -191,3 +192,8 @@ dropdown toTheme Config {..} x =
     , tabbable
     ] . _item $ y) <$> toList (unselected x)
   ]
+
+#ifdef TESTING
+instance (Ord a, Arbitrary a, Arbitrary (ConsideredChoice p a)) => Arbitrary (Dropdown p a) where
+  arbitrary = Dropdown <$> arbitrary <*> arbitrary
+#endif

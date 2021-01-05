@@ -10,6 +10,13 @@ synopsis:     Chrome extension to aide in development
 description:  A chrome extension to make developing Shpadoinkle applications easier
 
 
+flags:
+  development:
+    description: Add instrumentation for development purposes.
+    default:     False
+    manual:      True
+
+
 ghc-options:
     - -Wall
     - -Wcompat
@@ -43,7 +50,13 @@ dependencies:
 library:
   source-dirs: .
   exposed-modules:
-      - Shpadoinkle.DeveloperTools
+    - Shpadoinkle.DeveloperTools
+  when:
+    - condition: flag(development)
+      then:
+        cpp-options: -DDEVELOPMENT
+      else:
+        cpp-options: []
 
 
 executables:

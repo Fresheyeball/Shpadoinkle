@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes  #-}
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DefaultSignatures    #-}
@@ -18,6 +19,9 @@ module Shpadoinkle.Widgets.Types.Core where
 import           Data.Aeson
 import           Data.Text
 import           GHC.Generics
+#ifdef TESTING
+import           Test.QuickCheck (Arbitrary (..), arbitraryBoundedEnum)
+#endif
 
 import           Shpadoinkle
 
@@ -74,3 +78,7 @@ class Present a where
 
 
 instance {-# OVERLAPPABLE #-} Humanize a => Present a
+
+#ifdef TESTING
+instance Arbitrary Hygiene where arbitrary = arbitraryBoundedEnum
+#endif

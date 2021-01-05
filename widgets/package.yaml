@@ -14,6 +14,13 @@ description:
   these types.
 
 
+flags:
+  testing:
+    description: Provide test kit around QuickCheck
+    default:     False
+    manual:      True
+
+
 ghc-options:
     - -Wall
     - -Wcompat
@@ -41,6 +48,7 @@ library:
     - Shpadoinkle.Widgets.Table.Lazy
     - Shpadoinkle.Widgets.Types
     - Shpadoinkle.Widgets.Types.Choice
+    - Shpadoinkle.Widgets.Types.ConsideredChoice
     - Shpadoinkle.Widgets.Types.Core
     - Shpadoinkle.Widgets.Types.Form
     - Shpadoinkle.Widgets.Types.Physical
@@ -63,16 +71,32 @@ library:
 
     - Shpadoinkle
     - Shpadoinkle-html
+  when:
+    - condition: flag(testing)
+      then:
+        exposed-modules:
+          - Test.QuickCheck.Classes.Hspec
+        cpp-options: -DTESTING
+        dependencies:
+          - QuickCheck
+          - quickcheck-classes
+          - quickcheck-classes-base
+          - hspec
+      else:
+        cpp-options: []
 
 
 tests:
   unit:
+    cpp-options: -DTESTING
     source-dirs: tests
     main: Test.hs
     dependencies:
       - containers
 
       - QuickCheck
+      - quickcheck-classes
+      - quickcheck-classes-base
       - hspec
 
       - Shpadoinkle-widgets

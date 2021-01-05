@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE RankNTypes           #-}
-#ifdef EV
+#ifdef DEVELOPMENT
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -14,7 +14,7 @@ module Shpadoinkle.DeveloperTools (withDeveloperTools) where
 
 import           Language.Javascript.JSaddle
 import           UnliftIO
-#ifdef EV
+#ifdef DEVELOPMENT
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.STM           (retry)
@@ -25,7 +25,7 @@ import           UnliftIO.Concurrent
 default (JSString)
 
 
-#ifdef EV
+#ifdef DEVELOPMENT
 withDeveloperTools :: forall a. Eq a => Read a => Show a => TVar a -> JSM ()
 withDeveloperTools x = do
   i' <- readTVarIO x
