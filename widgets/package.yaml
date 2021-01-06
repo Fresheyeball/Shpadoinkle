@@ -76,8 +76,10 @@ library:
       then:
         exposed-modules:
           - Test.QuickCheck.Classes.Hspec
+          - Test.QuickCheck.Classes.FoldableOrd
         cpp-options: -DTESTING
         dependencies:
+          - transformers
           - QuickCheck
           - quickcheck-classes
           - quickcheck-classes-base

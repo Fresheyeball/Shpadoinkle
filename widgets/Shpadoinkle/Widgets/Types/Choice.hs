@@ -31,6 +31,7 @@ import           Data.Proxy
 import           Data.Set                         as Set
 import           GHC.Generics                     (Generic)
 #ifdef TESTING
+import           Data.Monoid                      (Sum (..))
 import           Test.QuickCheck
 import           Test.QuickCheck.Classes
 import           Test.QuickCheck.Classes.Hspec
@@ -404,6 +405,11 @@ instance Selection Choice 'Many where
   retain (Choice x _) (Choice y ys) = Choice (Set.intersection x ys <> y) ys
 
 
+type family ToS (p :: Pick) :: Type -> Type where
+  ToS 'One  = Maybe
+  ToS 'Many = Set
+
+
 class Selection f p => Deselection f (p :: Pick) where
   noselection :: (Foldable g, Ord a) => g a -> f p a
   deselect    :: Ord a => f p a -> f p a
@@ -415,6 +421,115 @@ instance Deselection Choice 'One where
 instance Deselection Choice 'Many where
   noselection = Choice mempty . Set.fromList . F.toList
   deselect (Choice ys xs) = Choice mempty (ys <> xs)
+
+
+#ifdef TESTING
+
+
+class
+  ( Propable1Ord (f p)
+  , Propable0 (Selected p (Sum Int))
+  , Monoid    (Selected p (Sum Int))
+  , DemotePick p, PickToSet p
+  , Selected p (Sum Int) ~ ToS p (Sum Int)
+  , SetLike (ToS p)
+  , Selection f p
+  ) => PropableChoiceDe f p
+instance
+  ( Propable1Ord (f p)
+  , Propable0 (Selected p (Sum Int))
+  , Monoid    (Selected p (Sum Int))
+  , DemotePick p, PickToSet p
+  , Selected p (Sum Int) ~ ToS p (Sum Int)
+  , SetLike (ToS p)
+  , Selection f p
+  ) => PropableChoiceDe f p
+
+
+type instance Justice (Deselection f) p = PropableChoiceDe f p
+
+
+instance Legal (Deselection f) where
+  legal' (_ :: Proxy (Deselection f)) (_ :: Proxy p) =
+     deselectionLaws (Proxy @(f p))
+
+
+deselectionLaws :: forall proxy f (p :: Pick).
+  ( Deselection f p
+  , Propable1Ord (f p)
+  , Propable0 (Selected p (Sum Int))
+  , Monoid    (Selected p (Sum Int))
+  , Selected p (Sum Int) ~ ToS p (Sum Int)
+  , SetLike (ToS p)
+  , DemotePick p
+  ) => proxy (f p) -> Laws
+deselectionLaws p = Laws ("Deselection '" <> show (demotePick @p))
+  [ ("idempotence deselect",              idempotenceSelect p)
+  , ("deselect select selected identity", dselectSelectSelectedIdentity p)
+  , ("selected deselect annihliation",    selectedDeselectAnnihliation p)
+  , ("deselect keeps",                    deselectKeeps p)
+  , ("unselected passes through deselect keeps", unselectedPasses p)
+  , ("deselect unselected is full set",   deselectFullSet p)
+  ]
+
+
+idempotenceSelect, deselectFullSet
+  :: forall proxy f (p :: Pick).
+  ( Deselection f p
+  , Propable1Ord (f p)
+  ) => proxy (f p) -> Property
+idempotenceSelect _ = property $ \(c :: f p (Sum Int)) ->
+  deselect (deselect c) == deselect c
+
+
+deselectFullSet _ = property $ \(c :: f p (Sum Int)) ->
+  unselected (deselect c) == toSet c
+
+
+dselectSelectSelectedIdentity
+  :: forall proxy f (p :: Pick).
+  ( Deselection f p
+  , Propable1Ord (f p)
+  , Propable0 (Selected p (Sum Int))
+  ) => proxy (f p) -> Property
+dselectSelectSelectedIdentity _ = property $ \(c :: f p (Sum Int)) x ->
+  selected (select (deselect c) x) == x
+
+
+selectedDeselectAnnihliation
+  :: forall proxy f (p :: Pick).
+  ( Deselection f p
+  , Propable1Ord (f p)
+  , Propable0 (Selected p (Sum Int))
+  , Monoid    (Selected p (Sum Int))
+  ) => proxy (f p) -> Property
+selectedDeselectAnnihliation _ = property $ \(c :: f p (Sum Int)) ->
+  selected (deselect c) == mempty
+
+
+deselectKeeps
+  :: forall proxy f (p :: Pick).
+  ( Deselection f p
+  , Propable1Ord (f p)
+  , Propable0 (Selected p (Sum Int))
+  , Selected p (Sum Int) ~ ToS p (Sum Int)
+  , SetLike (ToS p)
+  ) => proxy (f p) -> Property
+deselectKeeps _ = property $ \(c :: f p (Sum Int)) (x :: Selected p (Sum Int)) ->
+  toSet (x :: ToS p (Sum Int)) `isSubsetOf` toSet (deselect (select c x))
+
+
+unselectedPasses
+  :: forall proxy f (p :: Pick).
+  ( Deselection f p
+  , Propable1Ord (f p)
+  , Propable0 (Selected p (Sum Int))
+  , Selected p (Sum Int) ~ ToS p (Sum Int)
+  , SetLike (ToS p)
+  ) => proxy (f p) -> Property
+unselectedPasses _ = property $ \(c :: f p (Sum Int)) (x :: Selected p (Sum Int)) ->
+  toSet x `isSubsetOf` unselected (deselect (select c x))
+#endif
 
 
 next, nextLoop, prev, prevLoop :: (Selection f 'AtleastOne, Ord a) => f 'AtleastOne a -> f 'AtleastOne a
