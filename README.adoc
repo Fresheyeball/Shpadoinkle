@@ -101,7 +101,7 @@ CI]]
 |https://hackage.haskell.org/package/Shpadoinkle-developer-tools[image:https://img.shields.io/hackage/v/Shpadoinkle-developer-tools.svg[Hackage]]
 |http://packdeps.haskellers.com/feed?needle=Shpadoinkle-developer-tools[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-developer-tools.svg[Hackage
 Deps]]
-|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-developer-toolse[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-developer-tools/badge[Hackage
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-developer-tools[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-developer-tools/badge[Hackage
 CI]]
 
 |Lens
