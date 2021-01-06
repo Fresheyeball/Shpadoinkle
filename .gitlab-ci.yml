@@ -17,7 +17,7 @@ Hlint:
   stage: Lint
   needs: []
   script:
-  - nix-shell nix/lint.nix --run 'hlint .'
+  - nix-shell nix/lint.nix --run 'hlint . -j'
 
 Packages GHC 8.6.5 on Linux:
   stage: Linux Build

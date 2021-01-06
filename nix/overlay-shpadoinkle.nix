@@ -100,10 +100,10 @@
 
   addDev  = x: super.haskell.lib.appendConfigureFlags x [ "-f" "development" ];
 
-  addTest = x: hpkgs: if isJS then super.haskell.lib.dontCheck x else (super.haskell.lib.appendConfigureFlags (super.haskell.lib.addBuildDepends x
-    (with hpkgs; [hspec QuickCheck quickcheck-classes quickcheck-classes-base ])
-  ) [ "-f" "testing" ]);
-
+  addTest = x: hpkgs: if isJS then super.haskell.lib.dontCheck x else
+    (super.haskell.lib.appendConfigureFlags (super.haskell.lib.addBuildDepends x
+      (with hpkgs; [hspec QuickCheck quickcheck-classes quickcheck-classes-base ])
+    ) [ "-f" "testing" ]);
 
 
 in {
@@ -117,8 +117,6 @@ in {
   google-chrome = (import (builtins.fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/${chrome-rev}.tar.gz";
     }) {}).google-chrome;
-
-
 
   haskell = super.haskell //
     { packages = super.haskell.packages //

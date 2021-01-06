@@ -16,13 +16,14 @@
 module Test.QuickCheck.Classes.Hspec where
 
 
-import           Control.Applicative     (Alternative)
+import           Control.Applicative                 (Alternative)
 import           Data.Kind
 import           Data.Proxy
 
 import           Test.Hspec
 import           Test.QuickCheck
 import           Test.QuickCheck.Classes
+import qualified Test.QuickCheck.Classes.FoldableOrd as Ord
 
 
 toSpec :: Laws -> Spec
@@ -87,7 +88,7 @@ type instance Justice Applicative f = Propable1 f
 type instance Justice Alternative f = Propable1 f
 type instance Justice Monad       f = Propable1 f
 type instance Justice Show        a = Propable0 a
--- type instance Justice Foldable    f = Propable1Ord f
+type instance Justice Foldable    f = Propable1Ord f
 type instance Justice Traversable f = Propable1 f
 
 -- foldableLawsOrd :: forall proxy f.
@@ -110,5 +111,5 @@ instance Legal Applicative where legal' _ = applicativeLaws
 instance Legal Alternative where legal' _ = alternativeLaws
 instance Legal Monad       where legal' _ = monadLaws
 instance Legal Show        where legal' _ = showLaws
--- instance Legal Foldable    where legal' _ = foldableLawsOrd
+instance Legal Foldable    where legal' _ = Ord.foldableLaws
 -- instance Legal Traversable where legal' _ = traversableLaws

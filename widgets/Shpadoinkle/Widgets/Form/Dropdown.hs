@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                       #-}
 {-# LANGUAGE DataKinds                 #-}
+{-# LANGUAGE DeriveFoldable            #-}
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ExtendedDefaultRules      #-}
@@ -51,6 +52,7 @@ deriving instance (Show (Selected p a), Show (Considered p a), Show a)        =>
 deriving instance (Read (Selected p a), Read (Considered p a), Read a, Ord a) => Read (Dropdown p a)
 deriving instance (Eq   (Selected p a), Eq   (Considered p a), Eq a)          => Eq   (Dropdown p a)
 deriving instance (Ord  (Selected p a), Ord  (Considered p a), Ord a)         => Ord  (Dropdown p a)
+deriving instance (Foldable (ConsideredChoice p)) => Foldable (Dropdown p)
 deriving instance Generic (Dropdown p a)
 instance (ToJSON a,   ToJSON (Selected p a),   ToJSON (Considered p a))          => ToJSON   (Dropdown p a)
 instance (FromJSON a, FromJSON (Selected p a), FromJSON (Considered p a), Ord a) => FromJSON (Dropdown p a)

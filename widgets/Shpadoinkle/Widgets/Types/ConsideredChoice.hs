@@ -1,6 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveFoldable        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -42,6 +43,7 @@ deriving instance (Show (Selected p a), Show (Considered p a), Show a)        =>
 deriving instance (Read (Selected p a), Read (Considered p a), Read a, Ord a) => Read (ConsideredChoice p a)
 deriving instance (Eq   (Selected p a), Eq   (Considered p a), Eq a)          => Eq   (ConsideredChoice p a)
 deriving instance (Ord  (Selected p a), Ord  (Considered p a), Ord a)         => Ord  (ConsideredChoice p a)
+deriving instance (Foldable (Choice p), Foldable (Considered p))             => Foldable (ConsideredChoice p)
 deriving instance Generic (ConsideredChoice p a)
 instance (FromJSON a, FromJSON (Considered p a), FromJSON (Selected p a), Ord a) => FromJSON (ConsideredChoice p a)
 instance (ToJSON a,   ToJSON (Considered p a),   ToJSON (Selected p a))          => ToJSON   (ConsideredChoice p a)
