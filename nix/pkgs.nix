@@ -1,7 +1,7 @@
 { compiler ? ""
 , isJS ? false
 , system ? "x86_64-linux"
-, chan
+, chan ? (import ./chan.nix)
 }:
 import ./base-pkgs.nix { inherit chan; } {
   inherit system;

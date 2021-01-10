@@ -10,6 +10,13 @@ synopsis:     Chrome extension to aide in development
 description:  A chrome extension to make developing Shpadoinkle applications easier
 
 
+flags:
+  development:
+    description: Add instrumentation for development purposes.
+    default:     False
+    manual:      True
+
+
 ghc-options:
     - -Wall
     - -Wcompat
@@ -18,18 +25,6 @@ ghc-options:
     - -fwarn-tabs
     - -fwarn-incomplete-record-updates
     - -fwarn-identities
-
-
-ghcjs-options:
-    - -Wall
-    - -Wcompat
-    - -fno-warn-missing-home-modules
-    - -fwarn-redundant-constraints
-    - -fwarn-incomplete-uni-patterns
-    - -fwarn-tabs
-    - -fwarn-incomplete-record-updates
-    - -fwarn-identities
-    - -dedupe
 
 
 extra-source-files:
@@ -45,15 +40,39 @@ dependencies:
     - stm
     - text
     - time
+    - pretty-show
 
     - Shpadoinkle
     - Shpadoinkle-html
     - Shpadoinkle-backend-pardiff
 
 
+library:
+  source-dirs: .
+  exposed-modules:
+    - Shpadoinkle.DeveloperTools
+  when:
+    - condition: flag(development)
+      then:
+        cpp-options: -DDEVELOPMENT
+      else:
+        cpp-options: []
+
+
 executables:
 
   devtools:
+    ghcjs-options:
+        - -Wall
+        - -Wcompat
+        - -fno-warn-missing-home-modules
+        - -fwarn-redundant-constraints
+        - -fwarn-incomplete-uni-patterns
+        - -fwarn-tabs
+        - -fwarn-incomplete-record-updates
+        - -fwarn-identities
+        - -dedupe
+        - -O2
     main: Main.hs
     other-modules:
       - Shpadoinkle.DeveloperTools

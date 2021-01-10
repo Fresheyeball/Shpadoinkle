@@ -51,3 +51,5 @@ sortTup (x,y) = if x < y then (x,y) else (y,x)
 
 email :: Text -> Validated Text Text
 email i = if isValid (encodeUtf8 i) then pure i else throwError "Not a valid email"
+
+

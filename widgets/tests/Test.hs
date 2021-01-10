@@ -1,208 +1,197 @@
-{-# LANGUAGE AllowAmbiguousTypes  #-}
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE DeriveGeneric        #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE KindSignatures       #-}
-{-# LANGUAGE RankNTypes           #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeApplications     #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module Main where
 
 
-import           Data.Kind
+import           Control.Applicative               (Alternative)
+import           Data.Monoid                       (Sum)
 import           Data.Set                          as Set
-import           GHC.Generics
 
 import           Test.Hspec
-import           Test.QuickCheck
-
+import           Test.QuickCheck.Classes.Hspec
 
 import           Shpadoinkle.Widgets.Form.Dropdown
 import           Shpadoinkle.Widgets.Types
 
 
-data Foo = Bar | Baz | Qux | Nerp
-  deriving (Eq, Ord, Show, Enum, Bounded, Generic)
-
-
-instance Semigroup Foo where (<>) = min
-instance Monoid Foo where mempty = maxBound
-
-
-instance Arbitrary Foo where
-  arbitrary = arbitraryBoundedEnum
-
-instance (Ord a, Arbitrary a, Arbitrary (Selected p a)) => Arbitrary (Choice p a) where
-  arbitrary = Choice <$> arbitrary <*> arbitrary
-
-instance (Ord a, Arbitrary a, Arbitrary (Selected p a), Arbitrary (Considered p a)) => Arbitrary (ConsideredChoice p a) where
-  arbitrary = ConsideredChoice <$> arbitrary <*> arbitrary
-
-instance (Ord a, Arbitrary a, Arbitrary (ConsideredChoice p a)) => Arbitrary (Dropdown p a) where
-  arbitrary = Dropdown <$> arbitrary <*> arbitrary
-
-instance Arbitrary Toggle where
-  arbitrary = arbitraryBoundedEnum
-
-
-type TestConstrant f p =
-  ( Arbitrary (f p Foo)
-  , Selection f p
-  , Show (f p Foo)
-  , Eq (f p Foo)
-  )
-
-
-type TestConstrants f =
-  ( TestConstrant f 'One
-  , TestConstrant f 'AtleastOne
-  , TestConstrant f 'Many
-  )
-
-
-selectionProps :: forall (f :: Pick -> Type -> Type). TestConstrants f => Spec
-selectionProps = do
-
-  describe "selected is an option" $ do
-
-    it "One"        . property $ \(c :: f 'One Foo) ->
-      toSet (selected c) `isSubsetOf` toSet c
-    it "AtleastOne" . property $ \(c :: f 'AtleastOne Foo) ->
-      Set.singleton (selected c) `isSubsetOf` toSet c
-    it "Many"       . property $ \(c :: f 'Many Foo) ->
-      toSet (selected c) `isSubsetOf` toSet c
-
-
-  describe "if we select something it's an option" $ do
-
-    it "One'"        . property $ \(c :: f 'One Foo) x ->
-      x `member` toSet (select' c x)
-    it "AtleastOne'" . property $ \(c :: f 'AtleastOne Foo) x ->
-      x `member` toSet (select' c x)
-    it "Many'"       . property $ \(c :: f 'Many Foo) x ->
-      x `member` toSet (select' c x)
-
-
-  describe "selected and unselected are exclusive" $ do
-
-    it "One"        . property $ \(c :: f 'One Foo) ->
-      toSet (selected c) `disjoint` unselected c
-    it "AtleastOne" . property $ \(c :: f 'AtleastOne Foo) ->
-      Set.singleton (selected c) `disjoint` unselected c
-    it "Many"       . property $ \(c :: f 'Many Foo) ->
-      toSet (selected c) `disjoint` unselected c
-
-
-  describe "idempotence select" $ do
-
-    it "One"        . property $ \(c :: f 'One Foo) x ->
-      select' (select' c x) x == select' c x
-    it "AtleastOne" . property $ \(c :: f 'AtleastOne Foo) x ->
-      select' (select' c x) x == select' c x
-    it "Many"       . property $ \(c :: f 'Many Foo) x ->
-      select' (select' c x) x == select' c x
-
-
-  describe "select selected identity" $ do
-
-    it "One"        . property $ \x ->
-      selected (x `withOptions` Set.empty :: f 'One Foo) == x
-    it "AtleastOne" . property $ \x ->
-      selected (x `withOptions` Set.empty :: f 'AtleastOne Foo) == x
-    it "Many"       . property $ \x ->
-      selected (x `withOptions` Set.empty :: f 'Many Foo) == x
-
-
-  describe "unselected withOptions identity" $ do
-
-    it "One"        . property $ \x ->
-      unselected (x `withOptions` Set.empty :: f 'One Foo) == mempty
-    it "AtleastOne" . property $ \x ->
-      unselected (x `withOptions` Set.empty :: f 'AtleastOne Foo) == mempty
-    it "Many"       . property $ \x ->
-      unselected (x `withOptions` Set.empty :: f 'Many Foo) == mempty
-
-
-  describe "selected is not unselected" $ do
-
-    it "One" . property $ \(c :: f 'One Foo) x ->
-      not $ x `member` unselected (select' c x)
-    it "AtleastOne" . property $ \(c :: f 'AtleastOne Foo) x ->
-      not $ x `member` unselected (select' c x)
-    it "Many" . property $ \(c :: f 'Many Foo) x ->
-      not $ x `member` unselected (select' c x)
-
-
-deselectionPropsOne :: forall (f :: Pick -> Type -> Type). TestConstrants f => Deselection f 'One => Spec
-deselectionPropsOne = describe "One" $ do
-
-    it "idempotence deselect" . property $ \(c :: f 'One Foo) ->
-        deselect (deselect c) == deselect c
-
-    it "deselect select selected identity" . property $ \(c :: f 'One Foo) x ->
-        selected (select (deselect c) x) == x
-
-    it "selected deselect annihliation" . property $ \(c :: f 'One Foo) ->
-        selected (deselect c) == mempty
-
-    it "deselect keeps" . property $ \(c :: f 'One Foo) x ->
-        toSet x `isSubsetOf` toSet (deselect (select c x))
-
-    it "unselected passes through deselect keeps" . property $ \(c :: f 'One Foo) x ->
-        toSet x `isSubsetOf` unselected (deselect (select c x))
-
-    it "deselect unselected is full set" . property $ \(c :: f 'One Foo) ->
-        unselected (deselect c) == toSet c
-
-
-deselectionPropsMany :: forall (f :: Pick -> Type -> Type). TestConstrants f => Deselection f 'Many => Spec
-deselectionPropsMany = describe "Many" $ do
-
-    it "idempotence deselect" . property $ \(c :: f 'Many Foo) ->
-        deselect (deselect c) == deselect c
-
-    it "deselect select selected identity" . property $ \(c :: f 'Many Foo) x ->
-        selected (select (deselect c) x) == x
-
-    it "selected deselect annihliation" . property $ \(c :: f 'Many Foo) ->
-        selected (deselect c) == mempty
-
-    it "deselect keeps" . property $ \(c :: f 'Many Foo) x ->
-        toSet x `isSubsetOf` toSet (deselect (select c x))
-
-    it "unselected passes through deselect keeps" . property $ \(c :: f 'Many Foo) x ->
-        toSet x `isSubsetOf` unselected (deselect (select c x))
-
-    it "deselect unselected is full set" . property $ \(c :: f 'Many Foo) ->
-        unselected (deselect c) == toSet c
+instance Show (a -> b) where
+  show _ = "(a -> b)"
 
 
 main :: IO ()
 main = hspec $ do
-  it "foooid" . property $ \(x :: Foo) y z ->
-    x <> mempty == x && x == mempty <> x && (x <> y) <> z == x <> (y <> z)
+
+  describe "Set" $ legal @SetLike @Set
+
+
+  describe "Toggle"  $ do
+    legal @Eq        @Toggle
+    legal @Ord       @Toggle
+    legal @Show      @Toggle
+    legal @Semigroup @Toggle
+    legal @Monoid    @Toggle
+
+
+  describe "Hover"   $ do
+    legal @Eq        @Hover
+    legal @Ord       @Hover
+    legal @Show      @Hover
+    legal @Semigroup @Hover
+    legal @Monoid    @Hover
+
+
+  describe "Hygiene" $ do
+    legal @Eq        @Hygiene
+    legal @Ord       @Hygiene
+    legal @Show      @Hygiene
+    legal @Semigroup @Hygiene
+    legal @Monoid    @Hygiene
+
+
+  describe "Remote"  $ do
+    legal @Eq          @(Remote Int Int)
+    legal @Ord         @(Remote Int Int)
+    legal @Show        @(Remote Int Int)
+    legal @Monoid      @(Remote Int (Sum Int))
+    legal @Functor     @(Remote Int)
+    legal @Applicative @(Remote Int)
+    legal @Monad       @(Remote Int)
+    legal @Alternative @(Remote Int)
+    legal @Foldable    @(Remote Int)
+
+
+  describe "Input" $ do
+    legal @Eq          @(Input (Sum Int))
+    legal @Ord         @(Input (Sum Int))
+    legal @Show        @(Input (Sum Int))
+    legal @Monoid      @(Input (Sum Int))
+    legal @Functor     @Input
+    legal @Applicative @Input
+    legal @Monad       @Input
+    legal @Foldable    @Input
+
+
+  describe "Validated" $ do
+    legal @Eq          @(Validated Int Int)
+    legal @Ord         @(Validated Int Int)
+    legal @Show        @(Validated Int Int)
+    legal @Semigroup   @(Validated Int Int)
+    legal @Functor     @(Validated Int)
+    legal @Applicative @(Validated Int)
+    legal @Monad       @(Validated Int)
+    legal @Foldable    @(Validated Int)
+
 
   describe "Choice" $ do
-    selectionProps       @Choice
-    deselectionPropsOne  @Choice
-    deselectionPropsMany @Choice
+
+    describe "'One" $ do
+      legal @Eq         @(Choice   'One Int)
+      legal @Ord        @(Choice   'One Int)
+      legal @Show       @(Choice   'One Int)
+      legal @Semigroup  @(Choice   'One (Sum Int))
+      legal @Monoid     @(Choice   'One (Sum Int))
+      legal @SetLike    @(Choice   'One)
+      legal @Foldable   @(Choice   'One)
+      legal @(Selection   Choice) @'One
+      legal @(Deselection Choice) @'One
+
+    describe "'AtleastOne" $ do
+      legal @Eq         @(Choice   'AtleastOne Int)
+      legal @Ord        @(Choice   'AtleastOne Int)
+      legal @Show       @(Choice   'AtleastOne Int)
+      legal @Semigroup  @(Choice   'AtleastOne (Sum Int))
+      legal @SetLike    @(Choice   'AtleastOne)
+      legal @Foldable   @(Choice   'AtleastOne)
+      legal @(Selection   Choice) @'AtleastOne
+
+    describe "'Many" $ do
+      legal @Eq         @(Choice   'Many Int)
+      legal @Ord        @(Choice   'Many Int)
+      legal @Show       @(Choice   'Many Int)
+      legal @Semigroup  @(Choice   'Many (Sum Int))
+      legal @Monoid     @(Choice   'Many (Sum Int))
+      legal @SetLike    @(Choice   'Many)
+      legal @Foldable   @(Choice   'Many)
+      legal @(Selection   Choice) @'Many
+      legal @(Deselection Choice) @'Many
 
 
   describe "ConsideredChoice" $ do
-    selectionProps       @ConsideredChoice
-    deselectionPropsOne  @ConsideredChoice
-    deselectionPropsMany @ConsideredChoice
+
+    describe "'One" $ do
+      legal @Eq         @(ConsideredChoice   'One Int)
+      legal @Ord        @(ConsideredChoice   'One Int)
+      legal @Show       @(ConsideredChoice   'One Int)
+      legal @Semigroup  @(ConsideredChoice   'One (Sum Int))
+      legal @Monoid     @(ConsideredChoice   'One (Sum Int))
+      legal @SetLike    @(ConsideredChoice   'One)
+      legal @Foldable   @(ConsideredChoice   'One)
+      legal @(Selection   ConsideredChoice) @'One
+      legal @(Deselection ConsideredChoice) @'One
+
+    describe "'AtleastOne" $ do
+      legal @Eq        @(ConsideredChoice   'AtleastOne Int)
+      legal @Ord       @(ConsideredChoice   'AtleastOne Int)
+      legal @Show      @(ConsideredChoice   'AtleastOne Int)
+      legal @Semigroup @(ConsideredChoice   'AtleastOne (Sum Int))
+      legal @SetLike   @(ConsideredChoice   'AtleastOne)
+      legal @Foldable  @(ConsideredChoice   'AtleastOne)
+      legal @(Selection  ConsideredChoice) @'AtleastOne
+
+    describe "'Many" $ do
+      legal @Eq         @(ConsideredChoice   'Many Int)
+      legal @Ord        @(ConsideredChoice   'Many Int)
+      legal @Show       @(ConsideredChoice   'Many Int)
+      legal @Semigroup  @(ConsideredChoice   'Many (Sum Int))
+      legal @Monoid     @(ConsideredChoice   'Many (Sum Int))
+      legal @SetLike    @(ConsideredChoice   'Many)
+      legal @Foldable   @(ConsideredChoice   'Many)
+      legal @(Selection   ConsideredChoice) @'Many
+      legal @(Deselection ConsideredChoice) @'Many
 
 
   describe "Dropdown" $ do
-    selectionProps      @Dropdown
-    deselectionPropsOne @Dropdown
 
-{-# ANN module "HLint: ignore Monoid law, right identity" #-}
-{-# ANN module "HLint: ignore Monoid law, left identity"  #-}
+    describe "'One" $ do
+      legal @Eq         @(Dropdown   'One Int)
+      legal @Ord        @(Dropdown   'One Int)
+      legal @Show       @(Dropdown   'One Int)
+      legal @Semigroup  @(Dropdown   'One (Sum Int))
+      legal @Monoid     @(Dropdown   'One (Sum Int))
+      legal @SetLike    @(Dropdown   'One)
+      legal @Foldable   @(Dropdown   'One)
+      legal @(Selection   Dropdown) @'One
+      legal @(Deselection Dropdown) @'One
+
+    describe "'AtleastOne" $ do
+      legal @Eq        @(Dropdown   'AtleastOne Int)
+      legal @Ord       @(Dropdown   'AtleastOne Int)
+      legal @Show      @(Dropdown   'AtleastOne Int)
+      legal @Semigroup @(Dropdown   'AtleastOne (Sum Int))
+      legal @SetLike   @(Dropdown   'AtleastOne)
+      legal @Foldable  @(Dropdown   'AtleastOne)
+      legal @(Selection  Dropdown) @'AtleastOne
+
+    describe "'Many" $ do
+      legal @Eq         @(Dropdown   'Many Int)
+      legal @Ord        @(Dropdown   'Many Int)
+      legal @Show       @(Dropdown   'Many Int)
+      legal @Semigroup  @(Dropdown   'Many (Sum Int))
+      legal @Monoid     @(Dropdown   'Many (Sum Int))
+      legal @SetLike    @(Dropdown   'Many)
+      legal @Foldable   @(Dropdown   'Many)
+      legal @(Selection   Dropdown) @'Many
+      legal @(Deselection Dropdown) @'Many

@@ -97,6 +97,20 @@ Deps]]
 |https://matrix.hackage.haskell.org/#/package/Shpadoinkle-console[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-console/badge[Hackage
 CI]]
 
+|Developer Tools
+|https://hackage.haskell.org/package/Shpadoinkle-developer-tools[image:https://img.shields.io/hackage/v/Shpadoinkle-developer-tools.svg[Hackage]]
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-developer-tools[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-developer-tools.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-developer-tools[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-developer-tools/badge[Hackage
+CI]]
+
+|Disembodied
+|https://hackage.haskell.org/package/Shpadoinkle-disembodied[image:https://img.shields.io/hackage/v/Shpadoinkle-disembodied.svg[Hackage]]
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-disembodied[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-disembodied.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-Shpadoinkle-disembodied[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-disembodied/badge[Hackage
+CI]]
+
 |Lens
 |https://hackage.haskell.org/package/Shpadoinkle-lens[image:https://img.shields.io/hackage/v/Shpadoinkle-lens.svg[Hackage]]
 |http://packdeps.haskellers.com/feed?needle=Shpadoinkle-lens[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-lens.svg[Hackage

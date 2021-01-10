@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP            #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE LambdaCase     #-}
@@ -10,6 +11,10 @@ module Shpadoinkle.Widgets.Types.Physical where
 import           Data.Aeson
 import           Data.Functor.Identity
 import           GHC.Generics
+#ifdef TESTING
+import           Test.QuickCheck                (Arbitrary (..),
+                                                 arbitraryBoundedEnum)
+#endif
 
 import           Shpadoinkle.Html               hiding (s)
 import           Shpadoinkle.Widgets.Types.Core
@@ -21,6 +26,16 @@ data Toggle = Closed Hygiene | Open
 
 data Hover = MouseOver | MouseOut
   deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, ToJSON, FromJSON)
+
+
+instance Semigroup Hover where
+  MouseOver <> _ = MouseOver
+  _ <> MouseOver = MouseOver
+  _ <> _         = MouseOut
+
+
+instance Monoid Hover where
+  mempty = MouseOut
 
 
 withHover
@@ -35,7 +50,7 @@ withHover f = runIdentity . props
 togHygiene :: Toggle -> Hygiene
 togHygiene = \case
   Closed x -> x
-  _        -> Dirty
+  Open     -> Dirty
 
 
 instance Enum Toggle where
@@ -87,3 +102,10 @@ instance IsToggle Toggle where
 
 data Visbility = Visible | Hidden
   deriving (Eq, Ord, Show, Enum, Bounded, Generic)
+
+
+#ifdef TESTING
+instance Arbitrary Toggle    where arbitrary = arbitraryBoundedEnum
+instance Arbitrary Hover     where arbitrary = arbitraryBoundedEnum
+instance Arbitrary Visbility where arbitrary = arbitraryBoundedEnum
+#endif

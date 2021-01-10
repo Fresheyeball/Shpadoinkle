@@ -1,4 +1,6 @@
+{-# LANGUAGE CPP                       #-}
 {-# LANGUAGE DataKinds                 #-}
+{-# LANGUAGE DeriveFoldable            #-}
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ExtendedDefaultRules      #-}
@@ -25,6 +27,9 @@ import           Data.Aeson
 import           Data.Text
 import           GHC.Generics
 import           Prelude                   hiding (div)
+#ifdef TESTING
+import           Test.QuickCheck           (Arbitrary (..))
+#endif
 
 
 import           Shpadoinkle
@@ -47,6 +52,7 @@ deriving instance (Show (Selected p a), Show (Considered p a), Show a)        =>
 deriving instance (Read (Selected p a), Read (Considered p a), Read a, Ord a) => Read (Dropdown p a)
 deriving instance (Eq   (Selected p a), Eq   (Considered p a), Eq a)          => Eq   (Dropdown p a)
 deriving instance (Ord  (Selected p a), Ord  (Considered p a), Ord a)         => Ord  (Dropdown p a)
+deriving instance (Foldable (ConsideredChoice p)) => Foldable (Dropdown p)
 deriving instance Generic (Dropdown p a)
 instance (ToJSON a,   ToJSON (Selected p a),   ToJSON (Considered p a))          => ToJSON   (Dropdown p a)
 instance (FromJSON a, FromJSON (Selected p a), FromJSON (Considered p a), Ord a) => FromJSON (Dropdown p a)
@@ -100,13 +106,12 @@ instance SetLike (ConsideredChoice p) => SetLike (Dropdown p) where
   valid (Dropdown c _) = valid c
 
 
-instance Consideration ConsideredChoice p => Selection Dropdown p where
+instance (Consideration ConsideredChoice p, PickToSelected p) => Selection Dropdown p where
   select  (Dropdown c t) x = close $ Dropdown (select c x) t
-  select' (Dropdown c t) x = close $ Dropdown (select' c x) t
   unselected = unselected . _considered
   selected   = selected . _considered
   withOptions x xs  = Dropdown (x `withOptions` xs) mempty
-  withOptions' x xs = Dropdown (x `withOptions'` xs) mempty
+  retain (Dropdown c t) (Dropdown c' t') = Dropdown (retain c c') (t <> t')
 
 
 instance (Consideration ConsideredChoice p, Deselection ConsideredChoice p)
@@ -115,9 +120,8 @@ instance (Consideration ConsideredChoice p, Deselection ConsideredChoice p)
   deselect (Dropdown c t) = close $ Dropdown (deselect c) t
 
 
-instance Consideration ConsideredChoice p => Consideration Dropdown p where
+instance (Consideration ConsideredChoice p, PickToConsidered p) => Consideration Dropdown p where
   consider  x (Dropdown c t) = Dropdown (consider x c) t
-  consider' x (Dropdown c t) = Dropdown (consider' x c) t
   choose (Dropdown c t) = Dropdown (choose c) t
   choice (Dropdown c _) = choice c
   considered (Dropdown c _) = considered c
@@ -125,10 +129,10 @@ instance Consideration ConsideredChoice p => Consideration Dropdown p where
 
 
 data Theme m p b = Theme
-    { _wrapper :: forall a . [Html m a]  -> Html m a
+    { _wrapper :: forall a . [Html m a]   ->  Html m a
     , _header  :: forall a . Selected p b -> [Html m a]
-    , _list    :: forall a . [Html m a]  -> Html m a
-    , _item    :: forall a . b            -> Html m a
+    , _list    :: forall a . [Html m a]   ->  Html m a
+    , _item    :: forall a . b            ->  Html m a
     }
 
 
@@ -179,15 +183,19 @@ dropdown toTheme Config {..} x =
     UpArrow   -> considerPrev
     DownArrow -> considerNext
     _         -> id
-  , onClick act
   , onClickAway close
+  , onClick act
   , tabbable
   ] ++ _attrs) . _wrapper $
   _header (selected x) ++
   [ _list $ (\y -> injectProps
     [ onMouseover (consider' y)
     , onFocus     (consider' y)
-    , onClick     (`select'` y)
     , tabbable
     ] . _item $ y) <$> toList (unselected x)
   ]
+
+#ifdef TESTING
+instance (Ord a, Arbitrary a, Arbitrary (ConsideredChoice p a)) => Arbitrary (Dropdown p a) where
+  arbitrary = Dropdown <$> arbitrary <*> arbitrary
+#endif

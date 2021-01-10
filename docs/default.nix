@@ -22,6 +22,7 @@ let
     "*dist*"
     "*result*"
     "*.md"
+    "keybase*"
   ] ../.;
 
 in

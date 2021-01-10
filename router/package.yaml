@@ -1,7 +1,7 @@
 name:         Shpadoinkle-router
 license:      BSD3
 license-file: LICENSE
-version:      0.2.0.0
+version:      0.2.0.1
 author:       Isaac Shapira
 maintainer:   fresheyeball@protonmail.com
 category:     Web
@@ -36,7 +36,7 @@ when:
         - servant-client-js >= 0.1 && < 0.2
     else:
       dependencies:
-        - servant-client    >= 0.16.0 && < 0.18
+        - servant-client    >= 0.15.0 && < 0.19
         - servant-client-js >= 0.1 && <0.2
         - servant-server    >= 0.16 && < 0.18
         - wai               >= 3.2.2 && < 3.3

@@ -1,7 +1,7 @@
 name:         Shpadoinkle-widgets
 license:      BSD3
 license-file: LICENSE
-version:      0.1.0.0
+version:      0.2.0.0
 author:       Isaac Shapira
 maintainer:   fresheyeball@protonmail.com
 category:     Web
@@ -12,6 +12,13 @@ description:
   themselves in frameworks and applications. This package provides a useful
   subset of these concepts as types along with implementations consuming
   these types.
+
+
+flags:
+  testing:
+    description: Provide test kit around QuickCheck
+    default:     False
+    manual:      True
 
 
 ghc-options:
@@ -41,6 +48,7 @@ library:
     - Shpadoinkle.Widgets.Table.Lazy
     - Shpadoinkle.Widgets.Types
     - Shpadoinkle.Widgets.Types.Choice
+    - Shpadoinkle.Widgets.Types.ConsideredChoice
     - Shpadoinkle.Widgets.Types.Core
     - Shpadoinkle.Widgets.Types.Form
     - Shpadoinkle.Widgets.Types.Physical
@@ -63,16 +71,34 @@ library:
 
     - Shpadoinkle
     - Shpadoinkle-html
+  when:
+    - condition: flag(testing)
+      then:
+        exposed-modules:
+          - Test.QuickCheck.Classes.Hspec
+          - Test.QuickCheck.Classes.FoldableOrd
+        cpp-options: -DTESTING
+        dependencies:
+          - transformers
+          - QuickCheck
+          - quickcheck-classes
+          - quickcheck-classes-base
+          - hspec
+      else:
+        cpp-options: []
 
 
 tests:
   unit:
+    cpp-options: -DTESTING
     source-dirs: tests
     main: Test.hs
     dependencies:
       - containers
 
       - QuickCheck
+      - quickcheck-classes
+      - quickcheck-classes-base
       - hspec
 
       - Shpadoinkle-widgets

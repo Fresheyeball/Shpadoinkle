@@ -19,6 +19,9 @@ echo "Building Haddocks and copying in"
 ./nix/fish.sh
 rm result*
 
+echo "Proving to Keybase"
+cp docs/keybase.txt public/keybase.txt
+
 # echo "Building Marketing"
 # nix-build marketing --fallback
 

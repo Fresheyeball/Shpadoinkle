@@ -1,29 +1,37 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
-{-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RankNTypes           #-}
+#ifdef DEVELOPMENT
+{-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+#endif
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 
 module Shpadoinkle.DeveloperTools (withDeveloperTools) where
 
 
+import           Language.Javascript.JSaddle
+import           UnliftIO
+#ifdef DEVELOPMENT
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.STM           (retry)
-import           Language.Javascript.JSaddle
-import           UnliftIO
 import           UnliftIO.Concurrent
+#endif
 
 
 default (JSString)
 
 
+#ifdef DEVELOPMENT
 withDeveloperTools :: forall a. Eq a => Read a => Show a => TVar a -> JSM ()
 withDeveloperTools x = do
   i' <- readTVarIO x
   y  <- newTVarIO i'
   outputState i'
+  syncPoint
   listenForSetState x
   () <$ forkIO (f y)
   where
@@ -55,3 +63,8 @@ listenForSetState model = void $ jsg "window" ^. js2 "addEventListener" "message
       Just msg' | isWindow && isRightType ->
         atomically . writeTVar model $ read msg'
       _ -> return ())
+
+#else
+withDeveloperTools :: forall a. Eq a => Read a => Show a => TVar a -> JSM ()
+withDeveloperTools = const $ pure ()
+#endif

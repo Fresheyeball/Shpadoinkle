@@ -7,6 +7,7 @@ packages: core
         , developer-tools
         , disembodied
         , lens
+        , marketing
         , html
         , router
         , widgets
@@ -14,3 +15,5 @@ packages: core
         , examples
 
         , isreal
+
+tests: true
