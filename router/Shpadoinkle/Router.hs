@@ -40,7 +40,7 @@ module Shpadoinkle.Router (
     -- * Rehydration
     , withHydration, toHydration
     -- * Re-Exports
-    , Raw, MonadJSM, HasLink(..)
+    , Raw, S.RawM', S.RawM, MonadJSM, HasLink(..)
     ) where
 
 
@@ -74,24 +74,25 @@ import           Servant.API                   (Accept (contentTypes), Capture,
                                                 IsElem, MimeRender (..),
                                                 QueryFlag, QueryParam,
                                                 QueryParam', QueryParams, Raw,
-                                                Required, type (:<|>) (..),
-                                                type (:>))
+                                                Required, parseQueryParam,
+                                                type (:<|>) (..), type (:>))
 #else
 import           Servant.API                   (Capture, FromHttpApiData,
                                                 HasLink (..), IsElem, QueryFlag,
                                                 QueryParam, QueryParam',
                                                 QueryParams, Raw, Required,
+                                                parseQueryParam,
                                                 type (:<|>) (..), type (:>))
 #endif
 import           Servant.Links                 (Link, URI (..), linkURI,
                                                 safeLink)
+import qualified Servant.RawM                  as S
 import           System.IO.Unsafe              (unsafePerformIO)
 import           UnliftIO.Concurrent           (MVar, forkIO, newEmptyMVar,
                                                 putMVar, takeMVar)
 import           UnliftIO.STM                  (TVar, atomically, newTVarIO,
                                                 writeTVar)
-import           Web.HttpApiData               (parseQueryParamMaybe,
-                                                parseUrlPieceMaybe)
+import           Web.HttpApiData               (parseUrlPiece)
 
 import           Shpadoinkle                   (Backend, Continuation, Html,
                                                 RawNode, h, hoist, kleisli, pur,
@@ -104,8 +105,8 @@ import           Shpadoinkle                   (Backend, Continuation, Html,
 import qualified Data.ByteString.Lazy          as BSL
 import qualified Data.List.NonEmpty            as NE
 import qualified Network.HTTP.Media            as M
-import           Servant                       (Application, HasServer, Tagged)
 import qualified Servant                       as S
+import           Servant.RawM.Server           ()
 
 import           Shpadoinkle.Backend.Static    (renderStatic)
 
@@ -119,10 +120,10 @@ default (Text)
 -- | Term level API representation
 data Router a where
   RChoice      :: Router a -> Router a -> Router a
-  RCapture     :: FromHttpApiData x => (x -> Router a) -> Router a
-  RQueryParam  :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> (Maybe x -> Router a) -> Router a
-  RQueryParamR :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> (x -> Router a) -> Router a
-  RQueryParams :: (FromHttpApiData x, KnownSymbol sym) => Proxy sym -> ([x] -> Router a) -> Router a
+  RCapture     :: (Text -> Either Text x) -> (x -> Router a) -> Router a
+  RQueryParam  :: KnownSymbol sym => (Text -> Either Text x) -> Proxy sym -> (Maybe x -> Router a) -> Router a
+  RQueryParamR :: KnownSymbol sym => (Text -> Either Text x) -> Proxy sym -> (x -> Router a) -> Router a
+  RQueryParams :: KnownSymbol sym => (Text -> Either Text x) -> Proxy sym -> ([x] -> Router a) -> Router a
   RQueryFlag   :: KnownSymbol sym => Proxy sym -> (Bool -> Router a) -> Router a
   RPath        :: KnownSymbol sym => Proxy sym -> Router a -> Router a
   RView        :: a -> Router a
@@ -330,23 +331,23 @@ listenStateChange router handle = do
   return ()
 
 
--- | Get an @r@ from a route and URL context
+-- | Get an @r@ from a route and url context
 fromRouter :: [(Text,Text)] -> [Text] -> Router r -> Maybe r
 fromRouter queries segs = \case
-    RChoice x y        -> fromRouter queries segs x <|> fromRouter queries segs y
-    RCapture f         -> case segs of
-        []                 -> Nothing
-        capture:paths      -> fromRouter queries paths . f =<< parseUrlPieceMaybe capture
-    RQueryParam sym f  ->
+    RChoice x y                -> fromRouter queries segs x <|> fromRouter queries segs y
+    RCapture decoder f         -> case segs of
+        []            -> Nothing
+        capture:paths -> fromRouter queries paths . f =<< mabify decoder capture
+    RQueryParam decoder sym f  ->
         case lookup (T.pack $ symbolVal sym) queries of
             Nothing -> fromRouter queries segs $ f Nothing
-            Just t  -> fromRouter queries segs $ f (parseQueryParamMaybe t)
-    RQueryParamR sym f ->
+            Just t  -> fromRouter queries segs $ f (mabify decoder t)
+    RQueryParamR decoder sym f ->
        case lookup (T.pack $ symbolVal sym) queries of
             Nothing -> Nothing
-            Just t  -> fromRouter queries segs . f =<< parseQueryParamMaybe t
-    RQueryParams sym f ->
-        fromRouter queries segs . f . compact $ parseQueryParamMaybe . snd <$> C.filter
+            Just t  -> fromRouter queries segs . f =<< mabify decoder t
+    RQueryParams decoder sym f ->
+        fromRouter queries segs . f . compact $ mabify decoder . snd <$> C.filter
             (\(k, _) -> k == T.pack (symbolVal sym))
             queries
     RQueryFlag sym f ->
@@ -356,6 +357,11 @@ fromRouter queries segs = \case
         p:paths            -> if p == T.pack (symbolVal sym) then
             fromRouter queries paths a else Nothing
     RView a            -> if null segs then Just a else Nothing
+  where
+    mabify :: (x -> Either e a) -> (x -> Maybe a)
+    mabify f input = case f input of
+                      (Left _)  -> Nothing
+                      (Right x) -> Just x
 
 
 -- | This type class traverses the Servant API and sets up a function to
@@ -384,7 +390,7 @@ instance (HasRouter sub, FromHttpApiData x)
     type (Capture sym x :> sub) :>> a = x -> sub :>> a
 
     route :: (x -> sub :>> r) -> Router r
-    route = RCapture . (route @sub .)
+    route = RCapture parseUrlPiece . (route @sub .)
     {-# INLINABLE route #-}
 
 instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
@@ -393,7 +399,7 @@ instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
     type (QueryParam sym x :> sub) :>> a = Maybe x -> sub :>> a
 
     route :: (Maybe x -> sub :>> r) -> Router r
-    route = RQueryParam (Proxy @sym) . (route @sub .)
+    route = RQueryParam parseQueryParam (Proxy @sym) . (route @sub .)
     {-# INLINABLE route #-}
 
 instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
@@ -402,7 +408,7 @@ instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
   type (QueryParam' '[Required] sym x :> sub) :>> a = x -> sub :>> a
 
   route :: (x -> sub :>> r) -> Router r
-  route = RQueryParamR (Proxy @sym) . (route @sub .)
+  route = RQueryParamR parseQueryParam (Proxy @sym) . (route @sub .)
 
 instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
     => HasRouter (QueryParams sym x :> sub) where
@@ -410,7 +416,7 @@ instance (HasRouter sub, FromHttpApiData x, KnownSymbol sym)
     type (QueryParams sym x :> sub) :>> a = [x] -> sub :>> a
 
     route :: ([x] -> sub :>> r) -> Router r
-    route = RQueryParams (Proxy @sym) . (route @sub .)
+    route = RQueryParams parseQueryParam (Proxy @sym) . (route @sub .)
     {-# INLINABLE route #-}
 
 instance (HasRouter sub, KnownSymbol sym)
@@ -433,6 +439,13 @@ instance (HasRouter sub, KnownSymbol path)
 
 instance HasRouter Raw where
     type Raw :>> a = a
+
+    route :: r -> Router r
+    route = RView
+    {-# INLINABLE route #-}
+
+instance HasRouter (S.RawM' serverType) where
+    type S.RawM' serverType :>> a = a
 
     route :: r -> Router r
     route = RView
@@ -466,10 +479,10 @@ instance MimeRender HTML (Html m a) where
   mimeRender _ =  BSL.fromStrict . encodeUtf8 . renderStatic
 
 
-instance HasServer (View m a) context where
-  type ServerT (View m a) m' = Tagged m' Application
-  route _                   = S.route          (Proxy @Raw)
-  hoistServerWithContext _  = S.hoistServerWithContext (Proxy @Raw)
+instance S.HasServer (View m a) context where
+  type ServerT (View m a) n = S.ServerT S.RawM n
+  route _                    = S.route                  (Proxy @S.RawM)
+  hoistServerWithContext _   = S.hoistServerWithContext (Proxy @S.RawM)
 
 
 #endif
