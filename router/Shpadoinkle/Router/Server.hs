@@ -27,15 +27,16 @@ module Shpadoinkle.Router.Server where
 
 import           Data.ByteString.Lazy           as BS (ByteString, fromStrict,
                                                        length)
+import qualified Data.ByteString.Lazy           as BSL
 import           Data.Text.Encoding             (encodeUtf8)
 import           GHC.TypeLits                   (Symbol)
-import           Network.Wai                    (responseLBS)
+import           Network.HTTP.Types
+import           Network.Wai                    (Application, responseLBS)
 import           Network.Wai.Application.Static (StaticSettings (ssLookupFile, ssMaxAge),
                                                  defaultWebAppSettings,
                                                  staticApp)
 import           Servant.API
-import           Servant.Server                 (HasServer (ServerT), Server,
-                                                 Tagged (Tagged))
+import           Servant.Server                 (HasServer (ServerT), Server)
 import           Servant.Server.StaticFiles     (serveDirectoryWith)
 import           WaiAppStatic.Types             (File (..),
                                                  LookupResult (LRFile, LRNotFound),
@@ -145,6 +146,12 @@ instance ServeRouter (View n b) r m a where
   {-# INLINABLE serveUI #-}
 
 
-serveDirectoryWithSpa :: StaticSettings -> ServerT (View m a) n
-serveDirectoryWithSpa = Tagged . staticApp
+serveDirectoryWithSpa :: Applicative n => StaticSettings -> ServerT (View m a) n
+serveDirectoryWithSpa = pure . staticApp
+
+
+serveHtml :: Html m a -> Application
+serveHtml html _ respond
+  = respond . responseLBS status200 [(hContentType, "text/html")]
+  . BSL.fromStrict . encodeUtf8 $ renderStatic html
 #endif
