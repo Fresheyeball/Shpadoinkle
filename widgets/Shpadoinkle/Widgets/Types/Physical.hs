@@ -101,7 +101,7 @@ instance IsToggle Toggle where
 
 
 data Visbility = Visible | Hidden
-  deriving (Eq, Ord, Show, Enum, Bounded, Generic)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic)
 
 
 #ifdef TESTING

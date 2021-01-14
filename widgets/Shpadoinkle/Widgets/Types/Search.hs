@@ -29,7 +29,7 @@ newtype EditDistance = EditDistance { unEditDistance :: Int }
   deriving stock Generic
 
 
-data Levenshtiened a = Levenshtiened { _distance :: !EditDistance, _unLevenshtiened :: a } deriving Eq
+data Levenshtiened a = Levenshtiened { _distance :: !EditDistance, _unLevenshtiened :: a } deriving (Eq, Show, Read, Generic)
 instance Eq       a => Ord    (Levenshtiened a) where
   compare (Levenshtiened x _) (Levenshtiened y _) = unEditDistance x `compare` unEditDistance y
 

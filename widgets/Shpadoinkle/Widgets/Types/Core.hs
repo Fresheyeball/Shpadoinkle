@@ -40,7 +40,7 @@ instance Monoid Hygiene where
 
 
 data Ability = Enabled | Disabled
-  deriving (Eq, Ord, Show, Enum, Bounded)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded)
 
 
 toBool :: Ability -> Bool
