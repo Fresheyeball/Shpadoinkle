@@ -107,10 +107,10 @@
 
   addDev  = x: super.haskell.lib.appendConfigureFlags x [ "-f" "development" ];
 
-  addTest = x: hpkgs: if isJS then super.haskell.lib.dontCheck x else
-    (super.haskell.lib.appendConfigureFlags (super.haskell.lib.addBuildDepends x
+  addTest = x: hpkgs: (if isJS then super.haskell.lib.dontCheck else id)
+    ((super.haskell.lib.appendConfigureFlags (super.haskell.lib.addBuildDepends x
       (with hpkgs; [hspec QuickCheck quickcheck-classes quickcheck-classes-base ])
-    ) [ "-f" "testing" ]);
+    ) [ "-f" "testing" ]));
 
 
 in {
@@ -181,8 +181,9 @@ in {
           snabbdom                = hself.callCabal2nix "snabbdom" snabbdom-src {};
           jsaddle-warp            = dontCheck (hself.callCabal2nix "jsaddle-warp"    "${jsaddle-src}/jsaddle-warp"   {});
           jsaddle                 = dontCheck (hself.callCabal2nix "jsaddle"         "${jsaddle-src}/jsaddle"        {});
-          quickcheck-classes      = doJailbreak (hself.callCabal2nix "quickcheck-classes"      "${quickcheck-classes-src}/quickcheck-classes"      {});
+          quickcheck-classes      = dontJS (doJailbreak (hself.callCabal2nix "quickcheck-classes"      "${quickcheck-classes-src}/quickcheck-classes"      {}));
           quickcheck-classes-base = doJailbreak (hself.callCabal2nix "quickcheck-classes-base" "${quickcheck-classes-src}/quickcheck-classes-base" {});
+          primitive-addr          = doJailbreak hsuper.primitive-addr;
 
           # Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
         } // forThese dontJS [
