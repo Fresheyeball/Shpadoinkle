@@ -69,7 +69,7 @@ emptyModel = Model [] Nothing All (Description "")
 
 appendItem :: Model -> Model
 appendItem m = if current m /= "" then m
-  & #tasks   %~ (Task (current m) Incomplete newId :)
+  & #tasks   %~ (<> [Task (current m) Incomplete newId])
   & #current .~ "" else m
   where newId = Prelude.maximum (0 : (taskId <$> tasks m)) + 1
 
