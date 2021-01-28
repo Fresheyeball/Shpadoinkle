@@ -30,6 +30,10 @@ data Hygiene = Clean | Dirty
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON)
 
 
+data ClickAway = ClosesOnClickAway | StaysOpenOnClickAway
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON)
+
+
 instance Semigroup Hygiene where
   Clean <> Clean = Clean
   _ <> _         = Dirty
