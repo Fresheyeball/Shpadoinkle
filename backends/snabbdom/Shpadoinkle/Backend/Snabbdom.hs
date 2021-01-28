@@ -29,17 +29,23 @@ module Shpadoinkle.Backend.Snabbdom
   ) where
 
 
-import           Control.Category
+import           Control.Category            ((.))
 import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
 import           Control.Monad.Catch         (MonadCatch, MonadThrow)
-import           Control.Monad.Reader
+import           Control.Monad.Reader        (MonadIO, MonadReader (..),
+                                              MonadTrans, ReaderT (..), forM_,
+                                              void, (>=>))
 import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
                                               MonadTransControl,
                                               defaultLiftBaseWith,
                                               defaultRestoreM)
-import           Data.FileEmbed
-import           Data.Text
-import           Data.Traversable
+import           Data.FileEmbed              (embedStringFile)
+import           Data.Text                   (Text, split)
+import           Data.Traversable            (for)
+import           GHCJS.DOM                   (currentDocumentUnchecked)
+import           GHCJS.DOM.Document          (createElement, getBodyUnsafe)
+import           GHCJS.DOM.Element           (setAttribute)
+import           GHCJS.DOM.Node              (appendChild)
 import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, liftJSM,
                                               (#))
 import           Prelude                     hiding (id, (.))
@@ -134,7 +140,8 @@ props toJSM i xs = do
       t' <- toJSVal t
       true <- toJSVal True
       case k of
-        "className" | t /= "" -> forM_ (split (== ' ') t) $ \u -> unsafeSetProp (toJSString u) true classesObj
+        "className" | t /= "" -> forM_ (split (== ' ') t) $ \u ->
+          if u == mempty then pure () else unsafeSetProp (toJSString u) true classesObj
         "style"     | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
         "type"      | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
         "autofocus" | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
@@ -211,5 +218,11 @@ instance (MonadJSM m, Eq a) => Backend (SnabbdomT a) m a where
 
 -- | Get the @window.container@ DOM node produced by 'setup' (@Setup.js@).
 stage :: MonadJSM m => SnabbdomT a m RawNode
-stage = liftJSM $ fromJSValUnchecked =<< jsg "container"
+stage = liftJSM $ do
+  doc <- currentDocumentUnchecked
+  elm <- createElement doc ("div" :: Text)
+  setAttribute elm ("id" :: Text) ("stage" :: Text)
+  b <- getBodyUnsafe doc
+  _ <- appendChild b elm
+  RawNode <$> toJSVal elm
 
