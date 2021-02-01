@@ -45,7 +45,7 @@ Nodes (and only Nodes) in Html can have properties. These properties are represe
 ----
 data Prop m a
   = PText Text
-  | PListener (RawNode -> RawEvent -> JSM a)
+  | PListener (RawNode -> RawEvent -> JSM (Continuation m a))
   | PFlag Bool
 ----
 
@@ -129,7 +129,7 @@ This packages does **not** come with a backend implementation, and an implementa
 [NOTE]
 .Monad Transformer
 ====
-`b` is expected to be a Monad Transformer, though this is not required; in practice, `(b m)` must have in instance of `MonadJSM`.
+`b` is expected to be a Monad Transformer, though this is not required; in practice, `(b m)` must have an instance of `MonadJSM`.
 ====
 
 === VNode
