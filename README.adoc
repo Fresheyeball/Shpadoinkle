@@ -7,11 +7,13 @@ image::docs/modules/ROOT/assets/images/logo.png[Eddie is loved forever,150,150]
 
 https://gitlab.com/fresheyeball/Shpadoinkle/commits/master[image:https://gitlab.com/fresheyeball/Shpadoinkle/badges/master/pipeline.svg[pipeline
 status]]
+https://shpadoinkle.zulipchat.com/register[image:https://img.shields.io/badge/zulip-join_chat-orange.svg[Community]]
 https://opensource.org/licenses/BSD-3-Clause[image:https://img.shields.io/badge/License-BSD%203--Clause-blue.svg[BSD-3]]
 https://builtwithnix.org[image:https://img.shields.io/badge/built%20with-nix-41439a[built
 with nix]]
-http://shpadoinkle.cachix.org[image:https://img.shields.io/badge/Cachix-up%20to%20date-green[cachix]]
-http://hoogle.shpadoinkle.org[image:https://img.shields.io/badge/-Hoogle-lightgrey[hoogle]]
+https://shpadoinkle.cachix.org[image:https://img.shields.io/badge/Cachix-up%20to%20date-green[cachix]]
+https://hoogle.shpadoinkle.org[image:https://img.shields.io/badge/-Hoogle-lightgrey[hoogle]]
+
 
 = Shpadoinkle
 
