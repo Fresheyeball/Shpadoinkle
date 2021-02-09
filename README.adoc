@@ -59,6 +59,10 @@ $ nix-shell nix/lint.nix --run 'hlint .'
 
 Correct version of hlint is also available within `nix-shell`.
 
+== Community
+
+Join the Shpadoinkle community on https://shpadoinkle.zulipchat.com/register[Zulip]!
+
 == Hackage Matrix
 
 [options="header"]
