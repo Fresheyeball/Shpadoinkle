@@ -1,13 +1,17 @@
 = Calculator
 
-Here we will build a simple calculator, following pioneers of the space http://weblog.luite.com/wordpress/?p=127[Luite Stegemann], https://reflex-frp.org/tutorial[Ryan Trinkle], and https://keera.co.uk/2020/05/28/building-a-reactive-calculator-in-haskell-1-5/[Ivan Perez].
+Here we will build a simple calculator, following pioneers of the space
+http://weblog.luite.com/wordpress/?p=127[Luite Stegemann],
+https://reflex-frp.org/tutorial[Ryan Trinkle], and
+https://keera.co.uk/2020/05/28/building-a-reactive-calculator-in-haskell-1-5/[Ivan Perez].
 
-* xref:tutorial/index.adoc[<- See part 1, Basic concepts]
-* xref:tutorial/immediate-execution.adoc[Go to part 3: Immediate execution ->]
+* xref:tutorial/index.adoc[<- Part 1, Basic concepts]
+* xref:tutorial/immediate-execution.adoc[Part 3: Immediate execution ->]
+* xref:tutorial/composing.adoc[Part 4, Composing HTML Elements ->]
 
 == Hello World
 
-Let's start with a "Hello World" app. Luckily that is not too hard (but not too easy either):
+Let's start with a "Hello World" app.
 
 [source,haskell]
 ----
@@ -20,19 +24,22 @@ main = runJSorWarp 8080 $ -- <1>
     getBody -- <6>
 ----
 
-<1> This is a little function to abstract over starting the application with GHC or GHCjs. If built with GHC it will run a server on port `8080`, if built with GHCjs it will just start the application as a normal JavaScript file.
-<2> This is the highest-level wrapper around the `shpadoinkle` function provided in core. It prevents you from doing the work of choosing a `Monad` to run event handlers (defaulting to `JSM`), and creating a territory (defaulting to a `TVar`).
-<3> We are using the ParDiff backend. No matter how simple the app, you must still choose a backend explicitly.
+<1> This function either runs a server or generates a JavaScript-enabled web
+    page. If built with GHC, it will run a server on port `8080`. If built with
+    GHCjs, it will just start the application as a normal JavaScript file.
+<2> This is a wrapper around the `shpadoinkle` function.
+<3> No matter how simple the app, you must still choose a backend explicitly.
+    This function chooses the ParDiff backend.
 <4> The initial state. Because this is a "hello world" example, it's just `()`.
-<5> This is our view. Because we don't care about the `()` we're using `const` here. `"hello world"` is an `OverloadedString` of type `Html m a`.
-<6> This is what DOM node on the page will hold our application. We use `getBody` to get the `document.body` for the page.
-
-[NOTE]
-You need to stop ghcid and restart it after making _any_ changes to the .cabal file.
+<5> This is the view. Because we don't care about the state (`()`) we're using
+    `const` here. `"hello world"` is making use of the `OverloadedStrings`
+    pragma.
+<6> This the DOM node on the page that will hold our application.
 
 == Addition
 
-Now that we have our hello world, let's add some interactivity and perform addition on the part of the user:
+Now that we have our hello world, let's add some interactivity and perform
+addition on the part of the user:
 
 To start, we will need a simple single number input:
 
@@ -46,9 +53,10 @@ num x = input'
 ----
 
 <1> Set the value of the input to the current state of the application.
-<2> When an `"input"` event occurs, update the state with the provided function.
+<2> When an `"input"` event occurs, update the state with the provided
+    function.
 
-Now we can use our single number input in our view to add up two numbers for our user.
+Now we can use our single number input in our view to add two numbers.
 
 [source,haskell]
 ----
@@ -70,8 +78,10 @@ view (l,r) = -- <1>
 [TIP]
 .Heterogeneous Composition
 ====
-We are using `liftC` and a `TupleSection` here to compose our `num` component. This is because `Html Int` and `Html (Int, Int)` obviously do not unify.
-`liftC` comes from the `Continuous` type class, which underpins event handling in Shpadoinkle.
+We are using `liftC` and a `TupleSection` here to compose our `num` component.
+This is because `Html Int` and `Html (Int, Int)` obviously do not unify.
+`liftC` comes from the `Continuous` type class, which underpins event handling
+in Shpadoinkle.
 [source,haskell]
 ----
 liftC :: (Functor m, Continuous f) => (a -> b -> b) -> (b -> a) -> f m a -> f m b

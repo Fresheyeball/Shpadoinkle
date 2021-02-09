@@ -5,7 +5,7 @@
 * xref:tutorial/index.adoc[Tutorial]
 ** xref:tutorial/calculator.adoc[Simple Calculator]
 ** xref:tutorial/immediate-execution.adoc[Immediate Execution]
-** xref:tutorial/composing.adoc[Composing Heterogeneous Elements]
+** xref:tutorial/composing.adoc[Composing HTML Elements]
 * xref:packages/index.adoc[Reference]
 ** xref:packages/core.adoc[Core]
 ** xref:packages/backends.adoc[Backends]

@@ -1,22 +1,23 @@
 = Tutorial
 
-This is for those who would like to think they know precisely what they mean.
-
-Skip to:
+_This is for those who would like to think they know precisely what they mean._
 
 * xref:tutorial/calculator.adoc[Part 2, Simple Calculator ->]
 * xref:tutorial/immediate-execution.adoc[Part 3, Immediate Execution ->]
+* xref:tutorial/composing.adoc[Part 4, Composing HTML Elements ->]
 
 == Setup
 
 To begin, complete the setup described in the
 xref:getting-started/index.adoc[Getting Started] section.
 
-== Html
+== HTML
 
-Shpadoinkle Html is an optional module for generating Shpadoinkle Core's Html types.
+`Shpadoinkle Html` is an optional module for generating HTML. Here's how it
+works.
 
-Each Html tag has named functions, including a plain version that accepts properties `[(Text, Prop a)]` and children `[Html a]`. Adding an underscore allows you to pass no properties. Adding a prime allows you to pass no children.
+Each HTML tag has an associated named function. For the `H1` HTML tag, for
+example:
 
 [source,haskell]
 ----
@@ -30,24 +31,87 @@ will render as
 <h1 id="foo" >bar</h1>
 ----
 
-Text nodes, being extremely common, have an extra overloaded API.
+Each HTML tag's associated function accepts 2 arguments: first, a list of the
+properties (of type `[(Text, Prop a)]`); and second, a list of the children
+HTML tags (of type `[Html a]`).
+
+Each such named function has 2 additonal versions. Appending an underscore to
+the named function gives a version of the function that takes no properties.
+For example:
+
+[source,haskell]
+----
+h1_ [ text "bar" ]
+----
+
+will render as
+
+[source,html]
+----
+<h1>bar</h1>
+----
+
+Appending a prime to the named function gives a version of the function
+that takes no children. For example:
+
+[source,haskell]
+----
+div' [ id' "mydiv" ]
+----
+
+will render as
+
+[source,html]
+----
+<div id="mydiv" ></div>
+----
+
+Text nodes, being extremely common, can be used directly as HTML tags provided
+you have enabled the `OverloadedStrings` compiler pragma. Example:
 
 [source,haskell]
 ----
 h1 [ id' "foo" ] [ "bar" ]
 ----
 
-will work as well. Provided you have enabled `OverloadedStrings`.
+will render as
+
+[source,html]
+----
+<h1 id="foo" >bar</h1>
+----
+
+(Notice the lack of `text "bar"`.)
 
 === CSS Classes
 
-Due to the frequency of use, CSS classes have a polymorphic overloaded API. This includes multiple representations, all of which become `ClassList`, which is just a `newtype` of `Set Text`.
+This is by **far** the most common property to set. Extra affordances are
+offered. These 3 expressions:
 
-To learn more about the HTML package see docs xref:packages/html.adoc[here].
+[source,haskell]
+----
+div' "foo bar"
+div' [ class' "foo bar" ]
+div' [ class' ["foo", "bar"] ]
+----
+
+will *each* render as:
+
+[source,html]
+----
+<div class="foo bar" ></div>
+----
+
+To learn more about the `Shpadoinkle Html` package, see
+xref:packages/html.adoc[the docs].
 
 === Events
 
-Event handling is achieved through properties. There are several named functions for each event type and a few additional helpers. A plain version for pure handlers, an M version for monadic handlers, and a C version for working with `Continuation`s.
+Event handlers are properties. Event handling is achieved by attaching event
+handlers as propoprties of HTML elements. There are several named functions for
+each event type and a few additional helpers.
+
+This JavaScript code
 
 [source,javascript]
 ----
@@ -55,15 +119,13 @@ const div = document.createElement("div")
 div.addEventListener("click", doit)
 ----
 
-is morally equivalent to
+is obtained from this Shpadoinkle Haskell code:
 
 [source,haskell]
 ----
 div' [ onClick doit ]
 ----
 
-'''
+Next, we will use these concepts to build a calculator.
 
-Next we will use these concepts to build a calculator, in part 2.
-
-xref:tutorial/calculator.adoc[Go to part 2: Simple calculator ->]
+xref:tutorial/calculator.adoc[Tutorial Part 2: Simple calculator ->]
