@@ -40,17 +40,26 @@ module Shpadoinkle.Continuation (
   ) where
 
 
-import           Control.Arrow                 (first)
-import qualified Control.Categorical.Functor   as F
-import           Control.Monad                 (liftM2, void)
-import           Control.Monad.Trans.Class     (MonadTrans (..))
-import           Control.PseudoInverseCategory (EndoIso (..))
-import           Data.Maybe                    (fromMaybe)
-import           GHC.Conc                      (retry)
-import           UnliftIO                      (MonadUnliftIO, TVar, atomically,
-                                                newTVarIO, readTVar, readTVarIO,
-                                                writeTVar)
-import           UnliftIO.Concurrent           (forkIO)
+import           Control.Arrow                           (first)
+import qualified Control.Categorical.Functor             as F
+import           Control.Monad                           (liftM2, void)
+import           Control.Monad.Trans.Class               (MonadTrans (..))
+import           Control.PseudoInverseCategory           (EndoIso (..))
+import           Data.Maybe                              (fromMaybe)
+import           GHC.Conc                                (retry)
+import           GHCJS.DOM                               (currentWindowUnchecked)
+import           GHCJS.DOM.RequestAnimationFrameCallback (newRequestAnimationFrameCallback)
+import           GHCJS.DOM.Window                        (Window,
+                                                          cancelAnimationFrame,
+                                                          requestAnimationFrame)
+import           Language.Javascript.JSaddle             (MonadJSM)
+import           UnliftIO                                (MonadUnliftIO, TVar,
+                                                          UnliftIO, askUnliftIO,
+                                                          atomically, liftIO,
+                                                          newTVarIO, readTVar,
+                                                          readTVarIO, unliftIO,
+                                                          writeTVar)
+import           UnliftIO.Concurrent                     (forkIO)
 
 
 -- | A Continuation builds up an
@@ -348,19 +357,51 @@ writeUpdate model = \case
 
 -- | Execute a fold by watching a state variable and executing the next
 --   step of the fold each time it changes.
-shouldUpdate :: MonadUnliftIO m => Eq a => (b -> a -> m b) -> b -> TVar a -> m ()
-shouldUpdate sun prev model = do
-  i' <- readTVarIO model
-  p  <- newTVarIO i'
-  () <$ forkIO (go prev p)
-  where
-    go x p = do
-      a <- atomically $ do
-        new' <- readTVar model
-        old  <- readTVar p
-        if new' == old then retry else new' <$ writeTVar p new'
-      y <- sun x a
-      go y p
+shouldUpdate :: forall a b m. MonadJSM m => MonadUnliftIO m => Eq a => (b -> a -> m b) -> b -> TVar a -> m ()
+shouldUpdate sun prev currentModel = do
+  -- get the current state of the model
+  sampleModel   :: a          <- readTVarIO currentModel
+  -- duplicate that state so we can compare if the model changes
+  previousModel :: TVar a     <- newTVarIO sampleModel
+  -- store the accumulating value in a TVar so we can control when it updates
+  currentState  :: TVar b     <- newTVarIO prev
+  -- get the window once
+  window        :: Window     <- currentWindowUnchecked
+  -- get the execution context once
+  context       :: UnliftIO m <- askUnliftIO
+
+  let
+    go :: Maybe Int -> m ()
+    go frameId = do
+
+      -- block if the new model is the same as the old
+      newModel <- atomically $ do
+        new' <- readTVar currentModel
+        old  <- readTVar previousModel
+        -- if the new model is different from the old
+        -- unblock and write the new model for the next comparision
+        if new' == old then retry else new' <$ writeTVar previousModel new'
+
+      -- if we already had something scheduled to run, cancel it
+      maybe (pure ()) (cancelAnimationFrame window) frameId
+
+      -- generate a callback for the request animation frame
+      callback <- newRequestAnimationFrameCallback $ \_ -> do
+        -- get the current state
+        x <- readTVarIO currentState
+        -- run the action against the current state, and the new model
+        y <- liftIO $ unliftIO context $ sun x newModel
+        -- write the new state for the next run
+        atomically $ writeTVar currentState y
+        -- note this means that @newModel@ updates for each call to @go@
+        -- but @currentState@ only updates if the frame is actually called
+
+      -- schedule the action to run on the next frame
+      frameId' <- requestAnimationFrame window callback
+
+      go (Just frameId')
+
+  () <$ forkIO (go Nothing)
 
 
 -- | A monad transformer for building up a Continuation in a series of steps in a monadic computation
