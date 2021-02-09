@@ -161,7 +161,7 @@ Now if you are looking at the above code and starting to twitch because you are 
 You can see the final code https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/Calculator.hs[here] running below:
 
 ++++
-<iframe style="border-radius:5px;border:1px dashed blue;width:100%;height:70px" src="https://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator.jsexe/"></iframe>
+<iframe style="border-radius:5px;border:1px dashed blue;width:100%;height:70px;background:#fff;" src="https://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator.jsexe/"></iframe>
 ++++
 
 Next we emulate a real-world immediate execution calculator in part 3.

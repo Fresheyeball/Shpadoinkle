@@ -24,6 +24,13 @@
       sha256 = "0x27bgrasbxzp045rqj4ldrfnm2k832ch7vfkl9s7xj0afrcy6pg";
     };
 
+  servant-rawm-src = super.fetchFromGitHub
+    { owner  = "cdepillabout";
+      repo   = "servant-rawm";
+      rev    = "e6b7dd6d8bbc9610ed2b1d974c5813034b1c3da7";
+      sha256 = "12qxmq4i3vdcfddbq5wnyyfl0l68qccrf911hg3dk8i9iz02wgjm";
+    };
+
 
   snabbdom-src = super.fetchFromGitHub
     { owner  = "snabbdom";
@@ -100,10 +107,10 @@
 
   addDev  = x: super.haskell.lib.appendConfigureFlags x [ "-f" "development" ];
 
-  addTest = x: hpkgs: if isJS then super.haskell.lib.dontCheck x else
-    (super.haskell.lib.appendConfigureFlags (super.haskell.lib.addBuildDepends x
+  addTest = x: hpkgs: (if isJS then super.haskell.lib.dontCheck else id)
+    ((super.haskell.lib.appendConfigureFlags (super.haskell.lib.addBuildDepends x
       (with hpkgs; [hspec QuickCheck quickcheck-classes quickcheck-classes-base ])
-    ) [ "-f" "testing" ]);
+    ) [ "-f" "testing" ]));
 
 
 in {
@@ -131,6 +138,14 @@ in {
           forThese = f: builtins.foldl' (acc: x: acc // { ${x} = f hsuper.${x}; }) {};
           dontJS   = if isJS then x: dontHaddock (dontCheck x) else id;
 
+          patchLicense = x: x.overrideAttrs (old: {
+            postPatch = ''
+              ${old.postPatch}
+              rm LICENSE
+              cp ${servant-rawm-src}/LICENSE .
+            '';
+          });
+
           hpkgs    = {
 
           Shpadoinkle                  = call "Shpadoinkle"                  ../core;
@@ -155,16 +170,20 @@ in {
           ease                    = hself.callCabal2nix "ease" ease {};
           ghcjs-base-stub         = hself.callCabal2nix "ghcjs-base-stub" ghcjs-base-stub-src {};
           hpack                   = if isJS then super.haskell.packages.${compiler}.hpack else hsuper.hpack;
-          servant                 = dontJS    (hself.callCabal2nix "servant"         "${servant-src}/servant"        {});
-          servant-server          = dontCheck (hself.callCabal2nix "servant-server"  "${servant-src}/servant-server" {});
-          servant-client          = dontCheck (hself.callCabal2nix "servant-client"  "${servant-src}/servant-client" {});
+          servant                 = dontJS    (hself.callCabal2nix "servant"             "${servant-src}/servant"                  {});
+          servant-server          = dontCheck (hself.callCabal2nix "servant-server"      "${servant-src}/servant-server"           {});
+          servant-client          = dontCheck (hself.callCabal2nix "servant-client"      "${servant-src}/servant-client"           {});
+          servant-rawm            = dontJS    (patchLicense (hself.callCabal2nix "servant-rawm"        "${servant-rawm-src}/servant-rawm"        {}));
+          servant-rawm-server     = dontCheck (patchLicense (hself.callCabal2nix "servant-rawm-server" "${servant-rawm-src}/servant-rawm-server" {}));
+          servant-rawm-client     = dontCheck (patchLicense (hself.callCabal2nix "servant-rawm-client" "${servant-rawm-src}/servant-rawm-client" {}));
           servant-client-js       = hself.callCabal2nix "servant-client-js" servant-client-js-src {};
           servant-jsaddle         = dontCheck (hself.callCabal2nix "servant-jsaddle" "${servant-jsaddle-src}"        {});
           snabbdom                = hself.callCabal2nix "snabbdom" snabbdom-src {};
           jsaddle-warp            = dontCheck (hself.callCabal2nix "jsaddle-warp"    "${jsaddle-src}/jsaddle-warp"   {});
           jsaddle                 = dontCheck (hself.callCabal2nix "jsaddle"         "${jsaddle-src}/jsaddle"        {});
-          quickcheck-classes      = doJailbreak (hself.callCabal2nix "quickcheck-classes"      "${quickcheck-classes-src}/quickcheck-classes"      {});
+          quickcheck-classes      = dontJS (doJailbreak (hself.callCabal2nix "quickcheck-classes"      "${quickcheck-classes-src}/quickcheck-classes"      {}));
           quickcheck-classes-base = doJailbreak (hself.callCabal2nix "quickcheck-classes-base" "${quickcheck-classes-src}/quickcheck-classes-base" {});
+          primitive-addr          = doJailbreak hsuper.primitive-addr;
 
           # Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
         } // forThese dontJS [

@@ -264,9 +264,32 @@ table {
   color: rgb(200,195,188);
 }
 
+.nav-container{
+    position: static;
+    visibility: visible;
+    width: 100%;
+}
+
+.nav{
+    top: 0;
+    height: auto;
+}
+
+.nav-panel-menu {
+    height: auto;
+}
+
 @media screen and (min-width: 1024px){
+  .nav{
+      top: 3.5rem;
+      height: calc(100vh - 3.5rem);
+  }
   .nav-panel-menu {
       height: 100%;
+  }
+  .nav-container {
+      width: 15rem;
+      /* position: static; */
   }
 }
 

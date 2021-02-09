@@ -77,12 +77,14 @@ instance (Consideration ConsideredChoice p, Ord a)
   open   p = shrug $ p { _toggle = open   (_toggle p) }
 
 
-newtype Config m = Config
-  { _attrs :: forall a. [(Text, Prop m a)] }
+data Config m = Config
+  { _attrs     :: forall a. [(Text, Prop m a)]
+  , _clickAway :: ClickAway
+  }
 
 
 defConfig :: Config m
-defConfig = Config []
+defConfig = Config [] ClosesOnClickAway
 
 
 instance (Compactable (ConsideredChoice p)) => Compactable (Dropdown p) where
@@ -177,16 +179,19 @@ dropdown ::
 dropdown toTheme Config {..} x =
   let
     Theme {..} = toTheme x
+    ifClickAway = case _clickAway of
+      ClosesOnClickAway    -> [ onClickAway close ]
+      StaysOpenOnClickAway -> []
+
   in injectProps
   ([onKeyup $ \case
     Enter     -> act
     UpArrow   -> considerPrev
     DownArrow -> considerNext
     _         -> id
-  , onClickAway close
   , onClick act
   , tabbable
-  ] ++ _attrs) . _wrapper $
+  ] ++ ifClickAway ++ _attrs) . _wrapper $
   _header (selected x) ++
   [ _list $ (\y -> injectProps
     [ onMouseover (consider' y)

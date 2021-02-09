@@ -30,6 +30,10 @@ data Hygiene = Clean | Dirty
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON)
 
 
+data ClickAway = ClosesOnClickAway | StaysOpenOnClickAway
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON)
+
+
 instance Semigroup Hygiene where
   Clean <> Clean = Clean
   _ <> _         = Dirty
@@ -40,7 +44,7 @@ instance Monoid Hygiene where
 
 
 data Ability = Enabled | Disabled
-  deriving (Eq, Ord, Show, Enum, Bounded)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded)
 
 
 toBool :: Ability -> Bool

@@ -47,7 +47,7 @@ import           Shpadoinkle.Widgets.Types
 
 
 data Sort = ASC | DESC
-  deriving (Show, Eq, Ord, Bounded, Enum, Generic, ToJSON, FromJSON)
+  deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic, ToJSON, FromJSON)
 
 
 instance Semigroup Sort where (<>) = min
@@ -61,6 +61,7 @@ negateSort DESC = ASC
 
 data SortCol a = SortCol (Column a) Sort
 deriving instance Show (Column a) => Show (SortCol a)
+deriving instance Read (Column a) => Read (SortCol a)
 deriving instance Eq   (Column a) => Eq   (SortCol a)
 deriving instance Ord  (Column a) => Ord  (SortCol a)
 deriving instance Functor Column => Functor SortCol
