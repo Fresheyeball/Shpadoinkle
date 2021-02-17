@@ -25,6 +25,7 @@ import           Data.Kind                        (Type)
 import           Data.Proxy
 import           Data.Set                         as Set
 import           GHC.Generics                     (Generic)
+import           Shpadoinkle                      (NFData)
 #ifdef TESTING
 import           Test.QuickCheck                  (Arbitrary (..))
 #endif
@@ -45,6 +46,7 @@ deriving instance (Eq   (Selected p a), Eq   (Considered p a), Eq a)          =>
 deriving instance (Ord  (Selected p a), Ord  (Considered p a), Ord a)         => Ord  (ConsideredChoice p a)
 deriving instance (Foldable (Choice p), Foldable (Considered p))             => Foldable (ConsideredChoice p)
 deriving instance Generic (ConsideredChoice p a)
+instance (NFData (Selected p a), NFData (Considered p a), NFData a) => NFData (ConsideredChoice p a)
 instance (FromJSON a, FromJSON (Considered p a), FromJSON (Selected p a), Ord a) => FromJSON (ConsideredChoice p a)
 instance (ToJSON a,   ToJSON (Considered p a),   ToJSON (Selected p a))          => ToJSON   (ConsideredChoice p a)
 

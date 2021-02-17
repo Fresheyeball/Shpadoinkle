@@ -12,6 +12,7 @@
 module Shpadoinkle.Isreal.Types where
 
 
+import           Control.DeepSeq      (NFData)
 import           Data.Aeson           (FromJSON, ToJSON)
 import           Data.ByteString.Lazy (ByteString)
 import           Data.Text            (Text)
@@ -36,7 +37,7 @@ deriving instance MimeRender   OctetStream Code
 
 newtype SnowToken = SnowToken Text
   deriving stock (Eq, Ord, Read, Show, Generic)
-  deriving newtype (ToJSON, FromJSON, FromHttpApiData, ToHttpApiData)
+  deriving newtype (ToJSON, FromJSON, FromHttpApiData, ToHttpApiData, NFData)
 
 
 type API = "echo" :> Capture "echo" Text :> Get '[PlainText] Text

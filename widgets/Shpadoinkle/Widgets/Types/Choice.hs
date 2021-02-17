@@ -1,6 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -13,6 +14,7 @@
 {-# LANGUAGE ViewPatterns               #-}
 
 #ifdef TESTING
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE QuantifiedConstraints      #-}
 #endif
@@ -30,6 +32,7 @@ import qualified Data.List.NonEmpty               as NE
 import           Data.Proxy
 import           Data.Set                         as Set
 import           GHC.Generics                     (Generic)
+import           Shpadoinkle                      (NFData)
 #ifdef TESTING
 import           Data.Monoid                      (Sum (..))
 import           Test.QuickCheck
@@ -40,7 +43,7 @@ import           Test.QuickCheck.Classes.Internal (eq1, func1, func2)
 
 
 data Pick = One | AtleastOne | Many
-  deriving (Eq, Ord, Show, Generic)
+  deriving (Eq, Ord, Show, Generic, NFData)
 
 
 type family Selected (p :: Pick) (a :: Type) :: Type where
@@ -60,6 +63,7 @@ deriving instance (Read (Selected p a), Read a, Ord a) => Read (Choice p a)
 deriving instance (Eq   (Selected p a), Eq a)          => Eq   (Choice p a)
 deriving instance (Ord  (Selected p a), Ord a)         => Ord  (Choice p a)
 deriving instance Generic (Choice p a)
+instance (NFData (Selected p a), NFData a) => NFData (Choice p a)
 instance (ToJSON   (Selected p a), ToJSON   a)        => ToJSON   (Choice p a)
 instance (FromJSON (Selected p a), FromJSON a, Ord a) => FromJSON (Choice p a)
 
@@ -192,7 +196,7 @@ instance Legal SetLike where legal' _ = setLikeLaws
 newtype ApplyOrd f a = ApplyOrd { unApplyOrd :: f a }
 deriving instance (forall x. Eq x   => Eq (f x),   Eq a)   => Eq   (ApplyOrd f a)
 deriving instance (forall x. Show x => Show (f x), Show a) => Show (ApplyOrd f a)
-deriving instance
+deriving newtype instance
   ( forall x. (Ord x, Arbitrary x) => Arbitrary (f x)
   , Ord a
   , Arbitrary a

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -16,20 +17,23 @@ import           Data.String       (IsString)
 import           Data.Text         (Text, isInfixOf, splitOn, strip, toLower,
                                     unpack)
 import           GHC.Generics      (Generic)
+import           Shpadoinkle       (NFData)
 import           Text.EditDistance (defaultEditCosts, levenshteinDistance)
 
 
 newtype Search = Search { unSearch :: Text }
   deriving newtype (Eq, Ord, Show, Read, IsString, Semigroup, Monoid, ToJSON, FromJSON)
   deriving stock Generic
+  deriving anyclass NFData
 
 
 newtype EditDistance = EditDistance { unEditDistance :: Int }
   deriving newtype (Eq, Ord, Show, Read, ToJSON, FromJSON)
   deriving stock Generic
+  deriving anyclass NFData
 
 
-data Levenshtiened a = Levenshtiened { _distance :: !EditDistance, _unLevenshtiened :: a } deriving (Eq, Show, Read, Generic)
+data Levenshtiened a = Levenshtiened { _distance :: !EditDistance, _unLevenshtiened :: a } deriving (Eq, Show, Read, Generic, NFData)
 instance Eq       a => Ord    (Levenshtiened a) where
   compare (Levenshtiened x _) (Levenshtiened y _) = unEditDistance x `compare` unEditDistance y
 

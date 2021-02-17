@@ -10,6 +10,7 @@ module Shpadoinkle.Widgets.Types.Remote where
 import           Control.Applicative
 import           Data.Aeson          (FromJSON, ToJSON)
 import           GHC.Generics
+import           Shpadoinkle         (NFData)
 #ifdef TESTING
 import           Test.QuickCheck     (Arbitrary (..), elements)
 #endif
@@ -20,7 +21,7 @@ data Remote e a
   | Failure e
   | Loading
   | NotAsked
-  deriving (Eq, Ord, Show, Read, Generic, Functor, Foldable, Traversable, ToJSON, FromJSON)
+  deriving (Eq, Ord, Show, Read, Generic, Functor, Foldable, Traversable, ToJSON, FromJSON, NFData)
 
 
 instance Applicative (Remote e) where

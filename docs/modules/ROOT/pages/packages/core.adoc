@@ -17,7 +17,7 @@ data Html m a
 * `m` is an effect to run your event handlers.
 * `a` is what your event handlers produce.
 
-These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrained.
+These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrained. In reality this type is https://en.wikipedia.org/wiki/Church_encoding[Church encoded] for performance reasons.
 
 [NOTE]
 .Not Virtual DOM

@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -10,6 +11,7 @@
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuantifiedConstraints      #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -50,7 +52,7 @@ import           Servant.API                       (Capture, Delete,
                                                     Post, Put, QueryParam, Raw,
                                                     ReqBody, ToHttpApiData,
                                                     type (:<|>) (..), type (:>))
-import           Shpadoinkle                       (Html, MonadJSM)
+import           Shpadoinkle                       (Html, MonadJSM, NFData)
 import qualified Shpadoinkle.Html                  as H
 import           Shpadoinkle.Router                (HasRouter (type (:>>)),
                                                     Redirect (Redirect),
@@ -89,6 +91,9 @@ data SpaceCraftT f = SpaceCraft
   } deriving (Generic, Beamable)
 
 
+instance NFData (SpaceCraftT Identity)
+
+
 instance Table SpaceCraftT where
   newtype PrimaryKey SpaceCraftT f = SpaceCraftKey (Columnar f SpaceCraftId) deriving (Generic) deriving anyclass (Beamable)
   primaryKey = SpaceCraftKey . _identity
@@ -119,6 +124,14 @@ data SpaceCraftUpdate s = SpaceCraftUpdate
   , _squadron    :: Field s Text (Dropdown 'One) Squadron
   , _operable    :: Field s Text (Dropdown 'AtleastOne) Operable
   } deriving Generic
+
+
+instance ( NFData (Field s Text Input SKU)
+         , NFData (Field s Text Input (Maybe Description))
+         , NFData (Field s Text Input SerialNumber)
+         , NFData (Field s Text (Dropdown 'One) Squadron)
+         , NFData (Field s Text (Dropdown 'AtleastOne) Operable)
+         ) => NFData (SpaceCraftUpdate s)
 
 
 deriving instance Eq       (SpaceCraftUpdate 'Valid)
@@ -160,6 +173,9 @@ deriving instance Eq      Roster
 deriving instance Ord     Roster
 deriving instance Show    Roster
 deriving instance Generic Roster
+instance
+  ( NFData (Column [SpaceCraft])
+  , NFData (SpaceCraftT Identity)) => NFData Roster
 instance (ToJSON   (Table.Column [SpaceCraft])) => ToJSON   Roster
 instance (FromJSON (Table.Column [SpaceCraft])) => FromJSON Roster
 
@@ -187,6 +203,9 @@ data Frontend
 
 instance (ToJSON   (Column [SpaceCraft])) => ToJSON   Frontend
 instance (FromJSON (Column [SpaceCraft])) => FromJSON Frontend
+instance
+  ( NFData (Column [SpaceCraft])
+  , NFData (SpaceCraftT Identity)) => NFData Frontend
 
 
 makePrisms ''Frontend
@@ -265,7 +284,7 @@ instance Humanize (Column [SpaceCraft]) where
 
 data instance Column [SpaceCraft] =
     SKUT | DescriptionT | SerialNumberT | SquadronT | OperableT | ToolsT
-    deriving (Eq, Ord, Show, Enum, Bounded, Generic, ToJSON, FromJSON)
+    deriving (Eq, Ord, Show, Enum, Bounded, Generic, ToJSON, FromJSON, NFData)
 
 
 newtype instance Row [SpaceCraft] = SpaceCraftRow { unRow :: SpaceCraft }

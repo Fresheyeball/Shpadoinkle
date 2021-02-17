@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
@@ -8,6 +10,8 @@ import           Data.Aeson       (FromJSON (parseJSON), ToJSON (toJSON),
                                    object, withObject, (.:))
 import           Data.Aeson.Types (emptyObject)
 import qualified Data.Text        as T
+import           GHC.Generics
+import           Shpadoinkle      (NFData)
 
 
 type URL = String
@@ -21,7 +25,7 @@ data Target = Target
     ,targetType    :: String -- ^ One of package, module or empty string
     ,targetItem    :: String -- ^ HTML span of the item, using @\<s0\>@ for the name and @\<s1\>@ onwards for arguments
     ,targetDocs    :: String -- ^ HTML documentation to show, a sequence of block level elements
-    } deriving (Show,Read,Eq,Ord)
+    } deriving (Show,Read,Eq,Ord,Generic,NFData)
 
 
 instance Semigroup Target where

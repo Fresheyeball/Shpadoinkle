@@ -27,11 +27,11 @@ import           Shpadoinkle
 
 
 data Hygiene = Clean | Dirty
-  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON, NFData)
 
 
 data ClickAway = ClosesOnClickAway | StaysOpenOnClickAway
-  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON, NFData)
 
 
 instance Semigroup Hygiene where
@@ -44,7 +44,7 @@ instance Monoid Hygiene where
 
 
 data Ability = Enabled | Disabled
-  deriving (Eq, Ord, Show, Read, Enum, Bounded)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, ToJSON, FromJSON, NFData)
 
 
 toBool :: Ability -> Bool

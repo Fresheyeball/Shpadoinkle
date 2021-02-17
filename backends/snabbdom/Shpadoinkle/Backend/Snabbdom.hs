@@ -7,6 +7,7 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TupleSections              #-}
@@ -34,7 +35,7 @@ import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
 import           Control.Monad.Catch         (MonadCatch, MonadThrow)
 import           Control.Monad.Reader        (MonadIO, MonadReader (..),
                                               MonadTrans, ReaderT (..), forM_,
-                                              void, (>=>))
+                                              void)
 import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
                                               MonadTransControl,
                                               defaultLiftBaseWith,
@@ -54,7 +55,7 @@ import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               withUnliftIO)
 import           UnliftIO.Concurrent         (forkIO)
 
-import           Shpadoinkle                 hiding (children, name, props)
+import           Shpadoinkle
 
 
 default (Text)
@@ -111,7 +112,7 @@ runSnabbdom :: TVar model -> SnabbdomT model m ~> m
 runSnabbdom t (Snabbdom r) = runReaderT r t
 
 
-props :: Monad m => (m ~> JSM) -> TVar a -> [(Text, Prop (SnabbdomT a m) a)] -> JSM Object
+props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> [(Text, Prop (SnabbdomT a m) a)] -> JSM Object
 props toJSM i xs = do
   o <- create
   propsObj     <- create
@@ -173,26 +174,19 @@ props toJSM i xs = do
   return o
 
 
-instance (MonadJSM m, Eq a) => Backend (SnabbdomT a) m a where
+instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
   type VNode (SnabbdomT a) m = SnabVNode
 
   interpret :: (m ~> JSM) -> Html (SnabbdomT a m) a -> SnabbdomT a m SnabVNode
-  interpret toJSM = \case
+  interpret toJSM (Html h') = h'
 
-    TextNode t -> liftJSM $ fromJSValUnchecked =<< toJSVal t
-
-    Node name ps [TextNode t] -> do
+    (\name ps children -> do
+      cs <- sequence children
       i <- ask; liftJSM $ do
-        o <- props toJSM i ps
-        fromJSValUnchecked =<< jsg3 "vnode" name o t
+        o <- props toJSM i $ fromProps ps
+        jsg3 "vnode" name o cs >>= fromJSValUnchecked)
 
-    Node name ps children -> do
-      i <- ask; liftJSM $ do
-        o <- props toJSM i ps
-        traverse ((toJSM . runSnabbdom i) . interpret toJSM >=> toJSVal) children
-          >>= jsg3 "vnode" name o >>= fromJSValUnchecked
-
-    Potato mrn -> liftJSM $ do
+    (\mrn -> liftJSM $ do
       o <- create
       hook <- create
       rn <- mrn
@@ -202,7 +196,9 @@ instance (MonadJSM m, Eq a) => Backend (SnabbdomT a) m a where
       unsafeSetProp "insert" ins hook
       hoo <- toJSVal hook
       unsafeSetProp "hook" hoo o
-      fromJSValUnchecked =<< jsg2 "vnode" "div" o
+      fromJSValUnchecked =<< jsg2 "vnode" "div" o)
+
+    (\t -> liftJSM $ fromJSValUnchecked =<< toJSVal t)
 
 
   patch :: RawNode -> Maybe SnabVNode -> SnabVNode -> SnabbdomT a m SnabVNode

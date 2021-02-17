@@ -31,7 +31,7 @@ newtype Noop a = Noop (JSM a)
   deriving anyclass Hooglable
 
 
-wrap :: Applicative m => Prism' Frontend a -> (a -> Html m a) -> a -> b -> Html m Frontend
+wrap :: Monad m => Prism' Frontend a -> (a -> Html m a) -> a -> b -> Html m Frontend
 wrap l v x = const $ template Prod (x ^. re l) (l `onSum` v x)
 
 

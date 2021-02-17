@@ -95,9 +95,9 @@ import           UnliftIO.STM                  (TVar, atomically, newTVarIO,
 import           Web.HttpApiData               (parseUrlPiece)
 
 import           Shpadoinkle                   (Backend, Continuation, Html,
-                                                RawNode, h, hoist, kleisli, pur,
-                                                shpadoinkle, text, type (~>),
-                                                writeUpdate)
+                                                NFData, RawNode, h, hoist,
+                                                kleisli, pur, shpadoinkle, text,
+                                                type (~>), writeUpdate)
 
 #ifndef ghcjs_HOST_OS
 
@@ -161,7 +161,7 @@ withHydration s r = do
 -- data. This function returns a script tag that makes a global variable "initState"
 -- containing a JSON representation to be used as the initial state of the application
 -- on page load. Typically this is used on the server side.
-toHydration :: ToJSON a => a -> Html m b
+toHydration :: Monad m => ToJSON a => a -> Html m b
 toHydration fe =
   h "script" [] [ text $ "window.initState = '" <> (T.replace "'" "\\'" . decodeUtf8 . toStrict $ encode fe) <> "'" ]
 
@@ -189,6 +189,7 @@ fullPageSPAC :: forall layout b a r m
   => Backend b m a
   => Monad (b m)
   => Eq a
+  => NFData a
   => Functor m
   => (m ~> JSM)
   -- ^ how do we get to JSM?
@@ -228,6 +229,7 @@ fullPageSPA :: forall layout b a r m
   => Backend b m a
   => Monad (b m)
   => Eq a
+  => NFData a
   => Functor m
   => (m ~> JSM)
   -- ^ how do we get to JSM?
@@ -257,6 +259,7 @@ fullPageSPA' :: forall layout b a r m
   => Backend b m a
   => Monad (b m)
   => Eq a
+  => NFData a
   => Functor m
   => (m ~> JSM)
   -- ^ how do we get to JSM?

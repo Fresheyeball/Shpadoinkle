@@ -1,4 +1,6 @@
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE ExtendedDefaultRules       #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedLabels           #-}
@@ -15,7 +17,7 @@ import           Data.String                   (IsString)
 import           Data.Text                     hiding (count, filter, length)
 import           GHC.Generics                  (Generic)
 import           Prelude                       hiding (div, unwords)
-import           Shpadoinkle                   (Html, JSM, readTVarIO,
+import           Shpadoinkle                   (Html, JSM, NFData, readTVarIO,
                                                 shpadoinkle, text)
 import           Shpadoinkle.Backend.Snabbdom  (runSnabbdom, stage)
 import           Shpadoinkle.Html              (a, addStyle, autofocus, button,
@@ -36,23 +38,25 @@ import           Shpadoinkle.Run               (runJSorWarp)
 default (Text)
 
 
-newtype Description = Description { unDescription :: Text } deriving (Generic, Show, Read, Eq, IsString)
-newtype TaskId      = TaskId      { unTaskId      :: Int  } deriving (Generic, Show, Read, Eq, Ord, Num)
+newtype Description = Description { unDescription :: Text }
+  deriving stock Generic deriving newtype (Show, Read, Eq, IsString) deriving anyclass NFData
+newtype TaskId      = TaskId      { unTaskId      :: Int  }
+  deriving stock Generic deriving newtype (Show, Read, Eq, Ord, Num) deriving anyclass NFData
 
 
 data Completed  = Complete | Incomplete
-  deriving (Generic, Show, Read, Eq)
+  deriving (Generic, Show, Read, Eq, NFData)
 
 
 data Visibility = All | Active | Completed
-  deriving (Generic, Show, Read, Eq, Ord, Enum, Bounded)
+  deriving (Generic, Show, Read, Eq, Ord, Enum, Bounded, NFData)
 
 
 data Task = Task
   { description :: Description
   , completed   :: Completed
   , taskId      :: TaskId
-  } deriving (Generic, Show, Read, Eq)
+  } deriving (Generic, Show, Read, Eq, NFData)
 
 
 data Model = Model
@@ -60,7 +64,7 @@ data Model = Model
   , editing    :: Maybe TaskId
   , visibility :: Visibility
   , current    :: Description
-  } deriving (Generic, Show, Read, Eq)
+  } deriving (Generic, Show, Read, Eq, NFData)
 
 
 emptyModel :: Model
@@ -114,7 +118,7 @@ toVisible v = case v of
   Completed -> filter $ (== Complete)   . completed
 
 
-filterHtml :: Visibility -> Visibility -> Html m Visibility
+filterHtml :: Monad m => Visibility -> Visibility -> Html m Visibility
 filterHtml = memo $ \cur item -> li_
   [ a (href "#" : onClick (const item)
         : [class' ("selected", cur == item)]) [ text . pack $ show item ]
@@ -125,7 +129,7 @@ htmlIfTasks :: Model -> [Html m a] -> [Html m a]
 htmlIfTasks m h' = if Prelude.null (tasks m) then [] else h'
 
 
-taskView :: Model -> Task -> Html m Model
+taskView :: Monad m => Model -> Task -> Html m Model
 taskView m = memo $ \(Task (Description d) c tid) ->
   li [ id' . pack . show $ unTaskId tid
      , class' [ ("completed", c == Complete)
@@ -152,7 +156,7 @@ taskView m = memo $ \(Task (Description d) c tid) ->
   ]
 
 
-listFooter :: Functor m => Model -> Html m Model
+listFooter :: Monad m => Model -> Html m Model
 listFooter model = footer "footer" $
   [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ tasks model in
     [ strong_ [ text . pack $ show co ]
@@ -165,7 +169,7 @@ listFooter model = footer "footer" $
 
 
 
-info :: Html m a
+info :: Monad m => Html m a
 info = footer "info"
   [ p_ [ "Double-click to edit a todo" ]
   , p_ [ "Credits ", a [ href "https://twitter.com/fresheyeball" ] [ "Isaac Shapira" ] ]
@@ -173,7 +177,7 @@ info = footer "info"
   ]
 
 
-newTaskForm :: Model -> Html m Model
+newTaskForm :: Monad m => Model -> Html m Model
 newTaskForm model = form [ class' "todo-form", onSubmit appendItem ]
   [ input' [ class' "new-todo"
            , value . unDescription $ current model
@@ -182,18 +186,18 @@ newTaskForm model = form [ class' "todo-form", onSubmit appendItem ]
   ]
 
 
-todoList :: Model -> Html m Model
+todoList :: Monad m => Model -> Html m Model
 todoList model = ul "todo-list" $ taskView model <$> visibility model `toVisible` tasks model
 
 
-toggleAllBtn :: [Html m Model]
+toggleAllBtn :: Monad m => [Html m Model]
 toggleAllBtn =
   [ input' [ id' "toggle-all", class' "toggle-all", type' "checkbox", onChange toggleAll ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
 
-view :: Functor m => Model -> Html m Model
+view :: Monad m => Model -> Html m Model
 view model = div_
   [ section "todoapp" $
     header "header"

@@ -31,7 +31,7 @@ data Control m = Control
   (Throttle m (Text -> Model -> Model) Model)
 
 
-view :: Control m -> Model -> Html m Model
+view :: Monad m => Control m -> Model -> Html m Model
 view (Control debouncer1 debouncer2 throttler1 throttler2) (count, txt) = div_
   [ text ("Count: " <> pack (show count))
   , div_ [ button [ onClick $ first (+ 1) ] [ text "Increment" ] ]
