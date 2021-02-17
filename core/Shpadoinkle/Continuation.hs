@@ -37,12 +37,15 @@ module Shpadoinkle.Continuation (
   , writeUpdate, shouldUpdate, constUpdate
   -- * Monad Transformer
   , ContinuationT (..), voidRunContinuationT, kleisliT, commit
+  -- * Re-exports
+  , module Control.DeepSeq
   ) where
 
 
 import           Control.Arrow                           (first)
 import qualified Control.Categorical.Functor             as F
-import           Control.Monad                           (liftM2, void)
+import           Control.DeepSeq                         (NFData (..), force)
+import           Control.Monad                           (liftM2)
 import           Control.Monad.Trans.Class               (MonadTrans (..))
 import           Control.PseudoInverseCategory           (EndoIso (..))
 import           Data.Maybe                              (fromMaybe)
@@ -56,6 +59,7 @@ import           Language.Javascript.JSaddle             (MonadJSM)
 import           UnliftIO                                (MonadUnliftIO, TVar,
                                                           UnliftIO, askUnliftIO,
                                                           atomically, liftIO,
+                                                          modifyTVar',
                                                           newTVarIO, readTVar,
                                                           readTVarIO, unliftIO,
                                                           writeTVar)
@@ -335,23 +339,23 @@ instance Monad m => Monoid (Continuation m a) where
   mempty = done
 
 
-writeUpdate' :: MonadUnliftIO m => (a -> a) -> TVar a -> (a -> m (Continuation m a)) -> m ()
+writeUpdate' :: MonadUnliftIO m => NFData a => (a -> a) -> TVar a -> (a -> m (Continuation m a)) -> m ()
 writeUpdate' h model f = do
   i <- readTVarIO model
   m <- f (h i)
   case m of
-    Continuation (g,gs) -> writeUpdate' (g.h) model gs
-    Pure g -> atomically (writeTVar model . g . h =<< readTVar model)
-    Rollback gs -> writeUpdate' id model (const (return gs))
+    Continuation (g,gs) -> writeUpdate' (g . h) model gs
+    Pure g              -> atomically (modifyTVar' model (force . g . h))
+    Rollback gs         -> writeUpdate' id model (const (return gs))
 
 
 -- | Run a Continuation on a state variable. This may update the state.
 --   This is a synchronous, non-blocking operation for pure updates,
 --   and an asynchronous, non-blocking operation for impure updates.
-writeUpdate :: MonadUnliftIO m => TVar a -> Continuation m a -> m ()
+writeUpdate :: MonadUnliftIO m => NFData a => TVar a -> Continuation m a -> m ()
 writeUpdate model = \case
-  Continuation (f,g) -> void . forkIO $ writeUpdate' f model g
-  Pure f             -> atomically (writeTVar model . f =<< readTVar model)
+  Continuation (f,g) -> () <$ forkIO (writeUpdate' f model g)
+  Pure f             -> atomically (modifyTVar' model (force . f))
   Rollback f         -> writeUpdate model f
 
 

@@ -1,6 +1,6 @@
 = Lens
 
-http://shpadoinkle.org/lens[Haddock]
+https://shpadoinkle.org/lens[Haddock]
 
 Lens combinators for Shpadoinkle applications. The primary use case is the composition of heterogeneous `Html` components.
 

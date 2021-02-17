@@ -11,12 +11,10 @@ module Shpadoinkle.Html
   ) where
 
 
-import           Shpadoinkle                     (Html, Prop, baked, children,
-                                                  dataProp, injectProps, listen,
-                                                  listenC, listenRaw, listener,
-                                                  listenerProp, mapChildren,
-                                                  mapProps, name, props, text,
-                                                  textContent)
+import           Shpadoinkle                     (Html, Prop, baked, dataProp,
+                                                  injectProps, listen, listenC,
+                                                  listenRaw, listener,
+                                                  listenerProp, mapProps, text)
 import           Shpadoinkle.Html.Element
 import           Shpadoinkle.Html.Event
 import           Shpadoinkle.Html.Event.Debounce

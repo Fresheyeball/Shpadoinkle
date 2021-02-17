@@ -1,10 +1,14 @@
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE DeriveAnyClass       #-}
+{-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE MonoLocalBinds       #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -16,9 +20,10 @@ import           Control.Concurrent                (threadDelay)
 import           Control.Lens                      hiding (view)
 import           Control.Monad.IO.Class            (liftIO)
 import           Data.Text                         (Text, pack)
+import           GHC.Generics                      (Generic)
 import           Prelude                           hiding (div)
 
-import           Shpadoinkle                       (Html, JSM, MonadJSM,
+import           Shpadoinkle                       (Html, JSM, MonadJSM, NFData,
                                                     liftJSM, newTVarIO,
                                                     shpadoinkle)
 -- import           Shpadoinkle.Backend.ParDiff       (runParDiff)
@@ -42,7 +47,7 @@ default (Text)
 
 
 data Cheese = Cheddar | Munster | Mozzeralla
-  deriving (Show, Eq, Ord, Bounded, Enum)
+  deriving (Show, Eq, Ord, Bounded, Enum, Generic, NFData)
 
 
 instance Humanize Cheese where
@@ -57,7 +62,7 @@ data Model = Model
   { _pickOne        :: Dropdown 'One Cheese
   , _pickAtleastOne :: Dropdown 'AtleastOne Cheese
   , _concTest       :: Int
-  } deriving (Eq, Show)
+  } deriving (Eq, Show, Generic, NFData)
 makeLenses ''Model
 
 
@@ -73,7 +78,7 @@ conc x = div_
   ]
 
 
-view :: MonadJSM m => Model -> Html m Model
+view :: forall m. MonadJSM m => Model -> Html m Model
 view m = div_
   [ link' [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ]
   , onRecord pickOne        $ dropdown bootstrap defConfig { _attrs = [ id' "One" ] } (_pickOne m)
@@ -81,7 +86,7 @@ view m = div_
   , onRecord concTest $ conc $ _concTest m
   ]
   where
-  bootstrap :: Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
+  bootstrap :: forall p b. Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
   bootstrap Dropdown {..} = Dropdown.Theme
     { _wrapper = div
       [ class' [ ("dropdown", True)

@@ -1,4 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE KindSignatures        #-}
@@ -14,8 +16,9 @@ module Main where
 
 import           Data.Maybe                  (fromMaybe)
 import           Data.Text                   (Text, pack, unpack)
+import           GHC.Generics                (Generic)
 import           Safe                        (readMay)
-import           Shpadoinkle                 (Html, liftC, text)
+import           Shpadoinkle                 (Html, NFData, liftC, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (div_, getBody, input', onInput,
                                               onOption, option, select, value)
@@ -26,7 +29,7 @@ data Model = Model
   { operation :: Operation
   , left      :: Int
   , right     :: Int
-  } deriving (Eq, Show)
+  } deriving (Eq, Show, Generic, NFData)
 
 
 data Operation
@@ -34,7 +37,7 @@ data Operation
   | Subtraction
   | Multiplication
   | Division
-  deriving (Eq, Show, Read, Enum, Bounded)
+  deriving (Eq, Show, Read, Enum, Bounded, Generic, NFData)
 
 
 opFunction :: Operation -> (Int -> Int -> Int)
@@ -54,20 +57,20 @@ opText = \case
   Division       -> "÷"
 
 
-opSelect :: Html m Operation
+opSelect :: Monad m => Html m Operation
 opSelect = select [ onOption $ const . read . unpack ]
   $ opOption <$> [minBound..maxBound]
   where opOption o = option [ value . pack $ show o ] [ text $ opText o ]
 
 
-num :: Int -> Html m Int
+num :: Monad m => Int -> Html m Int
 num x = input'
   [ value . pack $ show x
   , onInput $ const . fromMaybe 0 . readMay . unpack
   ]
 
 
-view :: Functor m => Model -> Html m Model
+view :: Monad m => Model -> Html m Model
 view model = div_
   [ liftC (\l m -> m { left      = l }) left    $ num (left model)
   , liftC (\o m -> m { operation = o }) operation opSelect

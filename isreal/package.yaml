@@ -37,6 +37,7 @@ dependencies:
     - containers
     - text
     - servant
+    - deepseq
 
 
 library:

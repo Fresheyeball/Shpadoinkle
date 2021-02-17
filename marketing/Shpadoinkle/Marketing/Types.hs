@@ -24,6 +24,7 @@ import           Servant.API                        (Capture,
                                                      type (:<|>) (..),
                                                      type (:>))
 
+import           Shpadoinkle                        (NFData)
 import           Shpadoinkle.Isreal.Types           (Code, CompileError,
                                                      SnowToken)
 import           Shpadoinkle.Router                 (HasRouter (..), View)
@@ -42,7 +43,7 @@ data Hoogle = Hoogle
   , targets :: Dropdown 'One Target
   }
   deriving stock    (Eq, Ord, Show, Read, Generic)
-  deriving anyclass (FromJSON, ToJSON)
+  deriving anyclass (FromJSON, ToJSON, NFData)
   deriving Semigroup via GenericSemigroup Hoogle
   deriving Monoid via GenericMonoid Hoogle
 
@@ -51,7 +52,7 @@ data Comparison = Comparison
   { framework :: Framework
   , tokenMay  :: Maybe SnowToken
   }
-  deriving (Eq, Ord, Read, Show, Generic, FromJSON, ToJSON)
+  deriving (Eq, Ord, Read, Show, Generic, FromJSON, ToJSON, NFData)
 
 
 data Route
@@ -64,11 +65,11 @@ data Frontend
   = HomeM       Home
   | ComparisonM Comparison
   | FourOhFourM
-  deriving (Eq, Ord, Read, Show, Generic, FromJSON, ToJSON)
+  deriving (Eq, Ord, Read, Show, Generic, FromJSON, ToJSON, NFData)
 
 
 data Framework = React | Vue | Elm | Halogen | Reflex
-  deriving (Eq, Ord, Read, Show, Bounded, Enum, Generic, FromJSON, ToJSON)
+  deriving (Eq, Ord, Read, Show, Bounded, Enum, Generic, FromJSON, ToJSON, NFData)
 
 
 instance FromHttpApiData Framework where

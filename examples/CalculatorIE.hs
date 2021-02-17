@@ -24,7 +24,7 @@ import           Data.List.Split             as L
 import           Data.Text                   (Text, pack)
 import           Data.Text.Encoding          (decodeUtf8)
 import           GHC.Generics                (Generic)
-import           Shpadoinkle                 (Html, liftC)
+import           Shpadoinkle                 (Html, NFData, liftC)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Console         (askJSM, trapper)
 import           Shpadoinkle.Html            as H
@@ -36,10 +36,10 @@ data Digit
   = Seven | Eight | Nine
   | Four  | Five  | Six
   | One   | Two   | Three
-  | Zero deriving (Eq, Show, Ord, Enum, Bounded, Generic, ToJSON)
+  | Zero deriving (Eq, Show, Ord, Enum, Bounded, Generic, ToJSON, NFData)
 
 data Operator = Addition | Multiplication | Subtraction | Division
-  deriving (Eq, Enum, Bounded, Generic, ToJSON)
+  deriving (Eq, Enum, Bounded, Generic, ToJSON, NFData)
 
 instance Show Operator where
   show = \case
@@ -52,7 +52,7 @@ data Entry
   = Whole [Digit]
   | [Digit] :<.> [Digit]
   | Negate Entry
-  deriving (Eq, Generic, ToJSON)
+  deriving (Eq, Generic, ToJSON, NFData)
 
 noEntry :: Entry
 noEntry = Whole []
@@ -96,25 +96,25 @@ charDigit = prism'
 data Operation = Operation
   { _operator :: Operator
   , _previous :: Entry
-  } deriving (Eq, Show, Generic, ToJSON)
+  } deriving (Eq, Show, Generic, ToJSON, NFData)
 
 makeFieldsNoPrefix ''Operation
 
 data Model = Model
   { _current   :: Entry
   , _operation :: Maybe Operation
-  } deriving (Eq, Show, Generic, ToJSON)
+  } deriving (Eq, Show, Generic, ToJSON, NFData)
 
 makeFieldsNoPrefix ''Model
 
 initial :: Model
 initial = Model noEntry Nothing
 
-digit :: Digit -> Html m Model
+digit :: Monad m => Digit -> Html m Model
 digit d = button [ onClick $ current %~ applyDigit d, class' $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
-operate :: Maybe Operator -> Operator -> Html m Operator
+operate :: Monad m => Maybe Operator -> Operator -> Html m Operator
 operate active o = button
   [ onClick $ const o, class' ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
@@ -153,7 +153,7 @@ neg = \case
   Negate e -> e
   e        -> Negate e
 
-readout :: Model -> Html m a
+readout :: Monad m => Model -> Html m a
 readout x = H.div "readout" $
   [ text . pack . show $ x ^. current
   ] <> case x ^? operation . traverse . operator of
@@ -164,26 +164,26 @@ readout x = H.div "readout" $
              ]
            ]
 
-clear :: Html m Model
+clear :: Monad m => Html m Model
 clear  = button [ class' "clear", onClick $ const initial ] [ "AC" ]
 
-posNeg :: Html m Model
+posNeg :: Monad m => Html m Model
 posNeg = button [ class' "posNeg", onClick $ current %~ neg ] [ "-/+" ]
 
-numberpad :: Html m Model
+numberpad :: Monad m => Html m Model
 numberpad = H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
   digit <$> [minBound .. pred maxBound]
 
-operations :: Functor m => Model -> Html m Model
+operations :: Monad m => Model -> Html m Model
 operations x = H.div "operate" $ (\o' -> liftC (\o _ -> x
   & operation ?~ Operation o (x ^. current)
   & current .~ noEntry) (const o')
   $ operate (x ^? operation . traverse . operator) o') <$> ([minBound .. maxBound] :: [Operator])
 
-dot :: Html m Model
+dot :: Monad m => Html m Model
 dot = button [ onClick $ current %~ addDecimal ] [ "." ]
 
-equals :: Html m Model
+equals :: Monad m => Html m Model
 equals = button [ class' "equals", onClick calcResult ] [ "=" ]
 
 view :: Monad m => Model -> Html m Model

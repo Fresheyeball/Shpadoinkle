@@ -36,7 +36,7 @@ about ctx =
       ]
 
 
-home :: Html m a
+home :: Monad m => Html m a
 home = h1_ [ "home" ]
 
 

@@ -64,7 +64,7 @@ toEditForm sc = SpaceCraftUpdate
   }
 
 
-formGroup :: [Html m a] -> Html m a
+formGroup :: Monad m => [Html m a] -> Html m a
 formGroup = H.div "form-group row"
 
 
@@ -143,7 +143,7 @@ controlClass (Validated _) Dirty = ["is-valid"]
 controlClass _ Clean             = []
 
 
-invalid :: Validated Text a -> Hygiene -> [ Html m b ]
+invalid :: Monad m => Validated Text a -> Hygiene -> [ Html m b ]
 invalid (Invalid err errs) Dirty = (\e -> H.div "invalid-feedback" [ text e ]) <$> err:errs
 invalid _                  _     = []
 
@@ -250,7 +250,7 @@ view fe = case fe of
   M404 -> text "404"
 
 
-template :: Env -> Frontend -> Html m a -> Html m a
+template :: Monad m => Env -> Frontend -> Html m a -> Html m a
 template ev fe stage = H.html_
   [ H.head_
     [ H.link'

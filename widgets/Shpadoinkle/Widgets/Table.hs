@@ -31,10 +31,8 @@ module Shpadoinkle.Widgets.Table
 
 import           Control.Arrow             (second)
 import           Data.Aeson
-import           Data.Functor.Identity
 import           Data.Kind
 import           Data.List                 (sortBy)
-import qualified Data.Map                  as M
 import           Data.Proxy
 import           Data.Text
 import           GHC.Generics
@@ -47,7 +45,7 @@ import           Shpadoinkle.Widgets.Types
 
 
 data Sort = ASC | DESC
-  deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic, ToJSON, FromJSON)
+  deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic, ToJSON, FromJSON, NFData)
 
 
 instance Semigroup Sort where (<>) = min
@@ -66,6 +64,7 @@ deriving instance Eq   (Column a) => Eq   (SortCol a)
 deriving instance Ord  (Column a) => Ord  (SortCol a)
 deriving instance Functor Column => Functor SortCol
 deriving instance Generic (SortCol a)
+instance NFData (Column a) => NFData (SortCol a)
 instance (ToJSON   (Column a)) => ToJSON   (SortCol a)
 instance (FromJSON (Column a)) => FromJSON (SortCol a)
 
@@ -99,9 +98,9 @@ class Tabular a where
   toCell         :: Functor m => Effect a m => a -> Row a -> Column a -> [Html m a]
   sortTable      :: SortCol a -> Row a -> Row a -> Ordering
   ascendingIcon  :: Functor m => Effect a m => Proxy a -> Html m (a, SortCol a)
-  ascendingIcon _ = TextNode "↑"
+  ascendingIcon _ = text "↑"
   descendingIcon :: Functor m => Effect a m => Proxy a -> Html m (a, SortCol a)
-  descendingIcon _ = TextNode "↓"
+  descendingIcon _ = text "↓"
 
 
 toggleSort :: Eq (Column a) => Column a -> SortCol a -> SortCol a
@@ -162,15 +161,10 @@ viewWith Theme {..} xs s@(SortCol sorton sortorder) =
 
   filterRow :: Row a -> Html m (a, SortCol a) -> Html m (a, SortCol a)
   filterRow row el = if f row then el
-    else runIdentity $ props (Identity . addDisplayNoneStyle) el
+    else mapProps addDisplayNoneStyle el
 
-  addDisplayNoneStyle :: [(Text, Prop m (a, SortCol a))] -> [(Text, Prop m (a, SortCol a))]
-  addDisplayNoneStyle ps =
-    let pMap = M.fromList ps
-        styleProp = M.lookup "style" pMap in
-      case styleProp of
-        Just (PText sty) -> M.toList (M.insert "style" (textProp $ sty <> "; display: none") pMap)
-        _ -> M.toList (M.insert "style" (textProp "display: none") pMap)
+  addDisplayNoneStyle :: Props m (a, SortCol a) -> Props m (a, SortCol a)
+  addDisplayNoneStyle = (<> toProps [("style",  textProp "display: none")])
 
   cth_ c = th (thProps xs s c) . pure . Html.a [ second rightC . onClick $ toggleSort c ]
          . mappend [ text (humanize c) ] . pure $

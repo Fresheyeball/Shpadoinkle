@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass       #-}
+{-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE LambdaCase           #-}
@@ -17,6 +19,7 @@ import           Data.Map                    as Map (Map, insert, lookup,
 import           Data.Text                   (Text, pack, unpack)
 import           Data.Time                   (UTCTime, defaultTimeLocale,
                                               formatTime, getCurrentTime)
+import           GHC.Generics                (Generic)
 import           Language.Javascript.JSaddle (FromJSVal (fromJSVal), JSM,
                                               MonadJSM, fun, js, js1, js2, jsg,
                                               liftJSM, obj, strictEqual, (<#))
@@ -25,7 +28,8 @@ import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
                                               newTVarIO)
 
-import           Shpadoinkle                 (Html, flagProp, shpadoinkle, text)
+import           Shpadoinkle                 (Html, NFData, flagProp,
+                                              shpadoinkle, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html
 import           Shpadoinkle.Run             (runJSorWarp)
@@ -35,14 +39,14 @@ default (Text)
 
 
 newtype History = History { unHistory :: Text }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic, NFData)
 
 
 data Model = Model
   { _history :: Map UTCTime History
   , _active  :: Maybe UTCTime
   , _sync    :: Bool
-  } deriving (Eq, Show)
+  } deriving (Eq, Show, Generic, NFData)
 makeLenses ''Model
 
 
@@ -93,7 +97,7 @@ sendHistory (History history') = void $ do
   void $ jsg "chrome" ^. (js "tabs" . js2 "sendMessage" tabId msg)
 
 
-prettyHtml :: Int -> Pretty.Value -> Html m a
+prettyHtml :: Monad m => Int -> Pretty.Value -> Html m a
 prettyHtml depth = \case
   Pretty.Con con [] -> div "con-uniary" $ string con
   Pretty.Con con slots -> details [ className "con-wrap", ("open", flagProp $ depth < 3) ]

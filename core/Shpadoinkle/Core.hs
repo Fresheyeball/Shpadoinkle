@@ -26,21 +26,19 @@
 
 module Shpadoinkle.Core (
   -- * Base Types
-  Html(..), Prop(..)
+  Html(..), Prop(..), Props(..), fromProps, toProps
   -- ** Prop Constructors
   , dataProp, flagProp, textProp, listenerProp, bakedProp
   -- *** Listeners
   , listenRaw, listen, listenM, listenM_, listenC, listener
   -- ** Html Constructors
   , h, baked, text
-  -- ** Html Lenses
-  , props, children, name, textContent
   -- ** Hoists
   , hoistHtml, hoistProp
   -- ** Catamorphisms
   , cataH, cataProp
   -- ** Utilities
-  , mapProps, mapChildren, injectProps, eitherH
+  , mapProps, injectProps, eitherH
   -- * JSVal Wrappers
   , RawNode(..), RawEvent(..)
   -- * Backend Interface
@@ -54,18 +52,16 @@ module Shpadoinkle.Core (
   ) where
 
 
-import           Control.Arrow                 (second)
 import qualified Control.Categorical.Functor   as F
 import           Control.Category              ((.))
 import           Control.PseudoInverseCategory (EndoIso (..),
                                                 HasHaskFunctors (fmapA),
-                                                PIArrow (piendo, piiso, pisecond),
+                                                PIArrow (piendo, piiso),
                                                 PseudoInverseCategory (piinverse),
                                                 ToHask (piapply))
-import           Data.Functor.Identity         (Identity (Identity, runIdentity))
 import           Data.Kind                     (Type)
-import           Data.List                     (foldl')
-import           Data.Map                      (alter, toList)
+import           Data.Map                      as M (Map, singleton, toList,
+                                                     unionWithKey)
 import           Data.String                   (IsString (..))
 import           Data.Text                     (Text, pack)
 import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
@@ -88,20 +84,14 @@ import           Shpadoinkle.Continuation      (Continuation, Continuous (..),
 -- Please note, this is NOT the Virtual DOM used by Backend.
 -- This type backs a DSL that is then /interpreted/ into Virtual DOM
 -- by the Backend of your choosing. HTML comments are not supported.
-data Html :: (Type -> Type) -> Type -> Type where
-  -- | A standard node in the DOM tree
-  Node :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
-  -- | If you can bake an element into a 'RawNode' then you can embed it as a baked potato.
-  -- Backend does not provide any state management or abstraction to deal with
-  -- custom embedded content; it's on you to decide how and when this 'RawNode' will
-  -- be updated. For example, if you wanted to embed a Google map as a baked potato,
-  -- and you are driving your Backend view with a 'TVar', you would need to build
-  -- the 'RawNode' for this map /outside/ of your Backend view and pass it in
-  -- as an argument. The 'RawNode' is a reference you control.
-  Potato :: JSM RawNode -> Html m a
-  -- | The humble text node
-  TextNode :: Text -> Html m a
-
+-- This is Church encoded for performance reasons.
+newtype Html m a = Html
+  { unHtml
+      :: forall r. (Text -> Props m a -> [r] -> r)
+      -> (JSM RawNode -> r)
+      -> (Text -> r)
+      -> r
+  }
 
 -- | Properties of a DOM node. Backend does not use attributes directly,
 -- but rather is focused on the more capable properties that may be set on a DOM
@@ -129,26 +119,6 @@ data Prop :: (Type -> Type) -> Type -> Type where
   PListener :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> Prop m a
 
 
--- | Ensure all prop keys are unique.
--- Collisions for Data, Text, Flags, and Potatoes are last write wins
--- Collisions for Listeners are Continuation Semigroup operations
-nubProps :: Monad m => Html m a -> Html m a
-nubProps = mapPropsRecursive $ toList . foldl' f mempty
-  where
-  f acc (t,p) = alter (Just . g t p) t acc
-  g k new old = case (new, old) of
-    (PText t, Just (PText t')) | k == "className" -> PText $ t <> " " <> t'
-    (PListener l, Just (PListener l')) -> PListener $
-      \raw evt -> mappend <$> l raw evt <*> l' raw evt
-    _ -> new
-
-
-mapPropsRecursive :: ([(Text, Prop m a)] -> [(Text, Prop m a)]) -> Html m a -> Html m a
-mapPropsRecursive f = \case
-  Node t ps cs -> Node t (f ps) (mapPropsRecursive f <$> cs)
-  x            -> x
-
-
 -- | Construct a listener from its name and a simple monadic event handler.
 listenM :: Monad m => Text -> m (a -> a) -> (Text, Prop m a)
 listenM k = listenC k . impur
@@ -159,17 +129,37 @@ listenM_ :: Monad m => Text -> m () -> (Text, Prop m a)
 listenM_ k = listenC k . causes
 
 
--- | Type alias for convenience (typing out the nested brackets is tiresome)
-type Props' m a = [(Text, Prop m a)]
+newtype Props m a = Props { getProps :: Map Text (Prop m a) }
+
+
+toProps :: Monad m => [(Text, Prop m a)] -> Props m a
+toProps = foldMap $ Props . uncurry singleton
+
+
+fromProps :: Props m a -> [(Text, Prop m a)]
+fromProps = M.toList . getProps
+
+
+instance Monad m => Semigroup (Props m a) where
+  Props xs <> Props ys = Props (unionWithKey go xs ys)
+    where
+      go k old new = case (old, new) of
+        (PText t, PText t') | k == "className" -> PText (t <> " " <> t')
+        (PText t, PText t') | k == "style"     -> PText (t <> "; " <> t')
+        (PListener l, PListener l')            -> PListener $
+           \raw evt -> mappend <$> l raw evt <*> l' raw evt
+        _                                      -> new
+
+
+instance Monad m => Monoid (Props m a) where
+  mempty = Props mempty
 
 
 -- | If you can provide a Natural Transformation from one Functor to another
 -- then you may change the action of 'Html'.
-hoistHtml :: Functor m => Functor n => (m ~> n) -> Html m a -> Html n a
-hoistHtml f = \case
-  Node t ps cs -> Node t (fmap (hoistProp f) <$> ps) (hoistHtml f <$> cs)
-  Potato p     -> Potato p
-  TextNode t   -> TextNode t
+hoistHtml :: Functor m => (m ~> n) -> Html m a -> Html n a
+hoistHtml f (Html h') = Html $ \n p t -> h'
+  (\t' ps cs -> n t' (Props $ hoistProp f <$> getProps ps) cs) p t
 {-# INLINE hoistHtml #-}
 
 
@@ -190,7 +180,7 @@ hoistProp f = \case
 --   "hiya" = TextNode "hiya"
 -- @
 instance IsString (Html m a) where
-  fromString = TextNode . pack
+  fromString = text . pack
   {-# INLINE fromString #-}
 
 
@@ -242,28 +232,21 @@ instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
 -- | Given a lens, you can change the type of an Html by using the lens
 --   to convert the types of the Continuations inside it.
 instance Continuous Html where
-  mapC f (Node t ps es) = Node t (unMapProps . mapC f $ MapProps ps) (mapC f <$> es)
-  mapC _ (Potato p) = Potato p
-  mapC _ (TextNode t) = TextNode t
+  mapC f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (mapC f ps) cs) p t
   {-# INLINE mapC #-}
-
-
--- | Newtype to deal with the fact that we can't make the typeclass instances
---   for Endofunctor EndoIso and Continuous using the Props type alias
-newtype MapProps m a = MapProps { unMapProps :: Props' m a }
 
 
 -- | Props is a functor in the EndoIso category, where the objects are
 --  types and the morphisms are EndoIsos.
-instance Monad m => F.Functor EndoIso EndoIso (MapProps m) where
-  map f = piiso MapProps unMapProps . fmapA (pisecond (F.map f)) . piiso unMapProps MapProps
+instance Monad m => F.Functor EndoIso EndoIso (Props m) where
+  map f = piiso Props getProps . fmapA (F.map f) . piiso getProps Props
   {-# INLINE map #-}
 
 
 -- | Given a lens, you can change the type of a Props by using the lens
 --   to convert the types of the Continuations inside.
-instance Continuous MapProps where
-  mapC f = MapProps . fmap (second (mapC f)) . unMapProps
+instance Continuous Props where
+  mapC f = Props . fmap (mapC f) . getProps
   {-# INLINE mapC #-}
 
 
@@ -326,53 +309,21 @@ cataProp d t f l p = \case
 
 
 -- | Construct an HTML element JSX-style.
-h :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
-h = Node
+h :: Monad m => Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
+h t ps cs = Html $ \a b c -> a t (toProps ps) ((\(Html h') -> h' a b c) <$> cs)
 {-# INLINE h #-}
 
 
 -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'.
 baked :: JSM RawNode -> Html m a
-baked = Potato
+baked jr = Html $ \_ p _ -> p jr
 {-# INLINE baked #-}
 
 
 -- | Construct a text node.
 text :: Text -> Html m a
-text = TextNode
+text t = Html $ \_ _ f -> f t
 {-# INLINE text #-}
-
-
--- | Lens to props
-props :: Applicative f => ([(Text, Prop m a)] -> f [(Text, Prop m a)]) -> Html m a -> f (Html m a)
-props inj = \case
-  Node t ps cs -> (\ps' -> Node t ps' cs) <$> inj ps
-  t            -> pure t
-{-# INLINE props #-}
-
-
--- | Lens to children
-children :: Applicative f => ([Html m a] -> f [Html m a]) -> Html m a -> f (Html m a)
-children inj = \case
-  Node t ps cs -> Node t ps <$> inj cs
-  t            -> pure t
-{-# INLINE children #-}
-
-
--- | Lens to tag name
-name :: Applicative f => (Text -> f Text) -> Html m a -> f (Html m a)
-name inj = \case
-  Node t ps cs -> (\t' -> Node t' ps cs) <$> inj t
-  t            -> pure t
-{-# INLINE name #-}
-
-
--- | Lens to content of 'TextNode's
-textContent :: Applicative f => (Text -> f Text) -> Html m a -> f (Html m a)
-textContent inj = \case
-  TextNode t -> TextNode <$> inj t
-  n          -> pure n
-{-# INLINE textContent #-}
 
 
 -- | Construct an HTML element out of heterogeneous alternatives.
@@ -386,10 +337,7 @@ cataH :: (Text -> [(Text, Prop m a)] -> [b] -> b)
       -> (JSM RawNode -> b)
       -> (Text -> b)
       -> Html m a -> b
-cataH f g h' = \case
-  Node t ps cs -> f t ps (cataH f g h' <$> cs)
-  Potato p     -> g p
-  TextNode t   -> h' t
+cataH f g h' (Html h'') = h'' (\t ps cs -> f t (fromProps ps) cs) g h'
 
 
 -- | Natural Transformation
@@ -443,20 +391,14 @@ listen k = listenC k . pur
 
 
 -- | Transform the properties of some Node. This has no effect on 'TextNode's or 'Potato'es.
-mapProps :: ([(Text, Prop m a)] -> [(Text, Prop m a)]) -> Html m a -> Html m a
-mapProps f = runIdentity . props (Identity . f)
+mapProps :: (Props m a -> Props m a) -> Html m a -> Html m a
+mapProps f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (f ps) cs) p t
 {-# INLINE mapProps #-}
 
 
--- | Transform the children of some Node. This has no effect on 'TextNode's or 'Potato'es.
-mapChildren :: ([Html m a] -> [Html m a]) -> Html m a -> Html m a
-mapChildren f = runIdentity . children (Identity . f)
-{-# INLINE mapChildren #-}
-
-
 -- | Inject props into an existing 'Node'.
-injectProps :: [(Text, Prop m a)] -> Html m a -> Html m a
-injectProps ps = mapProps (++ ps)
+injectProps :: Monad m => [(Text, Prop m a)] -> Html m a -> Html m a
+injectProps ps = mapProps (<> toProps ps)
 {-# INLINE injectProps #-}
 
 
@@ -523,13 +465,13 @@ shpadoinkle toJSM toM initial model view stage = do
 
     go :: RawNode -> VNode b m -> a -> JSM (VNode b m)
     go c n a = j $ do
-      !m  <- interpret toJSM . nubProps $ view a
+      !m  <- interpret toJSM $ view a
       patch c (Just n) m
 
   setup @b @m @a $ do
     (c,n) <- j $ do
       c <- stage
-      n <- interpret toJSM . nubProps $ view initial
+      n <- interpret toJSM $ view initial
       _ <- patch c Nothing n
       return (c,n)
     _ <- shouldUpdate (go c) n model
