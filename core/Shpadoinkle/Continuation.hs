@@ -17,7 +17,7 @@ module Shpadoinkle.Continuation (
   -- * The Continuation Type
   Continuation (..)
   , runContinuation
-  , done, pur, impur, kleisli, causes, contIso
+  , done, pur, impur, kleisli, causes, merge, contIso
   -- * The Class
   , Continuous (..)
   -- ** Hoist
@@ -106,6 +106,11 @@ kleisli = Continuation . (id,)
 -- | A monadic computation can be turned into a Continuation which does not touch the state.
 causes :: Monad m => m () -> Continuation m a
 causes m = impur (m >> return id)
+
+
+-- | A continuation can be forced to write its changes midflight.
+merge :: Continuation m a -> Continuation m a
+merge = Merge
 
 
 -- | 'runContinuation' takes a 'Continuation' and a state value and runs the whole Continuation
