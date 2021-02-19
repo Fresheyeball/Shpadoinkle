@@ -160,6 +160,7 @@ in {
           Shpadoinkle-marketing        = call "Shpadoinkle-marketing"        ../marketing;
           Shpadoinkle-html             = call "Shpadoinkle-html"             ../html;
           Shpadoinkle-router           = call "Shpadoinkle-router"           ../router;
+          Shpadoinkle-streaming        = call "Shpadoinkle-streaming"        ../streaming;
           Shpadoinkle-widgets          = addTest (call "Shpadoinkle-widgets" ../widgets) hpkgs;
 
           Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests) {};

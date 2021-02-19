@@ -57,6 +57,7 @@ executables:
       - Shpadoinkle
       - Shpadoinkle-html
       - Shpadoinkle-lens
+      - Shpadoinkle-streaming
       - Shpadoinkle-backend-snabbdom
 
   lens:
