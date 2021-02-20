@@ -202,7 +202,7 @@ mkElement name = let
 
   in return
 
-    [ SigD n (ForallT [] [ AppT (ConT ''Prelude.Monad) m ]
+    [ SigD n (ForallT [] [ AppT (ConT ''Prelude.Applicative) m ]
       (AppT (AppT ArrowT (AppT ListT (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text))
                                       (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
         (AppT (AppT ArrowT (AppT ListT (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
@@ -211,21 +211,21 @@ mkElement name = let
     , ValD (VarP n) (NormalB (AppE (VarE l) (LitE (StringL raw)))) []
 
 
-    , SigD n_ (ForallT [] [ AppT (ConT ''Prelude.Monad) m ]
+    , SigD n_ (ForallT [] [ AppT (ConT ''Prelude.Applicative) m ]
       (AppT (AppT ArrowT (AppT ListT (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
        (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
 
     , ValD (VarP n_) (NormalB (AppE (VarE n) (ListE []))) []
 
 
-    , SigD n' (ForallT [] [ AppT (ConT ''Prelude.Monad) m ]
+    , SigD n' (ForallT [] [ AppT (ConT ''Prelude.Applicative) m ]
       (AppT (AppT ArrowT (AppT ListT (AppT (AppT (TupleT 2) (ConT ''Data.Text.Text)) (AppT (AppT (ConT ''Shpadoinkle.Prop) m) a))))
        (AppT (AppT (ConT ''Shpadoinkle.Html) m) a)))
 
     , ValD (VarP n') (NormalB (AppE (AppE (VarE (mkName "flip")) (VarE n)) (ListE []))) []
 
 
-    , SigD n'_ (ForallT [] [ AppT (ConT ''Prelude.Monad) m ]
+    , SigD n'_ (ForallT [] [ AppT (ConT ''Prelude.Applicative) m ]
       (AppT (AppT (ConT ''Shpadoinkle.Html) m) a))
 
     , ValD (VarP n'_) (NormalB (AppE (AppE (VarE n) (ListE [])) (ListE []))) []

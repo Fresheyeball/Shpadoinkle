@@ -120,19 +120,19 @@ data Prop :: (Type -> Type) -> Type -> Type where
 
 
 -- | Construct a listener from its name and a simple monadic event handler.
-listenM :: Monad m => Text -> m (a -> a) -> (Text, Prop m a)
+listenM :: Applicative m => Text -> m (a -> a) -> (Text, Prop m a)
 listenM k = listenC k . impur
 
 
 -- | Construct a listener from its name and a simple stateless monadic event handler.
-listenM_ :: Monad m => Text -> m () -> (Text, Prop m a)
+listenM_ :: Applicative m => Text -> m () -> (Text, Prop m a)
 listenM_ k = listenC k . causes
 
 
 newtype Props m a = Props { getProps :: Map Text (Prop m a) }
 
 
-toProps :: Monad m => [(Text, Prop m a)] -> Props m a
+toProps :: Applicative m => [(Text, Prop m a)] -> Props m a
 toProps = foldMap $ Props . uncurry singleton
 
 
@@ -140,7 +140,7 @@ fromProps :: Props m a -> [(Text, Prop m a)]
 fromProps = M.toList . getProps
 
 
-instance Monad m => Semigroup (Props m a) where
+instance Applicative m => Semigroup (Props m a) where
   Props xs <> Props ys = Props (unionWithKey go xs ys)
     where
       go k old new = case (old, new) of
@@ -151,7 +151,7 @@ instance Monad m => Semigroup (Props m a) where
         _                                      -> new
 
 
-instance Monad m => Monoid (Props m a) where
+instance Applicative m => Monoid (Props m a) where
   mempty = Props mempty
 
 
@@ -195,7 +195,7 @@ instance IsString (Prop m a) where
 
 -- | @Html m@ is a functor in the EndoIso category, where the objects are
 --   types and the morphisms are EndoIsos.
-instance Monad m => F.Functor EndoIso EndoIso (Html m) where
+instance Applicative m => F.Functor EndoIso EndoIso (Html m) where
   map (EndoIso f g i) = EndoIso (mapC . piapply $ map' (piendo f))
                                 (mapC . piapply $ map' (piiso g i))
                                 (mapC . piapply $ map' (piiso i g))
@@ -206,7 +206,7 @@ instance Monad m => F.Functor EndoIso EndoIso (Html m) where
 
 -- | Prop is a functor in the EndoIso category, where the objects are types
 --  and the morphisms are EndoIsos.
-instance Monad m => F.Functor EndoIso EndoIso (Prop m) where
+instance Applicative m => F.Functor EndoIso EndoIso (Prop m) where
   map :: forall a b. EndoIso a b -> EndoIso (Prop m a) (Prop m b)
   map f = EndoIso id mapFwd mapBack
     where f' :: EndoIso (Continuation m a) (Continuation m b)
@@ -238,7 +238,7 @@ instance Continuous Html where
 
 -- | Props is a functor in the EndoIso category, where the objects are
 --  types and the morphisms are EndoIsos.
-instance Monad m => F.Functor EndoIso EndoIso (Props m) where
+instance Applicative m => F.Functor EndoIso EndoIso (Props m) where
   map f = piiso Props getProps . fmapA (F.map f) . piiso getProps Props
   {-# INLINE map #-}
 
@@ -309,7 +309,7 @@ cataProp d t f l p = \case
 
 
 -- | Construct an HTML element JSX-style.
-h :: Monad m => Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
+h :: Applicative m => Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
 h t ps cs = Html $ \a b c -> a t (toProps ps) ((\(Html h') -> h' a b c) <$> cs)
 {-# INLINE h #-}
 
@@ -327,7 +327,7 @@ text t = Html $ \_ _ f -> f t
 
 
 -- | Construct an HTML element out of heterogeneous alternatives.
-eitherH :: Monad m => (a -> Html m a) -> (b -> Html m b) -> Either a b -> Html m (Either a b)
+eitherH :: Applicative m => (a -> Html m a) -> (b -> Html m b) -> Either a b -> Html m (Either a b)
 eitherH = eitherC
 {-# INLINE eitherH #-}
 
@@ -397,7 +397,7 @@ mapProps f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (f ps) cs) p t
 
 
 -- | Inject props into an existing 'Node'.
-injectProps :: Monad m => [(Text, Prop m a)] -> Html m a -> Html m a
+injectProps :: Applicative m => [(Text, Prop m a)] -> Html m a -> Html m a
 injectProps ps = mapProps (<> toProps ps)
 {-# INLINE injectProps #-}
 
