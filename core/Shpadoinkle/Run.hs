@@ -25,8 +25,8 @@ module Shpadoinkle.Run (
 import           Data.Text                              (Text)
 import           GHCJS.DOM.Types                        (JSM)
 import           Shpadoinkle                            (Backend, Html, RawNode,
-                                                         TVar, newTVarIO,
-                                                         shpadoinkle, type (~>))
+                                                         TVar, type (~>),
+                                                         newTVarIO, shpadoinkle)
 
 
 #ifndef ghcjs_HOST_OS
