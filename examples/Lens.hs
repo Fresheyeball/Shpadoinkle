@@ -31,7 +31,7 @@ data Form = Form
   } deriving (Eq, Show, Generic, NFData)
 
 
-form :: Monad m => Form -> Html m Form
+form :: Applicative m => Form -> Html m Form
 form f = div_
   [ label [ for' "name" ] [ "Name" ]
   , onRecord #name $ input'
@@ -54,7 +54,7 @@ newtype Counter = Counter Int
   deriving anyclass NFData
 
 
-counter :: Monad m => Counter -> Html m Counter
+counter :: Applicative m => Counter -> Html m Counter
 counter c = div_
   [ label [ for' "counter" ] [ text . pack $ show c ]
   , button [ id' "counter", onClick (+ 1) ] [ "Increment" ]
@@ -67,7 +67,7 @@ data Model
   deriving (Eq, Show, Generic, NFData)
 
 
-view :: Monad m => Model -> Html m Model
+view :: Applicative m => Model -> Html m Model
 view = \case
   MCounter c -> div_
     [ onSum #_MCounter $ counter c

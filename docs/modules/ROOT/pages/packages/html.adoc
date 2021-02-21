@@ -131,7 +131,7 @@ Think of `memo` as a way of changing the evaluation strategy:
 
 [source,haskell]
 ----
-view :: Text -> Html m a
+view :: Applicative m => Text -> Html m a
 view = memo $ \t ->
   div_ . take (length t) . repeat . text $ expensiveFilter t
 ----

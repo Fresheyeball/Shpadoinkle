@@ -31,7 +31,7 @@ Now that we can marshal between the Haskell representation and one we can show o
 
 [source,haskell]
 ----
-digit :: Digit -> Html m Digit
+digit :: Applicative m => Digit -> Html m Digit
 digit d = button [ onClick $ const d -- <1>
                  , className $ "d" <> d' -- <2>
                  ] [ text d' ]
@@ -157,7 +157,7 @@ instance Show Operator where
     Multiplication -> "×"
     Division       -> "÷"
 
-operate :: Maybe Operator -> Operator -> Html m Operator
+operate :: Applicative m => Maybe Operator -> Operator -> Html m Operator
 operate active o = button
   [ onClick (const o) -- <1>
   , className ("active", Just o == active) -- <2>
@@ -213,7 +213,7 @@ Now let's start building the final view. The calculator needs a readout area tha
 
 [source,haskell]
 ----
-readout :: Model -> Html m a
+readout :: Applicative m => Model -> Html m a
 ----
 
 Because the readout consumes the state but never produces an update we should leave the HTML parametric.
@@ -229,7 +229,7 @@ Resets the calculator to the `initial` state.
 
 [source,haskell]
 ----
-clear :: Html m Model
+clear :: Applicative m => Html m Model
 clear  = button [ class' "clear", onClick $ const initial ] [ "AC" ]
 ----
 
@@ -239,7 +239,7 @@ Negates the current entry. Phrased on the button as [-/+].
 
 [source,haskell]
 ----
-posNeg :: Html m Model
+posNeg :: Applicative m => Html m Model
 posNeg = button [ class' "posNeg", onClick (current %~ neg) ] [ "-/+" ]
 ----
 
@@ -249,7 +249,7 @@ The nine digit pad (excluding 0).
 
 [source,haskell]
 ----
-numberpad :: Html m Digit
+numberpad :: Applicative m => Html m Digit
 numberpad = H.div "numberpad"
   . L.intercalate [ br'_ ] -- <3>
   . L.chunksOf 3 -- <2>
@@ -266,7 +266,7 @@ A button to apply adding a decimal point to the current entry.
 
 [source,haskell]
 ----
-dot :: Html m Model
+dot :: Applicative m => Html m Model
 dot = button [ onClick $ current %~ addDecimal ] [ "." ]
 ----
 
@@ -280,7 +280,7 @@ Each operator button does the following:
 
 [source,haskell]
 ----
-operations :: Model -> Html m Model
+operations :: Applicative m => Model -> Html m Model
 operations x = H.div "operate" $ fmap (\o -> x
   & operation .~ Just (Operation o (x ^. current))
   & current   .~ noEntry) -- <3>
@@ -317,7 +317,7 @@ Based on the above examples, you should be able to see what is going on in this 
 
 [source,haskell]
 ----
-equals :: Html m Model
+equals :: Applicative m => Html m Model
 equals = button [ class' "equals", onClick calcResult ] [ "=" ]
 ----
 
@@ -327,7 +327,7 @@ Now, we can construct the final view by composing together our existing parts.
 
 [source,haskell]
 ----
-view :: Model -> Html Model
+view :: Applicative m => Model -> Html Model
 view x = H.div "calculator"
   [ readout x
   , H.div "buttons"

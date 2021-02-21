@@ -110,11 +110,11 @@ makeFieldsNoPrefix ''Model
 initial :: Model
 initial = Model noEntry Nothing
 
-digit :: Monad m => Digit -> Html m Model
+digit :: Applicative m => Digit -> Html m Model
 digit d = button [ onClick $ current %~ applyDigit d, class' $ "d" <> d' ] [ text d' ]
   where d' = d ^. re charDigit . to (pack . pure)
 
-operate :: Monad m => Maybe Operator -> Operator -> Html m Operator
+operate :: Applicative m => Maybe Operator -> Operator -> Html m Operator
 operate active o = button
   [ onClick $ const o, class' ("active" :: Text, Just o == active) ]
   [ text . pack $ show o ]
@@ -153,7 +153,7 @@ neg = \case
   Negate e -> e
   e        -> Negate e
 
-readout :: Monad m => Model -> Html m a
+readout :: Applicative m => Model -> Html m a
 readout x = H.div "readout" $
   [ text . pack . show $ x ^. current
   ] <> case x ^? operation . traverse . operator of
@@ -164,29 +164,29 @@ readout x = H.div "readout" $
              ]
            ]
 
-clear :: Monad m => Html m Model
+clear :: Applicative m => Html m Model
 clear  = button [ class' "clear", onClick $ const initial ] [ "AC" ]
 
-posNeg :: Monad m => Html m Model
+posNeg :: Applicative m => Html m Model
 posNeg = button [ class' "posNeg", onClick $ current %~ neg ] [ "-/+" ]
 
-numberpad :: Monad m => Html m Model
+numberpad :: Applicative m => Html m Model
 numberpad = H.div "numberpad" . L.intercalate [ br'_ ] . L.chunksOf 3 $
   digit <$> [minBound .. pred maxBound]
 
-operations :: Monad m => Model -> Html m Model
+operations :: Applicative m => Model -> Html m Model
 operations x = H.div "operate" $ (\o' -> liftC (\o _ -> x
   & operation ?~ Operation o (x ^. current)
   & current .~ noEntry) (const o')
   $ operate (x ^? operation . traverse . operator) o') <$> ([minBound .. maxBound] :: [Operator])
 
-dot :: Monad m => Html m Model
+dot :: Applicative m => Html m Model
 dot = button [ onClick $ current %~ addDecimal ] [ "." ]
 
-equals :: Monad m => Html m Model
+equals :: Applicative m => Html m Model
 equals = button [ class' "equals", onClick calcResult ] [ "=" ]
 
-view :: Monad m => Model -> Html m Model
+view :: Applicative m => Model -> Html m Model
 view m = H.div "calculator"
   [ readout m
   , H.div "buttons"

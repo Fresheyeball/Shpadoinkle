@@ -118,7 +118,7 @@ toVisible v = case v of
   Completed -> filter $ (== Complete)   . completed
 
 
-filterHtml :: Monad m => Visibility -> Visibility -> Html m Visibility
+filterHtml :: Applicative m => Visibility -> Visibility -> Html m Visibility
 filterHtml = memo $ \cur item -> li_
   [ a (href "#" : onClick (const item)
         : [class' ("selected", cur == item)]) [ text . pack $ show item ]
@@ -129,7 +129,7 @@ htmlIfTasks :: Model -> [Html m a] -> [Html m a]
 htmlIfTasks m h' = if Prelude.null (tasks m) then [] else h'
 
 
-taskView :: Monad m => Model -> Task -> Html m Model
+taskView :: Applicative m => Model -> Task -> Html m Model
 taskView m = memo $ \(Task (Description d) c tid) ->
   li [ id' . pack . show $ unTaskId tid
      , class' [ ("completed", c == Complete)
@@ -156,7 +156,7 @@ taskView m = memo $ \(Task (Description d) c tid) ->
   ]
 
 
-listFooter :: Monad m => Model -> Html m Model
+listFooter :: Applicative m => Model -> Html m Model
 listFooter model = footer "footer" $
   [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ tasks model in
     [ strong_ [ text . pack $ show co ]
@@ -169,7 +169,7 @@ listFooter model = footer "footer" $
 
 
 
-info :: Monad m => Html m a
+info :: Applicative m => Html m a
 info = footer "info"
   [ p_ [ "Double-click to edit a todo" ]
   , p_ [ "Credits ", a [ href "https://twitter.com/fresheyeball" ] [ "Isaac Shapira" ] ]
@@ -177,7 +177,7 @@ info = footer "info"
   ]
 
 
-newTaskForm :: Monad m => Model -> Html m Model
+newTaskForm :: Applicative m => Model -> Html m Model
 newTaskForm model = form [ class' "todo-form", onSubmit appendItem ]
   [ input' [ class' "new-todo"
            , value . unDescription $ current model
@@ -186,18 +186,18 @@ newTaskForm model = form [ class' "todo-form", onSubmit appendItem ]
   ]
 
 
-todoList :: Monad m => Model -> Html m Model
+todoList :: Applicative m => Model -> Html m Model
 todoList model = ul "todo-list" $ taskView model <$> visibility model `toVisible` tasks model
 
 
-toggleAllBtn :: Monad m => [Html m Model]
+toggleAllBtn :: Applicative m => [Html m Model]
 toggleAllBtn =
   [ input' [ id' "toggle-all", class' "toggle-all", type' "checkbox", onChange toggleAll ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
 
-view :: Monad m => Model -> Html m Model
+view :: Applicative m => Model -> Html m Model
 view model = div_
   [ section "todoapp" $
     header "header"
