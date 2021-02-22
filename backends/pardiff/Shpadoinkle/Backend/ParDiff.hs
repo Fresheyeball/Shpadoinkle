@@ -290,6 +290,7 @@ managePropertyState i obj' old new' = void $ do
     -- only old had it, delete
     This _                 -> case k of
       "className" -> voidJSM $ obj' ^. js1 "removeAttribute" "class"
+      "href"      -> voidJSM $ obj' ^. js1 "removeAttribute" "href"
       "htmlFor"   -> voidJSM $ obj' ^. js1 "removeAttribute" "for"
       "style"     -> voidJSM $ obj' ^. js1 "removeAttribute" "style"
       "checked"   -> voidJSM $ setProp' obj' k =<< toJSVal False
