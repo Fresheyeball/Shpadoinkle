@@ -6,18 +6,19 @@
 module Main where
 
 
-import             Prelude                     hiding (div)
+import           Prelude                     hiding (div)
 
-import             Control.Concurrent          (threadDelay)
-import             Control.Monad.IO.Class      (MonadIO (liftIO))
-import             Data.Text                   (Text, pack)
-import             Shpadoinkle                 (Html, liftC)
-import             Shpadoinkle.Backend.ParDiff (runParDiff)
-import             Shpadoinkle.Html            (button, div, getBody, text, onClickC)
-import             Shpadoinkle.Streaming       (consumeStream)
-import             Shpadoinkle.Run             (runJSorWarp, simple)
-import "streaming" Streaming                   (Stream, Of)
-import             Streaming.Prelude           (repeatM)
+import           Control.Concurrent          (threadDelay)
+import           Control.Monad.IO.Class      (MonadIO (liftIO))
+import           Data.Text                   (Text, pack)
+import           Shpadoinkle                 (Html, liftC)
+import           Shpadoinkle.Backend.ParDiff (runParDiff)
+import           Shpadoinkle.Html            (button, div, getBody, onClickC,
+                                              text)
+import           Shpadoinkle.Run             (runJSorWarp, simple)
+import           Shpadoinkle.Streaming       (consumeStream)
+import           "streaming" Streaming       (Of, Stream)
+import           Streaming.Prelude           (repeatM)
 
 default (Text)
 
@@ -37,7 +38,7 @@ view (Model ns) =
   div
     []
     [ text (pack (show ns))
-    , liftC (\c m -> m { streamContents = c}) streamContents $
+    , liftC (\c m -> m { streamContents = c }) streamContents $
       button
         [ onClickC (consumeStream exampleStream (return . (:))) ]
         [ text "Go" ]

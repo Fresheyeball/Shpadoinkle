@@ -6,11 +6,11 @@ module Shpadoinkle.Streaming
   ) where
 
 
-import Shpadoinkle hiding (h)
+import           Shpadoinkle        hiding (h)
 
-import Data.Functor.Of (Of ((:>)))
-import Streaming (Stream)
-import Streaming.Internal (destroy)
+import           Data.Functor.Of    (Of ((:>)))
+import           Streaming          (Stream)
+import           Streaming.Internal (destroy)
 
 
 consumeStream :: forall m a b. Monad m => Stream (Of a) m () -> (a -> m (b -> b)) -> Continuation m b
