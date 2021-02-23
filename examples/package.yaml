@@ -294,6 +294,7 @@ executables:
     other-modules: []
     source-dirs: .
     dependencies:
+    - streaming
     - text
 
     - Shpadoinkle
