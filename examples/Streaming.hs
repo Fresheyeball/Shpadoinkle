@@ -1,6 +1,7 @@
-{-# LANGUAGE ExtendedDefaultRules #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE PackageImports       #-}
+{-# LANGUAGE ExtendedDefaultRules       #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE PackageImports             #-}
 
 
 module Main where
@@ -11,7 +12,7 @@ import           Prelude                     hiding (div)
 import           Control.Concurrent          (threadDelay)
 import           Control.Monad.IO.Class      (MonadIO (liftIO))
 import           Data.Text                   (Text, pack)
-import           Shpadoinkle                 (Html, liftC)
+import           Shpadoinkle                 (Html, liftC, NFData)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (button, div, getBody, onClickC,
                                               text)
@@ -30,7 +31,7 @@ exampleStream = repeatM $ do
 
 
 newtype Model = Model { streamContents :: [Int] }
-  deriving (Eq, Show)
+  deriving (Eq, Show, NFData)
 
 
 view :: MonadIO m => Model -> Html m Model

@@ -41,7 +41,7 @@ dur :: Double
 dur = 3000
 
 
-view :: Double -> Html m a
+view :: Applicative m => Double -> Html m a
 view clock = H.div
   [ textProperty "style" $
      "position:absolute;background:red;padding:10px;" <> left

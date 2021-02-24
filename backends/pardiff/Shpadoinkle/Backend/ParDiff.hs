@@ -14,7 +14,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-{-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 #ifndef ghcjs_HOST_OS
@@ -82,10 +81,11 @@ import           UnliftIO.Concurrent         (forkIO)
 import           UnliftIO.STM                (STM, atomically)
 
 import           Shpadoinkle                 (Backend (..), Continuation,
-                                              Html (..), JSM, MonadJSM,
-                                              Prop (..), RawEvent (RawEvent),
-                                              RawNode (RawNode), hoist,
-                                              type (~>), writeUpdate)
+                                              Html (..), JSM, MonadJSM, NFData,
+                                              Prop (..), Props (..),
+                                              RawEvent (RawEvent),
+                                              RawNode (RawNode), fromProps,
+                                              hoist, type (~>), writeUpdate)
 
 
 default (Text)
@@ -169,13 +169,13 @@ instance Show (ParVProp a) where
     ParVFlag   b -> "ParVFlag " <> show b
 
 
-props :: Monad m => (m ~> JSM) -> TVar a -> Map Text (Prop (ParDiffT a m) a) -> RawNode -> JSM ()
+props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (ParDiffT a m) a -> RawNode -> JSM ()
 props toJSM i ps (RawNode raw) = do
   raw' <- makeObject raw
-  void . traverse (uncurry $ prop toJSM i raw') $ M.toList ps
+  void . traverse (uncurry $ prop toJSM i raw') $ fromProps ps
 
 
-prop :: Monad m => (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
+prop :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
 prop toJSM i raw k = \case
   PData d     -> setProp' raw k d
   PPotato p   -> setProptado i (fmap (fmap (hoist (toJSM . runParDiff i))) . p) raw
@@ -195,7 +195,7 @@ setProp' raw' k t = do
   if b then return () else unsafeSetProp (toJSString k) t' raw'
 
 
-setProptado :: forall a. TVar a -> (RawNode -> JSM (STM (Continuation JSM a))) -> Object -> JSM ()
+setProptado :: forall a. NFData a => TVar a -> (RawNode -> JSM (STM (Continuation JSM a))) -> Object -> JSM ()
 setProptado i f o = do
   elm <- RawNode <$> toJSVal o
   stm <- f elm
@@ -203,7 +203,7 @@ setProptado i f o = do
   void $ forkIO go
 
 
-setListener :: TVar a -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -> Object -> Text -> JSM ()
+setListener :: NFData a => TVar a -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -> Object -> Text -> JSM ()
 setListener i m o k = do
   elm <- RawNode <$> toJSVal o
   setProp' o ("on" <> k) . fun $ \_ _ -> \case
@@ -269,7 +269,7 @@ setFlag obj' k b = if b then
     _          -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
 
 
-managePropertyState :: MonadJSM m => TVar a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
+managePropertyState :: MonadJSM m => NFData a => TVar a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
 managePropertyState i obj' old new' = void $ do
   -- The following step may be necessary if the old DOM and the new VDOM both have checked == False
   -- but the user just checked this checkbox / radio button and the browser set its
@@ -290,6 +290,7 @@ managePropertyState i obj' old new' = void $ do
     -- only old had it, delete
     This _                 -> case k of
       "className" -> voidJSM $ obj' ^. js1 "removeAttribute" "class"
+      "href"      -> voidJSM $ obj' ^. js1 "removeAttribute" "href"
       "htmlFor"   -> voidJSM $ obj' ^. js1 "removeAttribute" "for"
       "style"     -> voidJSM $ obj' ^. js1 "removeAttribute" "style"
       "checked"   -> voidJSM $ setProp' obj' k =<< toJSVal False
@@ -324,6 +325,7 @@ patchChildren
   => MonadJSM m
 #endif
   => Show a
+  => NFData a
   => RawNode -> [ParVNode a] -> [ParVNode a] -> ParDiffT a m [ParVNode a]
 patchChildren parent@(RawNode p) old new'' =
   traverseMaybe (\case
@@ -350,6 +352,7 @@ patch'
   => MonadJSM m
 #endif
   => Show a
+  => NFData a
   => RawNode -> Maybe (ParVNode a) -> ParVNode a -> ParDiffT a m (ParVNode a)
 patch' parent old new' = do
   i <- ask
@@ -404,23 +407,11 @@ patch' parent old new' = do
 
 interpret'
   :: MonadJSM m
-  => MonadUnliftIO m
-  => Eq a
-  => Show a
+  => NFData a
   => (m ~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
-interpret' toJSM = \case
+interpret' toJSM (Html h') = h'
 
-  TextNode t -> do
-    raw <- liftJSM . newOnce $ do
-      doc <- jsg "document"
-      RawNode <$> doc ^. js1 "createTextNode" t
-    return $ ParTextNode raw t
-
-  Potato p -> do
-    raw <- liftJSM $ newOnce p
-    return $ ParPotato raw
-
-  Node name (M.fromList -> ps) cs -> do
+  (\name ps cs -> do
     i <- ask
 
     let makeNode = do
@@ -429,21 +420,31 @@ interpret' toJSM = \case
           props toJSM i ps elm
           return elm
 
-    cs' <- traverse (interpret toJSM) cs
+    cs' <- sequence cs
     raw <- liftJSM . newOnce $ do
       node <- makeNode
       traverse_ (appendChild node) cs'
       return node
 
-    p <- liftJSM $ makeProp toJSM i `traverse` ps
+    p <- liftJSM $ makeProp toJSM i `traverse` getProps ps
 
-    return $ ParNode raw name p cs'
+    return $ ParNode raw name p cs')
+
+  (\p -> do
+    raw <- liftJSM $ newOnce p
+    return $ ParPotato raw)
+
+  (\t -> do
+    raw <- liftJSM . newOnce $ do
+      doc <- jsg "document"
+      RawNode <$> doc ^. js1 "createTextNode" t
+    return $ ParTextNode raw t)
 
 
 instance
   ( MonadUnliftIO m
   , MonadJSM m
-  , Eq a
+  , NFData a
   , Show a ) => Backend (ParDiffT a) m a where
   type VNode (ParDiffT a) m = ParVNode a
   interpret = interpret'

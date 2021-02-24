@@ -1,6 +1,6 @@
 = Lens
 
-http://shpadoinkle.org/lens[Haddock]
+https://shpadoinkle.org/lens[Haddock]
 
 Lens combinators for Shpadoinkle applications. The primary use case is the composition of heterogeneous `Html` components.
 
@@ -20,7 +20,7 @@ data Form = Form
   , age  :: Int
   } deriving Generic
 
-form :: Functor m => Form -> Html m Form
+form :: Applicative m => Form -> Html m Form
 form f = div_
   [ label [ for "name" ] [ "Name" ]
   , onRecord #name $ input' -- <2>
@@ -51,7 +51,7 @@ Here we add it a component that increments an `Int`.
 newtype Counter = Counter Int
   deriving (Eq, Ord, Num, Show, Generic)
 
-counter :: Counter -> Html m Counter
+counter :: Applicative m => Counter -> Html m Counter
 counter c = div_
   [ label [ for' "counter" ] [ text . pack $ show c ]
   , button [ id' "counter", onClick (+ 1) ] [ "Increment" ]

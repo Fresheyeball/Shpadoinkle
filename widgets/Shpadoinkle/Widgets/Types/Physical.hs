@@ -9,23 +9,23 @@ module Shpadoinkle.Widgets.Types.Physical where
 
 
 import           Data.Aeson
-import           Data.Functor.Identity
 import           GHC.Generics
 #ifdef TESTING
 import           Test.QuickCheck                (Arbitrary (..),
                                                  arbitraryBoundedEnum)
 #endif
 
+import           Shpadoinkle                    (NFData)
 import           Shpadoinkle.Html               hiding (s)
 import           Shpadoinkle.Widgets.Types.Core
 
 
 data Toggle = Closed Hygiene | Open
-  deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON, NFData)
 
 
 data Hover = MouseOver | MouseOut
-  deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, ToJSON, FromJSON, NFData)
 
 
 instance Semigroup Hover where
@@ -39,12 +39,13 @@ instance Monoid Hover where
 
 
 withHover
-  :: ((Hover, a) -> Html m (Hover, a))
+  :: Monad m
+  => ((Hover, a) -> Html m (Hover, a))
   ->  (Hover, a) -> Html m (Hover, a)
-withHover f = runIdentity . props
-  (Identity . mappend [ onMouseenter $ (MouseOver, ) . snd
-                      , onMouseleave $ (MouseOut,  ) . snd
-                      ]) . f
+withHover f =
+  injectProps [ onMouseenter $ (MouseOver, ) . snd
+              , onMouseleave $ (MouseOut,  ) . snd
+              ] . f
 
 
 togHygiene :: Toggle -> Hygiene

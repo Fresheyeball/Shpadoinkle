@@ -5,7 +5,7 @@
 , withHoogle ? false
 , extra ? (_: b: b)
 , optimize ? true
-, system ? "x86_64-linux"
+, system ? builtins.currentSystem
 }:
 
 let

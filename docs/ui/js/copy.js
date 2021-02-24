@@ -12,13 +12,14 @@ window.addEventListener("load", init)
 function copyCode(code){
   code.title = "Click To Copy"
   code.addEventListener("click", () => {
-    const textArea = document.createElement('textarea')
-    textArea.style.position = "absolute"
-    textArea.style.left = "-99999px"
-    textArea.textContent = code.textContent
-    document.body.append(textArea)
-    textArea.select()
-    document.execCommand("copy")
-    document.body.removeChild(textArea)
+    navigator.clipboard.writeText(code.textContent)
+    // const textArea = document.createElement('textarea')
+    // textArea.style.position = "absolute"
+    // textArea.style.left = "-99999px"
+    // textArea.textContent = code.textContent
+    // document.body.append(textArea)
+    // textArea.select()
+    // document.execCommand("copy")
+    // document.body.removeChild(textArea)
   })
 }

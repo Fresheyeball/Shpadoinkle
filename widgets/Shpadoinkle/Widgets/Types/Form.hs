@@ -36,13 +36,14 @@ import           GHC.Generics
 import           Test.QuickCheck                (Arbitrary (..), elements)
 #endif
 
+import           Shpadoinkle                    (NFData)
 import           Shpadoinkle.Widgets.Types.Core (Hygiene)
 
 
 data Input a = Input
   { _hygiene :: Hygiene
   , _value   :: a
-  } deriving (Eq, Ord, Show, Read, Functor, Traversable, Foldable, Generic, ToJSON, FromJSON)
+  } deriving (Eq, Ord, Show, Read, Functor, Traversable, Foldable, Generic, ToJSON, FromJSON, NFData)
 
 
 #ifdef TESTING
@@ -90,10 +91,11 @@ instance Monoid a => Monoid (Input a) where
 newtype Placeholder = Placeholder { unPlaceholder :: Text }
   deriving newtype (Eq, Ord, Show, Read, IsString, Semigroup, Monoid, ToJSON, FromJSON)
   deriving stock Generic
+  deriving anyclass NFData
 
 
 data Validated e a = Validated a | Invalid e [e]
-  deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON, Functor, Foldable, Traversable, NFData)
 
 
 instance Semigroup (Validated e a) where

@@ -65,6 +65,8 @@ div' [ onClick (+ 1) ]
 
 You will also note that synchronous handlers take an `(a -> a)` and asynchronous handlers are `m (a -> a)`. This is because your Monadic action may be asynchronous and the state of the application may have changed during that time. The returned function `(a -> a)` will be applied as a state update to whatever that state is once the action completes. Should you need to query the state of the running application in the middle of asynchronous processing, use a `Continuation m a`.
 
+Repeated calls to the same event listener will be combined though the `Semigroup` instance for `Continuation` - if both operations are pure, their functions are composed. If they're impure, the first effects will be run before the second, and both of results are appended together.
+
 === Affordances
 
 Some listeners provide extra information. For example:
@@ -131,7 +133,7 @@ Think of `memo` as a way of changing the evaluation strategy:
 
 [source,haskell]
 ----
-view :: Text -> Html m a
+view :: Applicative m => Text -> Html m a
 view = memo $ \t ->
   div_ . take (length t) . repeat . text $ expensiveFilter t
 ----

@@ -26,7 +26,6 @@ import           Prelude                     hiding (div)
 
 import           Control.Arrow               (second)
 import           Data.Aeson
-import           Data.Functor.Identity
 import           Data.List                   (sortBy)
 import           Data.Maybe                  (fromMaybe)
 import           Data.Proxy
@@ -50,7 +49,7 @@ data LazyTable a = LazyTable a AssumedTableHeight AssumedRowHeight CurrentScroll
 
 
 newtype RowsToShow = RowsToShow Int
-  deriving (Eq, Ord, Num, Real, Bounded, Enum, Read, Show, ToJSON, FromJSON, Generic)
+  deriving (Eq, Ord, Num, Real, Bounded, Enum, Read, Show, ToJSON, FromJSON, Generic, NFData)
 
 
 data instance (Row (LazyTable a)) = LazyRow (Row a) | FakeRow
@@ -97,15 +96,15 @@ instance Tabular a => Tabular (LazyTable a) where
 
 -- Require the user to provide assumptions about the height of each row and the height of the container rather than querying the DOM for this information. Also make the assumption that all rows have equal height.
 newtype AssumedRowHeight = AssumedRowHeight Int -- measured in pixels
-  deriving (Eq, Ord, Generic, ToJSON, FromJSON, Read, Show, Num, Enum, Real, Integral)
+  deriving (Eq, Ord, Generic, ToJSON, FromJSON, Read, Show, Num, Enum, Real, Integral, NFData)
 
 
 newtype AssumedTableHeight = AssumedTableHeight Int -- measued in pixels
-  deriving (Eq, Ord, Generic, ToJSON, FromJSON, Read, Show, Num, Enum, Real, Integral)
+  deriving (Eq, Ord, Generic, ToJSON, FromJSON, Read, Show, Num, Enum, Real, Integral, NFData)
 
 
 newtype CurrentScrollY = CurrentScrollY Int -- measured in pixels
-  deriving (Eq, Ord, Generic, ToJSON, FromJSON, Read, Show, Num, Enum, Real, Integral)
+  deriving (Eq, Ord, Generic, ToJSON, FromJSON, Read, Show, Num, Enum, Real, Integral, NFData)
 
 
 type DebounceScroll m a = (RawNode -> RawEvent -> JSM (Continuation m a))
@@ -204,7 +203,7 @@ lazyTable theme tableHeight rowHeight@(AssumedRowHeight rowHeight')
 
     addContainerScrollHandler = case scrollConfig of
       ContainerIsScrollable debounceScroll ->
-        runIdentity . props (Identity . (listenRaw "scroll" (debounceScroll scrollHandlerContainer) :))
+        mapProps (toProps [listenRaw "scroll" (debounceScroll scrollHandlerContainer)] <>)
       TbodyIsScrollable _ -> id
 
     scrollHandlerContainer (RawNode n) _ =

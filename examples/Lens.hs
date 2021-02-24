@@ -1,4 +1,6 @@
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedLabels           #-}
@@ -14,7 +16,7 @@ import           Data.Maybe                  (fromMaybe)
 import           Data.Text                   (Text, pack, unpack)
 import           GHC.Generics                (Generic)
 import           Safe                        (readMay)
-import           Shpadoinkle                 (Html, JSM, text)
+import           Shpadoinkle                 (Html, JSM, NFData, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (button, div_, for', getBody, id',
                                               input', label, onClick, onInput,
@@ -26,10 +28,10 @@ import           Shpadoinkle.Run             (runJSorWarp, simple)
 data Form = Form
   { name :: Text
   , age  :: Int
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, NFData)
 
 
-form :: Functor m => Form -> Html m Form
+form :: Applicative m => Form -> Html m Form
 form f = div_
   [ label [ for' "name" ] [ "Name" ]
   , onRecord #name $ input'
@@ -47,10 +49,12 @@ form f = div_
 
 
 newtype Counter = Counter Int
-  deriving (Eq, Ord, Num, Show, Generic)
+  deriving stock Generic
+  deriving newtype (Eq, Ord, Num, Show)
+  deriving anyclass NFData
 
 
-counter :: Counter -> Html m Counter
+counter :: Applicative m => Counter -> Html m Counter
 counter c = div_
   [ label [ for' "counter" ] [ text . pack $ show c ]
   , button [ id' "counter", onClick (+ 1) ] [ "Increment" ]
@@ -60,7 +64,7 @@ counter c = div_
 data Model
   = MCounter Counter
   | MForm Form
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 
 view :: Applicative m => Model -> Html m Model

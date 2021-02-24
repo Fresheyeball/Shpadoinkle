@@ -31,14 +31,14 @@ import           Database.SQLite.Simple.FromField (FromField (..))
 
 import           Servant.API                      (FromHttpApiData,
                                                    ToHttpApiData)
-import           Shpadoinkle                      (text)
+import           Shpadoinkle                      (NFData, text)
 import           Shpadoinkle.Widgets.Types        (Humanize (..), Present (..))
 
 
 newtype SKU = SKU { unSKU :: Int  }
   deriving stock Generic
   deriving newtype (Real, Enum, Integral, Eq, Ord, Show, Read, Num, ToJSON, FromJSON)
-  deriving anyclass (Humanize, Present)
+  deriving anyclass (Humanize, Present, NFData)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
 #endif
@@ -47,9 +47,9 @@ instance Monoid SKU where mempty = SKU 0
 
 
 newtype Description = Description { unDescription  :: Text }
-  deriving stock (Generic)
+  deriving stock Generic
   deriving newtype (Eq, Ord, Show, Read, IsString, ToJSON, FromJSON, Humanize, Semigroup, Monoid)
-  deriving anyclass (Present)
+  deriving anyclass (Present, NFData)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
 #endif
@@ -61,7 +61,7 @@ instance Humanize (Maybe Description) where
 newtype SerialNumber = SerialNumber { unSerialNumber :: Int  }
   deriving stock Generic
   deriving newtype (Enum, Bounded, Real, Integral, Eq, Ord, Show, Num, ToJSON, FromJSON)
-  deriving anyclass (Humanize, Present)
+  deriving anyclass (Humanize, Present, NFData)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
 #endif
@@ -70,15 +70,16 @@ instance Monoid SerialNumber where mempty = SerialNumber 0
 
 
 newtype SpaceCraftId = SpaceCraftId { unSpaceCraftId :: Int }
+  deriving stock Generic
   deriving newtype ( Eq, Ord, Show, Num, ToJSON, FromJSON, FromHttpApiData, ToHttpApiData)
-  deriving anyclass (Humanize, Present)
+  deriving anyclass (Humanize, Present, NFData)
 #ifndef ghcjs_HOST_OS
   deriving newtype (FromBackendRow Sqlite, HasSqlValueSyntax SqliteValueSyntax, HasSqlEqualityCheck Sqlite)
 #endif
 
 
 data Operable = Operational | Inoperable
-  deriving (Eq, Ord, Enum, Bounded, Read, Show, Humanize, Present, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Enum, Bounded, Read, Show, Humanize, Present, Generic, ToJSON, FromJSON, NFData)
 #ifndef ghcjs_HOST_OS
   deriving (FromBackendRow Sqlite, HasSqlEqualityCheck Sqlite)
 instance HasSqlValueSyntax be String => HasSqlValueSyntax be Operable where sqlValueSyntax = autoSqlValueSyntax
@@ -88,7 +89,7 @@ instance Monoid Operable where mempty = maxBound
 
 
 data Squadron = AwayTeam | StrikeForce | Scout
-  deriving (Eq, Ord, Enum, Bounded, Read, Show, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Enum, Bounded, Read, Show, Generic, ToJSON, FromJSON, NFData)
 #ifndef ghcjs_HOST_OS
   deriving (FromBackendRow Sqlite)
 instance HasSqlValueSyntax be String => HasSqlValueSyntax be Squadron where sqlValueSyntax = autoSqlValueSyntax
@@ -107,6 +108,7 @@ instance Humanize Squadron where
     AwayTeam    -> "Away Team"
     StrikeForce -> "Strike Force"
     Scout       -> "Scouting"
+
 
 instance Present Squadron where
   present = pure . text . humanize
