@@ -1,7 +1,7 @@
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE ExtendedDefaultRules       #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
@@ -45,35 +45,31 @@ module Shpadoinkle.Backend.ParDiff
 
 
 import           Control.Applicative         (Alternative)
-import           Control.Compactable         (Compactable (traverseMaybe))
-import           Control.Lens                ((^.))
+import           Control.Monad               (forM_, void, when)
 import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
 import           Control.Monad.Catch         (MonadCatch, MonadThrow)
 import           Control.Monad.Reader        (MonadIO, MonadReader (ask),
                                               MonadTrans (..), ReaderT (..),
-                                              guard, void)
+                                              guard)
 import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
                                               MonadTransControl,
                                               defaultLiftBaseWith,
                                               defaultRestoreM)
-import           Data.Align                  (Semialign (align))
-import           Data.Foldable               (traverse_)
 import           Data.Kind                   (Type)
 import           Data.Map                    (Map)
 import qualified Data.Map                    as M
+import           Data.Map.Internal           (Map (Bin, Tip))
+import           Data.Maybe                  (isJust)
 import           Data.Monoid                 ((<>))
 import           Data.Once                   (Once, newOnce, runOnce)
 import           Data.Text                   (Text, intercalate)
-import           Data.These                  (These (That, These, This))
-import           Data.Traversable            (for)
-import           GHC.Generics                (Generic)
 import           Language.Javascript.JSaddle (FromJSVal (fromJSValUnchecked),
-                                              JSVal, MakeObject (makeObject),
+                                              JSString, MakeObject (makeObject),
                                               Object, ToJSString (toJSString),
-                                              ToJSVal (toJSVal), eval, fun, js1,
-                                              js2, jsg, jsg2, liftJSM,
-                                              strictEqual, unsafeGetProp,
-                                              unsafeSetProp)
+                                              ToJSVal (toJSVal), eval, fun,
+                                              jsFalse, jsTrue, jsg, jsg2,
+                                              liftJSM, unsafeSetProp,
+                                              valMakeText, (#))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
@@ -84,8 +80,9 @@ import           Shpadoinkle                 (Backend (..), Continuation,
                                               Html (..), JSM, MonadJSM, NFData,
                                               Prop (..), Props (..),
                                               RawEvent (RawEvent),
-                                              RawNode (RawNode), fromProps,
-                                              hoist, type (~>), writeUpdate)
+                                              RawNode (RawNode, unRawNode),
+                                              fromProps, hoist, type (~>),
+                                              writeUpdate)
 
 
 default (Text)
@@ -139,34 +136,13 @@ runParDiff t (ParDiffT r) = runReaderT r t
 
 
 data ParVNode :: Type -> Type where
-  ParNode     :: Once JSM RawNode -> Text -> Map Text (ParVProp a) -> [ParVNode a] -> ParVNode a
+  ParNode     :: Once JSM RawNode -> {-# UNPACK #-} !Text -> ParVProps a -> [ParVNode a] -> ParVNode a
   ParPotato   :: Once JSM RawNode -> ParVNode a
-  ParTextNode :: Once JSM RawNode -> Text -> ParVNode a
+  ParTextNode :: Once JSM RawNode -> {-# UNPACK #-} !Text -> ParVNode a
 
+type ParVProps = Props JSM
 
-instance Show (ParVNode a) where
-  show = \case
-    ParNode _ t ps cs -> "ParNode _ " <> show t <> " " <> show ps <> " " <> show cs
-    ParPotato _       -> "ParPotato _"
-    ParTextNode _ t   -> "ParTextNode _ " <> show t
-
-
-data ParVProp a
-  = ParVText Text
-  | ParVData JSVal
-  | ParVListen (RawNode -> RawEvent -> JSM (Continuation JSM a))
-  | ParVFlag Bool
-  | ParVPotato (RawNode -> JSM (STM (Continuation JSM a)))
-  deriving Generic
-
-
-instance Show (ParVProp a) where
-  show = \case
-    ParVData   _ -> "ParVData _"
-    ParVPotato _ -> "ParVPotato _"
-    ParVText   t -> "ParVText " <> show t
-    ParVListen _ -> "ParVListen _"
-    ParVFlag   b -> "ParVFlag " <> show b
+type ParVProp = Prop JSM
 
 
 props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (ParDiffT a m) a -> RawNode -> JSM ()
@@ -177,22 +153,16 @@ props toJSM i ps (RawNode raw) = do
 
 prop :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
 prop toJSM i raw k = \case
-  PData d     -> setProp' raw k d
+  PData d     -> unsafeSetProp k' d raw
+  PText t     -> do
+    t' <- valMakeText t
+    unsafeSetProp k' t' raw
   PPotato p   -> setProptado i (fmap (fmap (hoist (toJSM . runParDiff i))) . p) raw
-  PText t     -> setProp' raw k t
-  PListener f -> setListener i (\x y -> hoist (toJSM . runParDiff i)
-                                         <$> f x y) raw k
-  PFlag True  -> setProp' raw k =<< toJSVal True
+  PListener f -> setListener i (\x y -> hoist (toJSM . runParDiff i) <$> f x y) raw k'
+  PFlag True  -> unsafeSetProp k' jsTrue raw
   PFlag False -> return ()
-
-
-setProp' :: ToJSVal t => Object -> Text -> t -> JSM ()
-setProp' raw' k t = do
-  let k' = toJSString k
-  old <- unsafeGetProp k' raw'
-  t' <- toJSVal t
-  b <- strictEqual old t'
-  if b then return () else unsafeSetProp (toJSString k) t' raw'
+  where
+    k' = toJSString k
 
 
 setProptado :: forall a. NFData a => TVar a -> (RawNode -> JSM (STM (Continuation JSM a))) -> Object -> JSM ()
@@ -203,14 +173,15 @@ setProptado i f o = do
   void $ forkIO go
 
 
-setListener :: NFData a => TVar a -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -> Object -> Text -> JSM ()
+setListener :: NFData a => TVar a -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -> Object -> JSString -> JSM ()
 setListener i m o k = do
   elm <- RawNode <$> toJSVal o
-  setProp' o ("on" <> k) . fun $ \_ _ -> \case
+  f <- toJSVal . fun $ \_ _ -> \case
     e:_ -> do
       x <- m elm (RawEvent e)
       writeUpdate i x
     _ -> return ()
+  unsafeSetProp ("on" <> k) f o
 
 
 getRaw :: ParVNode a -> Once JSM RawNode
@@ -220,28 +191,13 @@ getRaw = \case
   ParTextNode mk _ -> mk
 
 
-setRaw :: Once JSM RawNode -> ParVNode a -> ParVNode a
-setRaw r = \case
-  ParNode _ a b c -> ParNode r a b c
-  ParPotato _     -> ParPotato r
-  ParTextNode _ a -> ParTextNode r a
-
-
-appendChild :: RawNode -> ParVNode a -> JSM (ParVNode a)
-appendChild (RawNode raw) pn = do
-  let raw' = getRaw pn
-  RawNode r <- runOnce raw'
-  void $ raw ^. js1 "appendChild" r
-  return pn
-
-
-makeProp :: Monad m => (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> JSM (ParVProp a)
+makeProp :: Monad m => (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> ParVProp a
 makeProp toJSM i = \case
-  PText t     -> return $ ParVText t
-  PData t     -> return $ ParVData t
-  PPotato p   -> return . ParVPotato $ fmap (fmap (hoist (toJSM . runParDiff i))) . p
-  PListener m -> return . ParVListen $ \x y -> hoist (toJSM . runParDiff i) <$> m x y
-  PFlag b     -> return $ ParVFlag b
+  PText t     -> PText t
+  PData t     -> PData t
+  PPotato p   -> PPotato $ fmap (fmap (hoist (toJSM . runParDiff i))) . p
+  PListener m -> PListener $ \x y -> hoist (toJSM . runParDiff i) <$> m x y
+  PFlag b     -> PFlag b
 
 
 setup' :: JSM () -> JSM ()
@@ -256,21 +212,27 @@ setup' cb = do
   cb
 
 
-voidJSM :: MonadJSM m => JSM a -> m ()
-voidJSM = void . liftJSM
+setFlag :: Object -> Text -> Bool -> JSM ()
+setFlag obj' k b
+  | b = unsafeSetProp k' jsTrue obj'
+  | otherwise = case k of
+    "checked"  -> unsafeSetProp k' jsFalse obj'
+    "disabled" -> void (obj' # "removeAttribute" $ "disabled")
+    _          -> void (jsg2 "deleteProp" k' obj')
+  where
+    k' = toJSString k
 
 
-setFlag :: MonadJSM m => Object -> Text -> Bool -> m ()
-setFlag obj' k b = if b then
-    voidJSM $ setProp' obj' k =<< toJSVal True
-  else case k of
-    "checked"  -> voidJSM $ setProp' obj' k =<< toJSVal False
-    "disabled" -> voidJSM $ obj' ^. js1 "removeAttribute" "disabled"
-    _          -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
+traverseWithKey_ :: Applicative t => (k -> a -> t ()) -> Map k a -> t ()
+traverseWithKey_ f = go
+  where
+    go Tip             = pure ()
+    go (Bin 1 k v _ _) = f k v
+    go (Bin _ k v l r) = go l *> f k v *> go r
 
 
-managePropertyState :: MonadJSM m => NFData a => TVar a -> Object -> Map Text (ParVProp a) -> Map Text (ParVProp a) -> m ()
-managePropertyState i obj' old new' = void $ do
+managePropertyState :: NFData a => TVar a -> Object -> ParVProps a -> ParVProps a -> JSM ()
+managePropertyState i obj' (Props !old) (Props !new) = void $ do
   -- The following step may be necessary if the old DOM and the new VDOM both have checked == False
   -- but the user just checked this checkbox / radio button and the browser set its
   -- checked property to true without setting its checked attribute.
@@ -284,39 +246,43 @@ managePropertyState i obj' old new' = void $ do
   -- Of these properties, checked is the only one where we know that the absence of the attribute
   -- in both the old and new (V)DOMs is consistent with the property needing to be updated
   -- because the property was updated with the corresponding attribute being absent the whole time.
-  maybe (return ()) (const . voidJSM $ setProp' obj' "checked" =<< toJSVal False)
-    $ M.lookup "checked" new' >>= guard . (\case { ParVFlag False -> True; _ -> False })
-  M.toList (align old new') `for` \(k, x) -> case x of
-    -- only old had it, delete
-    This _                 -> case k of
-      "className" -> voidJSM $ obj' ^. js1 "removeAttribute" "class"
-      "href"      -> voidJSM $ obj' ^. js1 "removeAttribute" "href"
-      "htmlFor"   -> voidJSM $ obj' ^. js1 "removeAttribute" "for"
-      "style"     -> voidJSM $ obj' ^. js1 "removeAttribute" "style"
-      "checked"   -> voidJSM $ setProp' obj' k =<< toJSVal False
-      "disabled"  -> voidJSM $ obj' ^. js1 "removeAttribute" "disabled"
-      _           -> voidJSM $ jsg2 "deleteProp" (toJSString k) obj'
-    That  (ParVPotato p)   -> voidJSM $ p . RawNode =<< toJSVal obj'
-    That  (ParVData j)     -> voidJSM $ setProp' obj' k j
-    -- new text prop, set
-    That  (ParVText t)     -> voidJSM $ setProp' obj' k =<< toJSVal t
-    -- changed text prop, set
-    These (ParVText t)
-          (ParVText t')
-                | t /= t'  -> voidJSM $ setProp' obj' k =<< toJSVal t'
-    -- new flag prop, set
-    That  (ParVFlag b)  -> setFlag obj' k b
-    -- changed flag prop, set
-    These (ParVFlag t)
-          (ParVFlag t')
-                | t /= t' -> setFlag obj' k t'
-    -- new listener, set
-    That  (ParVListen h)  -> voidJSM $ setListener i h obj' k
-    -- listeners are uncomparable in any useful way
-    These (ParVListen _)
-          (ParVListen h)  -> voidJSM $ setListener i h obj' k
-    -- no change, do nothing
-    These _ _              -> return ()
+  let isFalseFlag (PFlag f) = not f
+      isFalseFlag _         = False
+  when (isJust (M.lookup "checked" new >>= guard . isFalseFlag))
+    (unsafeSetProp "checked" jsFalse obj')
+
+  let toRemove = M.difference old new
+      willInclude new' old'
+        | new' == old' = Nothing
+        | otherwise    = Just new'
+      toInclude = M.differenceWith willInclude new old
+
+      remove k _ = case k of
+        "className" -> void $ obj' # "removeAttribute" $ "class"
+        "href"      -> void $ obj' # "removeAttribute" $ "href"
+        "htmlFor"   -> void $ obj' # "removeAttribute" $ "for"
+        "style"     -> void $ obj' # "removeAttribute" $ "style"
+        "checked"   -> unsafeSetProp (toJSString k) jsFalse obj'
+        "disabled"  -> void $ obj' # "removeAttribute" $ "disabled"
+        _           -> void $ jsg2 "deleteProp" (toJSString k) obj'
+
+  traverseWithKey_ remove toRemove
+
+  let include k v =
+        let k' = toJSString k
+        in  case v of
+          PPotato p -> void . p . RawNode =<< toJSVal obj' -- FIXME why throw away continuation...???
+          PData j -> unsafeSetProp k' j obj'
+          -- new text prop, set
+          PText t -> do
+            t' <- valMakeText t
+            unsafeSetProp k' t' obj'
+          -- new flag prop, set
+          PFlag b -> setFlag obj' k b
+          -- new listener, set
+          PListener h -> setListener i h obj' k'
+
+  traverseWithKey_ include toInclude
 
 
 patchChildren
@@ -327,23 +293,20 @@ patchChildren
   => Show a
   => NFData a
   => RawNode -> [ParVNode a] -> [ParVNode a] -> ParDiffT a m [ParVNode a]
-patchChildren parent@(RawNode p) old new'' =
-  traverseMaybe (\case
-
-    This child -> do
-      RawNode c <- lift . liftJSM . runOnce $ getRaw child
-      voidJSM $ p ^. js1 "removeChild" c
-      return Nothing
-
-    That child -> do
-      RawNode c <- lift . liftJSM . runOnce $ getRaw child
-      voidJSM $ p ^. js1 "appendChild" c
-      return $ Just child
-
-    These old' new' ->
-      Just <$> patch' parent (Just old') new'
-
-  ) (align old new'')
+patchChildren (RawNode p) [] new = liftJSM $ do
+  forM_ new $ \newChild -> do
+    RawNode cRaw <- runOnce (getRaw newChild)
+    p # "appendChild" $ cRaw
+  pure new
+patchChildren _ old [] = liftJSM $ do
+  doc <- jsg "document"
+  tmp <- doc # "createElement" $ "div"
+  old' <- traverse (fmap unRawNode . runOnce . getRaw) old
+  void (tmp # "replaceChildren" $ old')
+  void (tmp # "remove" $ ())
+  pure []
+patchChildren parent (old:olds) (new:news) =
+  (:) <$> patch' parent old new <*> patchChildren parent olds news
 
 
 patch'
@@ -353,92 +316,75 @@ patch'
 #endif
   => Show a
   => NFData a
-  => RawNode -> Maybe (ParVNode a) -> ParVNode a -> ParDiffT a m (ParVNode a)
-patch' parent old new' = do
+  => RawNode -> ParVNode a -> ParVNode a -> ParDiffT a m (ParVNode a)
+patch' parent old new = do
   i <- ask
-  case (old, new') of
+  case (old, new) of
 
-    -- text node did not change
-    (Just old'@(ParTextNode _ t)
-              , ParTextNode _ t')
-                         | t == t' -> return old'
-
-
-    -- text node changed
-    (Just (ParTextNode raw _)
-         , ParTextNode _ t) -> do
-
-      RawNode r <- liftJSM $ runOnce raw
-      obj' <- liftJSM $ makeObject r
-      liftJSM $ setProp' obj' "nodeValue" =<< toJSVal t
-      return $ setRaw raw new'
-
+    (ParTextNode raw t', ParTextNode _ t)
+      -- text node did not change
+      | t == t' -> return old
+      -- text node changed
+      | otherwise -> liftJSM $ do
+        RawNode r <- runOnce raw
+        obj' <- makeObject r
+        tNew <- valMakeText t
+        unsafeSetProp "nodeValue" tNew obj'
+        return (ParTextNode raw t)
 
     -- node may have changed
-    (Just (ParNode raw name ps cs)
-         , ParNode _   name' ps' cs')
-                 | name == name' -> do
-
-      raw'@(RawNode r) <- liftJSM $ runOnce raw
-      obj' <- liftJSM $ makeObject r
-      managePropertyState i obj' ps ps'
-      cs'' <- patchChildren raw' cs cs'
-      return $ ParNode raw name ps' cs''
-
+    (ParNode raw name ps cs, ParNode _ name' ps' cs')
+      | name == name' -> do
+        raw' <- liftJSM $ do
+          RawNode r <- runOnce raw
+          obj' <- makeObject r
+          managePropertyState i obj' ps ps'
+          pure (RawNode r)
+        cs'' <- patchChildren raw' cs cs'
+        return $ ParNode raw name ps' cs''
 
     -- node definitely has changed
-    (Just old', _) -> do
-
-      RawNode p <- return parent
-      RawNode r <- lift . liftJSM . runOnce $ getRaw old'
-      RawNode c <- lift . liftJSM . runOnce $ getRaw new'
-      _ <- liftJSM $ p ^. js2 "replaceChild" c r
-      return new'
-
-
-    -- first patch
-    (Nothing, _) -> do
-
-      RawNode p <- return parent
-      RawNode c <- lift . liftJSM . runOnce $ getRaw new'
-      _ <- liftJSM $ p ^. js1 "appendChild" c
-      return new'
+    _ -> liftJSM $ do
+        let RawNode p = parent
+        RawNode r <- runOnce $ getRaw old
+        RawNode c <- runOnce $ getRaw new
+        _ <- p # "replaceChild" $ (c, r)
+        return new
 
 
 interpret'
-  :: MonadJSM m
+  :: forall m a
+   . MonadJSM m
   => NFData a
   => (m ~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
-interpret' toJSM (Html h') = h'
+interpret' toJSM (Html h') = h' mkNode mkPotato mkText
+  where
+    mkNode :: Text -> Props (ParDiffT a m) a -> [ParDiffT a m (ParVNode a)] -> ParDiffT a m (ParVNode a)
+    mkNode name ps cs = do
+      cs' <- sequence cs
+      i <- ask
+      raw <- liftJSM . newOnce $ do
+        doc <- jsg "document"
+        raw' <- doc # "createElement" $ name
+        props toJSM i ps (RawNode raw')
+        forM_ cs' $ \c -> do
+          RawNode cRaw <- runOnce (getRaw c)
+          raw' # "appendChild" $ cRaw
+        return (RawNode raw')
 
-  (\name ps cs -> do
-    i <- ask
+      let p = Props (makeProp toJSM i <$> getProps ps)
 
-    let makeNode = do
-          doc <- jsg "document"
-          elm <- RawNode <$> doc ^. js1 "createElement" name
-          props toJSM i ps elm
-          return elm
+      return $ ParNode raw name p cs'
 
-    cs' <- sequence cs
-    raw <- liftJSM . newOnce $ do
-      node <- makeNode
-      traverse_ (appendChild node) cs'
-      return node
+    mkPotato :: JSM RawNode -> ParDiffT a m (ParVNode a)
+    mkPotato = fmap ParPotato . liftJSM . newOnce
 
-    p <- liftJSM $ makeProp toJSM i `traverse` getProps ps
-
-    return $ ParNode raw name p cs')
-
-  (\p -> do
-    raw <- liftJSM $ newOnce p
-    return $ ParPotato raw)
-
-  (\t -> do
-    raw <- liftJSM . newOnce $ do
-      doc <- jsg "document"
-      RawNode <$> doc ^. js1 "createTextNode" t
-    return $ ParTextNode raw t)
+    mkText :: Text -> ParDiffT a m (ParVNode a)
+    mkText t = liftJSM $ do
+      raw <- newOnce $ do
+        doc <- jsg "document"
+        RawNode <$> (doc # "createTextNode" $ t)
+      return $ ParTextNode raw t
 
 
 instance
@@ -449,7 +395,15 @@ instance
   type VNode (ParDiffT a) m = ParVNode a
   interpret = interpret'
   setup = setup'
-  patch = patch'
+  patch parent mOld new = case mOld of
+    -- first patch
+    Nothing ->
+      liftJSM $ do
+        let RawNode p = parent
+        RawNode c <- runOnce (getRaw new)
+        _ <- p # "appendChild" $ c
+        return new
+    Just old -> patch' parent old new
 
 
 -- | Get the DOM node produced by 'setup'.

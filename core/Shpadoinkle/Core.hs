@@ -120,6 +120,13 @@ data Prop :: (Type -> Type) -> Type -> Type where
   PListener :: (RawNode -> RawEvent -> JSM (Continuation m a)) -> Prop m a
 
 
+instance Eq (Prop m a) where
+  x == y = case (x,y) of
+    (PText x', PText y') -> x' == y'
+    (PFlag x', PFlag y') -> x' == y'
+    _                    -> False
+
+
 -- | Construct a listener from its name and a simple monadic event handler.
 listenM :: Applicative m => Text -> m (a -> a) -> (Text, Prop m a)
 listenM k = listenC k . impur
