@@ -12,7 +12,7 @@ import           Prelude                     hiding (div)
 import           Control.Concurrent          (threadDelay)
 import           Control.Monad.IO.Class      (MonadIO (liftIO))
 import           Data.Text                   (Text, pack)
-import           Shpadoinkle                 (Html, liftC, NFData)
+import           Shpadoinkle                 (Html, NFData, liftC)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (button, div, getBody, onClickC,
                                               text)
