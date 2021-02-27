@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ExtendedDefaultRules       #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -41,15 +42,15 @@ import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
                                               defaultLiftBaseWith,
                                               defaultRestoreM)
 import           Data.FileEmbed              (embedStringFile)
-import           Data.Text                   (Text, split)
-import           Data.Traversable            (for)
+import           Data.Map.Internal           (Map (Bin, Tip))
+import           Data.Text                   (Text, words)
 import           GHCJS.DOM                   (currentDocumentUnchecked)
 import           GHCJS.DOM.Document          (createElement, getBodyUnsafe)
 import           GHCJS.DOM.Element           (setAttribute)
 import           GHCJS.DOM.Node              (appendChild)
 import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, liftJSM,
                                               (#))
-import           Prelude                     hiding (id, (.))
+import           Prelude                     hiding (id, words, (.))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
@@ -112,54 +113,67 @@ runSnabbdom :: TVar model -> SnabbdomT model m ~> m
 runSnabbdom t (Snabbdom r) = runReaderT r t
 
 
-props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> [(Text, Prop (SnabbdomT a m) a)] -> JSM Object
-props toJSM i xs = do
+traverseWithKey_ :: Applicative t => (k -> a -> t ()) -> Map k a -> t ()
+traverseWithKey_ f = go
+  where
+    go Tip             = pure ()
+    go (Bin 1 k v _ _) = f k v
+    go (Bin _ k v l r) = go l *> f k v *> go r
+{-# INLINE traverseWithKey_ #-}
+
+
+props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (SnabbdomT a m) a -> JSM Object
+props toJSM i (Props xs) = do
   o <- create
   propsObj     <- create
   listenersObj <- create
   classesObj   <- create
   attrsObj     <- create
   hooksObj     <- create
-  void $ xs `for` \(k, p) -> case p of
-    PData d -> unsafeSetProp (toJSString k) d propsObj
-    PPotato pot -> do
-      f' <- toJSVal . fun $ \_ _ ->
-        let
-          g vnode = do
-            vnode' <- valToObject vnode
-            stm <- pot . RawNode =<< unsafeGetProp "elm" vnode'
-            let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i)
-            void $ forkIO go
-        in \case
-          [vnode]    -> g vnode
-          [_, vnode] -> g vnode
-          _          -> return ()
-      unsafeSetProp "insert" f' hooksObj
-      unsafeSetProp "update" f' hooksObj
+  flip traverseWithKey_ xs $ \k p ->
+    let k' = toJSString k
+    in  case p of
+      PData d -> unsafeSetProp k' d propsObj
+      PPotato pot -> do
+        f' <- toJSVal . fun $ \_ _ ->
+          let
+            g vnode = do
+              vnode' <- valToObject vnode
+              stm <- pot . RawNode =<< unsafeGetProp "elm" vnode'
+              let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i)
+              void $ forkIO go
+          in \case
+            [vnode]    -> g vnode
+            [_, vnode] -> g vnode
+            _          -> return ()
+        unsafeSetProp "insert" f' hooksObj
+        unsafeSetProp "update" f' hooksObj
 
-    PText t -> do
-      t' <- toJSVal t
-      true <- toJSVal True
-      case k of
-        "className" | t /= "" -> forM_ (split (== ' ') t) $ \u ->
-          if u == mempty then pure () else unsafeSetProp (toJSString u) true classesObj
-        "style"     | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
-        "type"      | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
-        "autofocus" | t /= "" -> unsafeSetProp (toJSString k) t' attrsObj
-        _                     -> unsafeSetProp (toJSString k) t' propsObj
+      PText t
+        | k == "className" -> forM_ (words t) $ \u ->
+            unsafeSetProp (toJSString u) jsTrue classesObj
+        | t /= "" -> do
+            t' <- valMakeText t
+            unsafeSetProp k' t' $ case k of
+              "style"     -> attrsObj
+              "type"      -> attrsObj
+              "autofocus" -> attrsObj
+              _           -> propsObj
+        | otherwise -> do
+            t' <- valMakeText t
+            unsafeSetProp k' t' propsObj
 
-    PListener f -> do
-      f' <- toJSVal . fun $ \_ _ -> \case
-        [] -> return ()
-        ev:_ -> do
-          rn <- unsafeGetProp "target" =<< valToObject ev
-          x <- f (RawNode rn) (RawEvent ev)
-          writeUpdate i $ hoist (toJSM . runSnabbdom i) x
-      unsafeSetProp (toJSString k) f' listenersObj
+      PListener f -> do
+        f' <- toJSVal . fun $ \_ _ -> \case
+          [] -> return ()
+          ev:_ -> do
+            rn <- unsafeGetProp "target" =<< valToObject ev
+            x <- f (RawNode rn) (RawEvent ev)
+            writeUpdate i $ hoist (toJSM . runSnabbdom i) x
+        unsafeSetProp k' f' listenersObj
 
-    PFlag b -> do
-      f <- toJSVal b
-      unsafeSetProp (toJSString k) f propsObj
+      PFlag b ->
+        unsafeSetProp k' (toJSBool b) propsObj
 
   p  <- toJSVal propsObj
   l  <- toJSVal listenersObj
@@ -178,32 +192,32 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
   type VNode (SnabbdomT a) m = SnabVNode
 
   interpret :: (m ~> JSM) -> Html (SnabbdomT a m) a -> SnabbdomT a m SnabVNode
-  interpret toJSM (Html h') = h'
+  interpret toJSM (Html h') = h' mkNode mkPotato mkText
+    where
+      mkNode name ps children = do
+        i <- ask; liftJSM $ do
+          !o <- props toJSM i ps
+          !cs <- toJSM . runSnabbdom i $ sequence children
+          SnabVNode <$> jsg3 "vnode" name o cs
 
-    (\name ps children -> do
-      cs <- sequence children
-      i <- ask; liftJSM $ do
-        o <- props toJSM i $ fromProps ps
-        jsg3 "vnode" name o cs >>= fromJSValUnchecked)
+      mkPotato mrn = liftJSM $ do
+        o <- create
+        hook <- create
+        rn <- mrn
+        ins <- toJSVal =<< function (\_ _ -> \case
+          [n] -> void $ jsg2 "potato" n rn
+          _   -> return ())
+        unsafeSetProp "insert" ins hook
+        hoo <- toJSVal hook
+        unsafeSetProp "hook" hoo o
+        SnabVNode <$> jsg2 "vnode" "div" o
 
-    (\mrn -> liftJSM $ do
-      o <- create
-      hook <- create
-      rn <- mrn
-      ins <- toJSVal =<< function (\_ _ -> \case
-        [n] -> void $ jsg2 "potato" n rn
-        _   -> return ())
-      unsafeSetProp "insert" ins hook
-      hoo <- toJSVal hook
-      unsafeSetProp "hook" hoo o
-      fromJSValUnchecked =<< jsg2 "vnode" "div" o)
-
-    (\t -> liftJSM $ fromJSValUnchecked =<< toJSVal t)
+      mkText = liftJSM . fmap SnabVNode . valMakeText
 
 
   patch :: RawNode -> Maybe SnabVNode -> SnabVNode -> SnabbdomT a m SnabVNode
-  patch (RawNode r) f t = t <$ (liftJSM . void $ jsg2 "patchh" f' t)
-    where f' = maybe r unVNode f
+  patch (RawNode container) mPreviousNode newNode = liftJSM $ newNode <$ jsg2 "patchh" previousNode newNode
+    where previousNode = maybe container unVNode mPreviousNode
 
 
   setup :: JSM () -> JSM ()
