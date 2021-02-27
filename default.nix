@@ -37,6 +37,7 @@ in
         Shpadoinkle-lens
         Shpadoinkle-html
         Shpadoinkle-router
+        Shpadoinkle-streaming
         Shpadoinkle-widgets
         Shpadoinkle-isreal
 

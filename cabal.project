@@ -10,6 +10,7 @@ packages: core
         , marketing
         , html
         , router
+        , streaming
         , widgets
 
         , examples

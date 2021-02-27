@@ -289,6 +289,19 @@ executables:
       - Shpadoinkle-backend-pardiff
       - Shpadoinkle-lens
 
+  streaming:
+    main: Streaming.hs
+    other-modules: []
+    source-dirs: .
+    dependencies:
+    - streaming
+    - text
+
+    - Shpadoinkle
+    - Shpadoinkle-streaming
+    - Shpadoinkle-html
+    - Shpadoinkle-backend-pardiff
+
 
 
 git: https://gitlab.com/fresheyeball/Shpadoinkle.git

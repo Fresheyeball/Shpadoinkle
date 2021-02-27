@@ -16,3 +16,4 @@ p widgets
 p examples
 p tests
 p isreal
+p streaming
