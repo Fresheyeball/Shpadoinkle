@@ -44,6 +44,7 @@ library:
     - exceptions
     - transformers-base
     - monad-control
+    - containers
 
     - mtl        >= 2.2.2 && < 2.3
     - unliftio   >= 0.2.12 && < 0.3
