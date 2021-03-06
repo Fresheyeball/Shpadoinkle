@@ -39,8 +39,7 @@ instance Monoid Hover where
 
 
 withHover
-  :: Monad m
-  => ((Hover, a) -> Html m (Hover, a))
+  :: ((Hover, a) -> Html m (Hover, a))
   ->  (Hover, a) -> Html m (Hover, a)
 withHover f =
   injectProps [ onMouseenter $ (MouseOver, ) . snd

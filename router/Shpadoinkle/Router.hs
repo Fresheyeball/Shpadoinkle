@@ -161,7 +161,7 @@ withHydration s r = do
 -- data. This function returns a script tag that makes a global variable "initState"
 -- containing a JSON representation to be used as the initial state of the application
 -- on page load. Typically this is used on the server side.
-toHydration :: Monad m => ToJSON a => a -> Html m b
+toHydration :: ToJSON a => a -> Html m b
 toHydration fe =
   h "script" [] [ text $ "window.initState = '" <> (T.replace "'" "\\'" . decodeUtf8 . toStrict $ encode fe) <> "'" ]
 
@@ -216,7 +216,7 @@ fullPageSPAC toJSM backend i' view getStage onRoute routes = do
       model <- newTVarIO i
       _ <- listenStateChange router $ writeUpdate model . kleisli . const
            . (fmap (hoist toJSM) . toJSM) . onRoute
-      shpadoinkle toJSM backend i model view getStage
+      shpadoinkle toJSM backend model view getStage
       syncPoint
 
 
@@ -288,7 +288,7 @@ fullPageSPA' toJSM backend model i' view getStage onRoute routes = do
       atomically $ writeTVar model i
       _ <- listenStateChange router $ writeUpdate model . kleisli . const
            . (fmap (hoist toJSM) . toJSM) . onRoute
-      shpadoinkle toJSM backend i model view getStage
+      shpadoinkle toJSM backend model view getStage
       syncPoint
 
 

@@ -81,7 +81,7 @@ import           Shpadoinkle                 (Backend (..), Continuation,
                                               Prop (..), Props (..),
                                               RawEvent (RawEvent),
                                               RawNode (RawNode, unRawNode),
-                                              fromProps, hoist, type (~>),
+                                              hoist, toProps, type (~>),
                                               writeUpdate)
 
 
@@ -146,9 +146,9 @@ type ParVProp = Prop JSM
 
 
 props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (ParDiffT a m) a -> RawNode -> JSM ()
-props toJSM i ps (RawNode raw) = do
+props toJSM i (Props ps) (RawNode raw) = do
   raw' <- makeObject raw
-  void . traverse (uncurry $ prop toJSM i raw') $ fromProps ps
+  traverseWithKey_ (prop toJSM i raw') ps
 
 
 prop :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
@@ -359,20 +359,21 @@ interpret'
   => (m ~> JSM) -> Html (ParDiffT a m) a -> ParDiffT a m (ParVNode a)
 interpret' toJSM (Html h') = h' mkNode mkPotato mkText
   where
-    mkNode :: Text -> Props (ParDiffT a m) a -> [ParDiffT a m (ParVNode a)] -> ParDiffT a m (ParVNode a)
+    mkNode :: Text -> [(Text, Prop (ParDiffT a m) a)] -> [ParDiffT a m (ParVNode a)] -> ParDiffT a m (ParVNode a)
     mkNode name ps cs = do
       cs' <- sequence cs
       i <- ask
+      let ps' = toProps ps
       raw <- liftJSM . newOnce $ do
         doc <- jsg "document"
         raw' <- doc # "createElement" $ name
-        props toJSM i ps (RawNode raw')
+        props toJSM i ps' (RawNode raw')
         forM_ cs' $ \c -> do
           RawNode cRaw <- runOnce (getRaw c)
           raw' # "appendChild" $ cRaw
         return (RawNode raw')
 
-      let p = Props (makeProp toJSM i <$> getProps ps)
+      let p = Props (makeProp toJSM i <$> getProps ps')
 
       return $ ParNode raw name p cs'
 

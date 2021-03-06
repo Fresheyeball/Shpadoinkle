@@ -15,7 +15,7 @@ import           Shpadoinkle.Html.Utils
 import           Shpadoinkle.Run             (runJSorWarp, simple)
 
 
-view :: Applicative m => Int -> Html m Int
+view :: Int -> Html m Int
 view count = div_
   [ h2_ [ "Counter Example" ]
   , "The current count is: "

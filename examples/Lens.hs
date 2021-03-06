@@ -54,7 +54,7 @@ newtype Counter = Counter Int
   deriving anyclass NFData
 
 
-counter :: Applicative m => Counter -> Html m Counter
+counter :: Counter -> Html m Counter
 counter c = div_
   [ label [ for' "counter" ] [ text . pack $ show c ]
   , button [ id' "counter", onClick (+ 1) ] [ "Increment" ]

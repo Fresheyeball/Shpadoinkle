@@ -17,8 +17,8 @@ import           Data.String                   (IsString)
 import           Data.Text                     hiding (count, filter, length)
 import           GHC.Generics                  (Generic)
 import           Prelude                       hiding (div, unwords)
-import           Shpadoinkle                   (Html, JSM, NFData, readTVarIO,
-                                                shpadoinkle, text)
+import           Shpadoinkle                   (Html, JSM, NFData, shpadoinkle,
+                                                text)
 import           Shpadoinkle.Backend.Snabbdom  (runSnabbdom, stage)
 import           Shpadoinkle.Html              (a, addStyle, autofocus, button,
                                                 button', checked, class', div,
@@ -31,7 +31,7 @@ import           Shpadoinkle.Html              (a, addStyle, autofocus, button,
                                                 strong_, type', ul, value)
 import           Shpadoinkle.Html.LocalStorage (manageLocalStorage)
 import           Shpadoinkle.Html.Memo         (memo)
-import           Shpadoinkle.Lens              (generalize)
+import           Shpadoinkle.Lens              (onRecord)
 import           Shpadoinkle.Run               (runJSorWarp)
 
 
@@ -118,7 +118,7 @@ toVisible v = case v of
   Completed -> filter $ (== Complete)   . completed
 
 
-filterHtml :: Applicative m => Visibility -> Visibility -> Html m Visibility
+filterHtml :: Visibility -> Visibility -> Html m Visibility
 filterHtml = memo $ \cur item -> li_
   [ a (href "#" : onClick (const item)
         : [class' ("selected", cur == item)]) [ text . pack $ show item ]
@@ -129,7 +129,7 @@ htmlIfTasks :: Model -> [Html m a] -> [Html m a]
 htmlIfTasks m h' = if Prelude.null (tasks m) then [] else h'
 
 
-taskView :: Applicative m => Model -> Task -> Html m Model
+taskView :: Model -> Task -> Html m Model
 taskView m = memo $ \(Task (Description d) c tid) ->
   li [ id' . pack . show $ unTaskId tid
      , class' [ ("completed", c == Complete)
@@ -156,20 +156,20 @@ taskView m = memo $ \(Task (Description d) c tid) ->
   ]
 
 
-listFooter :: Applicative m => Model -> Html m Model
+listFooter :: Functor m => Model -> Html m Model
 listFooter model = footer "footer" $
   [ Shpadoinkle.Html.span "todo-count" $ let co = count Incomplete $ tasks model in
     [ strong_ [ text . pack $ show co ]
     , text $ " item" <> (if co == 1 then "" else "s") <> " left"
     ]
-  , ul "filters" $ generalize #visibility .
+  , ul "filters" $ onRecord #visibility .
       filterHtml (visibility model) <$> [minBound..maxBound]
   ] ++ [ button [class' "clear-completed", onClick clearComplete ] ["Clear completed"]
        | count Complete (tasks model) /= 0 ]
 
 
 
-info :: Applicative m => Html m a
+info :: Html m a
 info = footer "info"
   [ p_ [ "Double-click to edit a todo" ]
   , p_ [ "Credits ", a [ href "https://twitter.com/fresheyeball" ] [ "Isaac Shapira" ] ]
@@ -177,7 +177,7 @@ info = footer "info"
   ]
 
 
-newTaskForm :: Applicative m => Model -> Html m Model
+newTaskForm :: Model -> Html m Model
 newTaskForm model = form [ class' "todo-form", onSubmit appendItem ]
   [ input' [ class' "new-todo"
            , value . unDescription $ current model
@@ -186,18 +186,18 @@ newTaskForm model = form [ class' "todo-form", onSubmit appendItem ]
   ]
 
 
-todoList :: Applicative m => Model -> Html m Model
+todoList :: Model -> Html m Model
 todoList model = ul "todo-list" $ taskView model <$> visibility model `toVisible` tasks model
 
 
-toggleAllBtn :: Applicative m => [Html m Model]
+toggleAllBtn :: [Html m Model]
 toggleAllBtn =
   [ input' [ id' "toggle-all", class' "toggle-all", type' "checkbox", onChange toggleAll ]
   , label [ for' "toggle-all" ] [ "Mark all as complete" ]
   ]
 
 
-view :: Applicative m => Model -> Html m Model
+view :: Functor m => Model -> Html m Model
 view model = div_
   [ section "todoapp" $
     header "header"
@@ -213,10 +213,9 @@ view model = div_
 app :: JSM ()
 app = do
   model <- manageLocalStorage "todo" emptyModel
-  initial <- readTVarIO model
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-common@1.0.5/base.css"
   addStyle "https://cdn.jsdelivr.net/npm/todomvc-app-css@2.2.0/index.css"
-  shpadoinkle id runSnabbdom initial model view stage
+  shpadoinkle id runSnabbdom model view stage
 
 
 main :: IO ()

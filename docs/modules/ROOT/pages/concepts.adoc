@@ -6,7 +6,7 @@ The core idea here is to model user interfaces as functions with this type:
 
 [source,haskell]
 ----
-view :: Applicative m => Model -> Html m Model
+view :: Model -> Html m Model
 ----
 
 Here, `Model` is a data type representing your application's state.
@@ -21,7 +21,7 @@ incremented by clicking a button.
 
 [source,haskell]
 ----
-view :: Applicative m => Int -> Html m Int
+view :: Int -> Html m Int
 view model = -- <1>
   div []
   [ text $ pack $ show model -- <2>

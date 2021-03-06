@@ -45,7 +45,7 @@ To start, we will need a simple single number input:
 
 [source,haskell]
 ----
-num :: Applicative m => Int -> Html m Int
+num :: Int -> Html m Int
 num x = input'
  [ value . pack $ show x -- <1>
  , onInput (const . fromMaybe 0 . readMay . unpack) -- <2>
@@ -60,7 +60,7 @@ Now we can use our single number input in our view to add two numbers.
 
 [source,haskell]
 ----
-view :: Applicative m => (Int, Int) -> Html m (Int, Int)
+view :: (Int, Int) -> Html m (Int, Int)
 view (l,r) = -- <1>
   div_
     [ liftC (,r) fst $ num l -- <2>
@@ -115,7 +115,7 @@ We will use a traditional Html `<select>` element to let the user pick the opera
 
 [source,haskell]
 ----
-opSelect :: Applicative m => Html m Operation
+opSelect :: Html m Operation
 opSelect = select [ onOption $ const . read . unpack ] -- <1>
   $ opOption <$> [ minBound .. maxBound ]
   where
@@ -142,7 +142,7 @@ We will use the same technique with `liftC` to compose these components together
 
 [source,haskell]
 ----
-view :: Applicative m => Model -> Html m Model
+view :: Model -> Html m Model
 view model = div_
   [ liftC (\l m -> m { left      = l }) left      $ num (left model)
   , liftC (\o m -> m { operation = o }) operation $ opSelect

@@ -33,7 +33,7 @@ domain :: IsString s => s
 domain = "https://shpadoinkle.org"
 
 
-hero :: Monad m => Html m a
+hero :: Html m a
 hero =
   H.div
     [ class' $ T.w_full <> T.bg_gray_900 <> T.p_10
@@ -50,7 +50,7 @@ hero =
     ]
 
 
-pitch :: Monad m => Html m a
+pitch :: Html m a
 pitch =
   H.div
     [ class' $ T.mx_auto <> T.text_white <> T.max_w_3xl <> T.my_5
@@ -117,7 +117,7 @@ hoogleWidget h =
  theme _ = Theme H.div_ (const mempty) H.div_ targetWidget
 
 
-targetWidget :: Monad m => Target -> Html m a
+targetWidget :: Target -> Html m a
 targetWidget = div' . pure . innerHTML . pack . targetItem
 
 
@@ -129,11 +129,11 @@ home h = section_
   ]
 
 
-comparisons :: Monad m => Comparison -> Html m Comparison
+comparisons :: Comparison -> Html m Comparison
 comparisons x = h1_ [ text $ "Comparison with, " <> x ^. #framework . to (pack . show) ]
 
 
-fourOhFour :: Monad m => Html m a
+fourOhFour :: Html m a
 fourOhFour = h2_ [ "404" ]
 
 
@@ -144,7 +144,7 @@ view = \case
   FourOhFourM   -> fourOhFour
 
 
-template :: Monad m => Env -> Frontend -> Html m Frontend ->  Html m Frontend
+template :: Env -> Frontend -> Html m Frontend ->  Html m Frontend
 template ev fe v = H.html_
   [ H.head_
     [ H.link'

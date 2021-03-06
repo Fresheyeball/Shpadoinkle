@@ -139,7 +139,7 @@ data Theme m p b = Theme
     }
 
 
-semantic :: Monad m => Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
+semantic :: Present b => Present (Selected p b) => Dropdown p b -> Theme m p b
 semantic Dropdown {..} = Theme
   { _wrapper = div
     [ class' [ ("dropdown", True)
@@ -174,7 +174,6 @@ dropdown ::
   ( Considered p ~ Maybe
   , Consideration Dropdown p
   , Consideration ConsideredChoice p
-  , Monad m
   , Ord a
   ) => (Dropdown p a -> Theme m p a)
     -> Config m -> Dropdown p a -> Html m (Dropdown p a)

@@ -163,8 +163,7 @@ viewWith Theme {..} xs s@(SortCol sorton sortorder) =
   filterRow row el = if f row then el
     else mapProps addDisplayNoneStyle el
 
-  addDisplayNoneStyle :: Props m (a, SortCol a) -> Props m (a, SortCol a)
-  addDisplayNoneStyle = (<> toProps [("style",  textProp "display: none")])
+  addDisplayNoneStyle = (<> [("style",  textProp "display: none")])
 
   cth_ c = th (thProps xs s c) . pure . Html.a [ second rightC . onClick $ toggleSort c ]
          . mappend [ text (humanize c) ] . pure $
