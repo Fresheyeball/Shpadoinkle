@@ -86,7 +86,7 @@ import           Shpadoinkle.Continuation      (Continuation, Continuous (..),
 -- This is Church encoded for performance reasons.
 newtype Html m a = Html
   { unHtml
-      :: forall r. (Text -> Props m a -> [r] -> r)
+      :: forall r. (Text -> [(Text, Prop m a)] -> [r] -> r)
       -> (JSM RawNode -> r)
       -> (Text -> r)
       -> r
@@ -166,7 +166,7 @@ instance Applicative m => Monoid (Props m a) where
 -- then you may change the action of 'Html'.
 hoistHtml :: Functor m => (m ~> n) -> Html m a -> Html n a
 hoistHtml f (Html h') = Html $ \n p t -> h'
-  (\t' ps cs -> n t' (Props $ hoistProp f <$> getProps ps) cs) p t
+  (\t' ps cs -> n t' (fmap (hoistProp f) <$> ps) cs) p t
 {-# INLINE hoistHtml #-}
 
 
@@ -239,7 +239,7 @@ instance Applicative m => F.Functor EndoIso EndoIso (Prop m) where
 -- | Given a lens, you can change the type of an Html by using the lens
 --   to convert the types of the Continuations inside it.
 instance Continuous Html where
-  mapC f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (mapC f ps) cs) p t
+  mapC f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (fmap (mapC f) <$> ps) cs) p t
   {-# INLINE mapC #-}
 
 
@@ -316,8 +316,8 @@ cataProp d t f l p = \case
 
 
 -- | Construct an HTML element JSX-style.
-h :: Applicative m => Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
-h t ps cs = Html $ \a b c -> a t (toProps ps) ((\(Html h') -> h' a b c) <$> cs)
+h :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
+h t ps cs = Html $ \a b c -> a t ps ((\(Html h') -> h' a b c) <$> cs)
 {-# INLINE h #-}
 
 
@@ -344,7 +344,7 @@ cataH :: (Text -> [(Text, Prop m a)] -> [b] -> b)
       -> (JSM RawNode -> b)
       -> (Text -> b)
       -> Html m a -> b
-cataH f g h' (Html h'') = h'' (\t ps cs -> f t (fromProps ps) cs) g h'
+cataH f g h' (Html h'') = h'' f g h'
 
 
 -- | Natural Transformation
@@ -398,14 +398,14 @@ listen k = listenC k . pur
 
 
 -- | Transform the properties of some Node. This has no effect on 'TextNode's or 'Potato'es.
-mapProps :: (Props m a -> Props m a) -> Html m a -> Html m a
+mapProps :: ([(Text, Prop m a)] -> [(Text, Prop m a)]) -> Html m a -> Html m a
 mapProps f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (f ps) cs) p t
 {-# INLINE mapProps #-}
 
 
 -- | Inject props into an existing 'Node'.
-injectProps :: Applicative m => [(Text, Prop m a)] -> Html m a -> Html m a
-injectProps ps = mapProps (<> toProps ps)
+injectProps :: [(Text, Prop m a)] -> Html m a -> Html m a
+injectProps ps = mapProps (<> ps)
 {-# INLINE injectProps #-}
 
 
@@ -456,8 +456,6 @@ shpadoinkle
   -- ^ How to get to JSM?
   -> (TVar a -> b m ~> m)
   -- ^ What backend are we running?
-  -> a
-  -- ^ What is the initial state?
   -> TVar a
   -- ^ How can we know when to update?
   -> (a -> Html (b m) a)
@@ -465,18 +463,18 @@ shpadoinkle
   -> b m RawNode
   -- ^ Where do we render?
   -> JSM ()
-shpadoinkle toJSM toM initial model view stage = setup @b @m @a $ do
+shpadoinkle toJSM toM model view stage = setup @b @m @a $ do
 
-  (c,n) <- j $ do
-    c <- stage
-    fmap (c,) $ patch c Nothing =<< interpret toJSM (view initial)
-  () <$ shouldUpdate (go c) n model
+  c <- j stage
+  initial <- readTVarIO model
+  n <- go c Nothing initial
+  () <$ shouldUpdate (go c . Just) n model
 
   where
 
   j :: b m ~> JSM
   j = toJSM . toM model
 
-  go :: RawNode -> VNode b m -> a -> JSM (VNode b m)
-  go c n a = j $ patch c (Just n) =<< interpret toJSM (view a)
+  go :: RawNode -> Maybe (VNode b m) -> a -> JSM (VNode b m)
+  go c n a = j $ patch c n =<< interpret toJSM (view a)
 

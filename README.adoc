@@ -1,7 +1,5 @@
 [.text-center]
 image::docs/modules/ROOT/assets/images/logo.png[Eddie is loved forever,150,150]
-[.text-center]
-🤠 ⟶ 🥔 🤠
 
 [.text-center]
 

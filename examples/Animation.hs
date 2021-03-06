@@ -41,7 +41,7 @@ dur :: Double
 dur = 3000
 
 
-view :: Applicative m => Double -> Html m a
+view :: Double -> Html m a
 view clock = H.div
   [ textProperty "style" $
      "position:absolute;background:red;padding:10px;" <> left
@@ -70,4 +70,4 @@ main = runJSorWarp 8080 $ do
   t <- newTVarIO 0
   w <- currentWindowUnchecked
   _ <- forkIO $ threadDelay wait >> animation w t
-  shpadoinkle id runSnabbdom 0 t view stage
+  shpadoinkle id runSnabbdom t view stage

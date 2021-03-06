@@ -3,6 +3,7 @@
 *.ghc*
 *result*
 *project.local
+*project.local~
 server
 client
 roster.db

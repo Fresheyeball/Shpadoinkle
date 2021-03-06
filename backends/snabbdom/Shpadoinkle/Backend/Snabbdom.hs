@@ -158,6 +158,7 @@ props toJSM i (Props xs) = do
               "style"     -> attrsObj
               "type"      -> attrsObj
               "autofocus" -> attrsObj
+              "checked"   -> attrsObj
               _           -> propsObj
         | otherwise -> do
             t' <- valMakeText t
@@ -196,7 +197,7 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
     where
       mkNode name ps children = do
         i <- ask; liftJSM $ do
-          !o <- props toJSM i ps
+          !o <- props toJSM i $ toProps ps
           !cs <- toJSM . runSnabbdom i $ sequence children
           SnabVNode <$> jsg3 "vnode" name o cs
 

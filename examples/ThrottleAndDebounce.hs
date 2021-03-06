@@ -31,7 +31,7 @@ data Control m = Control
   (Throttle m (Text -> Model -> Model) Model)
 
 
-view :: Monad m => Control m -> Model -> Html m Model
+view :: Control m -> Model -> Html m Model
 view (Control debouncer1 debouncer2 throttler1 throttler2) (count, txt) = div_
   [ text ("Count: " <> pack (show count))
   , div_ [ button [ onClick $ first (+ 1) ] [ text "Increment" ] ]
@@ -46,7 +46,7 @@ view (Control debouncer1 debouncer2 throttler1 throttler2) (count, txt) = div_
 app :: Control App -> JSM ()
 app control = do
   model <- liftIO $ newTVarIO initial
-  shpadoinkle id runParDiff initial model (view control) getBody
+  shpadoinkle id runParDiff model (view control) getBody
   where initial = (0, "")
 
 

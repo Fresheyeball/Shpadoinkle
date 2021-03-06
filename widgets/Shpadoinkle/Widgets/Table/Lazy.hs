@@ -203,7 +203,7 @@ lazyTable theme tableHeight rowHeight@(AssumedRowHeight rowHeight')
 
     addContainerScrollHandler = case scrollConfig of
       ContainerIsScrollable debounceScroll ->
-        mapProps (toProps [listenRaw "scroll" (debounceScroll scrollHandlerContainer)] <>)
+        mapProps ([listenRaw "scroll" (debounceScroll scrollHandlerContainer)] <>)
       TbodyIsScrollable _ -> id
 
     scrollHandlerContainer (RawNode n) _ =

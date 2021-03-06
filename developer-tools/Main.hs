@@ -152,7 +152,7 @@ app :: JSM ()
 app = do
   model <- liftIO $ newTVarIO emptyModel
   listenForOutput model
-  shpadoinkle id runParDiff emptyModel model panel getBody
+  shpadoinkle id runParDiff model panel getBody
 
 
 main :: IO ()

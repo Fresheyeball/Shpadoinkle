@@ -128,7 +128,7 @@ fullPage
   -> JSM ()
 fullPage g f i view getStage = do
   model <- newTVarIO i
-  shpadoinkle g f i model view getStage
+  shpadoinkle g f model view getStage
 {-# INLINE fullPage #-}
 
 

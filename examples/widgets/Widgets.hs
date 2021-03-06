@@ -114,7 +114,7 @@ initial = Model fullOptions (minBound `withOptions'` fullset) 4
 app :: JSM ()
 app = do
   model <- liftIO $ newTVarIO initial
-  shpadoinkle id runSnabbdom initial model view getBody
+  shpadoinkle id runSnabbdom model view getBody
 
 
 main :: IO ()
