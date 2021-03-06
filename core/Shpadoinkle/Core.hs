@@ -1,5 +1,4 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
-{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE CPP                    #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -466,22 +465,18 @@ shpadoinkle
   -> b m RawNode
   -- ^ Where do we render?
   -> JSM ()
-shpadoinkle toJSM toM initial model view stage = do
-  let
-    j :: b m ~> JSM
-    j = toJSM . toM model
+shpadoinkle toJSM toM initial model view stage = setup @b @m @a $ do
 
-    go :: RawNode -> VNode b m -> a -> JSM (VNode b m)
-    go c n a = j $ do
-      !m  <- interpret toJSM $ view a
-      patch c (Just n) m
+  (c,n) <- j $ do
+    c <- stage
+    fmap (c,) $ patch c Nothing =<< interpret toJSM (view initial)
+  () <$ shouldUpdate (go c) n model
 
-  setup @b @m @a $ do
-    (c,n) <- j $ do
-      c <- stage
-      n <- interpret toJSM $ view initial
-      _ <- patch c Nothing n
-      return (c,n)
-    _ <- shouldUpdate (go c) n model
-    return ()
+  where
+
+  j :: b m ~> JSM
+  j = toJSM . toM model
+
+  go :: RawNode -> VNode b m -> a -> JSM (VNode b m)
+  go c n a = j $ patch c (Just n) =<< interpret toJSM (view a)
 
