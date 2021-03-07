@@ -20,9 +20,18 @@ in
     docker = import ./examples/servant-crud/docker.nix { inherit compiler chan; };
 
     ghcTools = with haskell.packages.${compiler};
-      [ cabal-install ghcid hpack pkgs.stylish-haskell pkgs.hlint ];
+      [ easy-hls cabal-install ghcid hpack pkgs.stylish-haskell pkgs.hlint ];
 
     cannibal = if optimizeJS then util.doCannibalize else id;
+
+    easy-hls = pkgs.callPackage (pkgs.fetchFromGitHub {
+      owner  = "jkachmar";
+      repo   = "easy-hls-nix";
+      rev    = "b0ceb9277963eb39a8bb279f187e38b36d7d63db";
+      sha256 = "1UD7GIHLZyJueRMPpUiV1SoeBEwFyz6tgCRijDvfWkU=";
+    }) {
+      ghcVersions = [ "8.6.5" ];
+    };
 
     packages = {
 
