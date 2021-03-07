@@ -11,6 +11,7 @@
   It allows for asynchronous effects in event handlers by providing a model for atomic updates
   of application state.
 -}
+{-# OPTIONS_GHC -Wno-deferred-type-errors #-}
 
 
 module Shpadoinkle.Continuation (
@@ -42,27 +43,26 @@ module Shpadoinkle.Continuation (
   ) where
 
 
-import           Control.Arrow                           (first)
-import qualified Control.Categorical.Functor             as F
-import           Control.DeepSeq                         (NFData (..), force)
-import           Control.Monad                           (void)
-import           Control.Monad.Trans.Class               (MonadTrans (..))
-import           Control.PseudoInverseCategory           (EndoIso (..))
-import           Data.Maybe                              (fromMaybe)
-import           GHC.Conc                                (retry)
-import           GHCJS.DOM                               (currentWindowUnchecked)
-import           GHCJS.DOM.RequestAnimationFrameCallback (newRequestAnimationFrameCallback)
-import           GHCJS.DOM.Window                        (Window,
-                                                          cancelAnimationFrame,
-                                                          requestAnimationFrame)
-import           Language.Javascript.JSaddle             (MonadJSM)
-import           UnliftIO                                (MonadUnliftIO, TVar,
-                                                          UnliftIO, askUnliftIO,
-                                                          atomically, liftIO,
-                                                          newTVarIO, readTVar,
-                                                          readTVarIO, unliftIO,
-                                                          writeTVar)
-import           UnliftIO.Concurrent                     (forkIO)
+import           Control.Arrow                       (first)
+import qualified Control.Categorical.Functor         as F
+import           Control.DeepSeq                     (NFData (..), force)
+import           Control.Monad                       (void)
+import           Control.Monad.Trans.Class           (MonadTrans (..))
+import           Control.PseudoInverseCategory       (EndoIso (..))
+import           Data.Foldable                       (traverse_)
+import           Data.Maybe                          (fromMaybe)
+import           GHC.Conc                            (retry)
+import           GHCJS.DOM                           (currentWindowUnchecked)
+import           GHCJS.DOM.Window                    (Window)
+import           GHCJS.DOM.WindowOrWorkerGlobalScope (clearTimeout, setTimeout)
+import           Language.Javascript.JSaddle         (MonadJSM, fun)
+import           UnliftIO                            (MonadUnliftIO, TVar,
+                                                      UnliftIO, askUnliftIO,
+                                                      atomically, liftIO,
+                                                      newTVarIO, readTVar,
+                                                      readTVarIO, unliftIO,
+                                                      writeTVar)
+import           UnliftIO.Concurrent                 (forkIO)
 
 
 -- | A Continuation builds up an
@@ -398,8 +398,8 @@ shouldUpdate sun prev currentModel = do
   context       :: UnliftIO m <- askUnliftIO
 
   let
-    go :: Maybe Int -> m ()
-    go frameId = do
+    go :: [Int] -> m ()
+    go frames = do
 
       -- block if the new model is the same as the old
       newModel <- atomically $ do
@@ -410,25 +410,26 @@ shouldUpdate sun prev currentModel = do
         if new' == old then retry else new' <$ writeTVar previousModel new'
 
       -- if we already had something scheduled to run, cancel it
-      maybe (pure ()) (cancelAnimationFrame window) frameId
+      traverse_ (clearTimeout window . Just) frames
 
       -- generate a callback for the request animation frame
-      callback <- newRequestAnimationFrameCallback $ \_ -> do
-        -- get the current state
-        x <- readTVarIO currentState
-        -- run the action against the current state, and the new model
-        y <- liftIO $ unliftIO context $ sun x newModel
-        -- write the new state for the next run
-        atomically $ writeTVar currentState y
-        -- note this means that @newModel@ updates for each call to @go@
-        -- but @currentState@ only updates if the frame is actually called
+      let callback = fun $ \_ _ _ -> do
+             -- get the current state
+             x <- readTVarIO currentState
+             -- run the action against the current state, and the new model
+             y <- liftIO $ unliftIO context $ sun x newModel
+             -- write the new state for the next run
+             atomically $ writeTVar currentState y
+             -- note this means that @newModel@ updates for each call to @go@
+             -- but @currentState@ only updates if the frame is actually called
+             traverse_ (clearTimeout window . Just) frames
 
       -- schedule the action to run on the next frame
-      frameId' <- requestAnimationFrame window callback
+      frameId' <- setTimeout window callback Nothing
 
-      go (Just frameId')
+      go (frameId':frames)
 
-  () <$ forkIO (go Nothing)
+  () <$ forkIO (go mempty)
 
 
 -- | A monad transformer for building up a Continuation in a series of steps in a monadic computation
