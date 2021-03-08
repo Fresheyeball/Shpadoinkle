@@ -18,7 +18,7 @@ module Shpadoinkle.Continuation (
   -- * The Continuation Type
   Continuation (..)
   , runContinuation
-  , done, pur, impur, kleisli, causes, causedBy, merge, contIso
+  , done, pur, impur, kleisli, causes, causedBy, merge, contIso, before
   -- * The Class
   , Continuous (..)
   -- ** Hoist
@@ -125,6 +125,17 @@ causedBy = Continuation . (id,) . const
 -- | A continuation can be forced to write its changes midflight.
 merge :: Continuation m a -> Continuation m a
 merge = Merge
+
+
+-- | Sequences two continuations one after the other.
+before :: Applicative m => Continuation m a -> Continuation m a -> Continuation m a
+Pure f `before` Continuation (g, h) = Continuation (g . f, h)
+Pure _ `before` Rollback g = g
+Pure f `before` Merge g = Continuation (f, const (pure (Merge g)))
+Pure f `before` Pure g = Pure (g.f)
+Merge f `before` g = Merge (f `before` g)
+Rollback f `before` g = Rollback (f `before` g)
+Continuation (f, g) `before` h = Continuation . (f,) $ fmap (`before` h) . g
 
 
 -- | 'runContinuation' takes a 'Continuation' and a state value and runs the whole Continuation
@@ -478,7 +489,7 @@ instance Monad m => Monad (ContinuationT model m) where
   m >>= f = ContinuationT $ do
     (x, g) <- runContinuationT m
     (y, h) <- runContinuationT (f x)
-    return (y, g <> h)
+    return (y, g `before` h)
 
 
 instance MonadTrans (ContinuationT model) where
