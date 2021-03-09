@@ -6,10 +6,12 @@
 , extra ? (_: b: b)
 , optimize ? true
 , system ? builtins.currentSystem
+, enableLibraryProfiling ? false
+, enableExecutableProfiling ? false
 }:
 
 let
-  pkgs = import ./nix/pkgs.nix { inherit compiler isJS system chan; };
+  pkgs = import ./nix/pkgs.nix { inherit compiler isJS system chan enableLibraryProfiling enableExecutableProfiling; };
   util = import ./nix/util.nix { inherit pkgs compiler isJS; };
 in
   with pkgs; with lib;

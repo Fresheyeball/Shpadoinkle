@@ -1,4 +1,6 @@
 { chan ? (import ../nix/chan.nix)
+, enableLibraryProfiling ? false
+, enableExecutableProfiling ? false
 }:
 let
   overlay = self: super: {
@@ -15,7 +17,12 @@ let
     url = "https://github.com/NixOS/nixpkgs/archive/${chan}.tar.gz";
   }) {
     overlays = [
-      (import ../nix/overlay.nix { inherit chan; compiler = "ghc865"; isJS = true; })
+      (import ../nix/overlay.nix
+        { inherit chan enableLibraryProfiling enableExecutableProfiling;
+          compiler = "ghc865";
+          isJS = true;
+        }
+      )
       overlay
     ];
   };
