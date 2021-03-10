@@ -33,19 +33,19 @@ module Shpadoinkle.Backend.Snabbdom
 
 import           Control.Category            ((.))
 import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
-import           Control.Monad.Catch         (MonadCatch, MonadThrow, MonadMask)
+import           Control.Monad.Catch         (MonadCatch, MonadMask, MonadThrow)
+import           Control.Monad.Cont          (MonadCont)
+import           Control.Monad.Except        (MonadError)
+import           Control.Monad.RWS           (MonadRWS)
 import           Control.Monad.Reader        (MonadIO, MonadReader (..),
                                               MonadTrans, ReaderT (..), forM_,
                                               void)
-import           Control.Monad.Writer        (MonadWriter)
 import           Control.Monad.State         (MonadState)
-import           Control.Monad.RWS           (MonadRWS)
-import           Control.Monad.Except        (MonadError)
-import           Control.Monad.Cont          (MonadCont)
 import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
                                               MonadTransControl,
                                               defaultLiftBaseWith,
                                               defaultRestoreM)
+import           Control.Monad.Writer        (MonadWriter)
 import           Data.FileEmbed              (embedStringFile)
 import           Data.Map.Internal           (Map (Bin, Tip))
 import           Data.Text                   (Text, words)

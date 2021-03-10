@@ -47,19 +47,19 @@ module Shpadoinkle.Backend.ParDiff
 import           Control.Applicative         (Alternative)
 import           Control.Monad               (forM_, void, when)
 import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
-import           Control.Monad.Catch         (MonadCatch, MonadThrow, MonadMask)
+import           Control.Monad.Catch         (MonadCatch, MonadMask, MonadThrow)
+import           Control.Monad.Cont          (MonadCont)
+import           Control.Monad.Except        (MonadError)
+import           Control.Monad.RWS           (MonadRWS)
 import           Control.Monad.Reader        (MonadIO, MonadReader (ask),
                                               MonadTrans (..), ReaderT (..),
                                               guard)
-import           Control.Monad.Writer        (MonadWriter)
 import           Control.Monad.State         (MonadState)
-import           Control.Monad.RWS           (MonadRWS)
-import           Control.Monad.Except        (MonadError)
-import           Control.Monad.Cont          (MonadCont)
 import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
                                               MonadTransControl,
                                               defaultLiftBaseWith,
                                               defaultRestoreM)
+import           Control.Monad.Writer        (MonadWriter)
 import           Data.Kind                   (Type)
 import           Data.Map                    (Map)
 import qualified Data.Map                    as M
