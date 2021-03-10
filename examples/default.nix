@@ -1,6 +1,6 @@
 { isJS ? false
 , optimize ? true }:
-import ../default.nix {
+import ../. {
   pack = "Shpadoinkle-examples";
   inherit isJS optimize;
 }
