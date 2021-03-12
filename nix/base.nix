@@ -52,6 +52,7 @@ in
         Shpadoinkle-streaming
         Shpadoinkle-widgets
         Shpadoinkle-isreal
+        Shpadoinkle-template
 
         Shpadoinkle-tests;
         Shpadoinkle-examples  = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-examples;
