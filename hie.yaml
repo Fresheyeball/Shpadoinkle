@@ -91,6 +91,12 @@ cradle:
           cabal:
             component: "widgets"
 
+    - path: "./template/"
+      config:
+        cradle:
+          cabal:
+            component: "template"
+
     - path: "./examples/TODOMVC.hs"
       config:
         cradle:

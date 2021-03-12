@@ -15,5 +15,6 @@ p marketing
 p widgets
 p examples
 p tests
+p template
 p isreal
 p streaming
