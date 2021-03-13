@@ -38,6 +38,12 @@ xref:packages/router.adoc[Router] ({gitlab}/router[Gitlab], {hackage}-router[Hac
 xref:packages/widgets.adoc[Widgets] ({gitlab}/widgets[Gitlab], {hackage}-widgets[Hackage], https://shpadoinkle.org/widgets[Haddock])::
 Logical types and structures for common UI components, along with batteries-included implementations.
 
+Streaming ({gitlab}/streaming[Gitlab], {hackage}-streaming[Hackage], https://shpadoinkle.org/streaming[Haddock])::
+Integration of the streaming library with Shpadoinkle continuations.
+
+Template ({gitlab}/template[Gitlab], {hackage}-template[Hackage], https://shpadoinkle.org/template[Haddock])::
+Read standard file formats into Shpadoinkle with Template Haskell
+
 Examples ({gitlab}/examples[Gitlab])::
 Small applications of Shpadoinkle to illustrate programming patterns.
 
