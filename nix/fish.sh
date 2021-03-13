@@ -28,5 +28,11 @@ cp -r result-doc/share/doc/Shpadoinkle-router-*/html public/router
 nix-build -A Shpadoinkle-widgets.doc
 cp -r result-doc/share/doc/Shpadoinkle-widgets-*/html public/widgets
 
+nix-build -A Shpadoinkle-streaming.doc
+cp -r result-doc/share/doc/Shpadoinkle-streaming-*/html public/streaming
+
+nix-build -A Shpadoinkle-template.doc
+cp -r result-doc/share/doc/Shpadoinkle-template-*/html public/template
+
 nix-build -A Shpadoinkle-isreal.doc
 cp -r result-doc/share/doc/Shpadoinkle-isreal-*/html public/isreal
