@@ -48,6 +48,6 @@ attrToExp (Attr name value) = TupE [name', AppE textProp value']
         name'    = asText name
         value'   = asText value
 
+
 asText :: Text -> Exp
-asText = AppE pack . LitE . StringL . unpack
-  where pack = UnboundVarE $ mkName "pack"
+asText = AppE (UnboundVarE $ mkName "pack") . LitE . StringL . unpack
