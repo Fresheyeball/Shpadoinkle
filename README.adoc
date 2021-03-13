@@ -133,7 +133,21 @@ CI]]
 |https://hackage.haskell.org/package/Shpadoinkle-router[image:https://img.shields.io/hackage/v/Shpadoinkle-router.svg[Hackage]]
 |http://packdeps.haskellers.com/feed?needle=Shpadoinkle-router[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-router.svg[Hackage
 Deps]]
-|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-backend-snabbdom[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-backend-snabbdom/badge[Hackage
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-router[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-router/badge[Hackage
+CI]]
+
+|Streaming
+|https://hackage.haskell.org/package/Shpadoinkle-streaming[image:https://img.shields.io/hackage/v/Shpadoinkle-streaming.svg[Hackage]]
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-streaming[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-streaming.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-streaming[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-streaming/badge[Hackage
+CI]]
+
+|Template
+|https://hackage.haskell.org/package/Shpadoinkle-template[image:https://img.shields.io/hackage/v/Shpadoinkle-template.svg[Hackage]]
+|http://packdeps.haskellers.com/feed?needle=Shpadoinkle-template[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-template.svg[Hackage
+Deps]]
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-template[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-template/badge[Hackage
 CI]]
 
 |Widgets
@@ -147,7 +161,7 @@ CI]]
 |https://hackage.haskell.org/package/Shpadoinkle-examples[image:https://img.shields.io/hackage/v/Shpadoinkle-examples.svg[Hackage]]
 |http://packdeps.haskellers.com/feed?needle=Shpadoinkle-examples[image:https://img.shields.io/hackage-deps/v/Shpadoinkle-examples.svg[Hackage
 Deps]]
-|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-widgets[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-widgets/badge[Hackage
+|https://matrix.hackage.haskell.org/#/package/Shpadoinkle-examples[image:https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-examples/badge[Hackage
 CI]]
 
 |===
