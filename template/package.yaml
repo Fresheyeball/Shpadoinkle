@@ -40,6 +40,7 @@ dependencies:
 library:
   exposed-modules:
    - Shpadoinkle.Template.TH
+   - Shpadoinkle.Template
   other-modules: []
   source-dirs: .
 
