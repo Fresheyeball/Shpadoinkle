@@ -234,12 +234,6 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
 
   setup :: JSM () -> JSM ()
   setup cb = do
-    void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/init.js")
-    void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/h.js")
-    void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/class.js")
-    void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/props.js")
-    void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/attributes.js")
-    void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/eventlisteners.js")
     void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/Setup.js")
     void . jsg1 "startApp" . fun $ \_ _ _ -> cb
 
