@@ -26,6 +26,12 @@ ghc-options:
 extra-source-files:
   - README.md
   - CHANGELOG.md
+  - Shpadoinkle/Backend/Snabbdom/init.js
+  - Shpadoinkle/Backend/Snabbdom/h.js
+  - Shpadoinkle/Backend/Snabbdom/class.js
+  - Shpadoinkle/Backend/Snabbdom/props.js
+  - Shpadoinkle/Backend/Snabbdom/attributes.js
+  - Shpadoinkle/Backend/Snabbdom/eventlisteners.js
   - Shpadoinkle/Backend/Snabbdom/Setup.js
 
 
