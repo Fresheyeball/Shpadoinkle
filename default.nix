@@ -1,1 +1,1 @@
-import ./nix/base.nix "build"
+(import ./nix/base.nix).build
