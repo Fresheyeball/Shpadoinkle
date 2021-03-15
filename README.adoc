@@ -61,6 +61,11 @@ Correct version of hlint is also available within `nix-shell`.
 
 Join the Shpadoinkle community on https://shpadoinkle.zulipchat.com/register[Zulip]!
 
+== Actively Maintained
+
+This project is actively maintained by image:https://platonic.systems/logo.svg[Platonic Systems, 25,25] Platonic Systems 
+
+
 == Hackage Matrix
 
 [options="header"]
