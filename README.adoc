@@ -63,7 +63,7 @@ Join the Shpadoinkle community on https://shpadoinkle.zulipchat.com/register[Zul
 
 == Actively Maintained
 
-This project is actively maintained by image:https://platonic.systems/logo.svg[Platonic Systems, 25,25] Platonic Systems 
+This project is actively maintained by https://platonic.systems[image:https://platonic.systems/logo.svg[Platonic Systems, 25,25] Platonic Systems]
 
 
 == Hackage Matrix
