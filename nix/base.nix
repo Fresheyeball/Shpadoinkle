@@ -32,8 +32,8 @@ let
         easy-hls = pkgs.callPackage (pkgs.fetchFromGitHub {
           owner  = "jkachmar";
           repo   = "easy-hls-nix";
-          rev    = "b0ceb9277963eb39a8bb279f187e38b36d7d63db";
-          sha256 = "1UD7GIHLZyJueRMPpUiV1SoeBEwFyz6tgCRijDvfWkU=";
+          rev    = "cf0cb016e1c57934592fd4c9d07d6b7a67d3f6ce";
+          sha256 = "1whs5xckd1p4r8xskyfh5h098ks0fw1ki3ccjgb1fpmc4hbdx7sb";
         }) {
           ghcVersions = [ "8.6.5" ];
         };
