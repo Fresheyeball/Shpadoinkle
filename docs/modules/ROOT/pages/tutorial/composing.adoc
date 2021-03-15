@@ -31,4 +31,4 @@ In this scenario it will make more sense to think of view functions as opposed t
 
 If you wish to have multiple views combined in this way but you do not want your model type to be an `Either` type, then you can combine this coproduct pattern with an isomorphism. Suppose that `+++f :<span></span>: Either a b -> Model+++` and `+++g :<span></span>: Model -> Either a b+++` constitute an isomorphism, and `v` and `u` are as above. Then: `+++pimap (piiso f g) . eitherH v u . g :<span></span>: Model -> Html m Model+++`.
 
-For examples of many of these patterns, see https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/servant-crud[the Servant CRUD example].
+For examples of many of these patterns, see https://gitlab.com/platonic/shpadoinkle/-/blob/master/examples/servant-crud[the Servant CRUD example].

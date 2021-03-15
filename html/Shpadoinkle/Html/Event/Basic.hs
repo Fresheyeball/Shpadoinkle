@@ -26,7 +26,7 @@
 -- @(Text -> a -> a)@ where 'Text' is the current value of the input and 'onKeyup' takes
 -- a function of type @(KeyCode -> a -> a)@ from 'Shpadoinkle.Keyboard'. Mouse move
 -- listeners, for example, should take a function of @((Float, Float) -> a -> a)@, but
--- this work is not yet done. See https://gitlab.com/fresheyeball/Shpadoinkle/issues/5
+-- this work is not yet done. See https://gitlab.com/platonic/shpadoinkle/issues/5
 
 
 module Shpadoinkle.Html.Event.Basic where

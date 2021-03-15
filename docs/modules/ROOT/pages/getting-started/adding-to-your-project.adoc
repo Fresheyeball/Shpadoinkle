@@ -23,7 +23,7 @@ By exposing overlays we allow you to compose needed changes into the nixpkgs set
 [source,nix]
 ----
 shpadoinkle = builtins.fetchGit { # <1>
-  url    = https://gitlab.com/fresheyeball/Shpadoinkle.git;
+  url    = https://gitlab.com/platonic/shpadoinkle.git;
   rev    = "f4a90d2621aeb981bc0b5b1aaf6d86e19f6d0166";
 };
 
@@ -59,7 +59,7 @@ If overlays modifying Haskell package sets do not use `composeExtensions`, new o
 self: super:
 let
   shpadoinkle = fetchgit { # <1>
-    url    = https://gitlab.com/fresheyeball/Shpadoinkle.git;
+    url    = https://gitlab.com/platonic/shpadoinkle.git;
     rev    = "243b89a00c29cdce6768be1b743e846a0bc22fea";
     sha256 = "06v4mgni4nq7asxy96761hgrdzhlva36vzak0l4yxc727zfwrffr";
   };

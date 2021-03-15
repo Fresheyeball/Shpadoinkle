@@ -2,7 +2,7 @@
 
 [source,bash]
 ----
-git clone https://gitlab.com/fresheyeball/Shpadoinkle.git
+git clone https://gitlab.com/platonic/shpadoinkle.git
 cd Shpadoinkle
 ----
 

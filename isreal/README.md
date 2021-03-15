@@ -47,7 +47,7 @@ the resulting UI here:
 ## Deps & Such
 
 Many common Haskell dependencies are provided.
-The environment is based on the cabal file located [here](https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/isreal/swan/swan.cabal).
+The environment is based on the cabal file located [here](https://gitlab.com/platonic/shpadoinkle/-/blob/master/isreal/swan/swan.cabal).
 
 ## Clean Up
 

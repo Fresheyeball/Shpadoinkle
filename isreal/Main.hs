@@ -65,7 +65,7 @@ welcome :: Text
 welcome = intercalate "\n"
   [ "Isreal Swan is a microservice for processing haskell files, and serving GHCJS artifacts."
   , "There is no UI."
-  , "To learn more please visit the README.md located here: https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/isreal/README.md"
+  , "To learn more please visit the README.md located here: https://gitlab.com/platonic/shpadoinkle/-/blob/master/isreal/README.md"
   ]
 
 

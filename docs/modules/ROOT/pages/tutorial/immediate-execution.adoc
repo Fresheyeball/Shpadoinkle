@@ -343,7 +343,7 @@ And we are done.
 
 == Conclusion
 
-You can review the final code https://gitlab.com/fresheyeball/Shpadoinkle/-/blob/master/examples/CalculatorIE.hs[here], and see it running http://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator-ie.jsexe/[here].
+You can review the final code https://gitlab.com/platonic/shpadoinkle/-/blob/master/examples/CalculatorIE.hs[here], and see it running http://fresheyeball.gitlab.io/Shpadoinkle/examples/calculator-ie.jsexe/[here].
 
 [NOTE]
 .Simplicity
