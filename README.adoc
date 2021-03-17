@@ -36,7 +36,7 @@ $ serve-docs
 
 == Snowman
 
-The easiest way to start a new Shpadoinkle project is to build a https://gitlab.com/robinbb/Shpadoinkle-snowman/[Snowman].
+The easiest way to start a new Shpadoinkle project is to build a https://gitlab.com/platonic/shpadoinkle/-/blob/master/snowman/README.md[Snowman].
 
 == TODOMVC
 

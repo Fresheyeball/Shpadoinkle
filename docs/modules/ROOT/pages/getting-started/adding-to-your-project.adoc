@@ -2,7 +2,7 @@
 
 Adding Shpadoinkle to a project should be easy.
 
-See an example of this working by examining {snowman}[default.nix] in the {snowman}[Seed Project]. You can add packages from https://hackage.haskell.org/[Hackage] and standard Haskell toolchain.
+See an example of this working by examining {gitlab}/snowman[default.nix] in the {gitlab}/snowman[Seed Project]. You can add packages from https://hackage.haskell.org/[Hackage] and standard Haskell toolchain.
 
 == GHCjs Challenges
 

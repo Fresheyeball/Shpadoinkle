@@ -14,5 +14,13 @@ nix-build --argstr system x86_64-darwin --arg isJS true  -A Shpadoinkle-examples
 nix-build --argstr system x86_64-darwin --arg isJS false -A Shpadoinkle-examples.env | cachix push shpadoinkle &
 nix-build --argstr system x86_64-darwin --arg isJS true  -A Shpadoinkle-tests.env    | cachix push shpadoinkle &
 nix-build --argstr system x86_64-darwin --arg isJS false -A Shpadoinkle-tests.env    | cachix push shpadoinkle &
+
+nix-build ./snowman/template --arg isJS false --arg asShell true                       --no-out-link | cachix push shpadoinkle &
+nix-build ./snowman/template --arg isJS true  --arg asShell true                       --no-out-link | cachix push shpadoinkle &
+nix-build ./snowman/template --arg isJS false --arg asShell true --arg withHoogle true --no-out-link | cachix push shpadoinkle &
+
+nix-build ./snowman/template --argstr system x86_64-darwin --arg isJS false --arg asShell true                       --no-out-link | cachix push shpadoinkle &
+nix-build ./snowman/template --argstr system x86_64-darwin --arg isJS true  --arg asShell true                       --no-out-link | cachix push shpadoinkle &
+nix-build ./snowman/template --argstr system x86_64-darwin --arg isJS false --arg asShell true --arg withHoogle true --no-out-link | cachix push shpadoinkle &
 wait
 echo "Cachix up to date"

@@ -1,5 +1,5 @@
 { compiler ? "ghc865"
-, system ? "x86_64-linux"
+, system ? builtins.currentSystem
 , chan ? (import ../nix/chan.nix)
 , optimize ? true
 }:

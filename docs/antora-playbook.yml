@@ -20,7 +20,6 @@ asciidoc:
     stem: true
     icons: font
     gitlab: https://gitlab.com/platonic/shpadoinkle/-/tree/master
-    snowman: https://gitlab.com/robinbb/Shpadoinkle-snowman/
     hackage: https://hackage.haskell.org/package/Shpadoinkle
 output:
   dir: ./public

@@ -1,0 +1,13 @@
+
+ | This environment is based upon the state of your .cabal file at the time
+ | when you entered the nix-shell. So if you change your .cabal file to modify
+ | dependencies, you will need to exit, and re-enter the nix-shell to get an
+ | environment that includes these changes.
+
+
+   Tools included:
+    * cabal
+    * ghcid
+    * stylish-haskell (if this is a GHC shell)
+
+   You can add more tools to the shell by modifying the buildInputs in default.nix

@@ -1,6 +1,6 @@
 { compiler ? ""
 , isJS ? false
-, system ? "x86_64-linux"
+, system ? builtins.currentSystem
 , chan ? (import ./chan.nix)
 , enableLibraryProfiling ? false
 , enableExecutableProfiling ? false

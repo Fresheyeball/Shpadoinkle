@@ -13,21 +13,26 @@ let
     , enableExecutableProfiling ? false
     }:
 
+
     let
       pkgs = import ./pkgs.nix { inherit compiler isJS system chan enableLibraryProfiling enableExecutableProfiling; };
       util = import ./util.nix { inherit pkgs compiler isJS; };
-    in
-      with pkgs; with lib;
+    in with pkgs; with lib;
+
 
       let
         optimizeJS = optimize && isJS && !inNixShell;
 
+
         docker = import ../examples/servant-crud/docker.nix { inherit compiler chan; };
+
 
         ghcTools = with haskell.packages.${compiler};
           [ easy-hls cabal-install ghcid hpack pkgs.stylish-haskell pkgs.hlint ];
 
+
         cannibal = if optimizeJS then util.doCannibalize else id;
+
 
         easy-hls = pkgs.callPackage (pkgs.fetchFromGitHub {
           owner  = "jkachmar";
@@ -38,7 +43,18 @@ let
           ghcVersions = [ "8.6.5" ];
         };
 
+
         packages = {
+
+
+          snowman = import ../snowman/template {
+            inherit chan isJS system enableLibraryProfiling enableExecutableProfiling;
+            shpadoinkle-path = ../.;
+          };
+
+
+          swan    = import ../snowman { inherit chan; };
+
 
           inherit (haskell.packages.${util.compilerjs})
             Shpadoinkle
@@ -59,6 +75,7 @@ let
             Shpadoinkle-tests;
             Shpadoinkle-examples  = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-examples;
             Shpadoinkle-marketing = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-marketing;
+
 
         } // (
           if !isJS then { inherit (haskell.packages.${util.compilerjs})
@@ -90,7 +107,9 @@ let
         else if build-or-shell == "shell" then
           haskell.packages.${util.compilerjs}.shellFor (extra pkgs shellBase)
         else
-            builtins.throw ''The first argument to this function must be either "build" or "shell"'';
+          builtins.throw ''The first argument to this function must be either "build" or "shell"'';
+
+
 in
   { build = f "build";
     shell = f "shell";
