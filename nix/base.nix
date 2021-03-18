@@ -47,15 +47,6 @@ let
         packages = {
 
 
-          snowman = import ../snowman/template {
-            inherit chan isJS system enableLibraryProfiling enableExecutableProfiling;
-            shpadoinkle-path = ../.;
-          };
-
-
-          swan    = import ../snowman { inherit chan; };
-
-
           inherit (haskell.packages.${util.compilerjs})
             Shpadoinkle
 
@@ -78,10 +69,26 @@ let
 
 
         } // (
-          if !isJS then { inherit (haskell.packages.${util.compilerjs})
+          if isJS then {} else { inherit (haskell.packages.${util.compilerjs})
+
             Shpadoinkle-disembodied;
-          } else {}
-        );
+
+          }
+        ) // (
+          if build-or-shell == "shell" then {} else {
+
+
+          snowman = import ../snowman/template {
+            inherit chan isJS system enableLibraryProfiling enableExecutableProfiling;
+            shpadoinkle-path = ../.;
+          };
+
+          swan    = import ../snowman { inherit chan; };
+
+
+        });
+
+
 
 
         shellBase = {
