@@ -16,3 +16,22 @@ These design decisions made Snabbdom a good fit for Shpadoinkle's first high-per
 
 - Proactively monitoring the CDN endpoints
 - Wrap `SnabbdomT` in your own `newtype` and overriding the `setup` method in the `Backend` instance with a mechanism where you provide Snabbdom's JavaScript artifacts yourself.
+
+# Building
+
+In order to re-build `Shpadoinkle/Backend/Snabbdom/Setup.js`, it needs to be bundled with a tool like [parcel](https://parceljs.org/) - the following methodology is how it's currently done:
+
+```bash
+# clone outside the source directory of Shpadoinkl
+git clone git@gituhub.com:snabbdom/snabbdom.gite
+# compile its typescript so we can bundle the javascript
+cd snabbdom && npm install && npm run compile
+# Setup_src.js imports the snabbdom sources locally, so we need to manually move it
+cp path-to-shpadoinkle/backends/snabbdom/Shpadoinkle/Backend/Snabbdom/Setup_src.js build/package/
+# nix is most reliable for running parcel
+nix-shell -p nodePackages.parcel-bundler --command "parcel build Setup_src.js"
+# copy the bundled output as Setup.js
+cp dist/Setup_src.js path-to-shpadoinkle/backends/snabbdom/Shpadoinkle/Backend/Snabbdom/Setup.js
+```
+
+Now when you build your shpadoinkle project, this new `Setup.js` will be statically allocated with your GHCJS output.
