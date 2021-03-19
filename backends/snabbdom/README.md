@@ -12,10 +12,7 @@ This package contains a script to setup the [Snabbdom](https://github.com/snabbd
 
 > Snabbdom consists of an extremely simple, performant, and extensible core that is only ≈ 200 SLOC. It offers a modular architecture with rich functionality for extensions through custom modules. To keep the core simple, all non-essential functionality is delegated to modules.
 
-These design decisions made Snabbdom a good fit for Shpadoinkle's first high-performance pure JavaScript backend. Right now Snabbdom is being provided using [CloudFlare](https://cdnjs.com/) content delivery network (CDN) and is not included in this repo. This is great for getting started fast and having a transparent developer experience where you can simply switch to the backend of your choosing. However, this is not a stable long term approach as the CDN artifact could be removed at any time. If you wish to use Snabbdom in production, I recommend either:
-
-- Proactively monitoring the CDN endpoints
-- Wrap `SnabbdomT` in your own `newtype` and overriding the `setup` method in the `Backend` instance with a mechanism where you provide Snabbdom's JavaScript artifacts yourself.
+These design decisions made Snabbdom a good fit for Shpadoinkle's first high-performance pure JavaScript backend. Right now Snabbdom is being provided statically, and a [slightly modified build](https://github.com/fresheyeball/snabbdom) is included in this repo. Although this increases the size of the resulting executable, it's necessary for reproducible and stable builds.
 
 # Building
 
@@ -23,7 +20,7 @@ In order to re-build `Shpadoinkle/Backend/Snabbdom/Setup.js`, it needs to be bun
 
 ```bash
 # clone outside the source directory of Shpadoinkl
-git clone git@gituhub.com:snabbdom/snabbdom.gite
+git clone git@gituhub.com:snabbdom/snabbdom.git
 # compile its typescript so we can bundle the javascript
 cd snabbdom && npm install && npm run compile
 # Setup_src.js imports the snabbdom sources locally, so we need to manually move it
