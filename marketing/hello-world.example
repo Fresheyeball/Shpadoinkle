@@ -1,0 +1,4 @@
+hello name =
+  div_ [ text $ "Hello " <> name <> "!" ]
+
+view = hello "World"

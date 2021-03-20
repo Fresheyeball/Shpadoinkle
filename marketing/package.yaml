@@ -79,6 +79,7 @@ executables:
     dependencies:
       - Shpadoinkle-backend-snabbdom
       - Shpadoinkle-developer-tools
+      - Shpadoinkle-console
 
     when:
       - condition: impl(ghcjs)

@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedLabels     #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeApplications     #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults   #-}
 
 
@@ -16,14 +17,15 @@ import           Control.Monad.IO.Class             (MonadIO, liftIO)
 import           Data.Generics.Labels               ()
 import           Data.String
 import           Data.Text                          (Text, pack)
-import           Data.Text.Lazy                     (fromStrict)
-import           Data.Text.Lazy.Encoding            (encodeUtf8)
+import           Data.Text.Lazy                     (fromStrict, toStrict)
+import           Data.Text.Lazy.Encoding            (decodeUtf8, encodeUtf8)
 import           GHCJS.DOM
 import           GHCJS.DOM.Document
 import           Language.Javascript.JSaddle
 import           Shpadoinkle                        (Html, MonadJSM,
                                                      RawNode (..), constUpdate,
                                                      text)
+import           Shpadoinkle.Console                as Console
 import           Shpadoinkle.Html                   as H
 import           Shpadoinkle.Isreal.Types
 import           Shpadoinkle.Lens                   (onRecord, onRecordEndo,
@@ -111,12 +113,22 @@ top hoo =
     ]
 
 
-mirror :: Html m Code
-mirror = baked $ do
+mirrorCfg :: Code -> JSM Object
+mirrorCfg (Code cc) = do
+  cfg <- obj
+  (cfg <# "mode") "haskell"
+  (cfg <# "value") $ toStrict $ decodeUtf8 cc
+  return cfg
+
+
+mirror :: Code -> Html m Code
+mirror cc = baked $ do
   (notify, stream) <- mkGlobalMailboxAfforded constUpdate
   doc <- currentDocumentUnchecked
   w <- toJSVal =<< createElement doc ("div" :: Text)
-  cm <- jsgf ("CodeMirror" :: Text) w
+  cfg <- mirrorCfg cc
+  Console.log @ToJSVal cfg
+  cm <- jsg2 ("CodeMirror" :: Text) w cfg
   _ <- cm ^. js2 ("on" :: Text) ("change" :: Text) (fun $ \_ _ -> \case
     [arg] -> do
         jsv <- arg ^. (js "changeObj" . js "text")
@@ -155,7 +167,7 @@ home h = section_
   [ onRecordEndo #hoogle top h
   , hero
   , pitch
-  , onRecord (#examples . #counter . #inputHaskell) mirror
+  , onRecord (#examples . #counter . #inputHaskell) (mirror counterExample)
   ]
 
 

@@ -53,9 +53,8 @@ data Example = Example
   deriving anyclass (FromJSON, ToJSON, NFData)
 
 
-counterExample :: SnowToken -> Example
-counterExample = Example
-  (Code $ fromStrict $(embedFile "./counterExample.example"))
+helloWorldExample :: Code
+helloWorldExample = Code $ fromStrict $(embedFile "./hello-world.example")
 
 
 data Home = Home
@@ -67,7 +66,7 @@ data Home = Home
 
 
 emptyHome :: SnowToken -> Home
-emptyHome st = Home mempty (Examples $ counterExample st)
+emptyHome st = Home mempty (Examples $ Example helloWorldExample st)
 
 
 data Hoogle = Hoogle
