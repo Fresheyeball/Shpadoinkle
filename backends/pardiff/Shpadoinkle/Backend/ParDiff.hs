@@ -388,8 +388,12 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
 
       return $ ParNode raw name p cs'
 
-    mkPotato :: JSM RawNode -> ParDiffT a m (ParVNode a)
-    mkPotato = fmap ParPotato . liftJSM . newOnce
+    mkPotato :: JSM (RawNode, STM (Continuation (ParDiffT a m) a)) -> ParDiffT a m (ParVNode a)
+    mkPotato mrn = ask >>= \i -> liftJSM $ do
+      (rn, stm) <- mrn
+      let go = atomically stm >>= writeUpdate i . hoist (toJSM . runParDiff i)
+      void $ forkIO go
+      fmap ParPotato $ newOnce $ pure rn
 
     mkText :: Text -> ParDiffT a m (ParVNode a)
     mkText t = liftJSM $ do

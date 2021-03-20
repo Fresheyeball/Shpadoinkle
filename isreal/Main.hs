@@ -26,7 +26,7 @@ import           Shpadoinkle.Isreal.Types
 
 
 getDir :: Options -> SnowToken -> FilePath
-getDir Options {..} (SnowToken snow) = territory </> T.unpack snow
+getDir Options {..} snow = territory </> T.unpack (unSnowToken snow)
 
 
 compile :: MonadIO m => Options -> SnowToken -> Code -> m (Either CompileError Text)
@@ -44,9 +44,9 @@ compile options@Options {..} snow (Code code) = liftIO $ do
 
 
 clean :: MonadIO m => Options -> SnowToken -> m Text
-clean options snow@(SnowToken snow') = liftIO $ do
+clean options snow = liftIO $ do
   Dir.removePathForcibly $ getDir options snow
-  return $ snow' <> " is clean"
+  return $ unSnowToken snow <> " is clean"
 
 
 cleanAll :: MonadIO m => Options -> m Text

@@ -9,7 +9,7 @@
 module Shpadoinkle.Lens (
   -- * Continuous Composition
   generalize
-  , onSum, onRecord
+  , onSum, onRecord, onRecordEndo
   , mapLens, (%>)
   , forLens, (<%)
   -- * Misc Outlaws
@@ -48,6 +48,10 @@ generalize len = liftC (set len) (view len)
 onRecord = generalize
 {-# INLINE onRecord #-}
 {-# INLINE generalize #-}
+
+
+onRecordEndo :: forall f m s a. Functor m => Continuous f => Lens' s a -> (a -> f m a) -> s -> f m s
+onRecordEndo len f s = liftC (set len) (view len) (f $ view len s)
 
 
 {-|

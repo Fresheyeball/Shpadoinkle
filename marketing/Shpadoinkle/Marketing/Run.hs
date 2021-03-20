@@ -13,10 +13,8 @@ module Main where
 import           Control.Monad.Catch                (MonadThrow)
 import           Control.Monad.IO.Class             (MonadIO (..))
 import           Data.Proxy                         (Proxy (..))
-import           Data.Text                          (Text, pack)
-import           Data.Time                          (getCurrentTime)
+import           Data.Text                          (Text)
 import           Servant.API                        (type (:<|>) ((:<|>)))
-import           System.Random                      (Random (randomRIO))
 #ifndef ghcjs_HOST_OS
 import           Servant.Server                     (serve)
 #endif
@@ -78,9 +76,6 @@ instance MonadUnliftIO App where
 
 
 instance Swan App where
-  token       = App . liftIO $ do
-    (cur, rand) <- (,) <$> getCurrentTime <*> randomRIO (1, 1000000 :: Double)
-    return . SnowToken $ pack (show cur) <> "-" <> pack (show rand)
   compile t c = App . runXHR $ compileM t c
   clean   t   = App . runXHR $ cleanM   t
 
@@ -101,7 +96,7 @@ findTargetsM (Search s) = client (Proxy @ HoogleAPI) (Just "json") (Just s) (Jus
 
 app :: JSM ()
 app = do
-  model :: TVar Frontend <- newTVarIO =<< start FourOhFourR
+  model :: TVar Frontend <- newTVarIO =<< runApp (start FourOhFourR)
   withDeveloperTools model
   fullPageSPA' @(SPA JSM) runApp runSnabbdom model (withHydration start) view stage (fmap constUpdate . start) routes
 

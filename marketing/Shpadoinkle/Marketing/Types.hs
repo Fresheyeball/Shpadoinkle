@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeOperators     #-}
 
 
@@ -13,6 +14,8 @@ module Shpadoinkle.Marketing.Types where
 
 import           Control.Monad.Except               (MonadTrans (..))
 import           Data.Aeson                         (FromJSON, ToJSON)
+import           Data.ByteString.Lazy               (fromStrict)
+import           Data.FileEmbed
 import           Data.Monoid.Generic                (GenericMonoid (..),
                                                      GenericSemigroup (..))
 import           Data.Text                          (Text)
@@ -25,7 +28,7 @@ import           Servant.API                        (Capture,
                                                      type (:>))
 
 import           Shpadoinkle                        (NFData)
-import           Shpadoinkle.Isreal.Types           (Code, CompileError,
+import           Shpadoinkle.Isreal.Types           (Code (..), CompileError,
                                                      SnowToken)
 import           Shpadoinkle.Router                 (HasRouter (..), View)
 import           Shpadoinkle.Widgets.Form.Dropdown
@@ -35,7 +38,36 @@ import           Shpadoinkle.Widgets.Types          (Input, Pick (One),
 import           Shpadoinkle.Marketing.Types.Hoogle (Target)
 
 
-type Home = Hoogle
+newtype Examples = Examples
+  { counter :: Example
+  }
+  deriving stock    (Eq, Ord, Show, Read, Generic)
+  deriving anyclass (FromJSON, ToJSON, NFData)
+
+
+data Example = Example
+  { inputHaskell :: Code
+  , snowToken    :: SnowToken
+  }
+  deriving stock    (Eq, Ord, Show, Read, Generic)
+  deriving anyclass (FromJSON, ToJSON, NFData)
+
+
+counterExample :: SnowToken -> Example
+counterExample = Example
+  (Code $ fromStrict $(embedFile "./counterExample.example"))
+
+
+data Home = Home
+  { hoogle   :: Hoogle
+  , examples :: Examples
+  }
+  deriving stock    (Eq, Ord, Show, Read, Generic)
+  deriving anyclass (FromJSON, ToJSON, NFData)
+
+
+emptyHome :: SnowToken -> Home
+emptyHome st = Home mempty (Examples $ counterExample st)
 
 
 data Hoogle = Hoogle
@@ -106,13 +138,11 @@ type HoogleAPI = QueryParam "mode"   Text
 
 
 class Swan m where
-  token   :: m SnowToken
   compile :: SnowToken -> Code -> m (Either CompileError Text)
   clean   :: SnowToken -> m Text
 
 
 instance (MonadTrans t, Monad m, Swan m) => Swan (t m) where
-  token     = lift token
   compile x = lift . compile x
   clean     = lift . clean
 

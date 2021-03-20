@@ -87,7 +87,7 @@ import           Shpadoinkle.Continuation      (Continuation, Continuous (..),
 newtype Html m a = Html
   { unHtml
       :: forall r. (Text -> [(Text, Prop m a)] -> [r] -> r)
-      -> (JSM RawNode -> r)
+      -> (JSM (RawNode, STM (Continuation m a)) -> r)
       -> (Text -> r)
       -> r
   }
@@ -166,7 +166,7 @@ instance Applicative m => Monoid (Props m a) where
 -- then you may change the action of 'Html'.
 hoistHtml :: Functor m => (m ~> n) -> Html m a -> Html n a
 hoistHtml f (Html h') = Html $ \n p t -> h'
-  (\t' ps cs -> n t' (fmap (hoistProp f) <$> ps) cs) p t
+  (\t' ps cs -> n t' (fmap (hoistProp f) <$> ps) cs) (p . fmap (fmap (fmap (hoist f)))) t
 {-# INLINE hoistHtml #-}
 
 
@@ -239,7 +239,8 @@ instance Applicative m => F.Functor EndoIso EndoIso (Prop m) where
 -- | Given a lens, you can change the type of an Html by using the lens
 --   to convert the types of the Continuations inside it.
 instance Continuous Html where
-  mapC f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (fmap (mapC f) <$> ps) cs) p t
+  mapC f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (fmap (mapC f) <$> ps) cs)
+         (p . fmap (fmap (fmap (mapC f)))) t
   {-# INLINE mapC #-}
 
 
@@ -322,7 +323,7 @@ h t ps cs = Html $ \a b c -> a t ps ((\(Html h') -> h' a b c) <$> cs)
 
 
 -- | Construct a 'Potato' from a 'JSM' action producing a 'RawNode'.
-baked :: JSM RawNode -> Html m a
+baked :: JSM (RawNode, STM (Continuation m a)) -> Html m a
 baked jr = Html $ \_ p _ -> p jr
 {-# INLINE baked #-}
 
@@ -341,7 +342,7 @@ eitherH = eitherC
 
 -- | Fold an HTML element, i.e. transform an h-algebra into an h-catamorphism.
 cataH :: (Text -> [(Text, Prop m a)] -> [b] -> b)
-      -> (JSM RawNode -> b)
+      -> (JSM (RawNode, STM (Continuation m a)) -> b)
       -> (Text -> b)
       -> Html m a -> b
 cataH f g h' (Html h'') = h'' f g h'

@@ -51,7 +51,7 @@ import           Data.Map.Internal           (Map (Bin, Tip))
 import           Data.Text                   (Text, words)
 import           GHCJS.DOM                   (currentDocumentUnchecked)
 import           GHCJS.DOM.Document          (createElement, getBodyUnsafe)
-import           GHCJS.DOM.Element           (setAttribute)
+import           GHCJS.DOM.Element           (setAttribute, setInnerHTML)
 import           GHCJS.DOM.Node              (appendChild)
 import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, liftJSM,
                                               (#))
@@ -212,16 +212,18 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
           !cs <- toJSM . runSnabbdom i $ sequence children
           SnabVNode <$> jsg3 "vnode" name o cs
 
-      mkPotato mrn = liftJSM $ do
+      mkPotato mrn = ask >>= \i -> liftJSM $ do
         o <- create
         hook <- create
-        rn <- mrn
+        (rn, stm) <- mrn
         ins <- toJSVal =<< function (\_ _ -> \case
           [n] -> void $ jsg2 "potato" n rn
           _   -> return ())
         unsafeSetProp "insert" ins hook
         hoo <- toJSVal hook
         unsafeSetProp "hook" hoo o
+        let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i)
+        void $ forkIO go
         SnabVNode <$> jsg2 "vnode" "div" o
 
       mkText = liftJSM . fmap SnabVNode . valMakeText
@@ -245,6 +247,7 @@ stage = liftJSM $ do
   elm <- createElement doc ("div" :: Text)
   setAttribute elm ("id" :: Text) ("stage" :: Text)
   b <- getBodyUnsafe doc
+  setInnerHTML b ""
   _ <- appendChild b elm
   RawNode <$> toJSVal elm
 

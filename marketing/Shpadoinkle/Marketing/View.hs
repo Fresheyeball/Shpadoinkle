@@ -1,22 +1,33 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedLabels    #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE LambdaCase           #-}
+{-# LANGUAGE OverloadedLabels     #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults   #-}
 
 
 module Shpadoinkle.Marketing.View where
 
 
 import           Control.Lens                       (to, (<>~), (^.))
+import           Control.Monad.IO.Class             (MonadIO, liftIO)
 import           Data.Generics.Labels               ()
 import           Data.String
-import           Data.Text                          (pack)
-
-import           Shpadoinkle                        (Html, MonadJSM, text)
+import           Data.Text                          (Text, pack)
+import           Data.Text.Lazy                     (fromStrict)
+import           Data.Text.Lazy.Encoding            (encodeUtf8)
+import           GHCJS.DOM
+import           GHCJS.DOM.Document
+import           Language.Javascript.JSaddle
+import           Shpadoinkle                        (Html, MonadJSM,
+                                                     RawNode (..), constUpdate,
+                                                     text)
 import           Shpadoinkle.Html                   as H
-import           Shpadoinkle.Lens                   (onRecord, onSum)
+import           Shpadoinkle.Isreal.Types
+import           Shpadoinkle.Lens                   (onRecord, onRecordEndo,
+                                                     onSum)
 import qualified Shpadoinkle.Marketing.Tailwind     as T
 import           Shpadoinkle.Router                 (toHydration)
 import           Shpadoinkle.Run                    (Env, entrypoint)
@@ -27,6 +38,9 @@ import           Shpadoinkle.Widgets.Types          (Pick (One), Search (..),
 
 import           Shpadoinkle.Marketing.Types
 import           Shpadoinkle.Marketing.Types.Hoogle
+
+
+default (Text)
 
 
 domain :: IsString s => s
@@ -97,7 +111,22 @@ top hoo =
     ]
 
 
-hoogleWidget :: forall m. Hooglable m => MonadJSM m => Home -> Html m Home
+mirror :: Html m Code
+mirror = baked $ do
+  (notify, stream) <- mkGlobalMailboxAfforded constUpdate
+  doc <- currentDocumentUnchecked
+  w <- toJSVal =<< createElement doc ("div" :: Text)
+  cm <- jsgf ("CodeMirror" :: Text) w
+  _ <- cm ^. js2 ("on" :: Text) ("change" :: Text) (fun $ \_ _ -> \case
+    [arg] -> do
+        jsv <- arg ^. (js "changeObj" . js "text")
+        raw :: Maybe Text <- fromJSVal jsv
+        maybe (pure ()) (notify . Code . encodeUtf8 . fromStrict) raw
+    _ -> pure ())
+  return (RawNode w, stream)
+
+
+hoogleWidget :: forall m. Hooglable m => MonadJSM m => Hoogle -> Html m Hoogle
 hoogleWidget h =
   H.div
   [ onInputM (query . Search) ]
@@ -107,7 +136,7 @@ hoogleWidget h =
 
  where
 
- query :: Search -> m (Home -> Home)
+ query :: Search -> m (Hoogle -> Hoogle)
  query ss = do
    ts <- findTargets ss
    return $ #targets <>~ Nothing `withOptions` ts
@@ -123,9 +152,10 @@ targetWidget = div' . pure . innerHTML . pack . targetItem
 
 home :: Hooglable m => MonadJSM m => Home -> Html m Home
 home h = section_
-  [ top h
+  [ onRecordEndo #hoogle top h
   , hero
   , pitch
+  , onRecord (#examples . #counter . #inputHaskell) mirror
   ]
 
 
@@ -155,18 +185,25 @@ template ev fe v = H.html_
       [ H.rel "stylesheet"
       , H.href "/static/style.css"
       ]
+    , H.link'
+      [ H.rel "stylesheet"
+      , H.href $ codemirrorCDN "codemirror.min.css"
+      ]
     , H.meta [ H.charset "ISO-8859-1" ] []
     , toHydration fe
     , H.script [ H.src $ entrypoint ev ] []
+    , H.script [ H.src $ codemirrorCDN "codemirror.min.js" ] []
+    , H.script [ H.src $ codemirrorCDN "mode/haskell/haskell.min.js" ] []
     ]
   , H.body_
     [ v
     ]
   ]
+    where codemirrorCDN = mappend "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.4/"
 
 
-start :: Applicative m => Route -> m Frontend
+start :: MonadIO m => Route -> m Frontend
 start = \case
-  HomeR         -> pure $ HomeM mempty
+  HomeR         -> HomeM . emptyHome <$> liftIO genSnowToken
   ComparisonR f -> pure . ComparisonM $ Comparison f Nothing
   FourOhFourR   -> pure FourOhFourM

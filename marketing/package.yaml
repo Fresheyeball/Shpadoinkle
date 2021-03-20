@@ -44,6 +44,7 @@ dependencies:
     - base >= 4.12.0 && < 4.16
     - text >= 1.2.3 && < 1.3
     - aeson
+    - bytestring
     - time
     - random
     - servant
@@ -53,6 +54,9 @@ dependencies:
     - generic-lens
     - generic-monoid
     - mtl
+    - file-embed
+    - ghcjs-dom
+    - jsaddle
 
     - Shpadoinkle
     - Shpadoinkle-router

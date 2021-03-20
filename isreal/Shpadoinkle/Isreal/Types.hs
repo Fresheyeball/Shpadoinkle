@@ -5,19 +5,31 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeOperators              #-}
 
 
-module Shpadoinkle.Isreal.Types where
+module Shpadoinkle.Isreal.Types
+  ( Options (..)
+  , CompileError (..)
+  , Code (..)
+  , SnowToken, unSnowToken
+  , genSnowToken, API
+  ) where
 
 
-import           Control.DeepSeq      (NFData)
-import           Data.Aeson           (FromJSON, ToJSON)
-import           Data.ByteString.Lazy (ByteString)
-import           Data.Text            (Text)
-import           GHC.Generics         (Generic)
+import           Control.DeepSeq         (NFData)
+import           Data.Aeson              (FromJSON (..), ToJSON (..),
+                                          Value (String))
+import           Data.ByteString.Lazy    (ByteString)
+import           Data.Text               (Text, pack)
+import           Data.Text.Lazy          (fromStrict, toStrict)
+import           Data.Text.Lazy.Encoding (decodeUtf8, encodeUtf8)
+import           Data.Time               (getCurrentTime)
+import           GHC.Generics            (Generic)
 import           Servant.API
+import           System.Random           (Random (randomRIO))
 
 
 data Options = Options
@@ -30,14 +42,31 @@ newtype CompileError = CompileError Text
   deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
 
-newtype Code = Code ByteString deriving (Eq, Ord, Show, Generic)
+newtype Code = Code { unCode :: ByteString }
+  deriving stock Generic
+  deriving newtype (Eq, Ord, Show, Read, NFData)
 deriving instance MimeUnrender OctetStream Code
 deriving instance MimeRender   OctetStream Code
 
 
-newtype SnowToken = SnowToken Text
+instance ToJSON Code where
+  toJSON = String . toStrict . decodeUtf8 . unCode
+
+
+instance FromJSON Code where
+  parseJSON (String s) = pure . Code . encodeUtf8 $ fromStrict s
+  parseJSON _          = fail "not a string, so not Code"
+
+
+newtype SnowToken = SnowToken { unSnowToken :: Text }
   deriving stock (Eq, Ord, Read, Show, Generic)
   deriving newtype (ToJSON, FromJSON, FromHttpApiData, ToHttpApiData, NFData)
+
+
+genSnowToken :: IO SnowToken
+genSnowToken = do
+  (cur, rand) <- (,) <$> getCurrentTime <*> randomRIO (1, 1000000 :: Double)
+  return . SnowToken $ pack (show cur) <> "-" <> pack (show rand)
 
 
 type API = "echo" :> Capture "echo" Text :> Get '[PlainText] Text
