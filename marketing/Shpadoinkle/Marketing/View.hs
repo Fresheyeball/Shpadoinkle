@@ -12,31 +12,32 @@
 module Shpadoinkle.Marketing.View where
 
 
-import           Control.Lens                       (to, (<>~), (^.))
-import           Control.Monad.IO.Class             (MonadIO, liftIO)
-import           Data.Generics.Labels               ()
+import           Control.Lens                        (to, (<>~), (^.))
+import           Control.Monad.IO.Class              (MonadIO, liftIO)
+import           Data.Generics.Labels                ()
 import           Data.String
-import           Data.Text                          (Text, pack)
-import           Data.Text.Lazy                     (fromStrict, toStrict)
-import           Data.Text.Lazy.Encoding            (decodeUtf8, encodeUtf8)
+import           Data.Text                           (Text, pack)
+import           Data.Text.Lazy                      (fromStrict, toStrict)
+import           Data.Text.Lazy.Encoding             (decodeUtf8, encodeUtf8)
 import           GHCJS.DOM
 import           GHCJS.DOM.Document
+import           GHCJS.DOM.WindowOrWorkerGlobalScope (setTimeout)
 import           Language.Javascript.JSaddle
-import           Shpadoinkle                        (Html, MonadJSM,
-                                                     RawNode (..), constUpdate,
-                                                     text)
-import           Shpadoinkle.Console                as Console
-import           Shpadoinkle.Html                   as H
+import           Shpadoinkle                         (Html, MonadJSM,
+                                                      RawNode (..), constUpdate,
+                                                      text)
+-- import           Shpadoinkle.Console                 as Console
+import           Shpadoinkle.Html                    as H
 import           Shpadoinkle.Isreal.Types
-import           Shpadoinkle.Lens                   (onRecord, onRecordEndo,
-                                                     onSum)
-import qualified Shpadoinkle.Marketing.Tailwind     as T
-import           Shpadoinkle.Router                 (toHydration)
-import           Shpadoinkle.Run                    (Env, entrypoint)
+import           Shpadoinkle.Lens                    (onRecord, onRecordEndo,
+                                                      onSum)
+import qualified Shpadoinkle.Marketing.Tailwind      as T
+import           Shpadoinkle.Router                  (toHydration)
+import           Shpadoinkle.Run                     (Env, entrypoint)
 import           Shpadoinkle.Widgets.Form.Dropdown
-import qualified Shpadoinkle.Widgets.Form.Input     as I
-import           Shpadoinkle.Widgets.Types          (Pick (One), Search (..),
-                                                     withOptions)
+import qualified Shpadoinkle.Widgets.Form.Input      as I
+import           Shpadoinkle.Widgets.Types           (Pick (One), Search (..),
+                                                      withOptions)
 
 import           Shpadoinkle.Marketing.Types
 import           Shpadoinkle.Marketing.Types.Hoogle
@@ -118,6 +119,8 @@ mirrorCfg (Code cc) = do
   cfg <- obj
   (cfg <# "mode") "haskell"
   (cfg <# "value") $ toStrict $ decodeUtf8 cc
+  (cfg <# "indentUnit") (4 :: Int)
+  (cfg <# "matchBrackets") True
   return cfg
 
 
@@ -125,17 +128,18 @@ mirror :: Code -> Html m Code
 mirror cc = baked $ do
   (notify, stream) <- mkGlobalMailboxAfforded constUpdate
   doc <- currentDocumentUnchecked
-  w <- toJSVal =<< createElement doc ("div" :: Text)
+  container <- toJSVal =<< createElement doc "div"
   cfg <- mirrorCfg cc
-  Console.log @ToJSVal cfg
-  cm <- jsg2 ("CodeMirror" :: Text) w cfg
-  _ <- cm ^. js2 ("on" :: Text) ("change" :: Text) (fun $ \_ _ -> \case
-    [arg] -> do
-        jsv <- arg ^. (js "changeObj" . js "text")
+  cm <- jsg2 "CodeMirror" container cfg
+  _ <- cm ^. js2 "on" "change" (fun $ \_ _ _ -> do
+        jsv <- cm ^. js0 "getValue"
         raw :: Maybe Text <- fromJSVal jsv
         maybe (pure ()) (notify . Code . encodeUtf8 . fromStrict) raw
-    _ -> pure ())
-  return (RawNode w, stream)
+      )
+
+  window <- currentWindowUnchecked
+  _ <- setTimeout window (fun $ \_ _ _ -> () <$ cm ^. js0 "refresh") (Just 33)
+  return (RawNode container, stream)
 
 
 hoogleWidget :: forall m. Hooglable m => MonadJSM m => Hoogle -> Html m Hoogle
@@ -167,7 +171,7 @@ home h = section_
   [ onRecordEndo #hoogle top h
   , hero
   , pitch
-  , onRecord (#examples . #counter . #inputHaskell) (mirror counterExample)
+  , onRecord (#examples . #counter . #inputHaskell) (mirror helloWorldExample)
   ]
 
 

@@ -222,7 +222,7 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
         unsafeSetProp "insert" ins hook
         hoo <- toJSVal hook
         unsafeSetProp "hook" hoo o
-        let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i)
+        let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i) >> go
         void $ forkIO go
         SnabVNode <$> jsg2 "vnode" "div" o
 
