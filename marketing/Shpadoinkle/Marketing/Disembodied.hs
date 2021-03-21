@@ -19,6 +19,7 @@ import           System.Environment          (getArgs)
 
 import           Shpadoinkle                 (Html, JSM, MonadJSM)
 import           Shpadoinkle.Disembodied     (Disembodied (SiteSpec), writeSite)
+import           Shpadoinkle.Isreal.Types    (SnowToken, genSnowToken)
 import           Shpadoinkle.Lens            (onSum)
 import           Shpadoinkle.Run             (Env (Prod))
 
@@ -28,18 +29,18 @@ import           Shpadoinkle.Marketing.View  (comparisons, fourOhFour, home,
 
 newtype Noop a = Noop (JSM a)
   deriving newtype (Functor, Applicative, Monad, MonadJSM, MonadIO)
-  deriving anyclass Hooglable
+  deriving anyclass (Hooglable, Swan)
 
 
 wrap :: Monad m => Prism' Frontend a -> (a -> Html m a) -> a -> b -> Html m Frontend
 wrap l v x = const $ template Prod (x ^. re l) (l `onSum` v x)
 
 
-site :: Hooglable m => MonadJSM m => SiteSpec () (SPA m)
-site = wrap #_HomeM home mempty
+site :: Hooglable m => Swan m => MonadJSM m => SnowToken -> SiteSpec () (SPA m)
+site token = wrap #_HomeM home (emptyHome token)
   :<|> wrap #_ComparisonM comparisons . (`Comparison` Nothing)
   :<|> const fourOhFour
-  :<|> wrap #_HomeM home mempty
+  :<|> wrap #_HomeM home (emptyHome token)
 
 
 main :: IO ()
@@ -49,4 +50,5 @@ main = do
               [ "--out", out' ] -> out'
               [ "-o", out' ]    -> out'
               _                 -> error "You must pass --out or -o"
-  writeSite @ (SPA Noop) out () site
+  token <- genSnowToken
+  writeSite @ (SPA Noop) out () (site token)

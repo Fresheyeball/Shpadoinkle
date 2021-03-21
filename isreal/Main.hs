@@ -70,7 +70,7 @@ welcome = intercalate "\n"
 
 
 api :: Int -> Options -> IO ()
-api port options = run port $ serve (Proxy @API) $ pure
+api port options = run port $ Servant.serve (Proxy @API) $ pure
   :<|> compile  options
   :<|> clean    options
   :<|> cleanAll options

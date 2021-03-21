@@ -64,6 +64,7 @@ dependencies:
     - Shpadoinkle-isreal
     - Shpadoinkle-lens
     - Shpadoinkle-widgets
+    - Shpadoinkle-console
 
 
 executables:
@@ -79,7 +80,6 @@ executables:
     dependencies:
       - Shpadoinkle-backend-snabbdom
       - Shpadoinkle-developer-tools
-      - Shpadoinkle-console
 
     when:
       - condition: impl(ghcjs)
@@ -108,4 +108,5 @@ executables:
     source-dirs: .
     dependencies:
       - Shpadoinkle-disembodied
+      - servant-server
 
