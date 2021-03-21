@@ -24,9 +24,9 @@ import           Data.Text.Lazy.Encoding             (decodeUtf8, encodeUtf8)
 import           GHCJS.DOM
 import           GHCJS.DOM.Document
 import           GHCJS.DOM.WindowOrWorkerGlobalScope (setTimeout)
-import           Language.Javascript.JSaddle
+import           Language.Javascript.JSaddle         hiding (JSM, MonadJSM)
 import           Prelude                             hiding (div)
-import           Servant                             (toUrlPiece)
+import           Servant.API                         (toUrlPiece)
 import           Shpadoinkle
 import           Shpadoinkle.Console                 as Console
 import           Shpadoinkle.Html                    as H
