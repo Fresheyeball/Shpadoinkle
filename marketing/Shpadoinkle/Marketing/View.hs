@@ -145,7 +145,7 @@ mirror cc = baked $ do
 
 example :: MonadJSM m => Swan m => Example -> Html m Example
 example (Example cc token merr nonce') = div "example"
-  [ mapC (\ccUpdate -> impur $ do
+  [ mapC (\ccUpdate -> before (onRecord #inputHaskell ccUpdate) $ impur $ do
      Console.log @ToJSVal "call compile"
      cc' <- runContinuation ccUpdate cc
      res <- compile token $ exampleTemplate $ cc' cc
@@ -167,11 +167,11 @@ example (Example cc token merr nonce') = div "example"
 
 
 hoogleWidget :: forall m. Hooglable m => MonadJSM m => Hoogle -> Html m Hoogle
-hoogleWidget h =
+hoogleWidget hoo =
   div
   [ onInputM (query . Search) ]
-  [ onRecord #search $ I.search [] (search h)
-  , onRecord #targets $ div [ class' T.p_2 ] [ dropdown theme defConfig $ targets h ]
+  [ onRecord #search $ I.search [] (search hoo)
+  , onRecord #targets $ div [ class' T.p_2 ] [ dropdown theme defConfig $ targets hoo ]
   ]
 
  where
@@ -191,11 +191,11 @@ targetWidget = div' . pure . innerHTML . pack . targetItem
 
 
 home :: Hooglable m => Swan m => MonadJSM m => Home -> Html m Home
-home h = section_
-  [ onRecordEndo #hoogle top h
+home home' = section_
+  [ onRecordEndo #hoogle top home'
   , hero
   , pitch
-  , onRecordEndo (#examples . #helloWorld) example h
+  , onRecordEndo (#examples . #helloWorld) example home'
   ]
 
 
