@@ -2,3 +2,5 @@ hello name =
   div_ [ text $ "Hello " <> name <> "!" ]
 
 view = hello "World"
+
+app = simple runParDiff () (const view) getBody

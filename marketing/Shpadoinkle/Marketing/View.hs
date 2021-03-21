@@ -6,13 +6,15 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeApplications     #-}
+
 {-# OPTIONS_GHC -fno-warn-type-defaults   #-}
 
 
 module Shpadoinkle.Marketing.View where
 
 
-import           Control.Lens                        (to, (<>~), (^.))
+import           Control.Lens                        (to, (%~), (<>~), (?~),
+                                                      (^.))
 import           Control.Monad.IO.Class              (MonadIO, liftIO)
 import           Data.Generics.Labels                ()
 import           Data.String
@@ -23,12 +25,12 @@ import           GHCJS.DOM
 import           GHCJS.DOM.Document
 import           GHCJS.DOM.WindowOrWorkerGlobalScope (setTimeout)
 import           Language.Javascript.JSaddle
-import           Shpadoinkle                         (Html, MonadJSM,
-                                                      RawNode (..), constUpdate,
-                                                      text)
--- import           Shpadoinkle.Console                 as Console
+import           Prelude                             hiding (div)
+import           Servant                             (toUrlPiece)
+import           Shpadoinkle
+import           Shpadoinkle.Console                 as Console
 import           Shpadoinkle.Html                    as H
-import           Shpadoinkle.Isreal.Types
+import           Shpadoinkle.Isreal.Types            as Swan
 import           Shpadoinkle.Lens                    (onRecord, onRecordEndo,
                                                       onSum)
 import qualified Shpadoinkle.Marketing.Tailwind      as T
@@ -52,7 +54,7 @@ domain = "https://shpadoinkle.org"
 
 hero :: Html m a
 hero =
-  H.div
+  div
     [ class' $ T.w_full <> T.bg_gray_900 <> T.p_10
             <> T.text_center <> T.text_white
     ]
@@ -69,23 +71,23 @@ hero =
 
 pitch :: Html m a
 pitch =
-  H.div
+  div
     [ class' $ T.mx_auto <> T.text_white <> T.max_w_3xl <> T.my_5
             <> T.flex <> T.space_x_4 <> T.justify_between
     ]
-    [ H.div
+    [ div
       [ class' $ T.bg_gray_900 <> T.p_4 <> "w-1/3" ]
       [ h3_ [ "Declarative" ]
       , "Because types!"
       ]
 
-    , H.div
+    , div
       [ class' $ T.bg_gray_900 <> T.p_4 <> "w-1/3" ]
       [ h3_ [ "Modular" ]
       , "Because packages!"
       ]
 
-    , H.div
+    , div
       [ class' $ T.bg_gray_900 <> T.p_4 <> "w-1/3" ]
       [ h3_ [ "Performant" ]
       , "Because simple!"
@@ -98,7 +100,7 @@ top hoo =
   header
     [ class' $ T.bg_gray_900 <> T.py_2 <> T.px_5
     ]
-    [ H.div
+    [ div
       [ class' $ T.text_center <> T.flex
               <> T.items_center <> T.justify_between <> T.max_w_3xl
               <> T.mx_auto
@@ -136,18 +138,40 @@ mirror cc = baked $ do
         raw :: Maybe Text <- fromJSVal jsv
         maybe (pure ()) (notify . Code . encodeUtf8 . fromStrict) raw
       )
-
   window <- currentWindowUnchecked
   _ <- setTimeout window (fun $ \_ _ _ -> () <$ cm ^. js0 "refresh") (Just 33)
   return (RawNode container, stream)
 
 
+example :: MonadJSM m => Swan m => Example -> Html m Example
+example (Example cc token merr nonce') = div "example"
+  [ mapC (\ccUpdate -> impur $ do
+     Console.log @ToJSVal "call compile"
+     cc' <- runContinuation ccUpdate cc
+     res <- compile token $ exampleTemplate $ cc' cc
+     Console.log @Show res
+     return $ (#nonce %~ (+ 1)) . case res of
+       Left e -> #err ?~ e
+       _      -> id
+
+    ) $ mirror cc
+  , case merr of
+      Nothing -> iframe
+        [ src $ "https://isreal.shpadoinkle.org/"
+             <> toUrlPiece (Swan.serve token)
+             <> "/index.html?nonce="
+             <> pack (show nonce')
+        ] []
+      Just e -> div_ [ text $ pack $ show e ]
+  ]
+
+
 hoogleWidget :: forall m. Hooglable m => MonadJSM m => Hoogle -> Html m Hoogle
 hoogleWidget h =
-  H.div
+  div
   [ onInputM (query . Search) ]
   [ onRecord #search $ I.search [] (search h)
-  , onRecord #targets $ H.div [ class' T.p_2 ] [ dropdown theme defConfig $ targets h ]
+  , onRecord #targets $ div [ class' T.p_2 ] [ dropdown theme defConfig $ targets h ]
   ]
 
  where
@@ -159,19 +183,19 @@ hoogleWidget h =
 
 
  theme :: Dropdown 'One Target -> Theme m 'One Target
- theme _ = Theme H.div_ (const mempty) H.div_ targetWidget
+ theme _ = Theme div_ (const mempty) div_ targetWidget
 
 
 targetWidget :: Target -> Html m a
 targetWidget = div' . pure . innerHTML . pack . targetItem
 
 
-home :: Hooglable m => MonadJSM m => Home -> Html m Home
+home :: Hooglable m => Swan m => MonadJSM m => Home -> Html m Home
 home h = section_
   [ onRecordEndo #hoogle top h
   , hero
   , pitch
-  , onRecord (#examples . #counter . #inputHaskell) (mirror helloWorldExample)
+  , onRecordEndo (#examples . #helloWorld) example h
   ]
 
 
@@ -183,7 +207,7 @@ fourOhFour :: Html m a
 fourOhFour = h2_ [ "404" ]
 
 
-view :: Hooglable m => MonadJSM m => Frontend -> Html m Frontend
+view :: Hooglable m => Swan m => MonadJSM m => Frontend -> Html m Frontend
 view = \case
   HomeM x       -> #_HomeM       `onSum` home x
   ComparisonM x -> #_ComparisonM `onSum` comparisons x

@@ -39,7 +39,7 @@ import           Shpadoinkle.Marketing.Types.Hoogle (Target)
 
 
 newtype Examples = Examples
-  { counter :: Example
+  { helloWorld :: Example
   }
   deriving stock    (Eq, Ord, Show, Read, Generic)
   deriving anyclass (FromJSON, ToJSON, NFData)
@@ -48,6 +48,8 @@ newtype Examples = Examples
 data Example = Example
   { inputHaskell :: Code
   , snowToken    :: SnowToken
+  , err          :: Maybe CompileError
+  , nonce        :: Int
   }
   deriving stock    (Eq, Ord, Show, Read, Generic)
   deriving anyclass (FromJSON, ToJSON, NFData)
@@ -55,6 +57,13 @@ data Example = Example
 
 helloWorldExample :: Code
 helloWorldExample = Code $ fromStrict $(embedFile "./hello-world.example")
+
+
+exampleTemplate :: Code -> Code
+exampleTemplate (Code inputHaskell') = Code
+   $ fromStrict $(embedFile "./example.template.top")
+  <> inputHaskell'
+  <> fromStrict $(embedFile "./example.template.bottom")
 
 
 data Home = Home
@@ -66,7 +75,7 @@ data Home = Home
 
 
 emptyHome :: SnowToken -> Home
-emptyHome st = Home mempty (Examples $ Example helloWorldExample st)
+emptyHome st = Home mempty (Examples $ Example helloWorldExample st Nothing 0)
 
 
 data Hoogle = Hoogle

@@ -1,0 +1,14 @@
+{-# LANGUAGE OverloadedStrings #-}
+
+
+module Main where
+
+
+import           Data.Text
+import           Prelude                      hiding (span, div)
+import           Shpadoinkle.Backend.ParDiff (runParDiff)
+import           Shpadoinkle.Html
+import           Shpadoinkle.Html.Utils
+import           Shpadoinkle.Run              (runJSorWarp, simple)
+import           Shpadoinkle
+

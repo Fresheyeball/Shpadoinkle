@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE ExplicitNamespaces         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -16,7 +17,7 @@ import           Data.Proxy                         (Proxy (..))
 import           Data.Text                          (Text)
 import           Servant.API                        (type (:<|>) ((:<|>)))
 #ifndef ghcjs_HOST_OS
-import           Servant.Server                     (serve)
+import           Servant.Server                     as Servant (serve)
 #endif
 
 #ifndef ghcjs_HOST_OS
@@ -40,7 +41,7 @@ import           Shpadoinkle.Router                 (fullPageSPA',
 import           Shpadoinkle.Router.Client          (BaseUrl (..),
                                                      ClientEnv (..), ClientM,
                                                      Scheme (Https), client,
-                                                     runXHR, runXHR')
+                                                     runXHR')
 import           Shpadoinkle.Widgets.Types          (Search (..))
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle.Router.Server          (serveUI)
@@ -75,13 +76,18 @@ instance MonadUnliftIO App where
   askUnliftIO = do ctx <- askJSM; return $ UnliftIO $ \(App m) -> runJSM m ctx
 
 
+isrealEnv, hoogleEnv :: ClientEnv
+isrealEnv = ClientEnv $ BaseUrl Https "isreal.shpadoinkle.org" 443 ""
+hoogleEnv = ClientEnv $ BaseUrl Https "hoogle.shpadoinkle.org" 443 ""
+
+
 instance Swan App where
-  compile t c = App . runXHR $ compileM t c
-  clean   t   = App . runXHR $ cleanM   t
+  compile t c = App $ runXHR' (compileM t c) isrealEnv
+  clean   t   = App $ runXHR' (cleanM   t) isrealEnv
 
 
 instance Hooglable App where
-  findTargets s = App . runXHR' (findTargetsM s) . ClientEnv $ BaseUrl Https "hoogle.shpadoinkle.org" 443 ""
+  findTargets s = App $ runXHR' (findTargetsM s) hoogleEnv
 
 
 compileM :: SnowToken -> Code -> ClientM (Either CompileError Text)
@@ -108,7 +114,7 @@ main = runJSorWarp 8080 app
 #ifndef ghcjs_HOST_OS
 
 dev :: IO ()
-dev = liveWithBackend 8080 app . pure $ serve (Proxy @ (SPA IO)) $ serveUI @ (SPA IO) "." (\r -> do
+dev = liveWithBackend 8080 app . pure $ Servant.serve (Proxy @ (SPA IO)) $ serveUI @ (SPA IO) "." (\r -> do
   x <- start r
   return $ template @App Dev x (view x)) routes
 

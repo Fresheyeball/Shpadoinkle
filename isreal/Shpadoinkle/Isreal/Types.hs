@@ -7,6 +7,7 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeOperators              #-}
 
 
@@ -15,7 +16,7 @@ module Shpadoinkle.Isreal.Types
   , CompileError (..)
   , Code (..)
   , SnowToken, unSnowToken
-  , genSnowToken, API
+  , genSnowToken, API, serve
   ) where
 
 
@@ -23,6 +24,7 @@ import           Control.DeepSeq         (NFData)
 import           Data.Aeson              (FromJSON (..), ToJSON (..),
                                           Value (String))
 import           Data.ByteString.Lazy    (ByteString)
+import           Data.Proxy
 import           Data.Text               (Text, pack)
 import           Data.Text.Lazy          (fromStrict, toStrict)
 import           Data.Text.Lazy.Encoding (decodeUtf8, encodeUtf8)
@@ -39,7 +41,8 @@ data Options = Options
 
 
 newtype CompileError = CompileError Text
-  deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
+  deriving stock Generic
+  deriving newtype (Eq, Ord, Show, Read, ToJSON, FromJSON, NFData)
 
 
 newtype Code = Code { unCode :: ByteString }
@@ -61,6 +64,12 @@ instance FromJSON Code where
 newtype SnowToken = SnowToken { unSnowToken :: Text }
   deriving stock (Eq, Ord, Read, Show, Generic)
   deriving newtype (ToJSON, FromJSON, FromHttpApiData, ToHttpApiData, NFData)
+
+
+serve :: SnowToken -> Link
+serve = safeLink (Proxy @API) (Proxy @("serve"
+  :> Capture "token" SnowToken
+  :> Raw))
 
 
 genSnowToken :: IO SnowToken

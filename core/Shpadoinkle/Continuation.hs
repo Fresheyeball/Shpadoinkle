@@ -18,7 +18,7 @@ module Shpadoinkle.Continuation (
   -- * The Continuation Type
   Continuation (..)
   , runContinuation
-  , done, pur, impur, kleisli, causes, causedBy, merge, contIso, before
+  , done, pur, impur, kleisli, causes, causedBy, merge, contIso, before, after
   -- * The Class
   , Continuous (..)
   -- ** Hoist
@@ -136,6 +136,10 @@ Pure f `before` Pure g = Pure (g.f)
 Merge f `before` g = Merge (f `before` g)
 Rollback f `before` g = Rollback (f `before` g)
 Continuation (f, g) `before` h = Continuation . (f,) $ fmap (`before` h) . g
+
+
+after :: Applicative m => Continuation m a -> Continuation m a -> Continuation m a
+after = flip before
 
 
 -- | 'runContinuation' takes a 'Continuation' and a state value and runs the whole Continuation
