@@ -145,12 +145,11 @@ mirror cc = baked $ do
 
 example :: MonadJSM m => Swan m => Example -> Html m Example
 example (Example cc token merr nonce') = div "example"
-  [ mapC (\ccUpdate -> before (onRecord #inputHaskell ccUpdate) $ impur $ do
+  [ mapC (\ccUpdate -> before (onRecord #inputHaskell ccUpdate) $ kleisli $ \(Example cc' _ _ _) -> do
      Console.log @ToJSVal "call compile"
-     cc' <- runContinuation ccUpdate cc
-     res <- compile token $ exampleTemplate $ cc' cc
+     res <- compile token $ exampleTemplate cc'
      Console.log @Show res
-     return $ (#nonce %~ (+ 1)) . case res of
+     return . pur $ (#nonce %~ (+ 1)) . case res of
        Left e -> #err ?~ e
        _      -> id
 
