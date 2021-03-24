@@ -13,6 +13,8 @@ import           Control.Monad.IO.Class   (MonadIO (..))
 import           Data.ByteString.Lazy     as BSL (writeFile)
 import           Data.String              (fromString)
 import           Data.Text                as T (Text, intercalate, unpack)
+import           Data.Text.Lazy           as T (pack, unlines)
+import qualified Data.Text.Lazy.IO        as T
 import           Network.Wai.Handler.Warp (run)
 import           Servant
 import qualified System.Directory         as Dir
@@ -29,18 +31,37 @@ getDir :: Options -> SnowToken -> FilePath
 getDir Options {..} snow = territory </> T.unpack (unSnowToken snow)
 
 
-compile :: MonadIO m => Options -> SnowToken -> Code -> m (Either CompileError Text)
-compile options@Options {..} snow (Code code) = liftIO $ do
+compile :: MonadIO m => Options -> SnowToken -> SnowNonce -> Code -> m (Either CompileError Text)
+compile options@Options {..} snow nonce (Code code) = liftIO $ do
   let dir = getDir options snow
   Dir.createDirectoryIfMissing False dir
   BSL.writeFile (dir </> "Main.hs") code
   isCabal <- Dir.doesFileExist $ dir </> "swan.cabal"
   unless isCabal $ Dir.createFileLink (swan </> "swan.cabal") $ dir </> "swan.cabal"
   Dir.setCurrentDirectory dir
-  (exit, _, err) <- readCreateProcessWithExitCode (proc "cabal" ["build", "--ghcjs"]) ""
-  return $ case exit of
-    ExitSuccess   -> Right "Compiled!"
-    ExitFailure _ -> Left . CompileError $ fromString err
+  (exit, _, err) <- readCreateProcessWithExitCode (proc "cabal" ["build", "--ghcjs", "--ghc-options", "-w"]) ""
+  case exit of
+    ExitSuccess   -> do
+      let indexPath = dir </> artifactPath </> "index.html"
+      T.writeFile indexPath mkIndex
+      print indexPath
+      return $ Right "Compiled!"
+    ExitFailure _ -> return . Left . CompileError $ fromString err
+
+  where
+  mkIndex = T.unlines
+    [ "<!DOCTYPE html>"
+    , "<html>"
+    , "  <head>"
+    , "    <script language=\"javascript\" src=\"rts.js\"></script>"
+    , "    <script language=\"javascript\" src=\"lib.js\"></script>"
+    , "    <script language=\"javascript\" src=\"out.js?nonce=" <> pack (show nonce) <> "\"></script>"
+    , "  </head>"
+    , "  <body>"
+    , "  </body>"
+    , "  <script language=\"javascript\" src=\"runmain.js\" defer></script>"
+    , "</html>"
+    ]
 
 
 clean :: MonadIO m => Options -> SnowToken -> m Text
@@ -57,8 +78,11 @@ cleanAll Options {..} = liftIO $ do
 
 
 static :: Options -> SnowToken -> ServerT Raw m
-static options snow = serveDirectoryWebApp $ getDir options snow </>
-  "dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/swan-0.1.0.0/x/swan/build/swan/swan.jsexe/"
+static options snow = serveDirectoryWebApp $ getDir options snow </> artifactPath
+
+
+artifactPath :: FilePath
+artifactPath = "dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/swan-0.1.0.0/x/swan/build/swan/swan.jsexe/"
 
 
 welcome :: Text

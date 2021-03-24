@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -340,6 +342,7 @@ contIso f g (Pure h)     = Pure (f.h.g)
 -- | @Continuation m@ is a Functor in the EndoIso category (where the objects
 --   are types and the morphisms are EndoIsos).
 instance Applicative m => F.Functor EndoIso EndoIso (Continuation m) where
+  map :: EndoIso a b -> EndoIso  (Continuation m a) (Continuation m b)
   map (EndoIso f g h) =
     EndoIso (Continuation . (f,) . const . pure) (contIso g h) (contIso h g)
 

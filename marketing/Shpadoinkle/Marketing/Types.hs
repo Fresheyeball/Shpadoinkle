@@ -18,7 +18,8 @@ import           Data.ByteString.Lazy               (fromStrict)
 import           Data.FileEmbed
 import           Data.Monoid.Generic                (GenericMonoid (..),
                                                      GenericSemigroup (..))
-import           Data.Text                          (Text)
+import           Data.Text                          (Text, splitOn)
+import           Data.Text.Encoding                 (decodeUtf8)
 import           GHC.Generics                       (Generic)
 import           Servant.API                        (Capture,
                                                      FromHttpApiData (parseUrlPiece),
@@ -29,7 +30,7 @@ import           Servant.API                        (Capture,
 
 import           Shpadoinkle                        (NFData)
 import           Shpadoinkle.Isreal.Types           (Code (..), CompileError,
-                                                     SnowToken)
+                                                     SnowNonce, SnowToken)
 import           Shpadoinkle.Router                 (HasRouter (..), View)
 import           Shpadoinkle.Widgets.Form.Dropdown
 import           Shpadoinkle.Widgets.Types          (Input, Pick (One),
@@ -48,8 +49,8 @@ newtype Examples = Examples
 data Example = Example
   { inputHaskell :: Code
   , snowToken    :: SnowToken
+  , snowNonce    :: SnowNonce
   , err          :: Maybe CompileError
-  , nonce        :: Int
   }
   deriving stock    (Eq, Ord, Show, Read, Generic)
   deriving anyclass (FromJSON, ToJSON, NFData)
@@ -66,6 +67,10 @@ exampleTemplate (Code inputHaskell') = Code
   <> fromStrict $(embedFile "./example.template.bottom")
 
 
+topOffset :: Int
+topOffset = subtract 1 $ length $ splitOn "\n" $ decodeUtf8 $(embedFile "./example.template.top")
+
+
 data Home = Home
   { hoogle   :: Hoogle
   , examples :: Examples
@@ -75,7 +80,7 @@ data Home = Home
 
 
 emptyHome :: SnowToken -> Home
-emptyHome st = Home mempty (Examples $ Example helloWorldExample st Nothing 0)
+emptyHome st = Home mempty $ Examples $ Example helloWorldExample st 0 Nothing
 
 
 data Hoogle = Hoogle
@@ -146,12 +151,12 @@ type HoogleAPI = QueryParam "mode"   Text
 
 
 class Swan m where
-  compile :: SnowToken -> Code -> m (Either CompileError Text)
+  compile :: SnowToken -> SnowNonce -> Code -> m (Either CompileError Text)
   clean   :: SnowToken -> m Text
 
 
 instance (MonadTrans t, Monad m, Swan m) => Swan (t m) where
-  compile x = lift . compile x
+  compile x y = lift . compile x y
   clean     = lift . clean
 
 

@@ -5,7 +5,7 @@ build-type:          Simple
 
 executable swan
   main-is:             Main.hs
-  extensions:          OverloadedStrings
+  default-extensions:  OverloadedStrings
                      , MultiParamTypeClasses
                      , GeneralizedNewtypeDeriving
                      , TypeApplications

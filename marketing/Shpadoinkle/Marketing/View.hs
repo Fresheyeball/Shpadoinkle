@@ -13,12 +13,16 @@
 module Shpadoinkle.Marketing.View where
 
 
-import           Control.Lens                        (to, (%~), (<>~), (?~),
-                                                      (^.))
+import           Control.Lens                        (to, (%~), (.~), (<>~),
+                                                      (?~), (^.))
 import           Control.Monad.IO.Class              (MonadIO, liftIO)
 import           Data.Generics.Labels                ()
+import           Data.List                           (intersperse)
 import           Data.String
-import           Data.Text                           (Text, pack)
+import           Data.Text                           as T (Text, drop, length,
+                                                           null, pack, replace,
+                                                           replicate, splitOn,
+                                                           strip, unpack)
 import           Data.Text.Lazy                      (fromStrict, toStrict)
 import           Data.Text.Lazy.Encoding             (decodeUtf8, encodeUtf8)
 import           GHCJS.DOM
@@ -123,6 +127,7 @@ mirrorCfg (Code cc) = do
   (cfg <# "value") $ toStrict $ decodeUtf8 cc
   (cfg <# "indentUnit") (4 :: Int)
   (cfg <# "matchBrackets") True
+  (cfg <# "lineNumbers") True
   return cfg
 
 
@@ -132,7 +137,7 @@ mirror cc = baked $ do
   doc <- currentDocumentUnchecked
   container <- toJSVal =<< createElement doc "div"
   cfg <- mirrorCfg cc
-  cm <- jsg2 "CodeMirror" container cfg
+  cm  <- jsg2 "CodeMirror" container cfg
   _ <- cm ^. js2 "on" "change" (fun $ \_ _ _ -> do
         jsv <- cm ^. js0 "getValue"
         raw :: Maybe Text <- fromJSVal jsv
@@ -144,25 +149,39 @@ mirror cc = baked $ do
 
 
 example :: MonadJSM m => Swan m => Example -> Html m Example
-example (Example cc token merr nonce') = div "example"
-  [ mapC (\ccUpdate -> before (onRecord #inputHaskell ccUpdate) $ kleisli $ \(Example cc' _ _ _) -> do
-     Console.log @ToJSVal "call compile"
-     res <- compile token $ exampleTemplate cc'
-     Console.log @Show res
-     return . pur $ (#nonce %~ (+ 1)) . case res of
-       Left e -> #err ?~ e
-       _      -> id
+example (Example cc token nonce merr) = div "example"
+  [ mapC (\ccUpdate -> before (onRecord #inputHaskell ccUpdate) . kleisli $
+     \(Example cc' _ nonce' _) -> do
+       Console.log @ToJSVal $ "call compile " <> pack (show nonce')
+       res <- compile token nonce' $ exampleTemplate cc'
+       return . pur $ (#snowNonce %~ (+ 1)) . case res of
+         Left e -> #err ?~ e
+         _      -> #err .~ Nothing
 
     ) $ mirror cc
-  , case merr of
+  , case merr :: Maybe CompileError of
       Nothing -> iframe
         [ src $ "https://isreal.shpadoinkle.org/"
              <> toUrlPiece (Swan.serve token)
              <> "/index.html?nonce="
-             <> pack (show nonce')
+             <> pack (show $ nonce - 1)
         ] []
-      Just e -> div_ [ text $ pack $ show e ]
+      Just e -> errorMessages e
   ]
+
+
+errorMessages :: CompileError -> Html m a
+errorMessages = div "errors" . fmap singleError . breakError . replace bunkWarning "" . unCompileError
+  where
+  singleError e =
+    let offLineNumber = Prelude.head . splitOn ":" $ T.drop 1 e
+        lineNumber = pack . show . subtract topOffset . read $ unpack offLineNumber
+        pad = let padSize = T.length offLineNumber - T.length lineNumber in if padSize > 0 then T.replicate padSize " " else ""
+        replaceLineNumber = replace (offLineNumber <> ":") (lineNumber <> ":") . replace (offLineNumber <> " |") (pad <> lineNumber <> " |")
+    in div "error" . intersperse br'_ . fmap (text . replaceLineNumber) . splitOn "\n" $ T.drop 1 e
+  breakError = filter (not . T.null . strip) . splitOn "Main.hs"
+  bunkWarning = "Warning: don't know how to find change monitoring files for the installed\npackage databases for ghcjs\n"
+
 
 
 hoogleWidget :: forall m. Hooglable m => MonadJSM m => Hoogle -> Html m Hoogle

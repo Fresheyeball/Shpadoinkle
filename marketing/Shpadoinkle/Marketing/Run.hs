@@ -35,6 +35,7 @@ import           Shpadoinkle                        (JSM, MonadUnliftIO (..),
 import           Shpadoinkle.Backend.Snabbdom       (runSnabbdom, stage)
 import           Shpadoinkle.Isreal.Types           as Swan (API, Code,
                                                              CompileError,
+                                                             SnowNonce,
                                                              SnowToken (..))
 import           Shpadoinkle.Router                 (fullPageSPA',
                                                      withHydration)
@@ -82,15 +83,15 @@ hoogleEnv = ClientEnv $ BaseUrl Https "hoogle.shpadoinkle.org" 443 ""
 
 
 instance Swan App where
-  compile t c = App $ runXHR' (compileM t c) isrealEnv
-  clean   t   = App $ runXHR' (cleanM   t) isrealEnv
+  compile t n c = App $ runXHR' (compileM t n c) isrealEnv
+  clean   t     = App $ runXHR' (cleanM   t)     isrealEnv
 
 
 instance Hooglable App where
   findTargets s = App $ runXHR' (findTargetsM s) hoogleEnv
 
 
-compileM :: SnowToken -> Code -> ClientM (Either CompileError Text)
+compileM :: SnowToken -> SnowNonce -> Code -> ClientM (Either CompileError Text)
 cleanM   :: SnowToken -> ClientM Text
 (_ :<|> compileM :<|> cleanM :<|> _)
   = client (Proxy @ Swan.API)

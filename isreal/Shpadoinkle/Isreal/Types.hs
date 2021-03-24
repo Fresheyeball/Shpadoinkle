@@ -17,6 +17,7 @@ module Shpadoinkle.Isreal.Types
   , Code (..)
   , SnowToken, unSnowToken
   , genSnowToken, API, serve
+  , SnowNonce(..)
   ) where
 
 
@@ -40,7 +41,7 @@ data Options = Options
   } deriving (Eq, Ord, Show, Generic)
 
 
-newtype CompileError = CompileError Text
+newtype CompileError = CompileError { unCompileError :: Text }
   deriving stock Generic
   deriving newtype (Eq, Ord, Show, Read, ToJSON, FromJSON, NFData)
 
@@ -72,6 +73,11 @@ serve = safeLink (Proxy @API) (Proxy @("serve"
   :> Raw))
 
 
+newtype SnowNonce = SnowNonce { unSnowNonce :: Int }
+  deriving stock (Eq, Ord, Generic)
+  deriving newtype (Show, Read, ToJSON, FromJSON, FromHttpApiData, ToHttpApiData, NFData, Num)
+
+
 genSnowToken :: IO SnowToken
 genSnowToken = do
   (cur, rand) <- (,) <$> getCurrentTime <*> randomRIO (1, 1000000 :: Double)
@@ -81,6 +87,7 @@ genSnowToken = do
 type API = "echo" :> Capture "echo" Text :> Get '[PlainText] Text
    :<|> "compile"
      :> Capture "token" SnowToken
+     :> QueryParam' '[Required] "nonce" SnowNonce
      :> ReqBody '[OctetStream] Code
      :> Post    '[JSON] (Either CompileError Text)
    :<|> "clean"
