@@ -59,9 +59,10 @@ import           Shpadoinkle.Marketing.Types        (Frontend, Hooglable (..),
                                                      Swan (..), routes)
 import           Shpadoinkle.Marketing.Types.Hoogle (Target)
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Marketing.View         (start, template, view)
+import           Shpadoinkle.Marketing.View         (start, startJS, template,
+                                                     view)
 #else
-import           Shpadoinkle.Marketing.View         (start, view)
+import           Shpadoinkle.Marketing.View         (startJS, view)
 #endif
 
 
@@ -105,7 +106,8 @@ app :: JSM ()
 app = do
   model :: TVar Frontend <- newTVarIO =<< runApp (start FourOhFourR)
   withDeveloperTools model
-  fullPageSPA' @(SPA JSM) runApp runSnabbdom model (withHydration start) view stage (fmap constUpdate . start) routes
+  fullPageSPA' @(SPA JSM) runApp runSnabbdom model (withHydration startJS) view stage
+    (fmap constUpdate . startJS) routes
 
 
 main :: IO ()

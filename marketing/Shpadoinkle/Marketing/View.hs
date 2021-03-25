@@ -150,15 +150,7 @@ mirror cc = baked $ do
 
 example :: MonadJSM m => Swan m => Example -> Html m Example
 example (Example cc token nonce merr) = div "example"
-  [ mapC (\ccUpdate -> before (onRecord #inputHaskell ccUpdate) . kleisli $
-     \(Example cc' _ nonce' _) -> do
-       Console.log @ToJSVal $ "call compile " <> pack (show nonce')
-       res <- compile token nonce' $ exampleTemplate cc'
-       return . pur $ (#snowNonce %~ (+ 1)) . case res of
-         Left e -> #err ?~ e
-         _      -> #err .~ Nothing
-
-    ) $ mirror cc
+  [ mapC (\ccUpdate -> before (onRecord #inputHaskell ccUpdate) $ kleisli compileExample) $ mirror cc
   , case merr :: Maybe CompileError of
       Nothing -> iframe
         [ src $ "https://isreal.shpadoinkle.org/"
@@ -168,6 +160,15 @@ example (Example cc token nonce merr) = div "example"
         ] []
       Just e -> errorMessages e
   ]
+
+
+compileExample :: Monad m => Swan m => Example -> m (Continuation m Example)
+compileExample (Example cc token nonce _) = do
+  res <- compile token nonce $ exampleTemplate cc
+  return . pur $ (#snowNonce %~ (+ 1)) . case res of
+    Left e -> #err ?~ e
+    _      -> #err .~ Nothing
+
 
 
 errorMessages :: CompileError -> Html m a
@@ -265,3 +266,19 @@ start = \case
   HomeR         -> HomeM . emptyHome <$> liftIO genSnowToken
   ComparisonR f -> pure . ComparisonM $ Comparison f Nothing
   FourOhFourR   -> pure FourOhFourM
+
+
+startJS :: MonadJSM m => Swan m => Route -> m Frontend
+startJS r = do
+  fe <- start r
+  Console.log @Show fe
+  case fe of
+    HomeM home' -> HomeM <$> compileExamples home'
+    x           -> pure x
+
+
+compileExamples :: Monad m => Swan m => Home -> m Home
+compileExamples home' = do
+  cont <- compileExample $ home' ^. #examples . #helloWorld
+  f <- runContinuation cont $ home' ^. #examples . #helloWorld
+  return $ (#examples . #helloWorld %~ f) home'
