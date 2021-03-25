@@ -47,8 +47,6 @@ import           Shpadoinkle.Widgets.Types           (Pick (One), Search (..),
 import           Shpadoinkle.Marketing.Types
 import           Shpadoinkle.Marketing.Types.Hoogle
 
-import           Debug.Trace                         (trace)
-
 
 default (Text)
 
@@ -172,7 +170,7 @@ compileExample = kleisli $ \(Example cc token nonce _) -> do
   mutex <- ask
   cur <- readTVarIO mutex
   atomically $ writeTVar mutex $ Just cc
-  case trace (show cur) cur of
+  case cur of
     Just _ -> return done
     Nothing -> do
       res <- compile token nonce $ exampleTemplate cc
