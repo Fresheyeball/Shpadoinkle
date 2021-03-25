@@ -39,12 +39,10 @@ compile options@Options {..} snow nonce (Code code) = liftIO $ do
   isCabal <- Dir.doesFileExist $ dir </> "swan.cabal"
   unless isCabal $ Dir.createFileLink (swan </> "swan.cabal") $ dir </> "swan.cabal"
   Dir.setCurrentDirectory dir
-  (exit, _, err) <- readCreateProcessWithExitCode (proc "cabal" ["build", "--ghcjs", "--ghc-options", "-w"]) ""
+  (exit, _, err) <- readCreateProcessWithExitCode (proc "cabal" ["build", "--ghcjs"]) ""
   case exit of
     ExitSuccess   -> do
-      let indexPath = dir </> artifactPath </> "index.html"
-      T.writeFile indexPath mkIndex
-      print indexPath
+      T.writeFile (dir </> artifactPath </> "index.html") mkIndex
       return $ Right "Compiled!"
     ExitFailure _ -> return . Left . CompileError $ fromString err
 
