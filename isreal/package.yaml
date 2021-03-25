@@ -36,8 +36,10 @@ dependencies:
     - bytestring
     - containers
     - text
+    - time
     - servant
     - deepseq
+    - random
 
 
 library:

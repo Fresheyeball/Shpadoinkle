@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -18,7 +20,7 @@ module Shpadoinkle.Continuation (
   -- * The Continuation Type
   Continuation (..)
   , runContinuation
-  , done, pur, impur, kleisli, causes, causedBy, merge, contIso, before
+  , done, pur, impur, kleisli, causes, causedBy, merge, contIso, before, after
   -- * The Class
   , Continuous (..)
   -- ** Hoist
@@ -136,6 +138,10 @@ Pure f `before` Pure g = Pure (g.f)
 Merge f `before` g = Merge (f `before` g)
 Rollback f `before` g = Rollback (f `before` g)
 Continuation (f, g) `before` h = Continuation . (f,) $ fmap (`before` h) . g
+
+
+after :: Applicative m => Continuation m a -> Continuation m a -> Continuation m a
+after = flip before
 
 
 -- | 'runContinuation' takes a 'Continuation' and a state value and runs the whole Continuation
@@ -336,6 +342,7 @@ contIso f g (Pure h)     = Pure (f.h.g)
 -- | @Continuation m@ is a Functor in the EndoIso category (where the objects
 --   are types and the morphisms are EndoIsos).
 instance Applicative m => F.Functor EndoIso EndoIso (Continuation m) where
+  map :: EndoIso a b -> EndoIso  (Continuation m a) (Continuation m b)
   map (EndoIso f g h) =
     EndoIso (Continuation . (f,) . const . pure) (contIso g h) (contIso h g)
 

@@ -13,13 +13,13 @@ description:
 
 
 ghc-options:
-    - -Wall
-    - -Wcompat
-    - -fwarn-redundant-constraints
-    - -fwarn-incomplete-uni-patterns
-    - -fwarn-tabs
-    - -fwarn-incomplete-record-updates
-    - -fwarn-identities
+  - -Wall
+  - -Wcompat
+  - -fwarn-redundant-constraints
+  - -fwarn-incomplete-uni-patterns
+  - -fwarn-tabs
+  - -fwarn-incomplete-record-updates
+  - -fwarn-identities
 
 
 extra-source-files:
@@ -28,9 +28,9 @@ extra-source-files:
 
 
 dependencies:
-    - base >= 4.12.0 && < 4.16
-    - transformers
-    - containers
+  - base >= 4.12.0 && < 4.16
+  - transformers
+  - containers
 
 
 when:
@@ -54,6 +54,7 @@ library:
     - text      >= 1.2.3 && < 1.3
     - unliftio
     - deepseq
+    - mtl
 
 
 git: https://gitlab.com/platonic/shpadoinkle.git

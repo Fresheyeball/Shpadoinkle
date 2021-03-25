@@ -36,7 +36,6 @@ import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
 import           Control.Monad.Catch         (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.Cont          (MonadCont)
 import           Control.Monad.Except        (MonadError)
-import           Control.Monad.RWS           (MonadRWS)
 import           Control.Monad.Reader        (MonadIO, MonadReader (..),
                                               MonadTrans, ReaderT (..), forM_,
                                               void)
@@ -51,7 +50,7 @@ import           Data.Map.Internal           (Map (Bin, Tip))
 import           Data.Text                   (Text, words)
 import           GHCJS.DOM                   (currentDocumentUnchecked)
 import           GHCJS.DOM.Document          (createElement, getBodyUnsafe)
-import           GHCJS.DOM.Element           (setAttribute)
+import           GHCJS.DOM.Element           (setAttribute, setInnerHTML)
 import           GHCJS.DOM.Node              (appendChild)
 import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, liftJSM,
                                               (#))
@@ -78,7 +77,6 @@ newtype SnabbdomT model m a = Snabbdom { unSnabbdom :: ReaderT (TVar model) m a 
   , Applicative
   , Monad
   , MonadIO
-  , MonadReader (TVar model)
   , MonadTrans
   , MonadTransControl
   , MonadThrow
@@ -86,10 +84,13 @@ newtype SnabbdomT model m a = Snabbdom { unSnabbdom :: ReaderT (TVar model) m a 
   , MonadMask
   , MonadWriter w
   , MonadState s
-  , MonadRWS (TVar model) w s
   , MonadError e
   , MonadCont
   )
+
+
+snabbAsk :: Monad m => SnabbdomT model m (TVar model)
+snabbAsk = Snabbdom ask
 
 
 #ifndef ghcjs_HOST_OS
@@ -99,6 +100,11 @@ deriving instance MonadJSM m => MonadJSM (SnabbdomT model m)
 
 instance MonadBase n m => MonadBase n (SnabbdomT model m) where
   liftBase = liftBaseDefault
+
+
+instance MonadReader r m => MonadReader r (SnabbdomT a m) where
+  ask = Snabbdom . ReaderT $ const ask
+  local f (Snabbdom rs) = Snabbdom $ ReaderT $ local f . runReaderT rs
 
 
 instance MonadBaseControl n m => MonadBaseControl n (SnabbdomT model m) where
@@ -207,21 +213,23 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
   interpret toJSM (Html h') = h' mkNode mkPotato mkText
     where
       mkNode name ps children = do
-        i <- ask; liftJSM $ do
+        i <- snabbAsk; liftJSM $ do
           !o <- props toJSM i $ toProps ps
           !cs <- toJSM . runSnabbdom i $ sequence children
           SnabVNode <$> jsg3 "vnode" name o cs
 
-      mkPotato mrn = liftJSM $ do
+      mkPotato mrn = snabbAsk >>= \i -> liftJSM $ do
         o <- create
         hook <- create
-        rn <- mrn
+        (rn, stm) <- mrn
         ins <- toJSVal =<< function (\_ _ -> \case
           [n] -> void $ jsg2 "potato" n rn
           _   -> return ())
         unsafeSetProp "insert" ins hook
         hoo <- toJSVal hook
         unsafeSetProp "hook" hoo o
+        let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i) >> go
+        void $ forkIO go
         SnabVNode <$> jsg2 "vnode" "div" o
 
       mkText = liftJSM . fmap SnabVNode . valMakeText
@@ -245,6 +253,7 @@ stage = liftJSM $ do
   elm <- createElement doc ("div" :: Text)
   setAttribute elm ("id" :: Text) ("stage" :: Text)
   b <- getBodyUnsafe doc
+  setInnerHTML b ""
   _ <- appendChild b elm
   RawNode <$> toJSVal elm
 

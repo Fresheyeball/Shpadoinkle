@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE ExplicitNamespaces         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -12,37 +13,35 @@ module Main where
 
 import           Control.Monad.Catch                (MonadThrow)
 import           Control.Monad.IO.Class             (MonadIO (..))
+import           Control.Monad.Reader
 import           Data.Proxy                         (Proxy (..))
-import           Data.Text                          (Text, pack)
-import           Data.Time                          (getCurrentTime)
+import           Data.Text                          (Text)
 import           Servant.API                        (type (:<|>) ((:<|>)))
-import           System.Random                      (Random (randomRIO))
 #ifndef ghcjs_HOST_OS
-import           Servant.Server                     (serve)
+import           Servant.Server                     as Servant (serve)
 #endif
 
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle                        (JSM, MonadJSM,
                                                      MonadUnliftIO (..), TVar,
-                                                     UnliftIO (..), askJSM,
-                                                     constUpdate, newTVarIO,
-                                                     runJSM)
+                                                     constUpdate, liftJSM,
+                                                     newTVarIO)
 #else
 import           Shpadoinkle                        (JSM, MonadUnliftIO (..),
-                                                     TVar, UnliftIO (..),
-                                                     askJSM, constUpdate,
-                                                     newTVarIO, runJSM)
+                                                     TVar, constUpdate, liftJSM,
+                                                     newTVarIO)
 #endif
 import           Shpadoinkle.Backend.Snabbdom       (runSnabbdom, stage)
 import           Shpadoinkle.Isreal.Types           as Swan (API, Code,
                                                              CompileError,
+                                                             SnowNonce,
                                                              SnowToken (..))
 import           Shpadoinkle.Router                 (fullPageSPA',
                                                      withHydration)
 import           Shpadoinkle.Router.Client          (BaseUrl (..),
                                                      ClientEnv (..), ClientM,
                                                      Scheme (Https), client,
-                                                     runXHR, runXHR')
+                                                     runXHR')
 import           Shpadoinkle.Widgets.Types          (Search (..))
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle.Router.Server          (serveUI)
@@ -59,37 +58,40 @@ import           Shpadoinkle.Marketing.Types        (Frontend, Hooglable (..),
                                                      Swan (..), routes)
 import           Shpadoinkle.Marketing.Types.Hoogle (Target)
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Marketing.View         (start, template, view)
+import           Shpadoinkle.Marketing.View         (start, startJS, template,
+                                                     view)
 #else
-import           Shpadoinkle.Marketing.View         (start, view)
+import           Shpadoinkle.Marketing.View         (start, startJS, view)
 #endif
 
 
-newtype App a = App { runApp :: JSM a }
-  deriving (Functor, Applicative, Monad, MonadIO, MonadThrow)
+newtype App a = App { runApp :: ReaderT (TVar (Maybe Code)) JSM a }
+  deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadReader (TVar (Maybe Code)))
 #ifndef ghcjs_HOST_OS
   deriving (MonadJSM)
 #endif
 
 
 instance MonadUnliftIO App where
-  {-# INLINE askUnliftIO #-}
-  askUnliftIO = do ctx <- askJSM; return $ UnliftIO $ \(App m) -> runJSM m ctx
+  withRunInIO inner = App $ ReaderT $ \r ->
+    withRunInIO $ \run -> inner (run . flip runReaderT r . runApp)
+
+
+isrealEnv, hoogleEnv :: ClientEnv
+isrealEnv = ClientEnv $ BaseUrl Https "isreal.shpadoinkle.org" 443 ""
+hoogleEnv = ClientEnv $ BaseUrl Https "hoogle.shpadoinkle.org" 443 ""
 
 
 instance Swan App where
-  token       = App . liftIO $ do
-    (cur, rand) <- (,) <$> getCurrentTime <*> randomRIO (1, 1000000 :: Double)
-    return . SnowToken $ pack (show cur) <> "-" <> pack (show rand)
-  compile t c = App . runXHR $ compileM t c
-  clean   t   = App . runXHR $ cleanM   t
+  compile t n c = liftJSM $ runXHR' (compileM t n c) isrealEnv
+  clean   t     = liftJSM $ runXHR' (cleanM   t)     isrealEnv
 
 
 instance Hooglable App where
-  findTargets s = App . runXHR' (findTargetsM s) . ClientEnv $ BaseUrl Https "hoogle.shpadoinkle.org" 443 ""
+  findTargets s = liftJSM $ runXHR' (findTargetsM s) hoogleEnv
 
 
-compileM :: SnowToken -> Code -> ClientM (Either CompileError Text)
+compileM :: SnowToken -> SnowNonce -> Code -> ClientM (Either CompileError Text)
 cleanM   :: SnowToken -> ClientM Text
 (_ :<|> compileM :<|> cleanM :<|> _)
   = client (Proxy @ Swan.API)
@@ -101,9 +103,11 @@ findTargetsM (Search s) = client (Proxy @ HoogleAPI) (Just "json") (Just s) (Jus
 
 app :: JSM ()
 app = do
-  model :: TVar Frontend <- newTVarIO =<< start FourOhFourR
+  mutex <- newTVarIO Nothing
+  model :: TVar Frontend <- newTVarIO =<< runReaderT (runApp (start FourOhFourR)) mutex
   withDeveloperTools model
-  fullPageSPA' @(SPA JSM) runApp runSnabbdom model (withHydration start) view stage (fmap constUpdate . start) routes
+  fullPageSPA' @(SPA JSM) (flip runReaderT mutex . runApp) runSnabbdom model (withHydration startJS) view stage
+    (fmap constUpdate . startJS) routes
 
 
 main :: IO ()
@@ -113,7 +117,7 @@ main = runJSorWarp 8080 app
 #ifndef ghcjs_HOST_OS
 
 dev :: IO ()
-dev = liveWithBackend 8080 app . pure $ serve (Proxy @ (SPA IO)) $ serveUI @ (SPA IO) "." (\r -> do
+dev = liveWithBackend 8080 app . pure $ Servant.serve (Proxy @ (SPA IO)) $ serveUI @ (SPA IO) "." (\r -> do
   x <- start r
   return $ template @App Dev x (view x)) routes
 

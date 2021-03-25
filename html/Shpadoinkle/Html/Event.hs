@@ -164,6 +164,7 @@ onEscapeC :: Continuation m a -> (Text, Prop m a)
 onEscapeC c = onKeyupC $ \case 27 -> c; _ -> done
 $(mkEventVariants "escape")
 
+
 onEnterC :: (Text -> Continuation m a) -> (Text, Prop m a)
 onEnterC f = listenRaw "keyup" $ \(RawNode n) _ -> liftJSM $
   f <$> (valToText =<< unsafeGetProp "value"

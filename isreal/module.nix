@@ -58,7 +58,8 @@ in {
         hoogle server --local --port=${toString cfg.hoogle} &
 
         echo "starting Isreal Swan"
-        ${Shpadoinkle-isreal}/bin/isreal +RTS -N8 -H1G -A32M -RTS
+        cabal update
+        ${Shpadoinkle-isreal}/bin/isreal +RTS -N8 -H1G -A32M -RTS &> ${cfg.workspace}/isreal-log
       '';
 
     };
