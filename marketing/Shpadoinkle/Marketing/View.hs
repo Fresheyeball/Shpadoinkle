@@ -15,6 +15,7 @@ module Shpadoinkle.Marketing.View where
 import           Control.Lens                        (to, (%~), (.~), (<>~),
                                                       (^.))
 import           Control.Monad.IO.Class              (MonadIO, liftIO)
+import           Control.Monad.Reader
 import           Data.Generics.Labels                ()
 import           Data.List                           (intersperse)
 import           Data.String
@@ -45,6 +46,8 @@ import           Shpadoinkle.Widgets.Types           (Pick (One), Search (..),
 
 import           Shpadoinkle.Marketing.Types
 import           Shpadoinkle.Marketing.Types.Hoogle
+
+import           Debug.Trace                         (trace)
 
 
 default (Text)
@@ -146,7 +149,7 @@ mirror cc = baked $ do
   return (RawNode container, stream)
 
 
-example :: MonadJSM m => Swan m => Example -> Html m Example
+example :: MonadJSM m => ExampleEffects m => Example -> Html m Example
 example (Example cc token nonce state') = div "example"
   [ div [ className "mirror-wrap"
         , onInput $ const $ #state .~ ELoading
@@ -164,12 +167,28 @@ example (Example cc token nonce state') = div "example"
   ]
 
 
-compileExample :: MonadJSM m => Swan m => Continuation m Example
+compileExample :: MonadJSM m => ExampleEffects m => Continuation m Example
 compileExample = kleisli $ \(Example cc token nonce _) -> do
-  res <- compile token nonce $ exampleTemplate cc
-  return . pur $ (#snowNonce %~ (+ 1)) . case res of
-    Left e  -> #state .~ EError e
-    Right _ -> #state .~ EReady
+  mutex <- ask
+  cur <- readTVarIO mutex
+  atomically $ writeTVar mutex $ Just cc
+  case trace (show cur) cur of
+    Just _ -> return done
+    Nothing -> do
+      res <- compile token nonce $ exampleTemplate cc
+      cur' <- readTVarIO mutex
+      case cur' of
+        Nothing ->
+          return . pur $ (#snowNonce %~ (+ 1)) . case res of
+            Left e  -> #state .~ EError e
+            Right _ -> #state .~ EReady
+        Just cc' -> do
+          atomically $ writeTVar mutex Nothing
+          res' <- compile token (nonce + 1) $ exampleTemplate cc'
+          return . pur $ (#snowNonce %~ (+ 2)) . case res' of
+            Left e  -> #state .~ EError e
+            Right _ -> #state .~ EReady
+
 
 
 errorMessages :: CompileError -> Html m a
@@ -210,7 +229,7 @@ targetWidget :: Target -> Html m a
 targetWidget = div' . pure . innerHTML . pack . targetItem
 
 
-home :: Hooglable m => Swan m => MonadJSM m => Home -> Html m Home
+home :: Hooglable m => ExampleEffects m => MonadJSM m => Home -> Html m Home
 home home' = section_
   [ onRecordEndo #hoogle top home'
   , hero
@@ -227,7 +246,7 @@ fourOhFour :: Html m a
 fourOhFour = h2_ [ "404" ]
 
 
-view :: Hooglable m => Swan m => MonadJSM m => Frontend -> Html m Frontend
+view :: Hooglable m => ExampleEffects m => MonadJSM m => Frontend -> Html m Frontend
 view = \case
   HomeM x       -> #_HomeM       `onSum` home x
   ComparisonM x -> #_ComparisonM `onSum` comparisons x
@@ -269,7 +288,7 @@ start = \case
   FourOhFourR   -> pure FourOhFourM
 
 
-startJS :: MonadJSM m => Swan m => Route -> m Frontend
+startJS :: MonadJSM m => ExampleEffects m => Route -> m Frontend
 startJS r = do
   fe <- start r
   case fe of
@@ -277,7 +296,7 @@ startJS r = do
     x           -> pure x
 
 
-compileExamples :: MonadJSM m => Swan m => Home -> m Home
+compileExamples :: MonadJSM m => ExampleEffects m => Home -> m Home
 compileExamples home' = do
   f <- runContinuation compileExample $ home' ^. #examples . #helloWorld
   return $ (#examples . #helloWorld %~ f) home'

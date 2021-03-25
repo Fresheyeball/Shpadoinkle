@@ -36,7 +36,6 @@ import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
 import           Control.Monad.Catch         (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.Cont          (MonadCont)
 import           Control.Monad.Except        (MonadError)
-import           Control.Monad.RWS           (MonadRWS)
 import           Control.Monad.Reader        (MonadIO, MonadReader (..),
                                               MonadTrans, ReaderT (..), forM_,
                                               void)
@@ -78,7 +77,6 @@ newtype SnabbdomT model m a = Snabbdom { unSnabbdom :: ReaderT (TVar model) m a 
   , Applicative
   , Monad
   , MonadIO
-  , MonadReader (TVar model)
   , MonadTrans
   , MonadTransControl
   , MonadThrow
@@ -86,10 +84,13 @@ newtype SnabbdomT model m a = Snabbdom { unSnabbdom :: ReaderT (TVar model) m a 
   , MonadMask
   , MonadWriter w
   , MonadState s
-  , MonadRWS (TVar model) w s
   , MonadError e
   , MonadCont
   )
+
+
+snabbAsk :: Monad m => SnabbdomT model m (TVar model)
+snabbAsk = Snabbdom ask
 
 
 #ifndef ghcjs_HOST_OS
@@ -99,6 +100,11 @@ deriving instance MonadJSM m => MonadJSM (SnabbdomT model m)
 
 instance MonadBase n m => MonadBase n (SnabbdomT model m) where
   liftBase = liftBaseDefault
+
+
+instance MonadReader r m => MonadReader r (SnabbdomT a m) where
+  ask = Snabbdom . ReaderT $ const ask
+  local f (Snabbdom rs) = Snabbdom $ ReaderT $ local f . runReaderT rs
 
 
 instance MonadBaseControl n m => MonadBaseControl n (SnabbdomT model m) where
@@ -207,12 +213,12 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
   interpret toJSM (Html h') = h' mkNode mkPotato mkText
     where
       mkNode name ps children = do
-        i <- ask; liftJSM $ do
+        i <- snabbAsk; liftJSM $ do
           !o <- props toJSM i $ toProps ps
           !cs <- toJSM . runSnabbdom i $ sequence children
           SnabVNode <$> jsg3 "vnode" name o cs
 
-      mkPotato mrn = ask >>= \i -> liftJSM $ do
+      mkPotato mrn = snabbAsk >>= \i -> liftJSM $ do
         o <- create
         hook <- create
         (rn, stm) <- mrn

@@ -1,7 +1,9 @@
+{-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE DerivingVia       #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -13,6 +15,7 @@ module Shpadoinkle.Marketing.Types where
 
 
 import           Control.Monad.Except               (MonadTrans (..))
+import           Control.Monad.Reader
 import           Data.Aeson                         (FromJSON, ToJSON)
 import           Data.ByteString.Lazy               (fromStrict)
 import           Data.FileEmbed
@@ -28,7 +31,7 @@ import           Servant.API                        (Capture,
                                                      type (:<|>) (..),
                                                      type (:>))
 
-import           Shpadoinkle                        (NFData)
+import           Shpadoinkle                        (NFData, TVar)
 import           Shpadoinkle.Isreal.Types           (Code (..), CompileError,
                                                      SnowNonce, SnowToken)
 import           Shpadoinkle.Router                 (HasRouter (..), View)
@@ -158,6 +161,9 @@ type HoogleAPI = QueryParam "mode"   Text
 class Swan m where
   compile :: SnowToken -> SnowNonce -> Code -> m (Either CompileError Text)
   clean   :: SnowToken -> m Text
+
+
+type ExampleEffects m = (MonadReader (TVar (Maybe Code)) m, Swan m)
 
 
 instance (MonadTrans t, Monad m, Swan m) => Swan (t m) where

@@ -13,6 +13,7 @@ module Main where
 
 import           Control.Monad.Catch                (MonadThrow)
 import           Control.Monad.IO.Class             (MonadIO (..))
+import           Control.Monad.Reader
 import           Data.Proxy                         (Proxy (..))
 import           Data.Text                          (Text)
 import           Servant.API                        (type (:<|>) ((:<|>)))
@@ -23,14 +24,12 @@ import           Servant.Server                     as Servant (serve)
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle                        (JSM, MonadJSM,
                                                      MonadUnliftIO (..), TVar,
-                                                     UnliftIO (..), askJSM,
-                                                     constUpdate, newTVarIO,
-                                                     runJSM)
+                                                     constUpdate, liftJSM,
+                                                     newTVarIO)
 #else
 import           Shpadoinkle                        (JSM, MonadUnliftIO (..),
-                                                     TVar, UnliftIO (..),
-                                                     askJSM, constUpdate,
-                                                     newTVarIO, runJSM)
+                                                     TVar, constUpdate, liftJSM,
+                                                     newTVarIO)
 #endif
 import           Shpadoinkle.Backend.Snabbdom       (runSnabbdom, stage)
 import           Shpadoinkle.Isreal.Types           as Swan (API, Code,
@@ -62,20 +61,20 @@ import           Shpadoinkle.Marketing.Types.Hoogle (Target)
 import           Shpadoinkle.Marketing.View         (start, startJS, template,
                                                      view)
 #else
-import           Shpadoinkle.Marketing.View         (startJS, view)
+import           Shpadoinkle.Marketing.View         (start, startJS, view)
 #endif
 
 
-newtype App a = App { runApp :: JSM a }
-  deriving (Functor, Applicative, Monad, MonadIO, MonadThrow)
+newtype App a = App { runApp :: ReaderT (TVar (Maybe Code)) JSM a }
+  deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadReader (TVar (Maybe Code)))
 #ifndef ghcjs_HOST_OS
   deriving (MonadJSM)
 #endif
 
 
 instance MonadUnliftIO App where
-  {-# INLINE askUnliftIO #-}
-  askUnliftIO = do ctx <- askJSM; return $ UnliftIO $ \(App m) -> runJSM m ctx
+  withRunInIO inner = App $ ReaderT $ \r ->
+    withRunInIO $ \run -> inner (run . flip runReaderT r . runApp)
 
 
 isrealEnv, hoogleEnv :: ClientEnv
@@ -84,12 +83,12 @@ hoogleEnv = ClientEnv $ BaseUrl Https "hoogle.shpadoinkle.org" 443 ""
 
 
 instance Swan App where
-  compile t n c = App $ runXHR' (compileM t n c) isrealEnv
-  clean   t     = App $ runXHR' (cleanM   t)     isrealEnv
+  compile t n c = liftJSM $ runXHR' (compileM t n c) isrealEnv
+  clean   t     = liftJSM $ runXHR' (cleanM   t)     isrealEnv
 
 
 instance Hooglable App where
-  findTargets s = App $ runXHR' (findTargetsM s) hoogleEnv
+  findTargets s = liftJSM $ runXHR' (findTargetsM s) hoogleEnv
 
 
 compileM :: SnowToken -> SnowNonce -> Code -> ClientM (Either CompileError Text)
@@ -104,9 +103,10 @@ findTargetsM (Search s) = client (Proxy @ HoogleAPI) (Just "json") (Just s) (Jus
 
 app :: JSM ()
 app = do
-  model :: TVar Frontend <- newTVarIO =<< runApp (start FourOhFourR)
+  mutex <- newTVarIO Nothing
+  model :: TVar Frontend <- newTVarIO =<< runReaderT (runApp (start FourOhFourR)) mutex
   withDeveloperTools model
-  fullPageSPA' @(SPA JSM) runApp runSnabbdom model (withHydration startJS) view stage
+  fullPageSPA' @(SPA JSM) (flip runReaderT mutex . runApp) runSnabbdom model (withHydration startJS) view stage
     (fmap constUpdate . startJS) routes
 
 
