@@ -5,7 +5,6 @@
 {-# LANGUAGE OverloadedLabels     #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeApplications     #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults   #-}
 
@@ -14,7 +13,7 @@ module Shpadoinkle.Marketing.View where
 
 
 import           Control.Lens                        (to, (%~), (.~), (<>~),
-                                                      (?~), (^.))
+                                                      (^.))
 import           Control.Monad.IO.Class              (MonadIO, liftIO)
 import           Data.Generics.Labels                ()
 import           Data.List                           (intersperse)
@@ -32,7 +31,6 @@ import           Language.Javascript.JSaddle         hiding (JSM, MonadJSM)
 import           Prelude                             hiding (div)
 import           Servant.API                         (toUrlPiece)
 import           Shpadoinkle
-import           Shpadoinkle.Console                 as Console
 import           Shpadoinkle.Html                    as H
 import           Shpadoinkle.Isreal.Types            as Swan
 import           Shpadoinkle.Lens                    (onRecord, onRecordEndo,
@@ -149,26 +147,29 @@ mirror cc = baked $ do
 
 
 example :: MonadJSM m => Swan m => Example -> Html m Example
-example (Example cc token nonce merr) = div "example"
-  [ mapC (\ccUpdate -> before (onRecord #inputHaskell ccUpdate) $ kleisli compileExample) $ mirror cc
-  , case merr :: Maybe CompileError of
-      Nothing -> iframe
+example (Example cc token nonce state') = div "example"
+  [ div [ className "mirror-wrap"
+        , onInput $ const $ #state .~ ELoading
+        ]
+        [ mapC (mappend compileExample . onRecord #inputHaskell) $ mirror cc ]
+  , case state' of
+      EReady -> iframe
         [ src $ "https://isreal.shpadoinkle.org/"
              <> toUrlPiece (Swan.serve token)
              <> "/index.html?nonce="
              <> pack (show $ nonce - 1)
         ] []
-      Just e -> errorMessages e
+      EError e -> errorMessages e
+      ELoading -> text "Loading..."
   ]
 
 
-compileExample :: Monad m => Swan m => Example -> m (Continuation m Example)
-compileExample (Example cc token nonce _) = do
+compileExample :: MonadJSM m => Swan m => Continuation m Example
+compileExample = kleisli $ \(Example cc token nonce _) -> do
   res <- compile token nonce $ exampleTemplate cc
   return . pur $ (#snowNonce %~ (+ 1)) . case res of
-    Left e -> #err ?~ e
-    _      -> #err .~ Nothing
-
+    Left e  -> #state .~ EError e
+    Right _ -> #state .~ EReady
 
 
 errorMessages :: CompileError -> Html m a
@@ -271,14 +272,12 @@ start = \case
 startJS :: MonadJSM m => Swan m => Route -> m Frontend
 startJS r = do
   fe <- start r
-  Console.log @Show fe
   case fe of
     HomeM home' -> HomeM <$> compileExamples home'
     x           -> pure x
 
 
-compileExamples :: Monad m => Swan m => Home -> m Home
+compileExamples :: MonadJSM m => Swan m => Home -> m Home
 compileExamples home' = do
-  cont <- compileExample $ home' ^. #examples . #helloWorld
-  f <- runContinuation cont $ home' ^. #examples . #helloWorld
+  f <- runContinuation compileExample $ home' ^. #examples . #helloWorld
   return $ (#examples . #helloWorld %~ f) home'

@@ -46,11 +46,16 @@ newtype Examples = Examples
   deriving anyclass (FromJSON, ToJSON, NFData)
 
 
+data ExampleState = EError CompileError | ELoading | EReady
+  deriving stock    (Eq, Ord, Show, Read, Generic)
+  deriving anyclass (FromJSON, ToJSON, NFData)
+
+
 data Example = Example
   { inputHaskell :: Code
   , snowToken    :: SnowToken
   , snowNonce    :: SnowNonce
-  , err          :: Maybe CompileError
+  , state        :: ExampleState
   }
   deriving stock    (Eq, Ord, Show, Read, Generic)
   deriving anyclass (FromJSON, ToJSON, NFData)
@@ -80,7 +85,7 @@ data Home = Home
 
 
 emptyHome :: SnowToken -> Home
-emptyHome st = Home mempty $ Examples $ Example helloWorldExample st 0 Nothing
+emptyHome st = Home mempty $ Examples $ Example helloWorldExample st 0 ELoading
 
 
 data Hoogle = Hoogle
