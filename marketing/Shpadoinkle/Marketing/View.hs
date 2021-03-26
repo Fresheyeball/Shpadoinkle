@@ -176,14 +176,17 @@ compileExample = kleisli $ \(Example cc token nonce _) -> do
       res <- compile token nonce $ exampleTemplate cc
       cur' <- readTVarIO mutex
       case cur' of
-        Nothing ->
-          return . pur $ (#snowNonce %~ (+ 1)) . case res of
-            Left e  -> #state .~ EError e
-            Right _ -> #state .~ EReady
+        Nothing -> ret res 1
+        Just cc' | cc' == cc -> do
+          atomically $ writeTVar mutex Nothing
+          ret res 1
         Just cc' -> do
           atomically $ writeTVar mutex Nothing
           res' <- compile token (nonce + 1) $ exampleTemplate cc'
-          return . pur $ (#snowNonce %~ (+ 2)) . case res' of
+          ret res' 2
+  where
+  ret res n =
+    return . pur $ (#snowNonce %~ (+ n)) . case res of
             Left e  -> #state .~ EError e
             Right _ -> #state .~ EReady
 
@@ -233,6 +236,7 @@ home home' = section_
   , hero
   , pitch
   , onRecordEndo (#examples . #helloWorld) example home'
+  , onRecordEndo (#examples . #counter)    example home'
   ]
 
 
@@ -276,12 +280,22 @@ template ev fe v = H.html_
     [ v
     ]
   ]
-    where codemirrorCDN = mappend "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.4/"
+  where codemirrorCDN = mappend "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.4/"
+
+
+compileExamples :: MonadJSM m => ExampleEffects m => Home -> m Home
+compileExamples home' = do
+  f <- runContinuation compileExample $ home' ^. #examples . #helloWorld
+  return $ (#examples . #helloWorld %~ f) home'
+
+
+genExampleTokens :: MonadIO m => m (Examples SnowToken)
+genExampleTokens = liftIO $ Examples <$> genSnowToken <*> genSnowToken
 
 
 start :: MonadIO m => Route -> m Frontend
 start = \case
-  HomeR         -> HomeM . emptyHome <$> liftIO genSnowToken
+  HomeR         -> HomeM . emptyHome <$> genExampleTokens
   ComparisonR f -> pure . ComparisonM $ Comparison f Nothing
   FourOhFourR   -> pure FourOhFourM
 
@@ -294,7 +308,3 @@ startJS r = do
     x           -> pure x
 
 
-compileExamples :: MonadJSM m => ExampleEffects m => Home -> m Home
-compileExamples home' = do
-  f <- runContinuation compileExample $ home' ^. #examples . #helloWorld
-  return $ (#examples . #helloWorld %~ f) home'

@@ -27,6 +27,16 @@ Packages GHC 8.6.5 on Linux:
   script:
   - nix-build --argstr compiler ghc865 --fallback
 
+Isreal NixOPS:
+  stage: Linux Build
+  needs:
+  - Check Style
+  - Hlint
+  script:
+  - eval `ssh-agent -s`
+  - ssh-add /run/keys/isreal-deploy
+  - nix-shell --command "./nix/test-isreal.sh"
+
 Packages GHCJS 8.6 on Linux:
   stage: Linux Build
   needs:
@@ -131,6 +141,19 @@ Marketing:
 #   - rm -r result
 #   artifacts:
 #     untracked: true
+
+Isreal:
+  stage: Push Artifacts
+  needs:
+  - Packages GHCJS 8.6 on Linux
+  - Isreal NixOPS
+  script:
+  - eval `ssh-agent -s`
+  - ssh-add /run/keys/isreal-deploy
+  - nix-shell --command "./nix/deploy-isreal.sh"
+  only:
+  - master
+  - isreal
 
 pages:
   stage: Push Artifacts

@@ -6,6 +6,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeOperators     #-}
@@ -14,11 +15,13 @@
 module Shpadoinkle.Marketing.Types where
 
 
+import           Control.Lens                       ((^.))
 import           Control.Monad.Except               (MonadTrans (..))
 import           Control.Monad.Reader
 import           Data.Aeson                         (FromJSON, ToJSON)
 import           Data.ByteString.Lazy               (fromStrict)
-import           Data.FileEmbed
+import           Data.FileEmbed                     (embedFile)
+import           Data.Generics.Labels               ()
 import           Data.Monoid.Generic                (GenericMonoid (..),
                                                      GenericSemigroup (..))
 import           Data.Text                          (Text, splitOn)
@@ -30,7 +33,6 @@ import           Servant.API                        (Capture,
                                                      ToHttpApiData (toUrlPiece),
                                                      type (:<|>) (..),
                                                      type (:>))
-
 import           Shpadoinkle                        (NFData, TVar)
 import           Shpadoinkle.Isreal.Types           (Code (..), CompileError,
                                                      SnowNonce, SnowToken)
@@ -42,8 +44,9 @@ import           Shpadoinkle.Widgets.Types          (Input, Pick (One),
 import           Shpadoinkle.Marketing.Types.Hoogle (Target)
 
 
-newtype Examples = Examples
-  { helloWorld :: Example
+data Examples a = Examples
+  { helloWorld :: a
+  , counter    :: a
   }
   deriving stock    (Eq, Ord, Show, Read, Generic)
   deriving anyclass (FromJSON, ToJSON, NFData)
@@ -68,6 +71,10 @@ helloWorldExample :: Code
 helloWorldExample = Code $ fromStrict $(embedFile "./hello-world.example")
 
 
+counterExample :: Code
+counterExample = Code $ fromStrict $(embedFile "./counter.example")
+
+
 exampleTemplate :: Code -> Code
 exampleTemplate (Code inputHaskell') = Code
    $ fromStrict $(embedFile "./example.template.top")
@@ -81,14 +88,21 @@ topOffset = subtract 1 $ length $ splitOn "\n" $ decodeUtf8 $(embedFile "./examp
 
 data Home = Home
   { hoogle   :: Hoogle
-  , examples :: Examples
+  , examples :: Examples Example
   }
   deriving stock    (Eq, Ord, Show, Read, Generic)
   deriving anyclass (FromJSON, ToJSON, NFData)
 
 
-emptyHome :: SnowToken -> Home
-emptyHome st = Home mempty $ Examples $ Example helloWorldExample st 0 ELoading
+emptyExample :: Code -> SnowToken -> Example
+emptyExample cc st = Example cc st 0 ELoading
+
+
+emptyHome :: Examples SnowToken -> Home
+emptyHome st = Home mempty $ Examples
+  { helloWorld = emptyExample helloWorldExample (st ^. #helloWorld)
+  , counter    = emptyExample counterExample    (st ^. #counter)
+  }
 
 
 data Hoogle = Hoogle

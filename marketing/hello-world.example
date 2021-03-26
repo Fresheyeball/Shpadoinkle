@@ -3,4 +3,4 @@ hello name =
 
 view = hello "World"
 
-app = simple runParDiff () (const view) getBody
+app = simple runSnabbdom () (const view) getBody
