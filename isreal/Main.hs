@@ -13,7 +13,7 @@ import           Control.Monad.IO.Class   (MonadIO (..))
 import           Data.ByteString.Lazy     as BSL (writeFile)
 import           Data.String              (fromString)
 import           Data.Text                as T (Text, intercalate, unpack)
-import           Data.Text.Lazy           as T (pack, unlines)
+import           Data.Text.Lazy           as T (fromStrict, pack, unlines)
 import qualified Data.Text.Lazy.IO        as T
 import           Network.Wai.Handler.Warp (run)
 import           Servant
@@ -53,7 +53,9 @@ compile options@Options {..} snow nonce (Code code) = liftIO $ do
     , "  <head>"
     , "    <script language=\"javascript\" src=\"rts.js\"></script>"
     , "    <script language=\"javascript\" src=\"lib.js\"></script>"
-    , "    <script language=\"javascript\" src=\"out.js?nonce=" <> pack (show nonce) <> "\"></script>"
+    , "    <script language=\"javascript\" src=\"out.js"
+      <> "?token=" <> fromStrict (toQueryParam snow)
+      <> "&nonce=" <> pack (show nonce) <> "\"></script>"
     , "  </head>"
     , "  <body>"
     , "  </body>"
