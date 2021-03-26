@@ -95,7 +95,7 @@ let
           inherit withHoogle;
           packages = _: if pack == "all" then attrValues packages else [ packages.${pack} ];
           COMPILER = util.compilerjs;
-          buildInputs = ghcTools ++ [ ack util.cannibalize ];
+          buildInputs = ghcTools ++ [ ack util.cannibalize nixops ];
           shellHook = ''
             cat ${../etc/figlet}
             ./nix/hpackall.sh | grep generated
