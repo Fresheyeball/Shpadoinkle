@@ -5,5 +5,3 @@ view x = button
   ]
 
 app = simple runSnabbdom 0 view getBody
-
-a95a8f21ab163dc9331e7f14E9a
