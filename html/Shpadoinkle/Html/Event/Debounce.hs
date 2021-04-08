@@ -5,8 +5,7 @@
 module Shpadoinkle.Html.Event.Debounce
   ( debounce
   , debounceRaw
-  , Debounce
-  , runDebounce
+  , Debounce (..)
   ) where
 
 
