@@ -7,6 +7,7 @@
 
   util = import ./util.nix { inherit compiler isJS; pkgs = import nixpkgs-unstable {}; };
 
+
   chrome-rev = "71336116f3f78d3bb1f499bf4b88efcd8738a9cf";
 
 
@@ -23,6 +24,7 @@
       rev    = "b4e5aa0deff238e117137be68a4345bb02b7a80b";
       sha256 = "0x27bgrasbxzp045rqj4ldrfnm2k832ch7vfkl9s7xj0afrcy6pg";
     };
+
 
   servant-rawm-src = super.fetchFromGitHub
     { owner  = "cdepillabout";
@@ -88,15 +90,14 @@
 
 
   gitignore = util.gitignore
-      [ ".git"
-        "*.ghc*"
-        "*.cabal"
-        "*result*"
-        "*dist*"
-        "*.nix"
-        "*.md"
-        ".*.yml"
-      ];
+    [ ".git"
+      "*.ghc*"
+      "*result*"
+      "*dist*"
+      "*.nix"
+      "*.md"
+      ".*.yml"
+    ];
 
 
   addFlags = x: super.haskell.lib.overrideCabal (super.haskell.lib.appendConfigureFlags x
@@ -157,14 +158,12 @@ in {
           Shpadoinkle-developer-tools  = addDev (call "Shpadoinkle-developer-tools"  ../developer-tools);
           Shpadoinkle-disembodied      = call "Shpadoinkle-disembodied"      ../disembodied;
           Shpadoinkle-lens             = call "Shpadoinkle-lens"             ../lens;
-          Shpadoinkle-marketing        = call "Shpadoinkle-marketing"        ../marketing;
           Shpadoinkle-html             = call "Shpadoinkle-html"             ../html;
           Shpadoinkle-router           = call "Shpadoinkle-router"           ../router;
           Shpadoinkle-streaming        = call "Shpadoinkle-streaming"        ../streaming;
           Shpadoinkle-widgets          = addTest (call "Shpadoinkle-widgets" ../widgets) hpkgs;
           Shpadoinkle-template         = call "Shpadoinkle-template"         ../template;
 
-          Shpadoinkle-tests            = super.haskell.packages.${compiler}.callCabal2nix "tests" (gitignore ../tests) {};
           Shpadoinkle-examples         = call "Shpadoinkle-examples"         ../examples;
 
           Shpadoinkle-isreal           = call "Shpadoinkle-isreal"           ../isreal;
