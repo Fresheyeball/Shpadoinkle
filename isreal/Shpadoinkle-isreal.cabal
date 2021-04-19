@@ -36,7 +36,7 @@ common ghc-options
 
 
 library
-  imports: ghc-options
+  import: ghc-options
 
   exposed-modules:
     Shpadoinkle.Isreal.Types
@@ -62,7 +62,7 @@ library
 
 
 executable isreal
-  imports: ghc-options
+  import: ghc-options
 
   main-is: Main.hs
 

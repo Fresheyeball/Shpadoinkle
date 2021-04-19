@@ -38,7 +38,7 @@ common ghc-options
 
 
 library
-  imports: ghc-options
+  import: ghc-options
 
   exposed-modules:
     Shpadoinkle.DeveloperTools
@@ -69,8 +69,10 @@ library
 
 
 executable devtools
-  imports: ghc-options
+  import: ghc-options
+
   main-is: Main.hs
+
   other-modules:
     Shpadoinkle.DeveloperTools
 

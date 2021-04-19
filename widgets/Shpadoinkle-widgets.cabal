@@ -41,7 +41,7 @@ common ghc-options
 
 
 library
-  imports: ghc-options
+  import: ghc-options
 
   exposed-modules:
     Shpadoinkle.Widgets.Form.Input
@@ -94,7 +94,7 @@ library
 
 
 test-suite unit
-  imports: ghc-options
+  import: ghc-options
 
   type: exitcode-stdio-1.0
 

@@ -46,7 +46,7 @@ common ghcjs-options
 
 
 executable animation
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: Animation.hs
 
@@ -67,7 +67,7 @@ executable animation
 
 
 executable calculator
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: Calculator.hs
 
@@ -87,7 +87,7 @@ executable calculator
 
 
 executable calculator-ie
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: CalculatorIE.hs
 
@@ -111,7 +111,7 @@ executable calculator-ie
 
 
 executable counter
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: Counter.hs
 
@@ -129,7 +129,7 @@ executable counter
 
 
 executable lens
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: Lens.hs
 
@@ -150,7 +150,7 @@ executable lens
 
 
 executable servant-crud-client
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: Run/Client.hs
 
@@ -197,7 +197,7 @@ executable servant-crud-client
 
 
 executable servant-crud-dev
-  imports: ghc-options
+  import: ghc-options
 
   main-is: Run/Dev.hs
 
@@ -251,7 +251,7 @@ executable servant-crud-dev
 
 
 executable servant-crud-server
-  imports: ghc-options
+  import: ghc-options
 
   main-is: Run/Server.hs
 
@@ -298,7 +298,7 @@ executable servant-crud-server
 
 
 executable streaming
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: Streaming.hs
 
@@ -317,7 +317,7 @@ executable streaming
 
 
 executable throttle-and-debounce
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: ThrottleAndDebounce.hs
 
@@ -337,7 +337,7 @@ executable throttle-and-debounce
 
 
 executable todomvc
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: TODOMVC.hs
 
@@ -359,7 +359,7 @@ executable todomvc
 
 
 executable widgets
-  imports: ghc-options ghcjs-options
+  import: ghc-options, ghcjs-options
 
   main-is: Widgets.hs
 
