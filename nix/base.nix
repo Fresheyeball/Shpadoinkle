@@ -61,11 +61,9 @@ let
             Shpadoinkle-streaming
             Shpadoinkle-widgets
             Shpadoinkle-isreal
-            Shpadoinkle-template
+            Shpadoinkle-template;
 
-            Shpadoinkle-tests;
             Shpadoinkle-examples  = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-examples;
-            Shpadoinkle-marketing = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-marketing;
 
 
         } // (
@@ -89,8 +87,6 @@ let
         });
 
 
-
-
         shellBase = {
           inherit withHoogle;
           packages = _: if pack == "all" then attrValues packages else [ packages.${pack} ];
@@ -98,7 +94,6 @@ let
           buildInputs = ghcTools ++ [ ack util.cannibalize nixops ];
           shellHook = ''
             cat ${../etc/figlet}
-            ./nix/hpackall.sh | grep generated
           '';
         };
 

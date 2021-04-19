@@ -1,5 +1,4 @@
 *dist*
-*.cabal
 *.ghc*
 *result*
 *project.local

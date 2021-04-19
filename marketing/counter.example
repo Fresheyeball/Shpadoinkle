@@ -1,7 +1,0 @@
-view x = button
-  [ onClick (+ 1) ]
-  [ text $ "You have clicked " <> pack (show x)
-      <> " time" <> if x == 1 then "" else "s"
-  ]
-
-app = simple runSnabbdom 0 view getBody
