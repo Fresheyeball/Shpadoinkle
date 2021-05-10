@@ -10,4 +10,4 @@
     * ghcid
     * stylish-haskell (if this is a GHC shell)
 
-   You can add more tools to the shell by modifying the buildInputs in default.nix
+   You can add more tools to the shell by modifying the buildInputs in nix/base.nix
