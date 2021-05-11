@@ -31,11 +31,15 @@ module Shpadoinkle.Widgets.Table
 
 import           Control.Arrow             (second)
 import           Data.Aeson
+import qualified Data.ByteString.Lazy      as BSL
 import           Data.Kind
 import           Data.List                 (sortBy)
 import           Data.Proxy
 import           Data.Text
+import           Data.Text.Encoding        (decodeUtf8, encodeUtf8)
 import           GHC.Generics
+import           Servant.API               (FromHttpApiData (..),
+                                            ToHttpApiData (..))
 
 import           Shpadoinkle
 import           Shpadoinkle.Html          hiding (a, a', max, min, s, s', u,
@@ -67,6 +71,13 @@ deriving instance Generic (SortCol a)
 instance NFData (Column a) => NFData (SortCol a)
 instance (ToJSON   (Column a)) => ToJSON   (SortCol a)
 instance (FromJSON (Column a)) => FromJSON (SortCol a)
+
+instance ToJSON (Column a) => ToHttpApiData (SortCol a) where
+  toUrlPiece = decodeUtf8 . BSL.toStrict . encode
+  toQueryParam = toUrlPiece
+
+instance FromJSON (Column a) => FromHttpApiData (SortCol a) where
+  parseUrlPiece = maybe (Left "could not decode SortCol JSON") Right . decode . BSL.fromStrict . encodeUtf8
 
 
 instance Ord (Column a) => Semigroup (SortCol a) where
@@ -101,6 +112,8 @@ class Tabular a where
   ascendingIcon _ = text "↑"
   descendingIcon :: Functor m => Effect a m => Proxy a -> Html m (a, SortCol a)
   descendingIcon _ = text "↓"
+  handleSort     :: Monad m => Effect a m => a -> SortCol a -> Continuation m (a, SortCol a)
+  handleSort  _ _  = pur id
 
 
 toggleSort :: Eq (Column a) => Column a -> SortCol a -> SortCol a
@@ -165,7 +178,11 @@ viewWith Theme {..} xs s@(SortCol sorton sortorder) =
 
   addDisplayNoneStyle = (<> [("style",  textProp "display: none")])
 
-  cth_ c = th (thProps xs s c) . pure . Html.a [ second rightC . onClick $ toggleSort c ]
+  cth_ c = th (thProps xs s c) . pure . Html.a
+              [ onClickC . voidRunContinuationT $ do
+                  commit . pur . second $ toggleSort c
+                  commit . kleisli $ \(xs', s') -> return $ handleSort xs' s'
+              ]
          . mappend [ text (humanize c) ] . pure $
           if c == sorton then
             case sortorder of ASC -> ascendingIcon Proxy; DESC -> descendingIcon Proxy
