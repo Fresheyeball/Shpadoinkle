@@ -28,6 +28,8 @@ executable swan
                      , ghcjs-base
                      , ghcjs-dom
                      , time
+                     , stm
+                     , unliftio
                      , Shpadoinkle
                      , Shpadoinkle-html
                      , Shpadoinkle-lens
