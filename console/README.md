@@ -8,4 +8,4 @@
 [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-console.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-console)
 [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-console/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-console)
 
-## [Documentation ->](https://shpadoinkle.org/package/console)
+## [Documentation ->](https://shpadoinkle.org/packages/console)
