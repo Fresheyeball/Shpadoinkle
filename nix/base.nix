@@ -28,10 +28,10 @@ let
 
 
         eventlog2html = (import (pkgs.fetchFromGitHub {
-          owner  = "mpickering";
+          owner  = "Fresheyeball";
           repo   = "eventlog2html";
-          rev    = "a18ec810328c71122ccc630fccfcea5b48c0e937";
-          sha256 = "064x0y3ix5h22ibl9sn3znhkan6g1prkniv2hgrrssr0c4sgjvhb";
+          rev    = "cad38a207470e3f32530ff1545a5eff7c9b42b01";
+          sha256 = "1a3d244n76ii423vrxigclnkbd89m1sab9zw5ydn6fs2x263lwp2";
         }) {}).eventlog2html;
 
         # eventlog2html = (import ../../eventlog2html {}).eventlog2html;
@@ -39,7 +39,7 @@ let
 
         ghcTools = with haskell.packages.${compiler}; with haskell.lib;
           [ easy-hls pkgs.stylish-haskell pkgs.hlint]
-          # ++ (if enableLibraryProfiling then [ eventlog2html ] else [])
+          ++ (if enableLibraryProfiling then [ eventlog2html ] else [])
           ++ map disableLibraryProfiling
             ([ cabal-install ghcid ]
             ++ (if enableLibraryProfiling then [ hp2pretty ghc-prof-flamegraph ] else []));

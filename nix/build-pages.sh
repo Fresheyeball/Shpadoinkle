@@ -19,7 +19,7 @@ echo "Building Website"
 nix-build website --fallback
 
 echo "Copying in Website"
-cp -r result/* public
+cp --dereference -r result/* public
 rm result*
 
 chmod -R 755 public/*
