@@ -6,4 +6,3 @@ rm client &
 rm -r *dist* &
 rm -- **/*dist* &
 rm roster.db &
-rm -- **/*.cabal &

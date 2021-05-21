@@ -7,6 +7,7 @@ packages: core
         , developer-tools
         , disembodied
         , lens
+        , website
         , html
         , router
         , streaming
@@ -17,4 +18,4 @@ packages: core
 
         , isreal
 
-tests: true
+tests: True

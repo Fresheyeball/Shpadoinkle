@@ -4,7 +4,7 @@ version:       0.0.0.1
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
-license:       BSD-3-Clause
+license:       GPL-3.0-or-later
 license-file:  LICENSE
 build-type:    Simple
 extra-source-files:

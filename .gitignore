@@ -8,3 +8,9 @@ client
 roster.db
 .vscode
 *.tar.gz
+*/docs/**/*.html
+tags
+/website/favicon.html
+/website/assets/landing_logo.svg
+.cache
+stress*

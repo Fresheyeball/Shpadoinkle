@@ -18,6 +18,7 @@ module Shpadoinkle.Html.TH.CSS
 import           Control.Compactable
 import           Data.ByteString.Lazy        as BS (ByteString)
 import qualified Data.ByteString.Lazy.Char8  as BS
+import           Data.Char                   (toLower)
 import           Data.Containers.ListUtils   (nubOrd)
 import qualified Data.Set                    as Set
 import           Data.String                 (IsString)
@@ -108,12 +109,17 @@ toClassDec n' = let
 
 
 sanitize :: String -> String
-sanitize = (=<<) $ \case
+sanitize = lowerFirst . (=<<) (\case
   '/' -> "''"
   '-' -> "_"
   ':' -> "'"
   '>' -> "GT"
-  x   -> pure x
+  x   -> pure x)
+
+
+lowerFirst :: String -> String
+lowerFirst (x:xs) = toLower x : xs
+lowerFirst x      = x
 
 
 selectors :: IsString s => s

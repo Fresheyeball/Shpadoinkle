@@ -1,0 +1,21 @@
+data State = State
+  { input :: Text
+  , items :: [Text]
+  } deriving (Eq, Generic, NFData)
+
+appendItem state = state
+  & #items %~ (++ [state ^. #input | state ^. #input /= ""])
+  & #input .~ ""
+
+view state = div_
+  [ h3_ [ "TODO" ]
+  , ul_ $ (\item -> li_ [ text item ]) <$> (state ^. #items)
+  , form [ onSubmit appendItem ]
+    [ label [ for' "new-todo" ] [ "What needs to be done?" ]
+    , br'_
+    , input' [ id' "new-todo", onInput (#input .~), value $ state ^. #input ]
+    , button_ [ text $ "Add #" <> pack (show $ length (state ^. #items) + 1) ]
+    ]
+  ]
+
+app = simple runSnabbdom (State "" []) view getBody

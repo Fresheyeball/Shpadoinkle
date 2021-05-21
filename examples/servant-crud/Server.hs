@@ -85,22 +85,22 @@ newtype Noop a = Noop (JSM a)
 instance CRUDSpaceCraft App where
 
   listSpaceCraft =
-    runSql . runSelectReturningList . select . all_ $ _roster db
+    runSql . runSelectReturningList . select . all_ $ roster db
 
   getSpaceCraft i =
     runSql . runSelectReturningOne . select
-           . filter_ (\s -> val_ (SpaceCraftKey i) ==. primaryKey s) . all_ $ _roster db
+           . filter_ (\s -> val_ (SpaceCraftKey i) ==. primaryKey s) . all_ $ roster db
 
   updateSpaceCraft i SpaceCraftUpdate {..} =
-    runSql . runUpdate $ save (_roster db) $
-      SpaceCraft i _sku _description _serial _squadron _operable
+    runSql . runUpdate $ save (roster db) $
+      SpaceCraft i sku description serial squadron operable
 
   deleteSpaceCraft i =
-    runSql . runDelete $ delete (_roster db) $ \sc -> val_ (SpaceCraftKey i) ==. primaryKey sc
+    runSql . runDelete $ delete (roster db) $ \sc -> val_ (SpaceCraftKey i) ==. primaryKey sc
 
   createSpaceCraft SpaceCraftUpdate {..} =
-    runSql . fmap (_identity . head) . runInsertReturningList . insert (_roster db) $ insertExpressions
-        [ SpaceCraft default_ (val_ _sku) (val_ _description) (val_ _serial) (val_ _squadron) (val_ _operable) ]
+    runSql . fmap (identity . head) . runInsertReturningList . insert (roster db) $ insertExpressions
+        [ SpaceCraft default_ (val_ sku) (val_ description) (val_ serial) (val_ squadron) (val_ operable) ]
 
 
 app :: Env -> Connection -> FilePath -> Application
@@ -117,8 +117,8 @@ app ev conn root = serve (Proxy @ (API :<|> SPA App)) $ serveApi :<|> serveSpa
 
   serveSpa :: Server (SPA App)
   serveSpa = serveUI @ (SPA App) root
-    (\r -> toHandler conn $ do
-      i <- start r; return . template ev i $ view @ Noop i) routes
+    (\r -> toHandler conn $ start r >>= \i ->
+      return . template ev i $ view @ Noop i) routes
 
 
 application :: Env -> FilePath -> IO Application

@@ -1,0 +1,29 @@
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE OverloadedLabels           #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ExtendedDefaultRules       #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
+
+module Main where
+
+
+import           Control.Lens                 ((%~), (&), (^.), (.~))
+import           Data.Text                    hiding (length)
+import           Data.Generics.Labels         ()
+import           Prelude                      hiding (span, div)
+import           GHC.Generics
+import           Shpadoinkle.Lens
+import           Shpadoinkle.Backend.ParDiff  (runParDiff)
+import           Shpadoinkle.Backend.Snabbdom (runSnabbdom)
+import           Shpadoinkle.Html
+import           Shpadoinkle.Html.Utils
+import           Shpadoinkle.Run              (runJSorWarp, simple)
+import           Shpadoinkle

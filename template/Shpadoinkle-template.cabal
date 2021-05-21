@@ -45,9 +45,12 @@ library
       Shpadoinkle
     , Shpadoinkle-backend-static
     , base >=4.12.0 && <4.16
+    , directory
+    , process
     , html-parse
     , template-haskell
     , text >=1.2.3 && <1.3
+    , html-entities
 
   default-language: Haskell2010
 
@@ -70,9 +73,12 @@ test-suite sample
     , Shpadoinkle-backend-static
     , Shpadoinkle-template
     , base >=4.12.0 && <4.16
+    , directory
+    , process
     , file-embed
     , html-parse
     , template-haskell
     , text >=1.2.3 && <1.3
+    , html-entities
 
   default-language: Haskell2010

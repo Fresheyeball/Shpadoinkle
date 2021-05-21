@@ -47,7 +47,7 @@ import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
 import           Control.Monad.Writer        (MonadWriter)
 import           Data.FileEmbed              (embedStringFile)
 import           Data.Map.Internal           (Map (Bin, Tip))
-import           Data.Text                   (Text, words)
+import           Data.Text                   (Text, isPrefixOf, words)
 import           GHCJS.DOM                   (currentDocumentUnchecked)
 import           GHCJS.DOM.Document          (createElement, getBodyUnsafe)
 import           GHCJS.DOM.Element           (setAttribute, setInnerHTML)
@@ -137,8 +137,10 @@ traverseWithKey_ f = go
     go (Bin 1 k v _ _) = f k v
     go (Bin _ k v l r) = go l *> f k v *> go r
 {-# INLINE traverseWithKey_ #-}
+{-# SPECIALIZE traverseWithKey_ :: (k -> a -> JSM ()) -> Map k a -> JSM () #-}
 
 
+{-# SPECIALIZE props :: NFData a => (JSM ~> JSM) -> TVar a -> Props (SnabbdomT a JSM) a -> JSM Object #-}
 props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (SnabbdomT a m) a -> JSM Object
 props toJSM i (Props xs) = do
   o <- create
@@ -163,20 +165,20 @@ props toJSM i (Props xs) = do
             [vnode]    -> g vnode
             [_, vnode] -> g vnode
             _          -> return ()
-        unsafeSetProp "insert" f' hooksObj
-        unsafeSetProp "update" f' hooksObj
-
+        void $ jsg3 "insertHook" "insert" f' hooksObj
+        void $ jsg3 "insertHook" "update" f' hooksObj
       PText t
         | k == "className" -> forM_ (words t) $ \u ->
             unsafeSetProp (toJSString u) jsTrue classesObj
         | t /= "" -> do
             t' <- valMakeText t
             unsafeSetProp k' t' $ case k of
-              "style"     -> attrsObj
-              "type"      -> attrsObj
-              "autofocus" -> attrsObj
-              "checked"   -> attrsObj
-              _           -> propsObj
+              "style"                    -> attrsObj
+              "type"                     -> attrsObj
+              "autofocus"                -> attrsObj
+              "checked"                  -> attrsObj
+              d | "data-" `isPrefixOf` d -> attrsObj
+              _                          -> propsObj
         | otherwise -> do
             t' <- valMakeText t
             unsafeSetProp k' t' propsObj
@@ -256,4 +258,5 @@ stage = liftJSM $ do
   setInnerHTML b ""
   _ <- appendChild b elm
   RawNode <$> toJSVal elm
+{-# SPECIALIZE stage :: SnabbdomT a JSM RawNode #-}
 

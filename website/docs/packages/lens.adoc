@@ -1,0 +1,90 @@
+:relfilesuffix: /
+:relfileprefix: /
+:haddock: https://shpadoinkle.org/
+:gitlab: https://gitlab.com/platonic/shpadoinkle/-/tree/master/
+:icons: font
+
+{gitlab}lens[icon:gitlab[] Gitlab] | {haddock}lens[Haddock]
+
+Lens combinators for Shpadoinkle applications. The primary use case is the composition of heterogeneous `Html` components.
+
+== Heterogeneous Composition
+
+Optics in general are an ideal way to compose heterogeneous `Html` components. Consider usage with https://hackage.haskell.org/package/generic-lens[generic-lens].
+
+=== On Record
+
+We can use 'OverloadedLabels' to gain lenses to each field on a record, then compose
+heterogeneous sub-components onto the parent state with `onRecord`.
+
+[source,haskell]
+----
+data Form = Form
+  { name :: Text
+  , age  :: Int
+  } deriving Generic
+
+form :: Form -> Html m Form
+form f = div_
+  [ label [ for "name" ] [ "Name" ]
+  , onRecord #name $ input' -- <2>
+    [ id "name"
+    , value $ f ^. #name
+    , onInput $ const . id -- <1>
+    ]
+  , label [ for "age" ] [ "Age" ]
+  , onRecord #age $ input' -- <4>
+    [ id "name"
+    , value . pack .show $ f ^. #age
+    , onInput $ const . fromMaybe 0 . readMay . unpack -- <3>
+    ]
+  ]
+----
+
+<1> This will be an input element for the "name". We use `id` as our event handler to set the state to whatever the handler sees as the current value. Therefore, this prop is `Prop m Text`.
+<2> We have an impedance `Html m Text` vs `Html m Form` which we resolve with the use of `onRecord` and a generic derived lens as a label `#name`.
+<3> This input will capture the "age". We use `readMay` and `fromMaybe 0` to convert the incoming `Text` to an `Int`. Therefore, this prop is `Prop m Int`.
+<4> Another impedance `Html m Int` vs `Html m Form` which we resolve with the use of `onRecord` and a generic derived lens as a label `#age`.
+
+=== On Sum
+
+Here we add it a component that increments an `Int`.
+
+[source,haskell]
+----
+newtype Counter = Counter Int
+  deriving (Eq, Ord, Num, Show, Generic)
+
+counter :: Counter -> Html m Counter
+counter c = div_
+  [ label [ for' "counter" ] [ text . pack $ show c ]
+  , button [ id' "counter", onClick (+ 1) ] [ "Increment" ]
+  ]
+----
+
+We'll also add a Model to switch between the `Html Form` above and this new component `Html m Counter`.
+
+[source,haskell]
+----
+data Model
+  = MCounter Counter
+  | MForm Form
+  deriving (Eq, Show, Generic)
+
+view :: Model -> Html m Model
+view = \case
+  MCounter c -> div_
+    [ onSum #_MCounter $ counter c -- <1>
+    , button [ onClick . const . MForm $ Form "" 18 ] [ "Go to Form" ]
+    ]
+  MForm f    -> div_
+    [ onSum #_MForm $ form f -- <2>
+    , button [ onClick . const $ MCounter 0 ] [ "Go to Counter" ]
+    ]
+----
+
+<1> Here we have an impedance `Html m Counter` vs `Html m Model` which we resolve with the use of `onSum` and a generic derived prism as a label `#_MCounter`.
+<2> Another impedance, `Html m Form` vs `Html m Model` which we resolve with the use of `onSum` and a generic derived prism as a label `#_MForm`.
+
+And because we can use these lens combinators to compose heterogeneous `Html` at any place we wish, adding in
+navigation buttons to switch the `Model` from one constructor to the other is trivial.

@@ -55,17 +55,17 @@ cradle:
           cabal:
             component: "lens"
 
-    - path: "./marketing/Shpadoinkle/Marketing/Disembodied.hs"
+    - path: "./website/Shpadoinkle/Website/Disembodied.hs"
       config:
         cradle:
           cabal:
-            component: "marketing:disembodied"
+            component: "website:disembodied"
 
-    - path: "./marketing/"
+    - path: "./website/"
       config:
         cradle:
           cabal:
-            component: "marketing:run"
+            component: "website:run"
 
     - path: "./html/"
       config:

@@ -86,36 +86,37 @@ Dev Shell GHC 8.6.5 on Linux:
   needs:
   - Packages GHC 8.6.5 on Linux
   script:
-  - nix-shell --run "echo works" --argstr compiler ghc865 --fallback
+  - nix-shell --run "echo works" --arg enableLibraryProfiling false --fallback
 
 Dev Shell GHCJS 8.6 on Linux:
   stage: Linux Shell
   needs:
   - Packages GHCJS 8.6 on Linux
   script:
-  - nix-shell --run "echo works" --argstr compiler ghc865 --arg isJS true --fallback
+  - nix-shell --run "echo works" --arg enableLibraryProfiling false --arg isJS true --fallback
 
 Dev Shell GHC 8.6.5 on Darwin:
   stage: Darwin Shell
   needs:
   - Packages GHC 8.6.5 on Darwin
   script:
-  - nix-build --run "echo works" --argstr compiler ghc865 --argstr system x86_64-darwin --fallback
+  - nix-build --run "echo works" --arg enableLibraryProfiling false --argstr system x86_64-darwin --fallback
 
 Dev Shell GHCJS 8.6 on Darwin:
   stage: Darwin Shell
   needs:
   - Packages GHCJS 8.6 on Darwin
   script:
-  - nix-shell --run "echo works" --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
+  - nix-shell --run "echo works" --arg enableLibraryProfiling false --argstr system x86_64-darwin --arg isJS true --fallback
 
-Antora:
+Website:
   stage: Documentation
   needs:
   - Check Style
-  - Hlint
+  - Packages GHCJS 8.6 on Linux
+  - Packages GHC 8.6.5 on Linux
   script:
-  - nix-build docs --fallback
+  - nix-build website --arg ci true --fallback
 
 Isreal:
   stage: Push Artifacts
@@ -133,7 +134,7 @@ Isreal:
 pages:
   stage: Push Artifacts
   needs:
-  - Antora
+  - Website
   - Packages GHCJS 8.6 on Linux
   script:
   - ./nix/build-pages.sh
@@ -142,7 +143,6 @@ pages:
     - public
   only:
   - master
-  - docs
 
 Upload to Cachix:
   stage: Push Artifacts

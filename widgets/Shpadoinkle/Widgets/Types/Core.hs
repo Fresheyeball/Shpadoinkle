@@ -64,6 +64,10 @@ class Humanize a where
   {-# INLINE humanize #-}
 
 
+instance Humanize () where
+  humanize _ = pack "∅"
+
+
 instance Humanize Text where
   humanize = id
   {-# INLINE humanize #-}
@@ -82,6 +86,7 @@ class Present a where
 
 
 instance {-# OVERLAPPABLE #-} Humanize a => Present a
+
 
 #ifdef TESTING
 instance Arbitrary Hygiene where arbitrary = arbitraryBoundedEnum

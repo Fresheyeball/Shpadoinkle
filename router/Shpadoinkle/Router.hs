@@ -3,6 +3,7 @@
 {-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ExtendedDefaultRules      #-}
+{-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE InstanceSigs              #-}
@@ -36,11 +37,13 @@ module Shpadoinkle.Router (
     -- * Shpadoinkle with SPA
     , fullPageSPAC, fullPageSPA, fullPageSPA'
     -- * Navigation
-    , navigate
+    , navigate, getURI
     -- * Rehydration
     , withHydration, toHydration
     -- * Re-Exports
     , Raw, S.RawM', S.RawM, MonadJSM, HasLink(..)
+    -- * Sub route utilities
+    , TraverseUnions (..), mapUnions
     ) where
 
 
@@ -51,6 +54,7 @@ import           Control.Monad.IO.Class        (MonadIO (liftIO))
 import           Data.Aeson                    (FromJSON, ToJSON, decode,
                                                 encode)
 import           Data.ByteString.Lazy          (fromStrict, toStrict)
+import           Data.Functor.Identity         (Identity (..))
 import           Data.Kind                     (Type)
 import           Data.Maybe                    (isJust)
 import           Data.Proxy                    (Proxy (..))
@@ -66,7 +70,8 @@ import           GHCJS.DOM.History             (pushState)
 import           GHCJS.DOM.Location            (getPathname, getSearch)
 import           GHCJS.DOM.PopStateEvent       (PopStateEvent)
 import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
-import           GHCJS.DOM.Window              (Window, getHistory, getLocation)
+import           GHCJS.DOM.Window              (Window, getHistory, getLocation,
+                                                scrollTo)
 import           Language.Javascript.JSaddle   (fromJSVal, jsg)
 #ifndef ghcjs_HOST_OS
 import           Servant.API                   (Accept (contentTypes), Capture,
@@ -167,16 +172,22 @@ toHydration fe =
 
 
 -- | Change the browser's URL to the canonical URL for a given route `r`.
-navigate :: forall a m r. MonadJSM m => Routed a r => r -> m ()
+navigate :: forall a m r. (MonadJSM m, Routed a r) => r -> m ()
 navigate r = do
   w <- currentWindowUnchecked
   history <- getHistory w
+  let uri = getURI @a @r r
+  pushState history () "" . Just . T.pack $
+    "/" ++ uriPath uri ++ uriQuery uri ++ uriFragment uri
+  liftIO $ putMVar syncRoute ()
+
+
+-- | Get the cannonical URI for a given route
+getURI :: forall a r. Routed a r => r -> URI
+getURI r =
   case redirect r :: Redirect a of
-    Redirect pr mf -> do
-      let uri = linkURI . mf $ safeLink (Proxy @a) pr
-      pushState history () "" . Just . T.pack $
-        "/" ++ uriPath uri ++ uriQuery uri ++ uriFragment uri
-      liftIO $ putMVar syncRoute ()
+    Redirect pr mf -> linkURI . mf $ safeLink (Proxy @a) pr
+
 
 
 -- | This method wraps @shpadoinkle@, providing for a convenient entrypoint
@@ -329,8 +340,7 @@ listenStateChange router handle = do
     liftIO $ takeMVar syncRoute
     getRoute w router $ maybe (return ()) handle
     syncPoint
-    () <- liftIO $ return ()
-    return ()
+    scrollTo w 0 0
   return ()
 
 
@@ -502,3 +512,50 @@ data View :: (Type -> Type) -> Type -> Type
 instance HasLink (View m a) where
   type MkLink (View m a) b = b
   toLink toA _ = toA
+
+
+type family SwitchOutput layout b :: Type where
+  SwitchOutput ((a :<|> as) :<|> r) b = (b :<|> SwitchOutput as b) :<|> SwitchOutput r b
+  SwitchOutput (a :<|> r) b = b :<|> SwitchOutput r b
+  SwitchOutput a b = b
+
+
+type family SwitchInput layout :: Type where
+  SwitchInput ((a :<|> as) :<|> r) = a
+  SwitchInput (a :<|> r) = a
+  SwitchInput a = a
+
+
+class TraverseUnions m layout b where
+  traverseUnions :: (SwitchInput layout -> m b) -> layout -> m (SwitchOutput layout b)
+
+instance
+  ( Applicative m
+  , TraverseUnions m r b
+  , TraverseUnions m as b
+  , SwitchInput r ~ a
+  , SwitchInput as ~ a)
+  => TraverseUnions m ((a :<|> as) :<|> r) b where
+  traverseUnions f ((a :<|> as) :<|> r) = (\a' as' r' -> (a' :<|> as') :<|> r')
+    <$> f a
+    <*> traverseUnions @m @as @b f as
+    <*> traverseUnions @m @r @b f r
+
+instance
+  {-# OVERLAPPABLE #-}
+  ( Applicative m
+  , TraverseUnions m r b
+  , SwitchInput (a :<|> r) ~ a
+  , SwitchInput r ~ a
+  , SwitchOutput (a :<|> r) b ~ (b :<|> SwitchOutput r b))
+  => TraverseUnions m (a :<|> r) b where
+  traverseUnions f (a :<|> r) = (:<|>) <$> f a <*> traverseUnions @m @r @b f r
+
+
+instance {-# OVERLAPPABLE #-} (SwitchOutput a b ~ b, SwitchInput a ~ a)
+  => TraverseUnions m a b where
+  traverseUnions f a = f a
+
+
+mapUnions :: TraverseUnions Identity a b => (SwitchInput a -> b) -> a -> SwitchOutput a b
+mapUnions f = runIdentity . traverseUnions (Identity . f)

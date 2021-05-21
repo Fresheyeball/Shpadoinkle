@@ -1,0 +1,141 @@
+:haddock: https://shpadoinkle.org/
+:gitlab: https://gitlab.com/platonic/shpadoinkle/-/tree/master/
+:icons: font
+
+{gitlab}html[icon:gitlab[] Gitlab] | {haddock}html[Haddock]
+
+This package exposes a Haskell-generated template Digital Subscriber Line (DSL) of HTML tags, as well as properties. While not complete, this package is intended to eventually house utilities for web APIs.
+
+== Named Tags
+
+HTML tags each get **four** named functions, with the following semantic:
+
+[%header]
+|===
+| Variant            | Properties Required | Children Required
+| Plain              | icon:check[] Yes    | icon:check[] Yes
+| Prime              | icon:check[] Yes    | icon:times[] No
+| Underscore         | icon:times[] No     | icon:check[] Yes
+| Prime + Underscore | icon:times[] No     | icon:times[] No
+|===
+
+or you can see the semantic as follows:
+
+[source,haskell]
+----
+x [] = x_
+flip x [] = x'
+x [] [] = x'_
+h "x" = x
+----
+
+You also supply some overload strings for convenience:
+
+[source,haskell]
+----
+div "foo" [ "hiya" ]
+> <div class="foo">hiya</div>
+----
+
+== Event Listeners
+
+Event listeners each get named functions:
+
+* A plain one, for pure event handlers (synchronous)
+* An `M` version for monadic handlers (asynchronous)
+* A `C` variant for working with `Continuation` s. (asynchronous)
+
+[source,haskell]
+----
+onClick :: (a -> a) -> (Text, Prop m a)
+onClickM :: Monad m => m (a -> a) -> (Text, Prop m a)
+onClickM_ :: Monad m => m () -> (Text, Prop m a)
+onClickC :: Continuation m a -> (Text, Prop m a)
+----
+
+Each of these functions is named the same as in JavaScript (sans Camel-case). See that the following are morally equivalent:
+
+[source,javascript]
+----
+div.addEventListener("click", () => model++);
+----
+
+[source,haskell]
+----
+div' [ onClick (+ 1) ]
+----
+
+You will also note that synchronous handlers take an `(a -> a)` and asynchronous handlers are `m (a -> a)`. This is because your Monadic action may be asynchronous and the state of the application may have changed during that time. The returned function `(a -> a)` will be applied as a state update to whatever that state is once the action completes. Should you need to query the state of the running application in the middle of asynchronous processing, use a `Continuation m a`.
+
+Repeated calls to the same event listener will be combined though the `Semigroup` instance for `Continuation` - if both operations are pure, their functions are composed. If they're impure, the first effects will be run before the second, and both of results are appended together.
+
+=== Affordances
+
+Some listeners provide extra information. For example:
+
+[source,haskell]
+----
+onInput :: (Text -> a -> a) -> (Text, Prop m a)
+----
+
+where the `Text` will be the current value of the input element, preventing us from having to write low-level code to extract the value.
+
+== Properties
+
+Instead of orienting around attributes, we orient around _properties_ in Shpadoinkle. This is largely because you can set any attribute by properties, but not vice-versa. Credit due to https://kriszyp.github.io/alkali/[alkali] which introduced the author to this observation.
+
+In most cases the named function will have the same name it would have in JavaScript. For example, the following are morally equivalent:
+
+[source,javascript]
+----
+const div = document.createElement("div");
+div.className = "foo";
+----
+
+[source,haskell]
+----
+div' [ className "foo" ]
+----
+
+Not all properties have the same type. While we try to provide semantic types for the properties involved, this is not yet always the case. Please feel free to submit MR's if you encounter impedances, or would like to suggest a function.
+
+=== CSS Class
+
+This is by **far** the most common property to set. And so extra affordances are offered here. These are provide in **outlaw** fashion with typeclasses.
+
+[source,haskell]
+----
+div' "foo bar"
+div' [ class' "foo bar" ]
+div' [ class' ("foo bar", True) ]
+div' [ class' ["foo", "bar"] ]
+div' [ class' [("foo", True), ("bar", True), ("baz", False)] ]
+div' [ class' $ "foo" <> ("bar", True) ]
+----
+
+will all render as
+
+[source,html]
+----
+<div class="foo bar" ></div>
+----
+
+You can also use the {hackage}-html/docs/Shpadoinkle-Html-Property.html#t:ClassList[`ClassList` newtype], to build up classes for an element.
+
+== Memo
+
+The memo function remembers the last argument passed and the last result. When a new value is passed, it compares it with the previous value, and if they match, the previous result is returned from memory. This is useful when computing `Html` is expensive and benefits from memoization:
+
+[source,haskell]
+----
+memo = id
+----
+
+Think of `memo` as a way of changing the evaluation strategy:
+
+[source,haskell]
+----
+view :: Text -> Html m a
+view = memo $ \t ->
+  div_ . take (length t) . repeat . text $ expensiveFilter t
+----

@@ -12,6 +12,7 @@
 module Shpadoinkle.Router.Client
   ( runXHR
   , runXHR'
+  , runXHRe
   , module Servant.Client.JS
   ) where
 
@@ -57,3 +58,7 @@ runXHR m = do -- TODO cache the base url or make it optional
 -- | Run the ClientM from Servant as an XHR request with a customized base URL.
 runXHR' :: ClientM a -> ClientEnv -> JSM a
 runXHR' m env = either (liftIO . throwM) pure =<< runClientM m env
+
+
+runXHRe :: ClientM a -> ClientEnv -> JSM (Either ClientError a)
+runXHRe = runClientM

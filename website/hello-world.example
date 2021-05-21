@@ -1,0 +1,6 @@
+hello name =
+  div_ [ text $ "Hello " <> name <> "!" ]
+
+view = hello "World"
+
+app = simple runSnabbdom () (const view) getBody

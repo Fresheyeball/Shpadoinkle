@@ -1,0 +1,57 @@
+:gitlab: https://gitlab.com/platonic/shpadoinkle/-/tree/master/
+:haddock: https://shpadoinkle.org/
+:icons: font
+
+Render backends are pluggable in Shpadoinkle. This project currently comes with three backends:
+
+|===
+| ParDiff | {gitlab}backends/pardiff[icon:gitlab[] Gitlab] | {haddock}backend-pardiff[Haddock] |
+| Snabbdom | {gitlab}backends/snabbdom[icon:gitlab[] Gitlab] | {haddock}backend-snabbdom[Haddock] |
+| Static | {gitlab}backends/static[icon:gitlab[] Gitlab] | {haddock}backend-static[Haddock] |
+|===
+
+You do not need to change your application to use any of these. Our view code will work without alteration with any backend. The application should still build and run with both GHC and GHCjs.
+
+== Using a Backend
+
+Take a quick look at the `shpadoinkle` primitive:
+
+[source,haskell]
+----
+shpadoinkle :: Backend b m a => Territory t => Eq a
+  => (m ~> JSM) -> (t a -> b m ~> m) -> a -> t a -> (a -> Html (b m) a) -> b m RawNode -> JSM ()
+----
+
+The second argument `(t a -> b m ~> m)` is how you choose your backend. For example:
+
+[source,haskell]
+----
+import Shpadoinkle.Backend.ParDiff
+shpadoinkle id runParDiff 0 territory view getBody
+----
+
+This will use the ParDiff Virtual DOM backend written in Haskell by simply changing it to:
+
+[source,haskell]
+----
+import Shpadoinkle.Backend.Snabbdom
+shpadoinkle id runSnabbdom 0 territory view getBody
+----
+
+Now the application will render with the https://github.com/snabbdom/snabbdom[Snabbdom] Virtual DOM backend written in JavaScript instead.
+
+[TIP]
+====
+The Static backend is a bit different as it does not work with the `shpadoinkle` primitive. Instead it exposes a single function:
+
+[source,haskell]
+----
+renderStatic :: Html m a -> Text
+----
+====
+
+== Writing a Backend
+
+Adding your own backend is a matter of writing an instance of the `Backend` type class located in core.
+
+include::./core.adoc[tag=backend]

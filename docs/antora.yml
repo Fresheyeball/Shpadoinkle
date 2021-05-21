@@ -1,5 +1,0 @@
-name: docs
-title: Shpadoinkle Documentation
-version: 'master'
-nav:
-  - modules/ROOT/nav.adoc

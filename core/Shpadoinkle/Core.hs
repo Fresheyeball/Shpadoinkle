@@ -23,6 +23,7 @@
 -}
 
 
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module Shpadoinkle.Core (
   -- * Base Types
   Html(..), Prop(..), Props(..), fromProps, toProps
@@ -51,6 +52,7 @@ module Shpadoinkle.Core (
   ) where
 
 
+import           Control.Applicative           (liftA2)
 import qualified Control.Categorical.Functor   as F
 import           Control.Category              ((.))
 import           Control.PseudoInverseCategory (EndoIso (..),
@@ -59,8 +61,9 @@ import           Control.PseudoInverseCategory (EndoIso (..),
                                                 PseudoInverseCategory (piinverse),
                                                 ToHask (piapply))
 import           Data.Kind                     (Type)
-import           Data.Map                      as M (Map, singleton, toList,
-                                                     unionWithKey)
+import           Data.Map                      as M (Map, foldl', insert,
+                                                     mapEither, singleton,
+                                                     toList, unionWithKey)
 import           Data.String                   (IsString (..))
 import           Data.Text                     (Text, pack)
 import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
@@ -139,6 +142,7 @@ listenM_ k = listenC k . causes
 newtype Props m a = Props { getProps :: Map Text (Prop m a) }
 
 
+{-# SPECIALIZE toProps :: [(Text, Prop JSM a)] -> Props JSM a #-}
 toProps :: Applicative m => [(Text, Prop m a)] -> Props m a
 toProps = foldMap $ Props . uncurry singleton
 
@@ -148,7 +152,7 @@ fromProps = M.toList . getProps
 
 
 instance Applicative m => Semigroup (Props m a) where
-  Props xs <> Props ys = Props (unionWithKey go xs ys)
+  Props xs <> Props ys = Props $ unionWithKey go xs ys
     where
       go k old new = case (old, new) of
         (PText t, PText t') | k == "className" -> PText (t <> " " <> t')

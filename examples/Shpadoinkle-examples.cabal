@@ -41,7 +41,6 @@ common ghcjs-options
     -fwarn-tabs
     -fwarn-incomplete-record-updates
     -fwarn-identities
-    -dedupe
     -O2
 
 
@@ -176,6 +175,7 @@ executable servant-crud-client
     , bytestring
     , containers
     , exceptions
+    , generic-lens
     , jsaddle
     , lens
     , mtl
@@ -227,6 +227,7 @@ executable servant-crud-dev
     , containers
     , exceptions
     , file-embed
+    , generic-lens
     , generic-monoid
     , jsaddle
     , lens
@@ -277,6 +278,7 @@ executable servant-crud-server
     , bytestring
     , containers
     , file-embed
+    , generic-lens
     , lens
     , mtl
     , optparse-applicative
@@ -376,5 +378,23 @@ executable widgets
     , lens
     , stm
     , text
+
+  default-language: Haskell2010
+
+
+executable stress
+  main-is: Stress.hs
+  build-depends:
+      base >=4.12.0 && <4.16
+    , text
+    , containers
+    , generic-lens
+    , lens
+
+    , Shpadoinkle
+    , Shpadoinkle-html
+    , Shpadoinkle-lens
+    , Shpadoinkle-backend-snabbdom
+    , Shpadoinkle-backend-pardiff
 
   default-language: Haskell2010

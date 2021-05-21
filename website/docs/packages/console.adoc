@@ -1,0 +1,37 @@
+:haddock: https://shpadoinkle.org/
+:gitlab: https://gitlab.com/platonic/shpadoinkle/-/tree/master/
+:icons: font
+
+{gitlab}console[icon:gitlab[] Gitlab] | {haddock}console[Haddock]
+
+Support for logging to the JavaScript console, using three classes, as follows:
+
+[source,haskell]
+----
+class LogJS (c :: Type -> Constraint) where
+  logJS :: c a => a -> JSM ()
+
+class LogJS c => Trapper c where
+  trapper :: c a => JSContextRef -> a -> a
+
+class Assert (c :: Type -> Constraint) where
+  assert :: c a => Bool -> a -> JSM ()
+----
+
+These provide a `TypeApplications` interface for logging to the JavaScript console. Different log levels, time measurement, and other features of the native console are supported.
+
+== Trapping
+
+Trapping lets you log all state changes to our application for debugging purposes. For example, you can log the state as it enters the `view` function as follows:
+
+[source,haskell]
+----
+main :: IO ()
+main = runJSorWarp 8080 $ do
+  ctx <- askJSM
+  simple runParDiff initial (view . trapper @ToJSON ctx) getBody
+----
+
+This will log all state by first encoding to JSON with Aeson, then logging with `JSON.parse` so the browser console has the nice native display. If you change it to `trapper @Show ctx` it will use the `Show` instance instead.
+
+We also export a handful of `console` bindings such as `console.time`, `console.table`, `console.info`, `console.warn`, `console.debug`, and of course `console.log`.
