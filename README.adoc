@@ -1,6 +1,6 @@
 {zwsp}
 [.text-center]
-image::docs/modules/ROOT/assets/images/logo.png[Eddie is loved forever,150,150]
+image::https://shpadoinkle.org/assets/landing_logo.svg?_=d90ee964e70ae792d7a4[Eddie is loved forever,600,150]
 {zwsp}
 [.text-center]
 https://gitlab.com/platonic/shpadoinkle/commits/master[image:https://gitlab.com/platonic/shpadoinkle/badges/master/pipeline.svg[pipeline
@@ -11,42 +11,24 @@ with nix]]
 https://shpadoinkle.cachix.org[image:https://img.shields.io/badge/Cachix-up%20to%20date-green[cachix]]
 https://hoogle.shpadoinkle.org[image:https://img.shields.io/badge/-Hoogle-lightgrey[hoogle]]
 
+[.text-center]
+https://www.youtube.com/watch?v=0CizU8aB3c8[A new Functional UI programming paradigm]
 
-= Shpadoinkle
+= https://shpadoinkle.org/[Website]
 
-https://www.youtube.com/watch?v=0CizU8aB3c8[Shpadoinkle] is a new Functional UI programming paradigm.
+* https://shpadoinkle.org/concepts[Basic Concept]
+* https://shpadoinkle.org/getting-started[Getting Started]
+* https://shpadoinkle.org/tutorial[Tutorial]
+* https://shpadoinkle.org/packages[Package Reference / Haddock]
 
-== Documentation
-
-* https://shpadoinkle.org/docs/index.html[Home Page]
-* https://shpadoinkle.org/docs/getting-started/index.html[Getting Started]
-* https://shpadoinkle.org/docs/tutorial/index.html[Tutorial]
-* https://shpadoinkle.org/docs/packages/index.html[Packages]
-
-== Community
+= Community
 
 Join the Shpadoinkle community on https://shpadoinkle.zulipchat.com/register[Zulip]!
-
-== Snowman
-
-The easiest way to start a new Shpadoinkle project is to build a https://gitlab.com/platonic/shpadoinkle/-/blob/master/snowman/README.md[Snowman].
 
 == TODOMVC
 
 You can see an example of Shpadoinkle in the popular http://todomvc.com/[TODOMVC] running https://shpadoinkle.org/examples/todomvc.jsexe[here], compiled from the code located https://gitlab.com/platonic/shpadoinkle/-/blob/master/examples/TODOMVC.hs[here].
 
-== Code Contribution
-
-Code formatting is enforced by CI check.
-To reformat code according to project style guide run `nix/style-check.sh` and commit
-the changes either from within or outside of `nix-shell`.
-
-CI is also enforcing https://hackage.haskell.org/package/hlint[HLint] rules.
-To run hlint locally use:
-
-```
-$ nix-shell nix/lint.nix --run 'hlint .'
-```
 
 Correct version of hlint is also available within `nix-shell`.
 
