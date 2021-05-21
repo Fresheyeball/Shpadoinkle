@@ -5,7 +5,9 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TupleSections              #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 
 -- | This module provides a DSL for HTML properties
@@ -37,11 +39,11 @@ import           Shpadoinkle.Html.TH
 
 -- | How do we take a non-textual value, and make it text which JavaScript will
 -- cast appropriately?
-class ToPropText a where toPropText :: a -> Text
-instance ToPropText Text where toPropText = id
-instance ToPropText Int where toPropText = pack . show
+class    ToPropText a     where toPropText :: a -> Text
+instance ToPropText Text  where toPropText = id
+instance ToPropText Int   where toPropText = pack . show
 instance ToPropText Float where toPropText = pack . show
-instance ToPropText Bool where toPropText = \case True -> "true"; False -> "false"
+instance ToPropText Bool  where toPropText = \case True -> "true"; False -> "false"
 
 
 textProperty :: ToPropText a => Text -> a -> (Text, Prop m b)
@@ -53,13 +55,15 @@ textProperty' k = (,) k . textProp
 
 
 newtype ClassList = ClassList { unClassList :: Set.Set Text } deriving (Eq, Ord, Show, Semigroup, Monoid)
-class ClassListRep a where asClass :: a -> ClassList
-instance ClassListRep Text where asClass = ClassList . Set.fromList . split (== ' ')
-instance ClassListRep ClassList where asClass = id
-instance ClassListRep (Text, Bool) where asClass (a, b) = if b then asClass a else mempty
-instance ClassListRep (ClassList, Bool) where asClass = \case (cl, True) -> cl; _ -> mempty
-instance ClassListRep cl => ClassListRep [cl] where asClass = foldMap asClass
 instance IsString ClassList where fromString = ClassList . Set.fromList . split (== ' ') . pack
+
+
+class    ClassListRep a                       where asClass :: a -> ClassList
+instance ClassListRep Text                    where asClass = ClassList . Set.fromList . split (== ' ')
+instance ClassListRep ClassList               where asClass = id
+instance ClassListRep (Text, Bool)            where asClass (a, b) = if b then asClass a else mempty
+instance ClassListRep (ClassList, Bool)       where asClass = \case (cl, True) -> cl; _ -> mempty
+instance ClassListRep cl => ClassListRep [cl] where asClass = foldMap asClass
 
 
 flagProperty :: Text -> Bool -> (Text, Prop m a)
@@ -78,6 +82,17 @@ for' :: Text -> (Text, Prop m a)
 for' = textProperty "htmlFor"
 
 
+styleProp :: [(Text, Text)] -> (Text, Prop m a)
+styleProp = textProperty "style" . intercalate ";" . fmap subStyle
+  where subStyle (k,v) = k <> ":" <> v
+
+
+px, toEm, rem :: (Num a, Show a) => a -> Text
+px   = (<> "px")  . pack . show
+toEm = (<> "em")  . pack . show
+rem  = (<> "rem") . pack . show
+
+
 $(msum <$> mapM mkBoolProp
   [ "checked", "selected", "hidden", "autocomplete", "autofocus", "disabled", "autoplay", "controls", "loop"
   , "multiple", "novalidate", "readonly", "required", "ismap", "usemap", "default'", "reversed"
@@ -89,11 +104,15 @@ $(msum <$> mapM mkTextProp
   , "max", "min", "step", "wrap", "target", "download", "hreflang", "media", "ping", "shape", "coords"
   , "alt", "preload", "poster", "name'", "kind'", "srclang", "sandbox", "srcdoc", "align"
   , "headers", "scope", "datetime", "pubdate", "manifest", "contextmenu", "draggable"
-  , "dropzone", "itemprop", "charset", "content", "property", "innerHTML"
+  , "dropzone", "itemprop", "charset", "content", "property", "innerHTML", "lang"
   ])
 
 $(msum <$> mapM mkIntProp
- [ "tabIndex", "width", "height" ])
+ [ "tabIndex", "width", "height", "maxLength", "minLength" ])
+
+
+newTab :: (Text, Prop m a)
+newTab = target "_blank"
 
 
 tabbable :: (Text, Prop m a)

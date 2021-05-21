@@ -8,28 +8,4 @@
 [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-console.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-console)
 [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-console/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-console)
 
-This package exposes some useful debugging functions for tracing the state of Shpadoinkle applications as they change over time. It exposes some type classes currently.
-
-```haskell
-class LogJS (c :: Type -> Constraint) where
-  logJS :: c a => a -> JSM ()
-
-class LogJS c => Trapper c where
-  trapper :: c a => JSContextRef -> a -> a
-
-class Assert (c :: Type -> Constraint) where
-  assert :: c a => Bool -> a -> JSM ()
-```
-
-These are intended to by used with `TypeApplications`, so you can choose the means of conversion before passing to `console.log`. For example:
-
-```haskell
-main :: IO ()
-main = runJSorWarp 8080 $ do
-  ctx <- askJSM
-  simple runParDiff initial (view . trapper @ToJSON ctx) getBody
-```
-
-This will log all state by first encoding to JSON with Aeson, then then logging with `JSON.parse` so the browser console has the nice native display. If we change it to `trapper @Show ctx` it will use the `Show` instance instead.
-
-We also export a handful of `console` bindings such as `console.time`, `console.table`, `console.info`, `console.warn`, `console.debug`, and of course `console.log`.
+## [Documentation ->](https://shpadoinkle.org/package/console)

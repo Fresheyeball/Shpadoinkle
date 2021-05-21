@@ -20,13 +20,13 @@ In order to re-build `Shpadoinkle/Backend/Snabbdom/Setup.js`, it needs to be bun
 
 ```bash
 # clone outside the source directory of Shpadoinkl
-git clone git@gituhub.com:snabbdom/snabbdom.git
+git clone git@github.com:snabbdom/snabbdom.git
 # compile its typescript so we can bundle the javascript
 cd snabbdom && npm install && npm run compile
 # Setup_src.js imports the snabbdom sources locally, so we need to manually move it
 cp path-to-shpadoinkle/backends/snabbdom/Shpadoinkle/Backend/Snabbdom/Setup_src.js build/package/
 # nix is most reliable for running parcel
-nix-shell -p nodePackages.parcel-bundler --command "parcel build Setup_src.js"
+nix-shell -p nodePackages.parcel-bundler --command "parcel build build/package/Setup_src.js"
 # copy the bundled output as Setup.js
 cp dist/Setup_src.js path-to-shpadoinkle/backends/snabbdom/Shpadoinkle/Backend/Snabbdom/Setup.js
 ```

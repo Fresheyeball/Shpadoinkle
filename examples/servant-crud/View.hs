@@ -8,6 +8,7 @@
 {-# LANGUAGE ImpredicativeTypes    #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -23,6 +24,7 @@ module View where
 import           Control.Lens                      hiding (view)
 import           Control.Lens.Unsound              (lensProduct)
 import           Data.Coerce                       (Coercible)
+import           Data.Generics.Labels              ()
 import           Data.Maybe                        (fromMaybe, isNothing)
 import           Data.String                       (IsString)
 import           Data.Text                         as T
@@ -56,11 +58,11 @@ default (Text, [])
 
 toEditForm :: SpaceCraft -> SpaceCraftUpdate 'Edit
 toEditForm sc = SpaceCraftUpdate
-  { _sku         = pure $ sc ^. sku
-  , _description = pure $ sc ^. description
-  , _serial      = pure $ sc ^. serial
-  , _squadron    = (sc ^. squadron) `withOptions'` fullset
-  , _operable    = (sc ^. operable) `withOptions'` fullset
+  { sku         = pure $ sc ^. #sku
+  , description = pure $ sc ^. #description
+  , serial      = pure $ sc ^. #serial
+  , squadron    = (sc ^. #squadron) `withOptions'` fullset
+  , operable    = (sc ^. #operable) `withOptions'` fullset
   }
 
 
@@ -155,11 +157,11 @@ toHtmlName = toLower . replace " " "-"
 editForm :: forall m. (CRUDSpaceCraft m, MonadJSM m) => Maybe SpaceCraftId -> SpaceCraftUpdate 'Edit -> Html m (SpaceCraftUpdate 'Edit)
 editForm mid ef = H.div_
 
-  [ intControl    @SKU                   sku         "SKU"           errs ef
-  , textControl   @Description           description "Description"   errs ef
-  , intControl    @SerialNumber          serial      "Serial Number" errs ef
-  , selectControl @'One @Squadron        squadron    "Squadron"      errs ef
-  , selectControl @'AtleastOne @Operable operable    "Operable"      errs ef
+  [ intControl    @SKU                   #sku         "SKU"           errs ef
+  , textControl   @Description           #description "Description"   errs ef
+  , intControl    @SerialNumber          #serial      "Serial Number" errs ef
+  , selectControl @'One @Squadron        #squadron    "Squadron"      errs ef
+  , selectControl @'AtleastOne @Operable #operable    "Operable"      errs ef
   , H.div "d-flex flex-row justify-content-end"
 
     [ H.button
@@ -179,11 +181,11 @@ editForm mid ef = H.div_
       ] [ "Save" ]
 
     ]
-  ] where errs = validate ef
+  ] where errs    = validate ef
           isValid = getValid errs
 
 
-start :: (Monad m, CRUDSpaceCraft m) => Route -> m Frontend
+start :: (Monad m, CRUDSpaceCraft m) => Route -> m ViewModel
 start = \case
   RList s     -> MList . Roster (SortCol SKUT ASC) s <$> listSpaceCraft
   REcho t     -> return $ MEcho t
@@ -206,35 +208,35 @@ tableCfg = mempty
 
 fuzzy :: [SpaceCraft -> Text]
 fuzzy = flip (^.) <$>
-  [ sku         . to humanize
-  , description . to humanize
-  , serial      . to humanize
-  , squadron    . to humanize
-  , operable    . to humanize
+  [ #sku         . to humanize
+  , #description . to humanize
+  , #serial      . to humanize
+  , #squadron    . to humanize
+  , #operable    . to humanize
   ]
 
 
-view :: forall m. (MonadJSM m, CRUDSpaceCraft m) => Frontend -> Html m Frontend
+view :: forall m. (MonadJSM m, CRUDSpaceCraft m) => ViewModel -> Html m ViewModel
 view fe = case fe of
 
-  MList r -> onSum _MList $ H.div "container-fluid"
+  MList r -> onSum #_MList $ H.div "container-fluid"
    [ H.div "row justify-content-between align-items-center"
      [ H.h2_ [ "Space Craft Roster" ]
      , H.div [ H.class' "input-group"
              , H.textProperty "style" ("width:300px" :: Text)
              ]
-       [ r <% search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
+       [ r <% #search $ Input.search [ H.class' "form-control", H.placeholder "Search" ]
        , H.div "input-group-append mr-3"
          [ H.button [ H.onClickM_ $ navigate @(SPA m) RNew, H.class' "btn btn-primary" ] [ "Register" ]
          ]
        ]
      ]
-   , onRecord (lensProduct table sort) $ Table.viewWith tableCfg
-       (r ^. table . to (fuzzySearch fuzzy $ r ^. search . value))
-       (r ^. sort)
+   , onRecord (lensProduct #table #sort) $ Table.viewWith tableCfg
+       (r ^. #table . to (fuzzySearch fuzzy $ r ^. #search . value))
+       (r ^. #sort)
    ]
 
-  MDetail sid form -> onSum (_MDetail . _2) $ H.div "row"
+  MDetail sid form -> onSum (#_MDetail . _2) $ H.div "row"
     [ H.div "col-sm-8 offset-sm-2"
       [ H.h2_ [ text $ maybe "Register New Space Craft" (const "Edit Space Craft") sid
               ]
@@ -250,7 +252,7 @@ view fe = case fe of
   M404 -> text "404"
 
 
-template :: Env -> Frontend -> Html m a -> Html m a
+template :: Env -> ViewModel -> Html m a -> Html m a
 template ev fe stage = H.html_
   [ H.head_
     [ H.link'

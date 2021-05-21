@@ -1,4 +1,4 @@
-{ compiler, isJS }: self: super: with super.lib; let
+{ compiler, isJS, enableLibraryProfiling ? false }: self: super: with super.lib; let
 
 
   nixpkgs-unstable = builtins.fetchTarball {
@@ -9,6 +9,13 @@
 
 
   chrome-rev = "71336116f3f78d3bb1f499bf4b88efcd8738a9cf";
+
+
+  bitcoin-hash = builtins.fetchGit
+    { url = https://gitlab.com/k0001/hs-bitcoin-hash.git;
+      rev = "b0e85f463be0b23937a98acb16d7e4ffbca005a8";
+      ref = "master";
+    };
 
 
   jsaddle-src = builtins.fetchGit
@@ -97,11 +104,20 @@
       "*.nix"
       "*.md"
       ".*.yml"
+      "*docs*"
+      "*landing_logo.svg"
+      "*favicon.html"
     ];
 
 
-  addFlags = x: super.haskell.lib.overrideCabal (super.haskell.lib.appendConfigureFlags x
-      ["--ghc-option=-Werror"]) (drv: {
+  addFlags = x: with super.haskell.lib; overrideCabal
+  (appendConfigureFlags x [
+    "--ghc-option=-Werror"
+    "--ghcjs-options=-dedupe"
+    "--ghcjs-options=-DGHCJS_GC_INTERVAL=60000"
+    "--ghcjs-options=-O2"
+  ])
+  (drv: {
     haddockFlags   = ["--css=${../etc/linuwial.css}"];
   });
 
@@ -127,7 +143,14 @@ in {
     }) {}).google-chrome;
 
   haskell = super.haskell //
-    { packages = super.haskell.packages //
+  { # compiler = super.haskell.compiler // {
+    #   ghcjs86 = super.haskell.compiler.ghcjs86.overrideAttrs (old: {
+    #     buildPhase  = ''
+    #       ${old.buildPhase}
+    #     '';
+    #   });
+    # };
+    packages = super.haskell.packages //
       { "${util.compilerjs}" = with super.haskell.lib;
       super.haskell.packages.${util.compilerjs}.override (old: {
 
@@ -147,26 +170,40 @@ in {
             '';
           });
 
+          websiteOverride = x: addDev (x.overrideAttrs (old: {
+            buildInputs = old.buildInputs ++ [ super.asciidoctor ];
+            prePatch = let brand = import ../website/brand.nix {}; in ''
+              ${old.prePatch}
+              ln -s ${brand.icons.faviconHTML} favicon.html
+              cp -r ${../website/docs} docs
+              chmod -R +rw docs
+              ln -s ${brand.logo.full.svg { color = "bright_yellow"; }} assets/landing_logo.svg
+            '';
+          }));
+
           hpkgs    = {
 
-          Shpadoinkle                  = call "Shpadoinkle"                  ../core;
+          mkDerivation = args: hsuper.mkDerivation (args // {
+            inherit enableLibraryProfiling;
+            doCheck = if enableLibraryProfiling then false else args.doCheck or true;
+          });
 
-          Shpadoinkle-backend-snabbdom = call "Shpadoinkle-backend-snabbdom" ../backends/snabbdom;
-          Shpadoinkle-backend-static   = call "Shpadoinkle-backend-static"   ../backends/static;
-          Shpadoinkle-backend-pardiff  = call "Shpadoinkle-backend-pardiff"  ../backends/pardiff;
-          Shpadoinkle-console          = call "Shpadoinkle-console"          ../console;
+          Shpadoinkle                  = call "Shpadoinkle"                          ../core;
+          Shpadoinkle-backend-snabbdom = call "Shpadoinkle-backend-snabbdom"         ../backends/snabbdom;
+          Shpadoinkle-backend-static   = call "Shpadoinkle-backend-static"           ../backends/static;
+          Shpadoinkle-backend-pardiff  = call "Shpadoinkle-backend-pardiff"          ../backends/pardiff;
+          Shpadoinkle-console          = call "Shpadoinkle-console"                  ../console;
           Shpadoinkle-developer-tools  = addDev (call "Shpadoinkle-developer-tools"  ../developer-tools);
-          Shpadoinkle-disembodied      = call "Shpadoinkle-disembodied"      ../disembodied;
-          Shpadoinkle-lens             = call "Shpadoinkle-lens"             ../lens;
-          Shpadoinkle-html             = call "Shpadoinkle-html"             ../html;
-          Shpadoinkle-router           = call "Shpadoinkle-router"           ../router;
-          Shpadoinkle-streaming        = call "Shpadoinkle-streaming"        ../streaming;
-          Shpadoinkle-widgets          = addTest (call "Shpadoinkle-widgets" ../widgets) hpkgs;
-          Shpadoinkle-template         = call "Shpadoinkle-template"         ../template;
-
-          Shpadoinkle-examples         = call "Shpadoinkle-examples"         ../examples;
-
-          Shpadoinkle-isreal           = call "Shpadoinkle-isreal"           ../isreal;
+          Shpadoinkle-disembodied      = call "Shpadoinkle-disembodied"              ../disembodied;
+          Shpadoinkle-lens             = call "Shpadoinkle-lens"                     ../lens;
+          Shpadoinkle-website          = websiteOverride (call "Shpadoinkle-website" ../website);
+          Shpadoinkle-html             = call "Shpadoinkle-html"                     ../html;
+          Shpadoinkle-router           = call "Shpadoinkle-router"                   ../router;
+          Shpadoinkle-streaming        = call "Shpadoinkle-streaming"                ../streaming;
+          Shpadoinkle-widgets          = addTest (call "Shpadoinkle-widgets"         ../widgets) hpkgs;
+          Shpadoinkle-template         = call "Shpadoinkle-template"                 ../template;
+          Shpadoinkle-examples         = call "Shpadoinkle-examples"                 ../examples;
+          Shpadoinkle-isreal           = call "Shpadoinkle-isreal"                   ../isreal;
 
           ease                    = hself.callCabal2nix "ease" ease {};
           ghcjs-base-stub         = hself.callCabal2nix "ghcjs-base-stub" ghcjs-base-stub-src {};
@@ -185,6 +222,7 @@ in {
           quickcheck-classes      = dontJS (doJailbreak (hself.callCabal2nix "quickcheck-classes"      "${quickcheck-classes-src}/quickcheck-classes"      {}));
           quickcheck-classes-base = doJailbreak (hself.callCabal2nix "quickcheck-classes-base" "${quickcheck-classes-src}/quickcheck-classes-base" {});
           primitive-addr          = doJailbreak hsuper.primitive-addr;
+          trie-simple             = dontHaddock (unmarkBroken hsuper.trie-simple);
 
           # Diff = dontJS (if compiler == "ghc844" then appendPatch hsuper.Diff ./Diff-Test.patch else hsuper.diff);
         } // forThese dontJS [
@@ -202,6 +240,7 @@ in {
           "criterion"
           "megaparsec"
           "lens"
+          "ListLike"
           "http-types"
           "text-short"
           "silently"

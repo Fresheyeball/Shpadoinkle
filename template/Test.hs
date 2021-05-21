@@ -18,8 +18,11 @@ testHtmlIngestion :: IO ()
 testHtmlIngestion =
   let x = mconcat $ renderStatic <$> $(embedHtml "./test.html")
       y = decodeUtf8 $(embedFile "./test.html")
-  in if x == y then pure () else
-     error $ "test.html did not parse correctly. Got: " ++ unpack x
+  in if x == y then pure () else do
+     print x
+     print y
+     error "test.html did not parse correctly. Got: "
+
 
 testTemplate :: IO ()
 testTemplate =
@@ -28,8 +31,11 @@ testTemplate =
               [ h "span" [] [ "Hi {{x}}" ]
               ]
       y = "<divyoddle yoddleclass=\"baryoddle\"><span>Hi yoddle</span></divyoddle>"
-  in if x == y then pure () else
-     error $ "template did not interpolate. Got: " ++ unpack x
+  in if x == y then pure () else do
+     print x
+     print y
+     error "template did not interpolate."
+
 
 main :: IO ()
 main = do

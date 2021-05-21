@@ -6,17 +6,17 @@
 {-# LANGUAGE DuplicateRecordFields      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedLabels           #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuantifiedConstraints      #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -28,16 +28,13 @@
 module Types (module Types, module Types.Prim) where
 
 
-import           Control.Lens                      as Lens (Identity,
-                                                            makeFieldsNoPrefix,
-                                                            makeLenses,
-                                                            makePrisms, view,
+import           Control.Lens                      as Lens (Identity, view,
                                                             (^.))
-import           Control.Lens.TH                   ()
 import           Control.Monad.Except              (MonadError (throwError),
                                                     MonadTrans (..))
 import           Data.Aeson                        (FromJSON, ToJSON)
 import           Data.Function                     (on)
+import           Data.Generics.Labels              ()
 import           Data.Maybe                        (fromMaybe)
 import           Data.Proxy                        (Proxy (Proxy))
 import           Data.Text                         (Text)
@@ -82,12 +79,12 @@ import           Types.Prim                        (Description (..),
 
 
 data SpaceCraftT f = SpaceCraft
-  { _identity    :: Columnar f SpaceCraftId
-  , _sku         :: Columnar f SKU
-  , _description :: Columnar (Nullable f) Description
-  , _serial      :: Columnar f SerialNumber
-  , _squadron    :: Columnar f Squadron
-  , _operable    :: Columnar f Operable
+  { identity    :: Columnar f SpaceCraftId
+  , sku         :: Columnar f SKU
+  , description :: Columnar (Nullable f) Description
+  , serial      :: Columnar f SerialNumber
+  , squadron    :: Columnar f Squadron
+  , operable    :: Columnar f Operable
   } deriving (Generic, Beamable)
 
 
@@ -96,7 +93,7 @@ instance NFData (SpaceCraftT Identity)
 
 instance Table SpaceCraftT where
   newtype PrimaryKey SpaceCraftT f = SpaceCraftKey (Columnar f SpaceCraftId) deriving (Generic) deriving anyclass (Beamable)
-  primaryKey = SpaceCraftKey . _identity
+  primaryKey = SpaceCraftKey . identity
 
 
 type SpaceCraft = SpaceCraftT Identity
@@ -107,10 +104,7 @@ deriving instance ToJSON SpaceCraft
 deriving instance FromJSON SpaceCraft
 
 
-makeFieldsNoPrefix ''SpaceCraftT
-
-
-newtype DB f = DB { _roster :: f (TableEntity SpaceCraftT) } deriving (Generic) deriving anyclass (Database be)
+newtype DB f = DB { roster :: f (TableEntity SpaceCraftT) } deriving (Generic) deriving anyclass (Database be)
 
 
 db :: DatabaseSettings be DB
@@ -118,11 +112,11 @@ db = defaultDbSettings
 
 
 data SpaceCraftUpdate s = SpaceCraftUpdate
-  { _sku         :: Field s Text Input SKU
-  , _description :: Field s Text Input (Maybe Description)
-  , _serial      :: Field s Text Input SerialNumber
-  , _squadron    :: Field s Text (Dropdown 'One) Squadron
-  , _operable    :: Field s Text (Dropdown 'AtleastOne) Operable
+  { sku         :: Field s Text Input SKU
+  , description :: Field s Text Input (Maybe Description)
+  , serial      :: Field s Text Input SerialNumber
+  , squadron    :: Field s Text (Dropdown 'One) Squadron
+  , operable    :: Field s Text (Dropdown 'AtleastOne) Operable
   } deriving Generic
 
 
@@ -151,21 +145,18 @@ deriving instance Show     (SpaceCraftUpdate 'Errors)
 
 instance Validate SpaceCraftUpdate where
   rules = SpaceCraftUpdate
-    { _sku         = positive <> nonZero
-    , _description = nonMEmpty
-    , _serial      = between (30, maxBound)
-    , _squadron    = maybe (throwError "Cannot be empty") pure
-    , _operable    = pure
+    { sku         = positive <> nonZero
+    , description = nonMEmpty
+    , serial      = between (30, maxBound)
+    , squadron    = maybe (throwError "Cannot be empty") pure
+    , operable    = pure
     }
 
 
-makeFieldsNoPrefix ''SpaceCraftUpdate
-
-
 data Roster = Roster
-  { _sort   :: SortCol [SpaceCraft]
-  , _search :: Input Search
-  , _table  :: [SpaceCraft]
+  { sort   :: SortCol [SpaceCraft]
+  , search :: Input Search
+  , table  :: [SpaceCraft]
   }
 
 
@@ -180,20 +171,17 @@ instance (ToJSON   (Table.Column [SpaceCraft])) => ToJSON   Roster
 instance (FromJSON (Table.Column [SpaceCraft])) => FromJSON Roster
 
 
-makeFieldsNoPrefix ''Roster
-
-
 emptyEditForm :: SpaceCraftUpdate 'Edit
 emptyEditForm = SpaceCraftUpdate
-  { _sku         = Input Clean 0
-  , _description = Input Clean Nothing
-  , _serial      = Input Clean 0
-  , _squadron    = fullOptions
-  , _operable    = fullOptionsMin
+  { sku         = Input Clean 0
+  , description = Input Clean Nothing
+  , serial      = Input Clean 0
+  , squadron    = fullOptions
+  , operable    = fullOptionsMin
   }
 
 
-data Frontend
+data ViewModel
   = MEcho (Maybe Text)
   | MList Roster
   | MDetail (Maybe SpaceCraftId) (SpaceCraftUpdate 'Edit)
@@ -201,14 +189,9 @@ data Frontend
   deriving (Eq, Ord, Show, Generic)
 
 
-instance (ToJSON   (Column [SpaceCraft])) => ToJSON   Frontend
-instance (FromJSON (Column [SpaceCraft])) => FromJSON Frontend
-instance
-  ( NFData (Column [SpaceCraft])
-  , NFData (SpaceCraftT Identity)) => NFData Frontend
-
-
-makePrisms ''Frontend
+instance (ToJSON   (Column [SpaceCraft])) => ToJSON   ViewModel
+instance (FromJSON (Column [SpaceCraft])) => FromJSON ViewModel
+instance (NFData   (Column [SpaceCraft])) => NFData   ViewModel
 
 
 data Route
@@ -216,10 +199,7 @@ data Route
   | RList (Input Search)
   | RNew
   | RExisting SpaceCraftId
-  deriving (Eq, Ord, Show, Generic)
-
-
-makeLenses ''Route
+  deriving (Eq, Ord, Show, Generic, NFData, ToJSON, FromJSON)
 
 
 type API = "api" :> "space-craft" :> Get '[JSON] [SpaceCraft]
@@ -230,9 +210,9 @@ type API = "api" :> "space-craft" :> Get '[JSON] [SpaceCraft]
 
 
 type SPA m = "app" :> "echo" :> QueryParam "echo" Text :> View m Text
-        :<|> "app" :> "new"  :> View m Frontend
-        :<|> "app" :> "edit" :> Capture "id" SpaceCraftId :> View m Frontend
-        :<|> "app" :> QueryParam "search" Search :> View m Frontend
+        :<|> "app" :> "new"  :> View m ViewModel
+        :<|> "app" :> "edit" :> Capture "id" SpaceCraftId :> View m ViewModel
+        :<|> "app" :> QueryParam "search" Search :> View m ViewModel
         :<|> Raw
 
 
@@ -251,9 +231,9 @@ deriving newtype instance FromHttpApiData Search
 instance Routed (SPA m) Route where
   redirect = \case
     REcho t     -> Redirect (Proxy @("app" :> "echo" :> QueryParam "echo" Text :> View m Text)) ($ t)
-    RNew        -> Redirect (Proxy @("app" :> "new" :> View m Frontend)) id
-    RExisting i -> Redirect (Proxy @("app" :> "edit" :> Capture "id" SpaceCraftId :> View m Frontend)) ($ i)
-    RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> View m Frontend)) ($ Just (_value s))
+    RNew        -> Redirect (Proxy @("app" :> "new" :> View m ViewModel)) id
+    RExisting i -> Redirect (Proxy @("app" :> "edit" :> Capture "id" SpaceCraftId :> View m ViewModel)) ($ i)
+    RList s     -> Redirect (Proxy @("app" :> QueryParam "search" Search :> View m ViewModel)) ($ Just (_value s))
 
 
 class CRUDSpaceCraft m where
@@ -299,28 +279,28 @@ instance Tabular [SpaceCraft] where
 
   toCell :: forall m. Effect [SpaceCraft] m => [SpaceCraft] -> Row [SpaceCraft] -> Column [SpaceCraft] -> [Html m [SpaceCraft]]
   toCell _ (SpaceCraftRow SpaceCraft {..}) = \case
-    SKUT          -> present _sku
-    DescriptionT  -> present _description
-    SerialNumberT -> present _serial
-    SquadronT     -> present _squadron
-    OperableT     -> present _operable
+    SKUT          -> present sku
+    DescriptionT  -> present description
+    SerialNumberT -> present serial
+    SquadronT     -> present squadron
+    OperableT     -> present operable
     ToolsT        ->
       [ H.div "btn-group"
         [ H.button [ H.className "btn btn-sm btn-secondary",
-                     H.onClickM_ $ navigate @ (SPA m) (RExisting _identity) ] [ "Edit" ]
+                     H.onClickM_ $ navigate @ (SPA m) (RExisting identity) ] [ "Edit" ]
         , H.button [ H.className "btn btn-sm btn-secondary",
                      H.onClickM $ do
-                       deleteSpaceCraft _identity
-                       return . Prelude.filter $ \x -> x ^. identity /= _identity ] [ "Delete" ]
+                       deleteSpaceCraft identity
+                       return . Prelude.filter $ \x -> x ^. #identity /= identity ] [ "Delete" ]
         ]
       ]
 
   sortTable (SortCol c d) = f $ case c of
-    SKUT          -> g sku
-    DescriptionT  -> g description
-    SerialNumberT -> g serial
-    SquadronT     -> g squadron
-    OperableT     -> g operable
+    SKUT          -> g #sku
+    DescriptionT  -> g #description
+    SerialNumberT -> g #serial
+    SquadronT     -> g #squadron
+    OperableT     -> g #operable
     ToolsT        -> \_ _ -> EQ
     where f = case d of ASC -> id; DESC -> flip
           g l = compare `on` Lens.view l . unRow

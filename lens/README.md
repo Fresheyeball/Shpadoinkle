@@ -8,4 +8,4 @@
 [![Hackage Deps](https://img.shields.io/hackage-deps/v/Shpadoinkle-lens.svg)](http://packdeps.haskellers.com/reverse/Shpadoinkle-lens)
 [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-lens/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-lens)
 
-This module provides lens combinators for working with Shpadoinkle applications.
+## [Documentation ->](https://shpadoinkle.org/lens)

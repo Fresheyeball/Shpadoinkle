@@ -9,43 +9,4 @@
 [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle-router/badge)](https://matrix.hackage.haskell.org/#/package/Shpadoinkle-router)
 
 
-A Servant combinator-based router for Shpadoinkle single-page applications.
-Consuming this router requires that you provide two types:
-
-- Type alias for the recognized URIs
-- ADT representing views that can be rendered
-
-The relationship between these two types is surjective. meaning more than one URI
-may result in the same route. This is important for backward compatibility, so the
-routing schema can evolve while still supporting older schemas.
-
-Because interactions are done through the ADT, application code should be type-safe,
-and route canonically.
-
-```haskell
--- The accepted URIs
-type SPA m
-  =            "echo" :> QueryParam "echo" Text :> View m ()
-  :<|> "v2" :> "echo" :> QueryParam "echo" Text :> View m ()
-  :<|> "home" :> View m ()
-
--- The routes that can be rendered
-data Route
-  = Echo (Maybe Text)
-  | Home
-
--- Surjection from URIs to routes
-routes :: SPA m :>> Route
-routes
-  =    REcho
-  :<|> REcho
-  :<|> Home
-
--- Canonical URI for each route
-instance Routed SPA Route where
-  redirect = \case
-    REcho t -> Redirect (Proxy @("v2" :> "echo" :> QueryParam "echo" Text :> Raw)) ($ t)
-    Home    -> Redirect (Proxy @("home" :> Raw)) id
-```
-
-The above specification can be used on both the client and the server. See the `servant-crud` example for more on how to use this technique.
+## [Documentation ->](https://shpadoinkle.org/packages/router)

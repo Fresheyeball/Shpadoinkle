@@ -27,8 +27,22 @@ let
         docker = import ../examples/servant-crud/docker.nix { inherit compiler chan; };
 
 
-        ghcTools = with haskell.packages.${compiler};
-          [ cabal-install ghcid hpack pkgs.stylish-haskell pkgs.hlint ];
+        eventlog2html = (import (pkgs.fetchFromGitHub {
+          owner  = "mpickering";
+          repo   = "eventlog2html";
+          rev    = "a18ec810328c71122ccc630fccfcea5b48c0e937";
+          sha256 = "064x0y3ix5h22ibl9sn3znhkan6g1prkniv2hgrrssr0c4sgjvhb";
+        }) {}).eventlog2html;
+
+        # eventlog2html = (import ../../eventlog2html {}).eventlog2html;
+
+
+        ghcTools = with haskell.packages.${compiler}; with haskell.lib;
+          [ easy-hls pkgs.stylish-haskell pkgs.hlint]
+          # ++ (if enableLibraryProfiling then [ eventlog2html ] else [])
+          ++ map disableLibraryProfiling
+            ([ cabal-install ghcid ]
+            ++ (if enableLibraryProfiling then [ hp2pretty ghc-prof-flamegraph ] else []));
 
 
         cannibal = if optimizeJS then util.doCannibalize else id;
@@ -37,8 +51,8 @@ let
         easy-hls = pkgs.callPackage (pkgs.fetchFromGitHub {
           owner  = "jkachmar";
           repo   = "easy-hls-nix";
-          rev    = "9338014a947276812e5aa8ea570e48e01909c8b7";
-          sha256 = "1v85p85c68vcazhzx9yzbc06aymy81riz42lxry67gfysdsm9dqh";
+          rev    = "291cf77f512a7121bb6801cde35ee1e8b7287f91";
+          sha256 = "1bvbcp9zwmh53sm16ycp8phhc6vzc72a71sf0bvyjgfbn6zp68bc";
         }) {
           ghcVersions = [ "8.6.5" ];
         };
@@ -63,7 +77,8 @@ let
             Shpadoinkle-isreal
             Shpadoinkle-template;
 
-            Shpadoinkle-examples  = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-examples;
+            Shpadoinkle-examples = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-examples;
+            Shpadoinkle-website  = cannibal haskell.packages.${util.compilerjs}.Shpadoinkle-website;
 
 
         } // (
@@ -91,7 +106,7 @@ let
           inherit withHoogle;
           packages = _: if pack == "all" then attrValues packages else [ packages.${pack} ];
           COMPILER = util.compilerjs;
-          buildInputs = ghcTools ++ [ ack util.cannibalize nixops ];
+          buildInputs = ghcTools ++ [ asciidoctor ack util.cannibalize nixops ];
           shellHook = ''
             cat ${../etc/figlet}
           '';

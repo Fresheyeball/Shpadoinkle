@@ -6,8 +6,33 @@ executable snowman
   main-is:             Main.hs
   build-depends:       base ^>=4.12.0.0
    , Shpadoinkle
-   , Shpadoinkle-backend-pardiff
+   , Shpadoinkle-backend-snabbdom
    , Shpadoinkle-html
    , text
+
   hs-source-dirs:      src
   default-language:    Haskell2010
+
+  ghc-options:
+    -Wall
+    -Werror
+    -Wcompat
+    -fwarn-redundant-constraints
+    -fwarn-incomplete-uni-patterns
+    -fwarn-tabs
+    -fwarn-incomplete-record-updates
+    -fwarn-identities
+
+  ghcjs-options:
+    -Wall
+    -Werror
+    -Wcompat
+    -fno-warn-missing-home-modules
+    -fwarn-redundant-constraints
+    -fwarn-incomplete-uni-patterns
+    -fwarn-tabs
+    -fwarn-incomplete-record-updates
+    -fwarn-identities
+    -O2
+
+

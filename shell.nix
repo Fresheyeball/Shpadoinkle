@@ -1,1 +1,1 @@
-{ isJS ? false }: import ./examples/shell.nix { inherit isJS; }
+(import ./nix/base.nix).shell

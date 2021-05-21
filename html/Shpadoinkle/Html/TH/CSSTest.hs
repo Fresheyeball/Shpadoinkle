@@ -8,6 +8,7 @@ module Shpadoinkle.Html.TH.CSSTest
   , bar
   , foo
   , txt_rt
+  , woah
   ) where
 
 

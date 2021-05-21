@@ -10,6 +10,10 @@
   background: #123233;
 }
 
+.Woah {
+  height: auto;
+}
+
 @media print (min-width:200px){
   .bar{
      width: #EFEFEF;

@@ -363,6 +363,8 @@ patch' parent old new = do
         return new
 
 
+{-# SPECIALIZE interpret' :: forall a. NFData a => (JSM ~> JSM) -> Html (ParDiffT a JSM) a -> ParDiffT a JSM (ParVNode a) #-}
+
 interpret'
   :: forall m a
    . MonadJSM m

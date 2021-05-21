@@ -33,6 +33,7 @@ library
     Shpadoinkle.Html.Utils
     Shpadoinkle.Html.LocalStorage
     Shpadoinkle.Html.TH
+    Shpadoinkle.Html.TH.AssetLink
     Shpadoinkle.Html.TH.CSS
     Shpadoinkle.WebWorker
     Shpadoinkle.Keyboard
@@ -60,9 +61,11 @@ library
     , bytestring
     , compactable
     , containers >=0.6.0 && <0.7
+    , directory
     , ghcjs-dom
     , jsaddle >=0.9.7 && <0.20
     , lens
+    , process
     , raw-strings-qq
     , stm >=2.5.0 && <2.6
     , template-haskell >=2.14.0 && <2.17

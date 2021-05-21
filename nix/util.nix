@@ -19,7 +19,7 @@ rec
     echo "╙──────────────────────────────────────────────────────────────────────"
     echo ""
 
-    ${pkgs.closurecompiler}/bin/closure-compiler -O "SIMPLE" \
+    ${pkgs.closurecompiler}/bin/closure-compiler --compilation_level ADVANCED_OPTIMIZATIONS \
         --jscomp_warning=checkVars \
         --js_output_file=$output \
         --isolation_mode IIFE \
@@ -27,6 +27,7 @@ rec
         --create_source_map $output.map \
         --source_map_format=V3 \
         --source_map_include_content \
+        --compilation_level ADVANCED_OPTIMIZATIONS \
         --warning_level=QUIET \
         $input
   '';

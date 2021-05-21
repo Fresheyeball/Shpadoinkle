@@ -12,7 +12,7 @@
       eth0 = {
         ipv4.addresses = [
           { address="104.131.28.246"; prefixLength=18; }
-{ address="10.17.0.5"; prefixLength=16; }
+          { address="10.17.0.5"; prefixLength=16; }
         ];
         ipv6.addresses = [
           { address="fe80::e8a3:8cff:fe62:6d3b"; prefixLength=64; }
@@ -20,7 +20,7 @@
         ipv4.routes = [ { address = "104.131.0.1"; prefixLength = 32; } ];
         ipv6.routes = [ { address = ""; prefixLength = 32; } ];
       };
-      
+
     };
   };
   services.udev.extraRules = ''

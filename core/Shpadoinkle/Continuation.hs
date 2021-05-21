@@ -57,7 +57,7 @@ import           GHC.Conc                            (retry)
 import           GHCJS.DOM                           (currentWindowUnchecked)
 import           GHCJS.DOM.Window                    (Window)
 import           GHCJS.DOM.WindowOrWorkerGlobalScope (clearTimeout, setTimeout)
-import           Language.Javascript.JSaddle         (MonadJSM, fun)
+import           Language.Javascript.JSaddle         (MonadJSM, fun, JSM)
 import           UnliftIO                            (MonadUnliftIO, TVar,
                                                       UnliftIO, askUnliftIO,
                                                       atomically, liftIO,
@@ -84,7 +84,7 @@ import           UnliftIO.Concurrent                 (forkIO)
 --   (even if it changed since the start of computing the Continuation), and the updates made
 --   so far, although those updates are not committed to the real state until the Continuation
 --   finishes and they are all done atomically together.
-data Continuation m a = Continuation (a -> a, a -> m (Continuation m a))
+data Continuation m a = Continuation (a -> a) (a -> m (Continuation m a))
                       | Rollback (Continuation m a)
                       | Merge (Continuation m a)
                       | Pure (a -> a)
@@ -104,24 +104,26 @@ done = pur id
 
 
 -- | A monadic computation of a pure state updating function can be turned into a Continuation.
+{-# SPECIALIZE impur :: JSM (a -> a) -> Continuation JSM a #-}
 impur :: Applicative m => m (a -> a) -> Continuation m a
-impur m = kleisli . const $ (\f -> Continuation (f, const (pure done))) <$> m
+impur m = kleisli . const $ (\f -> Continuation f (const (pure done))) <$> m
 
 
 -- | This turns a Kleisli arrow for computing a Continuation into the Continuation which
 --   reads the state, runs the monadic computation specified by the arrow on that state,
 --   and runs the resulting Continuation.
 kleisli :: (a -> m (Continuation m a)) -> Continuation m a
-kleisli = Continuation . (id,)
+kleisli = Continuation id
 
 
 -- | A monadic computation can be turned into a Continuation which does not touch the state.
+{-# SPECIALIZE causes :: JSM () -> Continuation JSM a #-}
 causes :: Applicative m => m () -> Continuation m a
 causes m = impur (id <$ m)
 
 
 causedBy :: m (Continuation m a) -> Continuation m a
-causedBy = Continuation . (id,) . const
+causedBy = Continuation id . const
 
 
 -- | A continuation can be forced to write its changes midflight.
@@ -131,13 +133,13 @@ merge = Merge
 
 -- | Sequences two continuations one after the other.
 before :: Applicative m => Continuation m a -> Continuation m a -> Continuation m a
-Pure f `before` Continuation (g, h) = Continuation (g . f, h)
+Pure f `before` Continuation g h = Continuation (g . f) h
 Pure _ `before` Rollback g = g
-Pure f `before` Merge g = Continuation (f, const (pure (Merge g)))
+Pure f `before` Merge g = Continuation f (const (pure (Merge g)))
 Pure f `before` Pure g = Pure (g.f)
 Merge f `before` g = Merge (f `before` g)
 Rollback f `before` g = Rollback (f `before` g)
-Continuation (f, g) `before` h = Continuation . (f,) $ fmap (`before` h) . g
+Continuation f g `before` h = Continuation f $ fmap (`before` h) . g
 
 
 after :: Applicative m => Continuation m a -> Continuation m a -> Continuation m a
@@ -152,12 +154,14 @@ after = flip before
 --   territory, then you should probably be using 'writeUpdate' instead of 'runContinuation',
 --   because 'writeUpdate' will allow each stage of the Continuation to see any extant updates
 --   made to the territory after the Continuation started running.
+{-# SPECIALIZE runContinuation :: Continuation JSM a -> a -> JSM (a -> a) #-}
 runContinuation :: Monad m => Continuation m a -> a -> m (a -> a)
 runContinuation = runContinuation' id
 
 
+{-# SPECIALIZE runContinuation' :: (a -> a) -> Continuation JSM a -> a -> JSM (a -> a) #-}
 runContinuation' :: Monad m => (a -> a) -> Continuation m a -> a -> m (a -> a)
-runContinuation' f (Continuation (g, h)) x = do
+runContinuation' f (Continuation g h) x = do
   i <- h (f x)
   runContinuation' (g.f) i x
 runContinuation' _ (Rollback f) x = runContinuation' id f x
@@ -176,89 +180,105 @@ instance Continuous Continuation where
 
 
 -- | Given a natural transformation, change a Continuation's underlying functor.
+{-# SPECIALIZE hoist :: (forall b. JSM b -> n b) -> Continuation JSM a -> Continuation n a #-}
 hoist :: Functor m => (forall b. m b -> n b) -> Continuation m a -> Continuation n a
 hoist _ (Pure f)              = Pure f
 hoist f (Rollback r)          = Rollback (hoist f r)
 hoist f (Merge g)             = Merge (hoist f g)
-hoist f (Continuation (g, h)) = Continuation . (g,) $ \x -> f $ hoist f <$> h x
+hoist f (Continuation g h) = Continuation g $ \x -> f $ hoist f <$> h x
 
 
 -- | Apply a lens inside a Continuation to change the Continuation's type.
+{-# SPECIALIZE liftC' :: (a -> b -> b) -> (b -> a) -> Continuation JSM a -> Continuation JSM b #-}
 liftC' :: Functor m => (a -> b -> b) -> (b -> a) -> Continuation m a -> Continuation m b
 liftC' f g (Pure h)              = Pure (\x -> f (h (g x)) x)
 liftC' f g (Rollback r)          = Rollback (liftC' f g r)
 liftC' f g (Merge h)             = Merge (liftC' f g h)
-liftC' f g (Continuation (h, i)) = Continuation (\x -> f (h (g x)) x, \x -> liftC' f g <$> i (g x))
+liftC' f g (Continuation h i) = Continuation (\x -> f (h (g x)) x) (\x -> liftC' f g <$> i (g x))
 
 
 -- | Apply a traversal inside a Continuation to change the Continuation's type.
+{-# SPECIALIZE liftCMay' :: (a -> b -> b) -> (b -> Maybe a) -> Continuation JSM a -> Continuation JSM b #-}
 liftCMay' :: Applicative m => (a -> b -> b) -> (b -> Maybe a) -> Continuation m a -> Continuation m b
 liftCMay' f g (Pure h)     = Pure $ \x -> maybe x (flip f x . h) $ g x
 liftCMay' f g (Rollback r) = Rollback (liftCMay' f g r)
 liftCMay' f g (Merge h)    = Merge (liftCMay' f g h)
-liftCMay' f g (Continuation (h, i)) =
-  Continuation (\x -> maybe x (flip f x . h) $ g x, maybe (pure done) (fmap (liftCMay' f g) . i) . g)
+liftCMay' f g (Continuation h i) =
+  Continuation (\x -> maybe x (flip f x . h) $ g x) ( maybe (pure done) (fmap (liftCMay' f g) . i) . g)
 
 
 -- | Given a lens, change the value type of @f@ by applying the lens in the Continuations inside @f@.
+{-# SPECIALIZE liftC :: Functor m => (a -> b -> b) -> (b -> a) -> Continuation m a -> Continuation m b #-}
 liftC :: Functor m => Continuous f => (a -> b -> b) -> (b -> a) -> f m a -> f m b
 liftC f g = mapC (liftC' f g)
 
 
 -- | Given a traversal, change the value of @f@ by apply the traversal in the Continuations inside @f@.
+{-# SPECIALIZE liftCMay :: Applicative m => (a -> b -> b) -> (b -> Maybe a) -> Continuation m a -> Continuation m b #-}
 liftCMay :: Applicative m => Continuous f => (a -> b -> b) -> (b -> Maybe a) -> f m a -> f m b
 liftCMay f g = mapC (liftCMay' f g)
 
 
 -- | Change a void continuation into any other type of Continuation.
+{-# SPECIALIZE voidC' :: Continuation JSM () -> Continuation JSM a #-}
 voidC' :: Monad m => Continuation m () -> Continuation m a
-voidC' f = Continuation . (id,) $ \_ -> do
+voidC' f = Continuation id $ \_ -> do
   _ <- runContinuation f ()
   return done
 
 
 -- | Change the type of the f-embedded void Continuations into any other type of Continuation.
+{-# SPECIALIZE voidC :: Monad m => Continuation m () -> Continuation m a #-}
+{-# SPECIALIZE voidC :: Continuation JSM () -> Continuation JSM a #-}
 voidC :: Monad m => Continuous f => f m () -> f m a
 voidC = mapC voidC'
 
 
 -- | Forget about the Continuations.
+{-# SPECIALIZE forgetC :: Continuation m a -> Continuation m b #-}
+{-# SPECIALIZE forgetC :: Continuation JSM a -> Continuation JSM b #-}
 forgetC :: Continuous f => f m a -> f m b
 forgetC = mapC (const done)
 
 
 --- | Change the type of a Continuation by applying it to the left coordinate of a tuple.
+{-# SPECIALIZE leftC' :: Continuation JSM a -> Continuation JSM (a,b) #-}
 leftC' :: Functor m => Continuation m a -> Continuation m (a,b)
 leftC' = liftC' (\x (_,y) -> (x,y)) fst
 
 
 -- | Change the type of @f@ by applying the Continuations inside @f@ to the left coordinate of a tuple.
+{-# SPECIALIZE leftC :: Continuation JSM a -> Continuation JSM (a,b) #-}
 leftC :: Functor m => Continuous f => f m a -> f m (a,b)
 leftC = mapC leftC'
 
 
 -- | Change the type of a Continuation by applying it to the right coordinate of a tuple.
+{-# SPECIALIZE rightC' :: Continuation JSM b -> Continuation JSM (a,b) #-}
 rightC' :: Functor m => Continuation m b -> Continuation m (a,b)
 rightC' = liftC' (\y (x,_) -> (x,y)) snd
 
 
 -- | Change the value type of @f@ by applying the Continuations inside @f@ to the right coordinate of a tuple.
+{-# SPECIALIZE rightC :: Continuation JSM b -> Continuation JSM (a,b) #-}
 rightC :: Functor m => Continuous f => f m b -> f m (a,b)
 rightC = mapC rightC'
 
 
 -- | Transform a Continuation to work on 'Maybe's. If it encounters 'Nothing', then it cancels itself.
+{-# SPECIALIZE maybeC' :: Continuation JSM a -> Continuation JSM (Maybe a) #-}
 maybeC' :: Applicative m => Continuation m a -> Continuation m (Maybe a)
 maybeC' (Pure f)              = Pure (fmap f)
 maybeC' (Rollback r)          = Rollback (maybeC' r)
 maybeC' (Merge f)             = Merge (maybeC' f)
-maybeC' (Continuation (f, g)) = Continuation . (fmap f,) $
+maybeC' (Continuation f g) = Continuation (fmap f) $
   \case
     Just x  -> maybeC' <$> g x
     Nothing -> pure (Rollback done)
 
 
 -- | Change the value type of @f@ by transforming the Continuations inside @f@ to work on 'Maybe's using maybeC'.
+{-# SPECIALIZE maybeC' :: Continuation JSM a -> Continuation JSM (Maybe a) #-}
 maybeC :: Applicative m => Continuous f => f m a -> f m (Maybe a)
 maybeC = mapC maybeC'
 
@@ -273,14 +293,16 @@ comaybe f x = fromMaybe x . f $ Just x
 --   The resulting Continuation acts like the input Continuation except that
 --   when the input Continuation would replace the current value with 'Nothing',
 --   instead the current value is retained.
+{-# SPECIALIZE comaybeC' :: Continuation JSM (Maybe a) -> Continuation JSM a #-}
 comaybeC' :: Functor m => Continuation m (Maybe a) -> Continuation m a
 comaybeC' (Pure f)             = Pure (comaybe f)
 comaybeC' (Rollback r)         = Rollback (comaybeC' r)
 comaybeC' (Merge f)            = Merge (comaybeC' f)
-comaybeC' (Continuation (f,g)) = Continuation (comaybe f, fmap comaybeC' . g . Just)
+comaybeC' (Continuation f g) = Continuation (comaybe f) ( fmap comaybeC' . g . Just)
 
 
 -- | Transform the Continuations inside @f@ using comaybeC'.
+{-# SPECIALIZE comaybeC :: Continuation JSM (Maybe a) -> Continuation JSM a #-}
 comaybeC :: Functor m => Continuous f => f m (Maybe a) -> f m a
 comaybeC = mapC comaybeC'
 
@@ -303,21 +325,22 @@ mapRight f (Right x) = Right (f x)
 --   If the state is in a different Either-branch when the Continuation
 --   completes than it was when the Continuation started, then the
 --   coproduct Continuation will have no effect on the state.
+{-# SPECIALIZE eitherC' :: Continuation JSM a -> Continuation JSM b -> Continuation JSM (Either a b) #-}
 eitherC' :: Applicative m => Continuation m a -> Continuation m b -> Continuation m (Either a b)
-eitherC' f g = Continuation . (id,) $ \case
+eitherC' f g = Continuation id $ \case
   Left x -> case f of
     Pure h -> pure (Pure (mapLeft h))
     Rollback r -> pure . Rollback $ eitherC' r done
     Merge h -> pure . Merge $ eitherC' h done
-    Continuation (h, i) ->
-      (\j -> Continuation (mapLeft h, const . pure $ eitherC' j (Rollback done)))
+    Continuation h i ->
+      (\j -> Continuation (mapLeft h) ( const . pure $ eitherC' j (Rollback done)))
         <$> i x
   Right x -> case g of
     Pure h -> pure (Pure (mapRight h))
     Rollback r -> pure . Rollback $ eitherC' done r
     Merge h -> pure . Merge $ eitherC' done h
-    Continuation (h, i) ->
-      (\j -> Continuation (mapRight h, const . pure $ eitherC' (Rollback done) j))
+    Continuation h i ->
+      (\j -> Continuation (mapRight h) (const . pure $ eitherC' (Rollback done) j))
         <$> i x
 
 
@@ -326,14 +349,16 @@ eitherC' f g = Continuation . (id,) $ \case
 --   the types inside the coproduct. The Continuations in the resulting
 --   structure will only have effect on the state while it is in the branch
 --   of the coproduct selected by the input value used to create the structure.
+{-# SPECIALIZE eitherC :: (a -> Continuation JSM a) -> (b -> Continuation JSM b) -> Either a b -> Continuation JSM (Either a b) #-}
 eitherC :: Applicative m => Continuous f => (a -> f m a) -> (b -> f m b) -> Either a b -> f m (Either a b)
 eitherC l _ (Left x)  = mapC (\c -> eitherC' c (pur id)) (l x)
 eitherC _ r (Right x) = mapC (eitherC' (pur id)) (r x)
 
 
 -- | Transform the type of a Continuation using an isomorphism.
+{-# SPECIALIZE contIso :: (a -> b) -> (b -> a) -> Continuation JSM a -> Continuation JSM b #-}
 contIso :: Functor m => (a -> b) -> (b -> a) -> Continuation m a -> Continuation m b
-contIso f g (Continuation (h, i)) = Continuation (f.h.g, fmap (contIso f g) . i . g)
+contIso f g (Continuation h i) = Continuation (f.h.g) (fmap (contIso f g) . i . g)
 contIso f g (Rollback h) = Rollback (contIso f g h)
 contIso f g (Merge h)    = Merge (contIso f g h)
 contIso f g (Pure h)     = Pure (f.h.g)
@@ -344,7 +369,7 @@ contIso f g (Pure h)     = Pure (f.h.g)
 instance Applicative m => F.Functor EndoIso EndoIso (Continuation m) where
   map :: EndoIso a b -> EndoIso  (Continuation m a) (Continuation m b)
   map (EndoIso f g h) =
-    EndoIso (Continuation . (f,) . const . pure) (contIso g h) (contIso h g)
+    EndoIso (Continuation f . const . pure) (contIso g h) (contIso h g)
 
 
 -- | You can combine multiple Continuations homogeneously using the 'Monoid' typeclass
@@ -354,17 +379,17 @@ instance Applicative m => F.Functor EndoIso EndoIso (Continuation m) where
 --   all of them are done. A merge in any one of the branches will cause all of
 --   the changes that branch can see to be merged.
 instance Applicative m => Semigroup (Continuation m a) where
-  (Continuation (f, g)) <> (Continuation (h, i)) =
-    Continuation (f.h, \x -> (<>) <$> g x <*> i x)
-  (Continuation (f, g)) <> (Rollback h) =
-    Rollback (Continuation (f, fmap (<> h) . g))
-  (Rollback h) <> (Continuation (_, g)) =
-    Rollback (Continuation (id, fmap (h <>) . g))
+  (Continuation f g) <> (Continuation h i) =
+    Continuation (f.h) (\x -> (<>) <$> g x <*> i x)
+  (Continuation f g) <> (Rollback h) =
+    Rollback (Continuation f (fmap (<> h) . g))
+  (Rollback h) <> (Continuation _ g) =
+    Rollback (Continuation id (fmap (h <>) . g))
   (Rollback f) <> (Rollback g) = Rollback (f <> g)
   (Pure f) <> (Pure g) = Pure (f.g)
-  (Pure f) <> (Continuation (g,h)) = Continuation (f.g,h)
-  (Continuation (f,g)) <> (Pure h) = Continuation (f.h,g)
-  (Pure f) <> (Rollback g) = Continuation (f, const (pure (Rollback g)))
+  (Pure f) <> (Continuation g h) = Continuation (f.g) h
+  (Continuation f g) <> (Pure h) = Continuation (f.h) g
+  (Pure f) <> (Rollback g) = Continuation f (const (pure (Rollback g)))
   (Rollback f) <> (Pure _) = Rollback f
   (Merge f) <> g = Merge (f <> g)
   f <> (Merge g) = Merge (f <> g)
@@ -376,12 +401,13 @@ instance Applicative m => Monoid (Continuation m a) where
   mempty = done
 
 
+{-# SPECIALIZE writeUpdate' :: NFData a => (a -> a) -> TVar a -> (a -> JSM (Continuation JSM a)) -> JSM () #-}
 writeUpdate' :: MonadUnliftIO m => NFData a => (a -> a) -> TVar a -> (a -> m (Continuation m a)) -> m ()
 writeUpdate' h model f = do
   i <- readTVarIO model
   m <- f (h i)
   case m of
-    Continuation (g,gs) -> writeUpdate' (g . h) model gs
+    Continuation g gs -> writeUpdate' (g . h) model gs
     Pure g -> atomically (writeTVar model . g . h =<< readTVar model)
     Merge g -> do
       atomically $ writeTVar model . h =<< readTVar model
@@ -392,16 +418,18 @@ writeUpdate' h model f = do
 -- | Run a Continuation on a state variable. This may update the state.
 --   This is a synchronous, non-blocking operation for pure updates,
 --   and an asynchronous, non-blocking operation for impure updates.
+{-# SPECIALIZE writeUpdate :: NFData a => TVar a -> Continuation JSM a -> JSM () #-}
 writeUpdate :: MonadUnliftIO m => NFData a => TVar a -> Continuation m a -> m ()
 writeUpdate model = \case
-  Continuation (f,g) -> void . forkIO $ writeUpdate' f model g
-  Pure f             -> atomically (writeTVar model . f =<< readTVar model)
-  Merge f            -> writeUpdate model f
-  Rollback f         -> writeUpdate model f
+  Continuation f g -> void . forkIO $ writeUpdate' f model g
+  Pure f           -> atomically (writeTVar model . f =<< readTVar model)
+  Merge f          -> writeUpdate model f
+  Rollback f       -> writeUpdate model f
 
 
 -- | Execute a fold by watching a state variable and executing the next
 --   step of the fold each time it changes.
+{-# SPECIALIZE shouldUpdate :: forall a b. Eq a => (b -> a -> JSM b) -> b -> TVar a -> JSM () #-}
 shouldUpdate :: forall a b m. MonadJSM m => MonadUnliftIO m => Eq a => (b -> a -> m b) -> b -> TVar a -> m ()
 shouldUpdate sun prev currentModel = do
   -- get the current state of the model
@@ -457,6 +485,7 @@ newtype ContinuationT model m a = ContinuationT
 
 -- | This adds the given Continuation to the Continuation being built up in the monadic context
 --   where this function is invoked.
+{-# SPECIALIZE commit :: Continuation JSM model -> ContinuationT model JSM () #-}
 commit :: Applicative m => Continuation m model -> ContinuationT model m ()
 commit = ContinuationT . pure . ((),)
 
@@ -464,6 +493,7 @@ commit = ContinuationT . pure . ((),)
 -- | This turns a monadic computation to build up a Continuation into the Continuation which it
 --   represents. The actions inside the monadic computation will be run when the Continuation
 --   is run. The return value of the monadic computation will be discarded.
+{-# SPECIALIZE voidRunContinuationT :: ContinuationT model JSM a -> Continuation JSM model #-}
 voidRunContinuationT :: Functor m => ContinuationT model m a -> Continuation m model
 voidRunContinuationT m = kleisli . const $ snd <$> runContinuationT m
 
@@ -473,6 +503,7 @@ voidRunContinuationT m = kleisli . const $ snd <$> runContinuationT m
 --   into a Continuation which reads the current state of the model,
 --   runs the resulting monadic computation, and runs the Continuation
 --   resulting from that computation.
+{-# SPECIALIZE kleisliT :: (model -> ContinuationT model JSM a) -> Continuation JSM model #-}
 kleisliT :: Applicative m => (model -> ContinuationT model m a) -> Continuation m model
 kleisliT f = kleisli (pure . voidRunContinuationT . f)
 

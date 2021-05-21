@@ -1,0 +1,126 @@
+:relfilesuffix: /
+:relfileprefix: /
+:gitlab: https://gitlab.com/platonic/shpadoinkle/-/tree/master/
+:hackage: https://hackage.haskell.org/package/Shpadoinkle
+:hackagebadge: https://img.shields.io/hackage/v/Shpadoinkle
+:deps: http://packdeps.haskellers.com/feed?needle=Shpadoinkle
+:depsbadge: https://img.shields.io/hackage-deps/v/Shpadoinkle
+:matrix: https://matrix.hackage.haskell.org/#/package/Shpadoinkle
+:matrixbadge: https://matrix.hackage.haskell.org/api/v2/packages/Shpadoinkle
+:haddock: https://shpadoinkle.org/
+:icons: font
+
+Shpadoinkle is segregated into several packages that compose together or can be used separately.
+
+[TIP]
+**Core** and a **Backend** are all that is needed to run a application.
+
+[%header]
+|===
+| Name/Intro | Gitlab | Haddock | Hackage | Dependencies | Availablity
+
+| xref:packages/core.adoc[Core]
+| {gitlab}core[icon:gitlab[] Gitlab]
+| {haddock}core[Haddock]
+| {hackage}[image:{hackagebadge}.svg[Hackage]]
+| {deps}[image:{depsbadge}.svg[Deps]]
+| {matrix}[image:{matrixbadge}/badge[CI]]
+
+| xref:packages/backends.adoc[Snabbdom Backend]
+| {gitlab}backends/snabbdom[icon:gitlab[] Gitlab]
+| {haddock}backend-snabbdom[Haddock]
+| {hackage}-backend-snabbdom[image:{hackagebadge}-backend-snabbdom.svg[Hackage]]
+| {deps}-backend-snabbdom[image:{depsbadge}-backend-snabbdom.svg[Deps]]
+| {matrix}-backend-snabbdom[image:{matrixbadge}-backend-snabbdom/badge[CI]]
+
+| xref:packages/backends.adoc[Static Backend]
+| {gitlab}backends/static[icon:gitlab[] Gitlab]
+| {haddock}backend-static[Haddock]
+| {hackage}-backend-static[image:{hackagebadge}-backend-static.svg[Hackage]]
+| {deps}-backend-static[image:{depsbadge}-backend-static.svg[Deps]]
+| {matrix}-backend-static[image:{matrixbadge}-backend-static/badge[CI]]
+
+| xref:packages/backends.adoc[ParDiff Backend]
+| {gitlab}backends/pardiff[icon:gitlab[] Gitlab]
+| {haddock}backend-pardiff[Haddock]
+| {hackage}-backend-pardiff[image:{hackagebadge}-backend-pardiff[Hackage]]
+| {deps}-backend-pardiff[image:{depsbadge}-backend-pardiff.svg[Deps]]
+| {matrix}-backend-pardiff[image:{matrixbadge}-backend-pardiff/badge[CI]]
+
+| xref:packages/console.adoc[Console]
+| {gitlab}console[icon:gitlab[] Gitlab]
+| {haddock}console[Haddock]
+| {hackage}-console[image:{hackagebadge}-console[Hackage]]
+| {deps}-console[image:{depsbadge}-console.svg[Deps]]
+| {matrix}-console[image:{matrixbadge}-console/badge[CI]]
+
+| Developer Tools
+| {gitlab}developer-tools[icon:gitlab[] Gitlab]
+| {haddock}developer-tools[Haddock]
+| {hackage}-developer-tools[image:{hackagebadge}-developer-tools[Hackage]]
+| {deps}-developer-tools[image:{depsbadge}-developer-tools[Haddock]]
+| {matrix}-developer-tools[image:{matrixbadge}-developer-tools/badge[CI]]
+
+| xref:packages/disembodied.adoc[Disembodied]
+| {gitlab}disembodied[icon:gitlab[] Gitlab]
+| {haddock}disembodied[Haddock]
+| {hackage}-disembodied[image:{hackagebadge}-disembodied[Hackage]]
+| {deps}-disembodied[image:{depsbadge}-disembodied[Haddock]]
+| {matrix}-disembodied[image:{matrixbadge}-disembodied/badge[CI]]
+
+| xref:packages/lens.adoc[Lens]
+| {gitlab}lens[icon:gitlab[] Gitlab]
+| {haddock}lens[Haddock]
+| {hackage}-lens[image:{hackagebadge}-lens[Hackage]]
+| {deps}-lens[image:{depsbadge}-lens[Haddock]]
+| {matrix}-lens[image:{matrixbadge}-lens/badge[CI]]
+
+| xref:packages/html.adoc[Html]
+| {gitlab}html[icon:gitlab[] Gitlab]
+| {haddock}html[Haddock]
+| {hackage}-html[image:{hackagebadge}-html[Hackage]]
+| {deps}-html[image:{depsbadge}-html[Haddock]]
+| {matrix}-html[image:{matrixbadge}-html/badge[CI]]
+
+| xref:packages/router.adoc[Router]
+| {gitlab}router[icon:gitlab[] Gitlab]
+| {haddock}router[Haddock]
+| {hackage}-router[image:{hackagebadge}-router[Hackage]]
+| {deps}-router[image:{depsbadge}-router[Haddock]]
+| {matrix}-router[image:{matrixbadge}-router/badge[CI]]
+
+| xref:packages/widgets.adoc[Widgets]
+| {gitlab}widgets[icon:gitlab[] Gitlab]
+| {haddock}widgets[Haddock]
+| {hackage}-widgets[image:{hackagebadge}-widgets[Hackage]]
+| {deps}-widgets[image:{depsbadge}-widgets[Haddock]]
+| {matrix}-widgets[image:{matrixbadge}-widgets/badge[CI]]
+
+| Streaming
+| {gitlab}streaming[icon:gitlab[] Gitlab]
+| {haddock}streaming[Haddock]
+| {hackage}-streaming[image:{hackagebadge}-streaming[Hackage]]
+| {deps}-streaming[image:{depsbadge}-streaming[Haddock]]
+| {matrix}-streaming[image:{matrixbadge}-streaming/badge[CI]]
+
+| Template
+| {gitlab}template[icon:gitlab[] Gitlab]
+| {haddock}template[Haddock]
+| {hackage}-template[image:{hackagebadge}-template[Hackage]]
+| {deps}-template[image:{depsbadge}-template[Haddock]]
+| {matrix}-template[image:{matrixbadge}-template/badge[CI]]
+
+| Examples
+| {gitlab}examples[icon:gitlab[] Gitlab]
+| N/A
+| N/A
+| N/A
+| N/A
+
+| Isreal
+| {gitlab}isreal[icon:gitlab[] Gitlab]
+| {haddock}isreal[Haddock]
+| {hackage}-isreal[image:{hackagebadge}-isreal[Hackage]]
+| {deps}-isreal[image:{depsbadge}-isreal[Haddock]]
+| {matrix}-isreal[image:{matrixbadge}-isreal/badge[CI]]
+|===

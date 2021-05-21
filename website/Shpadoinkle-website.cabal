@@ -1,0 +1,194 @@
+cabal-version: 2.2
+name:          Shpadoinkle-website
+version:       0.0.0.1
+category:      Web
+author:        Isaac Shapira
+maintainer:    fresheyeball@protonmail.com
+license:       GPL-3.0-or-later
+license-file:  LICENSE
+build-type:    Simple
+extra-source-files:
+  README.md
+synopsis:
+  Shpadoinkle website
+description:
+  Website for Shpadoinkle, includeing splash pages, sandboxes, and documentation.
+
+
+common ghc-options
+  ghc-options:
+    -Wall
+    -Wcompat
+    -fwarn-redundant-constraints
+    -fwarn-incomplete-uni-patterns
+    -fwarn-tabs
+    -fwarn-incomplete-record-updates
+    -fwarn-identities
+
+
+common ghcjs-options
+  ghcjs-options:
+    -Wall
+    -Wcompat
+    -fno-warn-missing-home-modules
+    -fwarn-redundant-constraints
+    -fwarn-incomplete-uni-patterns
+    -fwarn-tabs
+    -fwarn-incomplete-record-updates
+    -fwarn-identities
+    -O2
+
+
+executable disembodied
+  import: ghc-options, ghcjs-options
+
+  main-is: Shpadoinkle/Website/Disembodied.hs
+
+  other-modules:
+    Shpadoinkle.Website.Style
+    Shpadoinkle.Website.Page.Home
+    Shpadoinkle.Website.Page.Documentation
+    Shpadoinkle.Website.Page.FourOhFour
+    Shpadoinkle.Website.Partials.Template
+    Shpadoinkle.Website.Types.Effects.Example
+    Shpadoinkle.Website.Types.Effects.Hooglable
+    Shpadoinkle.Website.Types.Effects.Swan
+    Shpadoinkle.Website.Types.ViewModel
+    Shpadoinkle.Website.Types.PageModel
+    Shpadoinkle.Website.Types.CurrentYear
+    Shpadoinkle.Website.Types.Home
+    Shpadoinkle.Website.View
+    Shpadoinkle.Website.Component.LiveExample
+    Shpadoinkle.Website.Partials.Footer
+    Shpadoinkle.Website.Partials.Nav
+    Shpadoinkle.Website.Partials.Social
+    Shpadoinkle.Website.Types.Example
+    Shpadoinkle.Website.Types.ExampleState
+    Shpadoinkle.Website.Types.Hoogle
+    Shpadoinkle.Website.Types.Hoogle.Target
+    Shpadoinkle.Website.Types.Nav
+    Shpadoinkle.Website.Types.Route.GettingStarted
+    Shpadoinkle.Website.Types.Route.Packages
+    Shpadoinkle.Website.Types.Route.Tutorial
+    Shpadoinkle.Website.Types.Route
+    Shpadoinkle.Website.Types.SPA
+    Shpadoinkle.Website.Types.Social
+
+  hs-source-dirs: ./.
+
+  build-depends:
+      Shpadoinkle
+    , Shpadoinkle-backend-snabbdom
+    , Shpadoinkle-console
+    , Shpadoinkle-disembodied
+    , Shpadoinkle-html
+    , Shpadoinkle-isreal
+    , Shpadoinkle-lens
+    , Shpadoinkle-router
+    , Shpadoinkle-template
+    , Shpadoinkle-widgets
+    , aeson
+    , base >=4.12.0 && <4.16
+    , bytestring
+    , exceptions
+    , file-embed
+    , generic-lens
+    , generic-monoid
+    , ghcjs-dom
+    , jsaddle
+    , lens
+    , mtl
+    , random
+    , network-uri
+    , servant
+    , servant-server
+    , stm
+    , text >=1.2.3 && <1.3
+    , time
+    , unliftio
+
+  if impl(ghcjs)
+    buildable: False
+  else
+    buildable: True
+
+  default-language: Haskell2010
+
+
+executable run
+  import: ghc-options, ghcjs-options
+
+  main-is: Shpadoinkle/Website/Run.hs
+
+  other-modules:
+    Shpadoinkle.Website.Component.LiveExample
+    Shpadoinkle.Website.Partials.Template
+    Shpadoinkle.Website.Partials.Nav
+    Shpadoinkle.Website.Partials.Footer
+    Shpadoinkle.Website.Partials.Social
+    Shpadoinkle.Website.Page.Home
+    Shpadoinkle.Website.Page.Documentation
+    Shpadoinkle.Website.Page.FourOhFour
+    Shpadoinkle.Website.Types.CurrentYear
+    Shpadoinkle.Website.Types.Nav
+    Shpadoinkle.Website.Types.Home
+    Shpadoinkle.Website.Types.Hoogle
+    Shpadoinkle.Website.Types.Hoogle.API
+    Shpadoinkle.Website.Types.Hoogle.Target
+    Shpadoinkle.Website.Types.Example
+    Shpadoinkle.Website.Types.ViewModel
+    Shpadoinkle.Website.Types.PageModel
+    Shpadoinkle.Website.Types.ExampleState
+    Shpadoinkle.Website.Types.Effects.Example
+    Shpadoinkle.Website.Types.Effects.Hooglable
+    Shpadoinkle.Website.Types.Effects.Swan
+    Shpadoinkle.Website.Types.Route.GettingStarted
+    Shpadoinkle.Website.Types.Route.Tutorial
+    Shpadoinkle.Website.Types.Route.Packages
+    Shpadoinkle.Website.Types.Route
+    Shpadoinkle.Website.Types.SPA
+    Shpadoinkle.Website.Types.Social
+    Shpadoinkle.Website.Style
+    Shpadoinkle.Website.View
+
+  hs-source-dirs: ./.
+
+  build-depends:
+      Shpadoinkle
+    , Shpadoinkle-backend-snabbdom
+    , Shpadoinkle-console
+    , Shpadoinkle-developer-tools
+    , Shpadoinkle-html
+    , Shpadoinkle-isreal
+    , Shpadoinkle-lens
+    , Shpadoinkle-router
+    , Shpadoinkle-template
+    , Shpadoinkle-widgets
+    , aeson
+    , base >=4.12.0 && <4.16
+    , bytestring
+    , exceptions
+    , file-embed
+    , generic-lens
+    , generic-monoid
+    , ghcjs-dom
+    , jsaddle
+    , lens
+    , mtl
+    , network-uri
+    , random
+    , servant
+    , stm
+    , text >=1.2.3 && <1.3
+    , time
+    , unliftio
+
+  if impl(ghcjs)
+    build-depends:
+        servant-client-js
+  else
+    build-depends:
+        servant-client
+      , servant-server
+
+  default-language: Haskell2010

@@ -37,47 +37,7 @@ common ghc-options
     -fwarn-identities
 
 
-library
-  import: ghc-options
-
-  exposed-modules:
-    Shpadoinkle.DeveloperTools
-
-  other-modules:
-    Main
-
-  hs-source-dirs: ./.
-
-  build-depends:
-      Shpadoinkle
-    , Shpadoinkle-backend-pardiff
-    , Shpadoinkle-html
-    , base >=4.12.0 && <4.16
-    , containers
-    , jsaddle
-    , lens
-    , pretty-show
-    , stm
-    , text
-    , time
-    , unliftio
-
-  if !flag(development)
-    cpp-options: -DDEVELOPMENT
-
-  default-language: Haskell2010
-
-
-executable devtools
-  import: ghc-options
-
-  main-is: Main.hs
-
-  other-modules:
-    Shpadoinkle.DeveloperTools
-
-  hs-source-dirs: ./.
-
+common ghcjs-options
   ghcjs-options:
     -Wall
     -Wcompat
@@ -87,9 +47,10 @@ executable devtools
     -fwarn-tabs
     -fwarn-incomplete-record-updates
     -fwarn-identities
-    -dedupe
     -O2
 
+
+common build-depends
   build-depends:
       Shpadoinkle
     , Shpadoinkle-backend-pardiff
@@ -103,5 +64,32 @@ executable devtools
     , text
     , time
     , unliftio
+
+library
+  import: ghc-options, ghcjs-options, build-depends
+
+  exposed-modules:
+    Shpadoinkle.DeveloperTools
+
+  other-modules:
+    Main
+
+  hs-source-dirs: ./.
+
+  if flag(development)
+    cpp-options: -DDEVELOPMENT
+
+  default-language: Haskell2010
+
+
+executable devtools
+  import: ghc-options, ghcjs-options, build-depends
+
+  main-is: Main.hs
+
+  other-modules:
+    Shpadoinkle.DeveloperTools
+
+  hs-source-dirs: ./.
 
   default-language: Haskell2010
