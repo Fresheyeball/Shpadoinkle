@@ -26,6 +26,7 @@ import           GHCJS.DOM                               (currentDocumentUncheck
                                                           currentWindowUnchecked)
 import           GHCJS.DOM.Document                      (createElement)
 import           GHCJS.DOM.Element                       (setId)
+import           GHCJS.DOM.NonElementParentNode          (getElementById)
 import           GHCJS.DOM.RequestAnimationFrameCallback (RequestAnimationFrameCallback,
                                                           newRequestAnimationFrameCallback)
 import           GHCJS.DOM.Window                        (Window,
@@ -153,16 +154,21 @@ animate win model = newRequestAnimationFrameCallback $ \d -> () <$ do
 
 play :: JSM RawNode
 play = do
-  win <- currentWindowUnchecked
+  let gameId = "game"
   doc <- currentDocumentUnchecked
-  elm <- createElement doc "div"
-  setId elm "game"
-  model <- newTVarIO $ Game 24 0 Idle FaceRight
-  _ <- requestAnimationFrame win =<< animate win model
-  raw <- RawNode <$> toJSVal elm
-  _ <- forkIO $ threadDelay 1
-    >> shpadoinkle id runSnabbdom model game (pure raw)
-  return raw
+  isSubsequent <- traverse toJSVal =<< getElementById doc gameId
+  case isSubsequent of
+    Just raw -> return $ RawNode raw
+    Nothing -> do
+      win <- currentWindowUnchecked
+      elm <- createElement doc "div"
+      setId elm gameId
+      model <- newTVarIO $ Game 24 0 Idle FaceRight
+      _ <- requestAnimationFrame win =<< animate win model
+      raw <- RawNode <$> toJSVal elm
+      _ <- forkIO $ threadDelay 1
+        >> shpadoinkle id runSnabbdom model game (pure raw)
+      return raw
 
 
 view :: Html m a
