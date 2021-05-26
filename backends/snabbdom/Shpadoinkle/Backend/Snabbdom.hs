@@ -32,6 +32,9 @@ module Shpadoinkle.Backend.Snabbdom
 
 
 import           Control.Category            ((.))
+#ifdef ghcjs_HOST_OS
+import           Control.Monad               (join)
+#endif
 import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
 import           Control.Monad.Catch         (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.Cont          (MonadCont)
@@ -52,8 +55,21 @@ import           GHCJS.DOM                   (currentDocumentUnchecked)
 import           GHCJS.DOM.Document          (createElement, getBodyUnsafe)
 import           GHCJS.DOM.Element           (setAttribute, setInnerHTML)
 import           GHCJS.DOM.Node              (appendChild)
-import           Language.Javascript.JSaddle hiding (JSM, MonadJSM, liftJSM,
-                                              (#))
+#ifndef ghcjs_HOST_OS
+import           Language.Javascript.JSaddle (FromJSVal (..), JSVal, Object,
+                                              ToJSVal (..), create, eval, fun,
+                                              function, jsTrue, jsg1, jsg2,
+                                              jsg3, toJSBool, toJSString,
+                                              unsafeGetProp, unsafeSetProp,
+                                              valMakeText, valToObject)
+#else
+import           Language.Javascript.JSaddle (FromJSVal (..), JSVal, Object,
+                                              ToJSVal (..), create, eval, fun,
+                                              function, jsTrue, toJSBool,
+                                              toJSString, unsafeGetProp,
+                                              unsafeSetProp, valMakeText,
+                                              valToObject)
+#endif
 import           Prelude                     hiding (id, words, (.))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
@@ -140,6 +156,15 @@ traverseWithKey_ f = go
 {-# SPECIALIZE traverseWithKey_ :: (k -> a -> JSM ()) -> Map k a -> JSM () #-}
 
 
+insertHook :: Text -> JSVal -> Object -> JSM ()
+#ifndef ghcjs_HOST_OS
+insertHook t f' hooksObj = void $ jsg3 "insertHook" t f' hooksObj
+#else
+insertHook t f' hooksObj = join $ insertHook' <$> toJSVal t <*> pure f' <*> toJSVal hooksObj
+foreign import javascript unsafe "window['insertHook']($1,$2,$3)" insertHook' :: JSVal -> JSVal -> JSVal -> JSM ()
+#endif
+
+
 {-# SPECIALIZE props :: NFData a => (JSM ~> JSM) -> TVar a -> Props (SnabbdomT a JSM) a -> JSM Object #-}
 props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (SnabbdomT a m) a -> JSM Object
 props toJSM i (Props xs) = do
@@ -156,17 +181,17 @@ props toJSM i (Props xs) = do
       PPotato pot -> do
         f' <- toJSVal . fun $ \_ _ ->
           let
-            g vnode = do
-              vnode' <- valToObject vnode
-              stm <- pot . RawNode =<< unsafeGetProp "elm" vnode'
+            g vnode'' = do
+              vnode_ <- valToObject vnode''
+              stm <- pot . RawNode =<< unsafeGetProp "elm" vnode_
               let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i)
               void $ forkIO go
           in \case
-            [vnode]    -> g vnode
-            [_, vnode] -> g vnode
-            _          -> return ()
-        void $ jsg3 "insertHook" "insert" f' hooksObj
-        void $ jsg3 "insertHook" "update" f' hooksObj
+            [vnode_]    -> g vnode_
+            [_, vnode_] -> g vnode_
+            _           -> return ()
+        insertHook "insert" f' hooksObj
+        insertHook "update" f' hooksObj
       PText t
         | k == "className" -> forM_ (words t) $ \u ->
             unsafeSetProp (toJSString u) jsTrue classesObj
@@ -208,6 +233,41 @@ props toJSM i (Props xs) = do
   return o
 
 
+potato :: JSVal -> RawNode -> JSM ()
+#ifndef ghcjs_HOST_OS
+potato n rn           = void $ jsg2 "potato" n rn
+#else
+potato n (RawNode rn) = potato' n rn
+foreign import javascript unsafe "window['potato']($1,$2)" potato' :: JSVal -> JSVal -> JSM ()
+#endif
+
+
+vnode :: Text -> Object -> [SnabVNode] -> JSM SnabVNode
+#ifndef ghcjs_HOST_OS
+vnode name o cs = SnabVNode <$> jsg3 "vnode" name o cs
+#else
+vnode t o cs    = join $ vnode' <$> pure t <*> pure o <*> toJSVal cs
+foreign import javascript unsafe "window['vnode']($1,$2,$3)" vnode' :: Text -> Object -> JSVal -> JSM SnabVNode
+#endif
+
+
+#ifndef ghcjs_HOST_OS
+vnodePotato :: Object -> JSM SnabVNode
+vnodePotato o = SnabVNode <$> jsg2 "vnode" "div" o
+#else
+foreign import javascript unsafe "window['vnode']('div',$1)" vnodePotato :: Object -> JSM SnabVNode
+#endif
+
+
+patchh :: JSVal -> SnabVNode -> JSM ()
+#ifndef ghcjs_HOST_OS
+patchh previousNode newNode = void $ jsg2 "patchh" previousNode newNode
+#else
+patchh p (SnabVNode n)      = patchh' p n
+foreign import javascript unsafe "window['patchh']($1,$2)" patchh' :: JSVal -> JSVal -> JSM ()
+#endif
+
+
 instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
   type VNode (SnabbdomT a) m = SnabVNode
 
@@ -218,34 +278,43 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
         i <- snabbAsk; liftJSM $ do
           !o <- props toJSM i $ toProps ps
           !cs <- toJSM . runSnabbdom i $ sequence children
-          SnabVNode <$> jsg3 "vnode" name o cs
+          vnode name o cs
 
       mkPotato mrn = snabbAsk >>= \i -> liftJSM $ do
         o <- create
         hook <- create
         (rn, stm) <- mrn
         ins <- toJSVal =<< function (\_ _ -> \case
-          [n] -> void $ jsg2 "potato" n rn
+          [n] -> potato n rn
           _   -> return ())
         unsafeSetProp "insert" ins hook
         hoo <- toJSVal hook
         unsafeSetProp "hook" hoo o
         let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i) >> go
         void $ forkIO go
-        SnabVNode <$> jsg2 "vnode" "div" o
+        vnodePotato o
 
       mkText = liftJSM . fmap SnabVNode . valMakeText
 
 
   patch :: RawNode -> Maybe SnabVNode -> SnabVNode -> SnabbdomT a m SnabVNode
-  patch (RawNode container) mPreviousNode newNode = liftJSM $ newNode <$ jsg2 "patchh" previousNode newNode
+  patch (RawNode container) mPreviousNode newNode = liftJSM $ newNode <$ patchh previousNode newNode
     where previousNode = maybe container unVNode mPreviousNode
 
 
   setup :: JSM () -> JSM ()
   setup cb = do
     void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/Setup.js")
-    void . jsg1 "startApp" . fun $ \_ _ _ -> cb
+    startApp cb
+
+
+startApp :: JSM () -> JSM ()
+#ifndef ghcjs_HOST_OS
+startApp cb = void . jsg1 "startApp" . fun $ \_ _ _ -> cb
+#else
+startApp cb = startApp' =<< toJSVal =<< function (fun $ \_ _ _ -> cb)
+foreign import javascript unsafe "window['startApp']($1)" startApp' :: JSVal -> JSM ()
+#endif
 
 
 -- | Get the @window.container@ DOM node produced by 'setup' (@Setup.js@).
