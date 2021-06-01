@@ -52,9 +52,9 @@
   servant-client-js-src = super.fetchFromGitHub
     { owner = "morganthomas";
       repo = "servant-client-js";
-      rev = "c61e99ef6688eae463eea322ad43cb5fe6aa7fed";
-      sha256 = "1al0wlvy44s13zd7jlxiw2939kpr44r05zgd5kz6gcv1ppw7gz2d";
-   };
+      rev = "56cf74cd71f7164e0c45d6caab4e53535932ad7d";
+      sha256 = "06i0dmfqq3c2wdxqb1p3vqkiw8094k1q930g7hrfggv2ps36jhf1";
+    };
 
 
   servant-jsaddle-src = super.fetchFromGitHub
