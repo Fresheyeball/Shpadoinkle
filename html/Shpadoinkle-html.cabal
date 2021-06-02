@@ -28,7 +28,6 @@ library
     Shpadoinkle.Html.Element
     Shpadoinkle.Html.Event
     Shpadoinkle.Html.Property
-    Shpadoinkle.Html.Memo
     Shpadoinkle.Html.MicroData
     Shpadoinkle.Html.Utils
     Shpadoinkle.Html.LocalStorage

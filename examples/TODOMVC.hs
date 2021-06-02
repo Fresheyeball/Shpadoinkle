@@ -30,7 +30,6 @@ import           Shpadoinkle.Html              (a, addStyle, autofocus, button,
                                                 placeholder, section, span,
                                                 strong_, type', ul, value)
 import           Shpadoinkle.Html.LocalStorage (manageLocalStorage)
-import           Shpadoinkle.Html.Memo         (memo)
 import           Shpadoinkle.Lens              (onRecord)
 import           Shpadoinkle.Run               (runJSorWarp)
 
@@ -119,7 +118,7 @@ toVisible v = case v of
 
 
 filterHtml :: Visibility -> Visibility -> Html m Visibility
-filterHtml = memo $ \cur item -> li_
+filterHtml cur item = li_
   [ a (href "#" : onClick (const item)
         : [class' ("selected", cur == item)]) [ text . pack $ show item ]
   ]
@@ -130,7 +129,7 @@ htmlIfTasks m h' = if Prelude.null (tasks m) then [] else h'
 
 
 taskView :: Model -> Task -> Html m Model
-taskView m = memo $ \(Task (Description d) c tid) ->
+taskView m (Task (Description d) c tid) =
   li [ id' . pack . show $ unTaskId tid
      , class' [ ("completed", c == Complete)
               , ("editing", Just tid == editing m)

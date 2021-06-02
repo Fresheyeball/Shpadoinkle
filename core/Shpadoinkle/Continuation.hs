@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -46,11 +45,9 @@ module Shpadoinkle.Continuation (
 
 
 import           Control.Arrow                       (first)
-import qualified Control.Categorical.Functor         as F
 import           Control.DeepSeq                     (NFData (..), force)
 import           Control.Monad                       (void)
 import           Control.Monad.Trans.Class           (MonadTrans (..))
-import           Control.PseudoInverseCategory       (EndoIso (..))
 import           Data.Foldable                       (traverse_)
 import           Data.Maybe                          (fromMaybe)
 import           GHC.Conc                            (retry)
@@ -362,14 +359,6 @@ contIso f g (Continuation h i) = Continuation (f.h.g) (fmap (contIso f g) . i . 
 contIso f g (Rollback h) = Rollback (contIso f g h)
 contIso f g (Merge h)    = Merge (contIso f g h)
 contIso f g (Pure h)     = Pure (f.h.g)
-
-
--- | @Continuation m@ is a Functor in the EndoIso category (where the objects
---   are types and the morphisms are EndoIsos).
-instance Applicative m => F.Functor EndoIso EndoIso (Continuation m) where
-  map :: EndoIso a b -> EndoIso  (Continuation m a) (Continuation m b)
-  map (EndoIso f g h) =
-    EndoIso (Continuation f . const . pure) (contIso g h) (contIso h g)
 
 
 -- | You can combine multiple Continuations homogeneously using the 'Monoid' typeclass
