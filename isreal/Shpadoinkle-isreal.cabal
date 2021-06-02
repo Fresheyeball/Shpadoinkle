@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-isreal
-version:       0.0.0.1
+version:       0.0.0.2
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
@@ -30,9 +30,6 @@ common ghc-options
     -fwarn-tabs
     -fwarn-incomplete-record-updates
     -fwarn-identities
-    -rtsopts
-    -O2
-    -threaded
 
 
 library
@@ -41,7 +38,7 @@ library
   exposed-modules:
     Shpadoinkle.Isreal.Types
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   build-depends:
       aeson
@@ -69,7 +66,7 @@ executable isreal
   other-modules:
     Shpadoinkle.Isreal.Types
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   build-depends:
       aeson

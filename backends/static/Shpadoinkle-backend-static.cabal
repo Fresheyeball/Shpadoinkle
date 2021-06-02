@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-backend-static
-version:       0.2.0.0
+version:       0.2.0.1
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
@@ -21,7 +21,7 @@ library
   exposed-modules:
     Shpadoinkle.Backend.Static
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   ghc-options:
     -Wall

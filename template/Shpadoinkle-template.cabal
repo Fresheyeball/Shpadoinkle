@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-template
-version:       0.0.0.1
+version:       0.0.0.2
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
@@ -39,7 +39,7 @@ library
     Shpadoinkle.Template.TH
     Shpadoinkle.Template
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   build-depends:
       Shpadoinkle
@@ -66,7 +66,7 @@ test-suite sample
     Shpadoinkle.Template
     Shpadoinkle.Template.TH
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   build-depends:
       Shpadoinkle

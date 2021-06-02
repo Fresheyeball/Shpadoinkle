@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-console
-version:       0.0.1.3
+version:       0.0.1.4
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
@@ -24,7 +24,7 @@ library
   exposed-modules:
     Shpadoinkle.Console
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   ghc-options:
     -Wall

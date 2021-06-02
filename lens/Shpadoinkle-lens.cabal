@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-lens
-version:       0.0.0.3
+version:       0.0.0.4
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
@@ -14,7 +14,7 @@ library
   exposed-modules:
     Shpadoinkle.Lens
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   ghc-options:
     -Wall

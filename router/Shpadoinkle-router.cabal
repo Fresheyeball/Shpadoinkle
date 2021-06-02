@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-router
-version:       0.3.0.0
+version:       0.3.0.1
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
@@ -31,7 +31,7 @@ library
     Shpadoinkle.Router.Client
     Shpadoinkle.Router.Server
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   ghc-options:
     -Wall

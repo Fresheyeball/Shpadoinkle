@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-html
-version:       0.3.0.0
+version:       0.3.0.1
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
@@ -15,6 +15,9 @@ description:
   Shpadoinkle Html is a typed template-generated Html DSL building on types provided
   by Shpadoinkle Core. This exports a large namespace of terms covering most of the
   Html specifications. Some Elm-API-style helpers are present, but as outlaw type classes.
+
+
+extra-source-files: sample.css
 
 
 source-repository head
@@ -44,7 +47,7 @@ library
     Shpadoinkle.Html.Event.Throttle
     Shpadoinkle.Html.TH.CSSTest
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   ghc-options:
     -Wall
@@ -54,9 +57,6 @@ library
     -fwarn-tabs
     -fwarn-incomplete-record-updates
     -fwarn-identities
-
-  extra-source-files:
-    sample.css
 
   build-depends:
       Shpadoinkle

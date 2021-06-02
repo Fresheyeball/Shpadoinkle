@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-disembodied
-version:       0.0.0.1
+version:       0.0.0.2
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
@@ -22,7 +22,7 @@ library
   other-modules:
       Shpadoinkle.Disembodied.Sample
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   ghc-options:
     -Wall

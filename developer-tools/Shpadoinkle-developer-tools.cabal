@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-developer-tools
-version:       0.0.0.1
+version:       0.0.0.2
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
@@ -74,7 +74,7 @@ library
   other-modules:
     Main
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   if flag(development)
     cpp-options: -DDEVELOPMENT
@@ -90,6 +90,6 @@ executable devtools
   other-modules:
     Shpadoinkle.DeveloperTools
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   default-language: Haskell2010

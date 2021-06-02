@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-streaming
-version:       0.0.0.1
+version:       0.0.0.2
 category:      Web
 author:        Morgan Thomas
 maintainer:    morgan.a.s.thomas@gmail.com
@@ -15,7 +15,7 @@ library
   exposed-modules:
     Shpadoinkle.Streaming
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   ghc-options:
     -Wall
