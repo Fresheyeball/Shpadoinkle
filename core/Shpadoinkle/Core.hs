@@ -53,13 +53,7 @@ module Shpadoinkle.Core (
 
 
 import           Control.Applicative           (liftA2)
-import qualified Control.Categorical.Functor   as F
 import           Control.Category              ((.))
-import           Control.PseudoInverseCategory (EndoIso (..),
-                                                HasHaskFunctors (fmapA),
-                                                PIArrow (piendo, piiso),
-                                                PseudoInverseCategory (piinverse),
-                                                ToHask (piapply))
 import           Data.Kind                     (Type)
 import           Data.Map                      as M (Map, foldl', insert,
                                                      mapEither, singleton,
@@ -204,55 +198,12 @@ instance IsString (Prop m a) where
   {-# INLINE fromString #-}
 
 
--- | @Html m@ is a functor in the EndoIso category, where the objects are
---   types and the morphisms are EndoIsos.
-instance Applicative m => F.Functor EndoIso EndoIso (Html m) where
-  map (EndoIso f g i) = EndoIso (mapC . piapply $ map' (piendo f))
-                                (mapC . piapply $ map' (piiso g i))
-                                (mapC . piapply $ map' (piiso i g))
-    where map' :: EndoIso a b -> EndoIso (Continuation m a) (Continuation m b)
-          map' = F.map
-  {-# INLINE map #-}
-
-
--- | Prop is a functor in the EndoIso category, where the objects are types
---  and the morphisms are EndoIsos.
-instance Applicative m => F.Functor EndoIso EndoIso (Prop m) where
-  map :: forall a b. EndoIso a b -> EndoIso (Prop m a) (Prop m b)
-  map f = EndoIso id mapFwd mapBack
-    where f' :: EndoIso (Continuation m a) (Continuation m b)
-          f' = F.map f
-
-          mapFwd :: Prop m a -> Prop m b
-          mapFwd (PData t)     = PData t
-          mapFwd (PText t)     = PText t
-          mapFwd (PFlag t)     = PFlag t
-          mapFwd (PListener g) = PListener $ \r e -> piapply f' <$> g r e
-          mapFwd (PPotato p)   = PPotato $ fmap (fmap (piapply f')) . p
-
-
-          mapBack :: Prop m b -> Prop m a
-          mapBack (PData t)     = PData t
-          mapBack (PText t)     = PText t
-          mapBack (PFlag t)     = PFlag t
-          mapBack (PListener g) = PListener $ \r e -> piapply (piinverse f') <$> g r e
-          mapBack (PPotato b)   = PPotato $ fmap (fmap (piapply (piinverse f'))) . b
-  {-# INLINE map #-}
-
-
 -- | Given a lens, you can change the type of an Html by using the lens
 --   to convert the types of the Continuations inside it.
 instance Continuous Html where
   mapC f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (fmap (mapC f) <$> ps) cs)
          (p . fmap (fmap (fmap (mapC f)))) t
   {-# INLINE mapC #-}
-
-
--- | Props is a functor in the EndoIso category, where the objects are
---  types and the morphisms are EndoIsos.
-instance Applicative m => F.Functor EndoIso EndoIso (Props m) where
-  map f = piiso Props getProps . fmapA (F.map f) . piiso getProps Props
-  {-# INLINE map #-}
 
 
 -- | Given a lens, you can change the type of a Props by using the lens

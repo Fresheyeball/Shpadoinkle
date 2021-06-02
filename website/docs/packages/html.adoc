@@ -121,21 +121,3 @@ will all render as
 ----
 
 You can also use the {hackage}-html/docs/Shpadoinkle-Html-Property.html#t:ClassList[`ClassList` newtype], to build up classes for an element.
-
-== Memo
-
-The memo function remembers the last argument passed and the last result. When a new value is passed, it compares it with the previous value, and if they match, the previous result is returned from memory. This is useful when computing `Html` is expensive and benefits from memoization:
-
-[source,haskell]
-----
-memo = id
-----
-
-Think of `memo` as a way of changing the evaluation strategy:
-
-[source,haskell]
-----
-view :: Text -> Html m a
-view = memo $ \t ->
-  div_ . take (length t) . repeat . text $ expensiveFilter t
-----
