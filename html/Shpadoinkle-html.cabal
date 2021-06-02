@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          Shpadoinkle-html
-version:       0.3.0.1
+version:       0.3.0.2
 category:      Web
 author:        Isaac Shapira
 maintainer:    isaac.shapira@platonic.systems
