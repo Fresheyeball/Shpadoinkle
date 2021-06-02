@@ -55,6 +55,9 @@ library
     -fwarn-incomplete-record-updates
     -fwarn-identities
 
+  extra-source-files:
+    sample.css
+
   build-depends:
       Shpadoinkle
     , base >=4.12.0 && <4.16
