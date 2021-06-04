@@ -54,11 +54,17 @@ compile :: MonadIO m => Options -> SnowToken -> SnowNonce -> Code -> m (Either C
 compile options@Options {..} snow nonce (Code code) = liftIO $ do
   let dir = getDir options snow
   Dir.createDirectoryIfMissing False dir
+  putStrLn $ "Ensured existence of: " <> dir
   BSL.writeFile (dir </> "Main.hs") code
+  putStrLn $ "Wrote Main.hs to: " <> (dir </> "Main.hs")
   isCabal <- Dir.doesFileExist $ dir </> "swan.cabal"
   unless isCabal $ Dir.createFileLink (swan </> "swan.cabal") $ dir </> "swan.cabal"
+  putStrLn $ "Ensured existence of: " <> (dir </> "swan.cabal")
   Dir.setCurrentDirectory dir
+  putStrLn $ "Set current directory to: " <> dir
+  putStrLn "Compiling..."
   (exit, _, err) <- readCreateProcessWithExitCode (proc "cabal" ["build", "--ghcjs"]) ""
+  putStrLn $ "Compile result: " <> show exit <> " | " <> show err
   case exit of
     ExitSuccess   -> do
       T.writeFile (dir </> artifactPath </> "index.html") mkIndex

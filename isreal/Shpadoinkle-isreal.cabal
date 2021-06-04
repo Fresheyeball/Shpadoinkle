@@ -22,6 +22,9 @@ source-repository head
 
 
 common ghc-options
+
+
+library
   ghc-options:
     -Wall
     -Wcompat
@@ -30,10 +33,6 @@ common ghc-options
     -fwarn-tabs
     -fwarn-incomplete-record-updates
     -fwarn-identities
-
-
-library
-  import: ghc-options
 
   exposed-modules:
     Shpadoinkle.Isreal.Types
@@ -59,7 +58,16 @@ library
 
 
 executable isreal
-  import: ghc-options
+  ghc-options:
+    -Wall
+    -Wcompat
+    -fwarn-redundant-constraints
+    -fwarn-incomplete-uni-patterns
+    -fwarn-tabs
+    -fwarn-incomplete-record-updates
+    -fwarn-identities
+    -threaded
+    -rtsopts
 
   main-is: Main.hs
 
