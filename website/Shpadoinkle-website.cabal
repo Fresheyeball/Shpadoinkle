@@ -74,7 +74,7 @@ executable disembodied
     Shpadoinkle.Website.Types.SPA
     Shpadoinkle.Website.Types.Social
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   build-depends:
       Shpadoinkle
@@ -151,7 +151,7 @@ executable run
     Shpadoinkle.Website.Style
     Shpadoinkle.Website.View
 
-  hs-source-dirs: ./.
+  hs-source-dirs: .
 
   build-depends:
       Shpadoinkle
@@ -192,3 +192,91 @@ executable run
       , servant-server
 
   default-language: Haskell2010
+
+
+test-suite unit
+  import: ghc-options, ghcjs-options
+
+  type: exitcode-stdio-1.0
+
+  main-is: Test.hs
+
+  cpp-options: -DTESTING
+
+  other-modules:
+    Shpadoinkle.Website.Component.LiveExample
+    Shpadoinkle.Website.Partials.Template
+    Shpadoinkle.Website.Partials.Nav
+    Shpadoinkle.Website.Partials.NavSpec
+    Shpadoinkle.Website.Partials.Footer
+    Shpadoinkle.Website.Partials.Social
+    Shpadoinkle.Website.Page.Home
+    Shpadoinkle.Website.Page.Documentation
+    Shpadoinkle.Website.Page.FourOhFour
+    Shpadoinkle.Website.Types.CurrentYear
+    Shpadoinkle.Website.Types.Nav
+    Shpadoinkle.Website.Types.Home
+    Shpadoinkle.Website.Types.Hoogle
+    Shpadoinkle.Website.Types.Hoogle.API
+    Shpadoinkle.Website.Types.Hoogle.Target
+    Shpadoinkle.Website.Types.Example
+    Shpadoinkle.Website.Types.ViewModel
+    Shpadoinkle.Website.Types.PageModel
+    Shpadoinkle.Website.Types.ExampleState
+    Shpadoinkle.Website.Types.Effects.Example
+    Shpadoinkle.Website.Types.Effects.Hooglable
+    Shpadoinkle.Website.Types.Effects.Swan
+    Shpadoinkle.Website.Types.Route.GettingStarted
+    Shpadoinkle.Website.Types.Route.Tutorial
+    Shpadoinkle.Website.Types.Route.Packages
+    Shpadoinkle.Website.Types.Route
+    Shpadoinkle.Website.Types.SPA
+    Shpadoinkle.Website.Types.Social
+    Shpadoinkle.Website.Style
+    Shpadoinkle.Website.View
+
+  hs-source-dirs: .
+
+  build-depends:
+      Shpadoinkle
+    , Shpadoinkle-backend-snabbdom
+    , Shpadoinkle-console
+    , Shpadoinkle-developer-tools
+    , Shpadoinkle-html
+    , Shpadoinkle-isreal
+    , Shpadoinkle-lens
+    , Shpadoinkle-router
+    , Shpadoinkle-template
+    , Shpadoinkle-widgets
+    , aeson
+    , base >=4.12.0 && <4.16
+    , bytestring
+    , exceptions
+    , file-embed
+    , generic-lens
+    , generic-monoid
+    , ghcjs-dom
+    , jsaddle
+    , lens
+    , mtl
+    , network-uri
+    , random
+    , servant
+    , stm
+    , text >=1.2.3 && <1.3
+    , time
+    , unliftio
+
+    , hspec
+    , QuickCheck
+
+  if impl(ghcjs)
+    build-depends:
+        servant-client-js
+  else
+    build-depends:
+        servant-client
+      , servant-server
+
+  default-language: Haskell2010
+

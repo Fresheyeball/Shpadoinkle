@@ -15,7 +15,8 @@ import           Shpadoinkle.Html                      (Html, a, alt, class',
 import           Shpadoinkle.Html.TH.AssetLink         (assetLink)
 import           Shpadoinkle.Website.Style             as Style
 import           Shpadoinkle.Website.Types.CurrentYear (CurrentYear)
-import           Shpadoinkle.Website.Types.Nav         (Nav (NHome), toRoute)
+import           Shpadoinkle.Website.Types.Nav         (Nav, toRoute)
+import           Shpadoinkle.Website.Types.Route       (Route (RHome))
 import           Shpadoinkle.Website.Types.SPA         (goTo)
 import           Shpadoinkle.Widgets.Types             (humanize)
 
@@ -31,7 +32,7 @@ view :: MonadJSM m => CurrentYear -> Html m a
 view cy =
   footer_
     [ div [ class' footer__wrapper ]
-      [ a [ goTo $ toRoute NHome ]
+      [ a [ goTo RHome ]
         [ img' [ alt "shpadoinkle logo", src $(assetLink "/assets/try_shpadoinkle_footer_logo.svg") ]
         ]
       , div [ class' $ flex <> flex_col <> justify_between <> w_full <> gap_8 <> pt_12 <> leading_8 <> "md:flex-row" <> "md:w-2/5" <> "md:gap-0" ]

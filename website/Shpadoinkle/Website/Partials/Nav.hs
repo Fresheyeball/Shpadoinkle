@@ -3,7 +3,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 
-module Shpadoinkle.Website.Partials.Nav (view) where
+module Shpadoinkle.Website.Partials.Nav (view, toActive) where
 
 
 import           Prelude                            hiding (div)
@@ -20,10 +20,10 @@ import           Shpadoinkle.Widgets.Types.Physical (Toggle (..))
 
 toActive :: Route -> Maybe Nav
 toActive = \case
-  RHome             -> Just NHome
+  RConcepts         -> Just NConcept
   RGettingStarted _ -> Just NGettingStarted
+  RPackages       _ -> Just NReference
   RTutorial       _ -> Just NTutorial
-  -- RSandbox          -> Just NSandbox
   _                 -> Nothing
 
 
@@ -41,7 +41,7 @@ navLinkMobile n = a [ class' nav_mobile__link, goTo $ toRoute n ] [ text $ human
 view :: MonadJSM m => Toggle -> Route -> [Html m Toggle]
 view t r = pure $ div [ class' started_header ] $
   [ H.nav [ class' Style.nav ]
-    [ a [ goTo $ toRoute NHome ]
+    [ a [ goTo RHome ]
       [ img' [ class' nav__logo, src $(assetLink "/assets/landing_logo.svg") ]
       ]
     , img' [ class' nav__menu_icon, onClick toggle, src $ case t of

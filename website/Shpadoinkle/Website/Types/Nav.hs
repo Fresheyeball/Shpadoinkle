@@ -7,33 +7,41 @@
 module Shpadoinkle.Website.Types.Nav where
 
 
-import           Shpadoinkle.Website.Types.Route                as R (Route (RGettingStarted, RHome, RTutorial))
+import           Shpadoinkle.Website.Types.Route                as R (Route (RConcepts, RGettingStarted, RPackages, RTutorial))
 import           Shpadoinkle.Website.Types.Route.GettingStarted (Route (RGSIndex))
+import           Shpadoinkle.Website.Types.Route.Packages       (Route (RPIndex))
 import           Shpadoinkle.Website.Types.Route.Tutorial       (Route (RTIndex))
 import           Shpadoinkle.Widgets.Types                      (Humanize (..))
+#ifdef TESTING
+import           Test.QuickCheck                                (Arbitrary (..),
+                                                                 arbitraryBoundedEnum)
+#endif
 
 
 data Nav
-  = NHome
+  = NConcept
   | NGettingStarted
+  | NReference
   | NTutorial
---  | NSandbox
-  deriving (Eq, Ord, Enum, Bounded)
+  deriving (Show, Eq, Ord, Enum, Bounded)
 
 
 instance Humanize Nav where
   humanize = \case
-    NHome           -> "Home"
+    NConcept        -> "Concept"
     NGettingStarted -> "Get Started"
+    NReference      -> "Reference"
     NTutorial       -> "Tutorial"
---    NSandbox        -> "Sandbox"
 
 
 toRoute :: Nav -> R.Route
 toRoute = \case
-  NHome           -> RHome
+  NConcept        -> RConcepts
   NGettingStarted -> RGettingStarted RGSIndex
-  NTutorial       -> RTutorial RTIndex
---  NSandbox        -> RSandbox
+  NReference      -> RPackages       RPIndex
+  NTutorial       -> RTutorial       RTIndex
 
 
+#ifdef TESTING
+instance Arbitrary Nav where arbitrary = arbitraryBoundedEnum
+#endif
