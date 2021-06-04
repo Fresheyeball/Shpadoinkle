@@ -32,11 +32,11 @@ let
   assets = util.gitignore [
     "landing_logo.svg"
   ] ./assets;
-  setTarget = x: y: with pkgs.haskell.lib; dontHaddock (overrideCabal x (_: { buildTarget = y; installPhase = ''
+  setTarget = x: y: with pkgs.haskell.lib; dontCheck (dontHaddock (overrideCabal x (_: { buildTarget = y; installPhase = ''
     runHook preInstall
     ./Setup copy ${y}
     runHook postInstall
-  '';} ));
+  '';} )));
   setMay = if ci then (x: _: x) else setTarget;
 in
   pkgs.runCommand "website" {

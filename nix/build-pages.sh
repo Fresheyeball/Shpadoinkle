@@ -16,7 +16,7 @@ echo "Proving to Keybase"
 cp website/keybase.txt public/keybase.txt
 
 echo "Building Website"
-nix-build website --fallback
+nix-build website --fallback --arg ci true
 
 echo "Copying in Website"
 cp --dereference -r result/* public
