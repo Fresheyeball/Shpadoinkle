@@ -27,7 +27,7 @@ import           Shpadoinkle.Widgets.Types                      (Humanize (..))
 
 
 concepts :: MonadJSM m => Route -> Html m a
-concepts = docsWrap ("Concepts" :: Text) $(embedAsciidoc "./docs/concepts.adoc")
+concepts = docsWrap ("Concept" :: Text) $(embedAsciidoc "./docs/concepts.adoc")
 
 
 gettingStarted :: MonadJSM m => GettingStarted.Route -> Route -> Html m a

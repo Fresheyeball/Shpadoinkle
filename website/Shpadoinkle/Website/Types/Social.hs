@@ -23,7 +23,7 @@ toSocial = prependTitle . \case
   RHome             -> Social ""
     "A new Functional UI programming paradigm" Nothing
 
-  RConcepts         -> Social "Concepts"
+  RConcepts         -> Social "Concept"
     "Learn the basic ideas need to write Shpadoinkle applications" Nothing
 
   RGettingStarted _ -> Social "Getting Started"
