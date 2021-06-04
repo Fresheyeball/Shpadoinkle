@@ -11,6 +11,7 @@
 module Main where
 
 
+import           Control.Concurrent
 import           Control.Monad.Catch                         (MonadThrow)
 import           Control.Monad.IO.Class                      (MonadIO (..))
 import           Control.Monad.Reader
@@ -98,7 +99,9 @@ instance Swan App where
   compile t n c = do
     res <- liftJSM $ runXHRe (compileM t n c) isrealEnv
     case res of
-      Left _  -> compile t n c
+      Left _  -> do
+        liftIO $ threadDelay 1000000
+        compile t n c
       Right x -> pure x
   clean   t     = liftJSM $ runXHR' (cleanM   t)     isrealEnv
 
