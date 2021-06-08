@@ -13,20 +13,21 @@ This package is for core types and logic.
 data Html m a
   = TextNode Text
   | Node Text [(Text, Prop m a)] [Html m a]
-  | Potato (JSM RawNode)
+  | Potato (JSM (RawNode, STM (Continuation m a)))
 ----
 
-* `m` is an effect to run your event handlers.
-* `a` is what your event handlers produce.
+`Html m a` represents a DOM node. It can represent a text node. It can represent a regular node, with zero or more attributes and zero or more children. It can also represent a Potato, with which we can represent a component built outside of the Shpadoinkle view (e.g. for the purpose of wrapping a component coded in JavaScript).
 
-These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrained. In reality this type is https://en.wikipedia.org/wiki/Church_encoding[Church encoded] for performance reasons.
+* `m` is an effect (i.e., a monad) to run your event handlers.
+* `a` is what your event handlers produce. It is the type of the view model.
+
+These are only relevant to event handling. If your view has no event listeners, then `m` and `a` can be completely parametric and unconstrained.
+
+In reality, this type is https://en.wikipedia.org/wiki/Church_encoding[Church encoded] for performance reasons. The definition given above is not the actual definition. By applying the Church encoding transformation to the definition given above, we get the actual definition of `Html`.
 
 [NOTE]
 .Not Virtual DOM
-`Html` will NOT be diffed, instead they will be marshalled into a type for a given xref:packages/backends.adoc#selecting[backend]. This separation allows the same code to run on any backend.
-
-// This needs to be reworded, I'm uncertain what's trying to be said. -ckever
-This structure is the DOM Tree. There are Nodes which contain lists of Html, and which is a leaf where you can store `Text`, and Potato where we can store a component built outside of the Shpadoinkle view (for example wrapping a JavaScript component).
+`Html` is similar to the virtual DOM concept found in frameworks like [React](https://reactjs.org/). In a framework with a virtual DOM, each time the value of the view model changes and the UI needs to be updated, the virtual DOM is recomputed. The virtual DOM contains all the information needed to construct the actual DOM. After the virtual DOM is recomputed, it is diffed against the previous virtual DOM in order to determine what updates (i.e., patches) need to be made to the actual DOM. `Html` is not a virtual DOM according to this concept of virtual DOMs. `Html` will NOT be subjected to a DOM diffing algorithm to determine how the actual DOM needs to be updated. Instead, `Html` will be marshalled into a type which a given xref:packages/backends.adoc#selecting[backend] can use to determine how to update the DOM to reflect a change in the value of the view model. This separation allows the same code to run on any backend.
 
 [NOTE]
 .EndoIso
