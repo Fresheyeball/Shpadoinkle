@@ -71,6 +71,7 @@ headView ev vm = head_ $
   , javascript $ highlightCDN "languages/nix.min.js"
   , javascript $(assetLink "/assets/animate.js")
   , javascript $(assetLink "/assets/hljs.js")
+  , meta' [ rel "sitemap", type' "application/xml", href "/sitemap.xml" ]
   , toHydration vm
   , link'
     [ rel "canonical"
