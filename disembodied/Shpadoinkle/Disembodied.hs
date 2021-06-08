@@ -24,10 +24,11 @@ module Shpadoinkle.Disembodied (
   , Disembodied(..)
   -- * Write Files
   , writeSite
+  , writeSiteMap
   ) where
 
 
-import           Control.Monad              (void)
+import           Control.Monad              (join, void)
 import           Data.Kind                  (Type)
 import           Data.Proxy                 (Proxy (..))
 import           Data.Text                  (isSuffixOf, pack, unpack)
@@ -74,7 +75,6 @@ data Site where
 
   -- | Branch the site at a given point in generation.
   SChoice :: Site -> Site -> Site
-
 
 
 -- | Type class induction for building the site out of a specification
@@ -173,6 +173,42 @@ instance Disembodied (View m a) where
   buildSite :: Html m a -> Site
   buildSite = SIndex
   {-# INLINABLE buildSite #-}
+
+
+-- | Generate a sitemap.xml
+writeSiteMap
+  :: forall layout. Disembodied layout
+  => String
+  -- ^ Base url
+  -> FilePath
+  -- ^ Out path
+  -> SiteSpec layout
+  -- ^ Specification for the pages of the site relative to a Servant API.
+  -> IO ()
+writeSiteMap base fs layout
+    = T.writeFile (fs </> "sitemap" <.> "xml")
+    . buildSiteMapXML . go mempty $ buildSite @layout layout
+  where
+  go (x,xs) (SIndex _) = x:xs
+  go curr (SChoice x y) = go curr x <> go curr y
+  go curr (SCapture f)  = join $ traverse (
+    \c -> go curr $ SPath (unpack $ toUrlPiece c) $ f c
+                                   ) [ minBound .. maxBound ]
+  go (x,xs) (SPath path (SIndex _)) | ".html" `isSuffixOf` pack path =
+    (x <> "/" <> path):xs
+  go (x,xs) (SPath path site) = go (x <> "/" <> path, xs) site
+
+  buildSiteMapXML xs = pack . unlines $
+    [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    , "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">"
+    ] <>
+    (xs >>= (\url ->
+    [ "   <url>"
+    , "      <loc>" <> base <> url <> "</loc>"
+    , "   </url>"
+    ])) <>
+    [ "</urlset>"
+    ]
 
 
 -- | Actually write the site to disk. Branches are written in parallel.

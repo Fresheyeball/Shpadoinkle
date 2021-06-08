@@ -19,7 +19,8 @@ import           Data.Generics.Labels                        ()
 import           Shpadoinkle                                 (JSM, MonadJSM,
                                                               TVar)
 import           Shpadoinkle.Disembodied                     (Disembodied (SiteSpec),
-                                                              writeSite)
+                                                              writeSite,
+                                                              writeSiteMap)
 import           Shpadoinkle.Isreal.Types                    (Code)
 import           Shpadoinkle.Router                          (traverseUnions)
 import           Shpadoinkle.Run                             (Env (Prod))
@@ -53,4 +54,5 @@ main = do
               [ "-o", out' ]    -> out'
               _                 -> error "You must pass --out or -o"
   site <- getStarts
-  writeSite @ (SPA Noop) out site
+  writeSiteMap @ (SPA Noop) "https://shpadoinkle.org" out site
+  writeSite    @ (SPA Noop) out site
