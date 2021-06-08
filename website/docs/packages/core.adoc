@@ -41,24 +41,24 @@ data EndoIso a b = EndoIso (a -> a) (a -> b) (b -> a)
 
 == Prop Type
 
-Nodes (and only Nodes) in Html can have properties. These properties are represented as the following type, paired with `Text` giving the property a field key:
+Nodes (and only Nodes) in Html can have properties. These properties are represented as the Church encoding of the following type, paired with the `Text` property name:
 
 [source,haskell]
 ----
 data Prop m a
   = PText Text
-  | PListener (RawNode -> RawEvent -> JSM (Continuation m a))
+  | PListener (RawNode -> RawEvent -> JSM (STM (Continuation m a)))
   | PFlag Bool
 ----
 
-As you will recall, `Html` has a constructor:
+As you may recall, `Html` has a constructor:
 
 [source,haskell]
 ----
 Node :: Text -> [(Text, Prop m a)] -> [Html m a] -> Html m a
 ----
 
-Where a list of this pair is passed. The `Text` should match the property key in standard JavaScript. For example, you can see the following are morally equivalent:
+`Node` takes a list of properties: `[(Text, Prop m a)]`. The `Text` of a property should match the property key in standard JavaScript. For example, the following are morally equivalent:
 
 
 [source,javascript]
@@ -75,12 +75,14 @@ Node "div" [("className", PText "foo")] []
 [TIP]
 .Do Not use constructors directly!
 ====
-It is recommended you do **not** use these constructors, but rather use the exported named functions:
+It is recommended you do **not** use these constructors, but rather use the exported named functions, e.g.:
 
 [source,haskell]
 ----
 h "div" [("className",  textProp "foo")] []
 ----
+
+The reason for this guidance is that we reserve the right to change the constructors of `Prop` and `Html` in the future.
 
 ====
 
