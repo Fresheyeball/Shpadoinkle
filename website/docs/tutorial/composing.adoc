@@ -8,22 +8,24 @@ Composing HTML elements is straightforward in Shpadoinkle when the elements all 
 
 For an element to be a child of another element, they must have the same model type. This means that all elements in the tree under an `Html m Model` (children, children of children, etc.) must have the type `Html m Model`. Therefore, before an element can become the child of a parent, it must be transformed to have a matching model type, if the model types do not already match.
 
-Changing the model type of an HTML element can be accomplished using the `MC` functions which make use of the `MapContinuations` typeclass. This typeclass is instantiated by types where the values can be changed by functions which change continuations.
+Changing the model type of an HTML element can be accomplished using the `xC` functions which make use of the `Continuous` typeclass. This typeclass is instantiated by types where the values can be changed by functions which change continuations.
 
 [NOTE]
 Continuations are a concept in Shpadoinkle's event handling system. Each event handler causes a continuation to be run. That continuation may perform I/O actions and/or update the model. If a continuation updates the model, then it does so atomically, which means that it is safe to have multiple continuations running concurrently. To learn more about continuations, see the https://github.com/morganthomas/Shpadoinkle-continuations/blob/master/README.md[Shpadoinkle-continuations] package.
 
-First consider the case where you have an element `+++x :<span></span>: Html m a+++` and you need to change its type to `Html m (a,b)` so that the event handlers act on the left side of the tuple. In this case you should use the `leftMC` function: `+++leftMC x :<span></span>: Html m (a,b)+++`.
+The model type of an `Html` element determines what type the event handlers expect the model to have. An event handler yields a continuation which may update the model. In order to change the model type of an `Html` element, it is sufficient to change the type which the continuations operate on. As such, `Html` instantiates `Continuous`; any function which changes the type which continuations operate on can be used to change the model type of an `Html` element.
 
-Similarly, if you have an element `+++x :<span></span>: Html m b+++` and you need to change its type `Html m (a,b)`, then you should use the `rightMC` function: `+++rightMC x :<span></span>: Html (a,b)+++`.
+First consider the case where you have an element `+++x :<span></span>: Html m a+++` and you need to change its type to `Html m (a,b)` so that the event handlers act on the left side of the tuple. In this case you should use the `leftC` function: `+++leftC x :<span></span>: Html m (a,b)+++`.
+
+Similarly, if you have an element `+++x :<span></span>: Html m b+++` and you need to change its type `Html m (a,b)`, then you should use the `rightC` function: `+++rightC x :<span></span>: Html (a,b)+++`.
 
 If you have an element `+++x :<span></span>: Html m ()+++` then you can freely vary its model type using `voidC`: `+++voidC x :<span></span>: Html m a+++`. The event handlers will have the same side effects and they will not touch the model.
 
-You can change the model type from anything to anything using the `forgetMC` function, which will strip out all event handlers, replacing them with no-ops. For any types `a`, `b` and monads `m`, `n`, if `+++x :<span></span>: Html m a+++` then `+++forgetMC x :<span></span>: Html n b+++`.
+You can change the model type from anything to anything using the `forgetC` function, which will strip out all event handlers, replacing them with no-ops. For any types `a`, `b` and monads `m`, `n`, if `+++x :<span></span>: Html m a+++` then `+++forgetC x :<span></span>: Html n b+++`.
 
-Given a lens from a type `b` to a type `a`, consisting of a function `+++set :<span></span>: (a -> b -> b)+++` and a function `+++get :<span></span>: b -> a+++`, you can change an element `+++x :<span></span>: Html m a+++` to an element `+++liftMC set get x :<span></span>: Html m b+++` using the `liftMC` function.
+Given a lens from a type `b` to a type `a`, consisting of a function `+++set :<span></span>: (a -> b -> b)+++` and a function `+++get :<span></span>: b -> a+++`, you can change an element `+++x :<span></span>: Html m a+++` to an element `+++liftC set get x :<span></span>: Html m b+++` using the `liftC` function.
 
-You can change an element `+++x :<span></span>: Html m a+++` to an element `+++maybeMC x :<span></span>: Html m (Maybe a)+++`, where the event handlers are lifted into the `Maybe` monad using `fmap` (so they will have the same effect when the model is `Just` and they will not affect the model when the model is `Nothing`).
+You can change an element `+++x :<span></span>: Html m a+++` to an element `+++maybeC x :<span></span>: Html m (Maybe a)+++`, where the event handlers are lifted into the `Maybe` monad using `fmap` (so they will have the same effect when the model is `Just` and they will not affect the model when the model is `Nothing`).
 
 Given an isomorphism, you can change the type of an element from one side of the isomorphism to the other side. An isomorphism from a type `a` to a type `b` consists of a function `+++f :<span></span>: a -> b+++` and a function `+++g :<span></span>: b -> a+++` such that `f . g = id` and `g . f = id`. You can change an element `+++x :<span></span>: Html m a+++` in the following way: `+++pimap (piiso f g) x :<span></span>: Html m b+++`.
 
