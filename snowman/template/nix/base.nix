@@ -32,6 +32,7 @@ let
         "*.nix"
         "*.sh"
         "*.yml"
+        "result"
       ];
 
 
