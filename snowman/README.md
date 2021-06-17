@@ -64,7 +64,7 @@ Will drop you into a dev shell with [Ghcid](https://github.com/ndmitchell/ghcid#
 Get a ghcid server with live reloads in one line
 
 ```bash
-nix-shell --command "ghcid --command 'cabal repl' -W -T Main.dev"
+nix-shell --run "ghcid --command 'cabal repl' -W -T Main.dev"
 ```
 
 Get a hoogle server in one line

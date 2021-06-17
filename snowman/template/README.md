@@ -17,7 +17,7 @@ stack build
 ## Develop with live reloading
 
 ```bash
-nix-shell --command "ghcid --command 'cabal repl' -W -T Main.dev"
+nix-shell --run "ghcid --command 'cabal repl' -W -T Main.dev"
 ```
 
 ### License
