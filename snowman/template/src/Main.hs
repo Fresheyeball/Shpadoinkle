@@ -5,17 +5,17 @@ module Main where
 
 
 import           Shpadoinkle                  (Html, JSM)
-import           Shpadoinkle.Backend.Snabbdom (runSnabbdom)
+import           Shpadoinkle.Backend.Snabbdom (runSnabbdom, stage)
 import           Shpadoinkle.Html
 import           Shpadoinkle.Run              (live, runJSorWarp, simple)
 
 
 view :: () -> Html m ()
-view _ = "hello world"
+view _ = div_ [ "hello world" ]
 
 
 app :: JSM ()
-app = simple runSnabbdom () view getBody
+app = simple runSnabbdom () view stage
 
 
 dev :: IO ()
