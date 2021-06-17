@@ -20,7 +20,7 @@ Once you have your new project you can get live reloads with the following comma
 
 [source,bash]
 ----
-nix-shell --command "ghcid --command 'cabal repl' -W -T Main.dev"
+nix-shell --run "ghcid --command 'cabal repl' -W -T Main.dev"
 ----
 
 This will use `nix-shell` to setup a development environment for you, then execute `ghcid` inside the environment to watch your files, and execute `Main.dev` inside a repl. You can see results at `http://localhost:8080`. Of course you must have <<Nix>> installed for `nix-shell` to work.
