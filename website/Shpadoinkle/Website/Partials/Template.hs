@@ -57,6 +57,7 @@ headView :: forall m a. Env -> ViewModel -> Html m a
 headView ev vm = head_ $
   [ meta' [ charset "UTF-8" ]
   , meta' [ content "width=device-width, initial-scale=1.0", name' "viewport" ]
+  , googleTagManagerHead
   , stylesheet $ codemirrorCDN "codemirror.min.css"
   , stylesheet $ codemirrorCDN "theme/darcula.min.css"
   , stylesheet $ highlightCDN "styles/atom-one-light.min.css"
@@ -86,7 +87,10 @@ headView ev vm = head_ $
 template :: Env -> ViewModel -> Html m a -> Html m a
 template ev vm content' = html [ lang "en" ]
   [ headView ev vm
-  , body "top-border" [ content' ]
+  , body "top-border"
+      [ content'
+      , googleTagManagerBody
+      ]
   ]
 
 
@@ -96,3 +100,20 @@ wrapper yc t cur content'
   <> (onRecord #pageModel
  <$> case t of Open     -> []
                Closed _ ->[ content', Footer.view yc ])
+
+googleTagManagerHead :: Html m a
+googleTagManagerHead = script_ [ "(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-KPLVXXG');" ]
+
+googleTagManagerBody :: Html m a
+googleTagManagerBody =
+  noscript_
+    [ iframe'
+        [ src "https://www.googletagmanager.com/ns.html?id=GTM-KPLVXXG"
+        , height 0
+        , width 0
+        , styleProp
+            [ ("display", "none")
+            , ("visibility", "hidden")
+            ]
+        ]
+    ]
