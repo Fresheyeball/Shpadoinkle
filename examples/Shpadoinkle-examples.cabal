@@ -127,6 +127,74 @@ executable counter
   default-language: Haskell2010
 
 
+executable lazy-loading-table-client
+  import: ghc-options, ghcjs-options
+
+  main-is: Client.hs
+
+  other-modules:
+    Types
+    StockName
+
+  hs-source-dirs: ./lazy-loading-table
+
+  build-depends:
+      base >=4.12.0 && <4.16
+    , bytestring
+    , aeson
+    , containers
+    , country-codes
+    , deepseq
+    , jsaddle
+    , QuickCheck
+    , servant
+    , servant-client-core
+    , Shpadoinkle
+    , Shpadoinkle-backend-pardiff
+    , Shpadoinkle-html
+    , Shpadoinkle-router
+    , Shpadoinkle-widgets
+    , text
+    , transformers
+
+  default-language: Haskell2010
+
+
+executable lazy-loading-table-server
+  import: ghc-options, ghcjs-options
+
+  main-is: Server.hs
+
+  other-modules:
+    Types
+    StockName
+
+  hs-source-dirs: ./lazy-loading-table
+
+  if impl(ghcjs)
+    buildable: False
+  else
+    buildable: True
+
+  build-depends:
+      base >=4.12.0 && <4.16
+    , aeson
+    , bytestring
+    , containers
+    , country-codes
+    , deepseq
+    , jsaddle
+    , text
+    , QuickCheck
+    , servant
+    , servant-server
+    , Shpadoinkle-html
+    , Shpadoinkle-widgets
+    , warp
+
+  default-language: Haskell2010
+
+
 executable lens
   import: ghc-options, ghcjs-options
 

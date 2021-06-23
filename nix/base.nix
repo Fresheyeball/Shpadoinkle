@@ -13,6 +13,7 @@ let
     , enableExecutableProfiling ? false
     }:
 
+    assert enableLibraryProfiling -> !isJS;
 
     let
       pkgs = import ./pkgs.nix { inherit compiler isJS system chan enableLibraryProfiling enableExecutableProfiling; };

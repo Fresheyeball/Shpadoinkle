@@ -93,7 +93,7 @@ Dev Shell GHCJS 8.6 on Linux:
   needs:
   - Packages GHCJS 8.6 on Linux
   script:
-  - nix-shell --run "echo works" --arg enableLibraryProfiling true --arg isJS true --fallback
+  - nix-shell --run "echo works" --arg enableLibraryProfiling false --arg isJS true --fallback
 
 Dev Shell GHC 8.6.5 on Darwin:
   stage: Darwin Shell
@@ -107,7 +107,7 @@ Dev Shell GHCJS 8.6 on Darwin:
   needs:
   - Packages GHCJS 8.6 on Darwin
   script:
-  - nix-shell --run "echo works" --arg enableLibraryProfiling true --argstr system x86_64-darwin --arg isJS true --fallback
+  - nix-shell --run "echo works" --arg enableLibraryProfiling false --argstr system x86_64-darwin --arg isJS true --fallback
 
 Website:
   stage: Documentation
