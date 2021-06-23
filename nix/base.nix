@@ -38,7 +38,8 @@ let
 
 
         ghcTools = with haskell.packages.${compiler}; with haskell.lib;
-          [ easy-hls pkgs.stylish-haskell pkgs.hlint]
+          [ pkgs.stylish-haskell pkgs.hlint]
+          ++ (if builtins.currentSystem == "x86_64-linux" then [ easy-hls ] else [])
           ++ (if enableLibraryProfiling then [ eventlog2html ] else [])
           ++ map disableLibraryProfiling
             ([ cabal-install ghcid ]
