@@ -96,9 +96,6 @@ let
             shpadoinkle-path = ../.;
           };
 
-          swan    = import ../snowman { inherit chan; };
-
-
         });
 
 
