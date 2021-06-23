@@ -210,9 +210,9 @@ In the case of JavaScript-based backends, it will likely include steps like addi
 
 == The TVar
 
-The interface for driving the view is STM.
+The interface for driving the view is software transactional memory (STM).
 
-The Haskell ecosystem has many options for concurrent data structures. Many of these containers can be marshalled to the humble `TVar`
+The Haskell ecosystem has many options for thread safe data structures. Many of these containers can be marshalled to the humble `TVar`.
 Theoretically, you could write instances for containers such as https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-IORef.html#t:IORef[IORef], https://hackage.haskell.org/package/reflex-0.7.1.0/docs/Reflex-Class.html#t:Event[Event t], and https://hackage.haskell.org/package/auto-0.4.3.1/docs/Control-Auto.html#t:Auto[Auto m]
 
 The TVar is part of ensuring Shpadoinkle applications compose with one another as well as surrounding code. Consider a scenario where there is an existing piece of code that taps into a data stream and logs it:
@@ -235,7 +235,19 @@ shpadoinkle id runSnabbdom territory mempty view getBody -- <4>
 <3> Now, to show each Log as it passes through, simply write it to the TVar, setting it with a Lens.
 <4> Start the application. Changes to the territory will be reflected in the view.
 
-This makes integrating the frontend state machine into existing work fairly easy, because often existing locations in the code can be used to update the `TVar`. You can also listen for state changes originating from inside the Shpadoinkle application using existing machinery such as `retry` from https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Monad-STM.html#v:retry[STM].
+This makes integrating the frontend state machine into existing work fairly easy, because often existing locations in the code can be used to update the `TVar`. You can also listen for state changes originating from inside the Shpadoinkle application using existing machinery such as `retry` from https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Monad-STM.html#v:retry[STM]. Here is an example of how to listen for changes to a `TVar` called `model`:
+
+[source,haskell]
+----
+do current <- readTVarIO model
+   next <- atomically $ do
+     current' <- readTVar model
+     if current' == current
+       then retry
+       else return current'
+   -- do what should happen when model changes; next contains the new value of model
+   doSomething next
+----
 
 
 == Shpadoinkle
