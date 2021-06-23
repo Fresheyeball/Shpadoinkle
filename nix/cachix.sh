@@ -31,7 +31,7 @@ pids=()
 
 
 for cmd in "${cmds[@]}"; do
-  ($cmd > /dev/null) && ($cmd | cachix push shpadoinkle && echo "^ with $cmd") &
+  ($cmd > /dev/null) && ($cmd | cachix push shpadoinkle && echo "☝️ with $cmd") &
   pids+=($!)
 done
 
