@@ -25,17 +25,18 @@ then
   echo "Nix is required for this to work"
 fi
 
-self=$(realpath $0)
-whereiam=$(dirname $self)
 wd=$(pwd)
-cd $whereiam
+
+tmpdir=$(mktemp -d "${TMPDIR:-/tmp}"/tmp.XXXXXXXX)/Shpadoinkle
+git clone https://gitlab.com/platonic/shpadoinkle.git $tmpdir
+cd $tmpdir
 rev=$(git rev-parse HEAD)
 echo $rev
+
 cd $wd
-chan=$(cat $whereiam/../nix/chan.nix | sed -e s/\"//g)
+chan=$(cat $tmpdir/nix/chan.nix | sed -e s/\"//g)
 echo $chan
-tmpdir=$(mktemp -d "${TMPDIR:-/tmp}"/tmp.XXXXXXXX)
-git clone https://gitlab.com/platonic/shpadoinkle.git $tmpdir
+
 set -eu
 
 echo
@@ -60,9 +61,9 @@ if [[ -z "$path" ]]; then
 fi
 
 mkdir -p "$path"
-cp -r $whereiam/template/* "$path" || exit 1
-cp $whereiam/figlet "$path/figlet"
-cp $whereiam/intro "$path/intro"
+cp -r $tmpdir/snowman/template/* "$path" || exit 1
+cp $tmpdir/snowman/figlet "$path/figlet"
+cp $tmpdir/snowman/intro "$path/intro"
 
 echo "naming snowman $name …"
 echo
@@ -80,7 +81,7 @@ mv "$path/snowman.cabal" "$path/$name.cabal"
 
 chown -R $USER "$path"
 
-cat $whereiam/success
+cat $tmpdir/snowman/success
 
 cd "$path"
 
