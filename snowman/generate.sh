@@ -20,11 +20,6 @@
 
 set -eu
 
-if ! command -v nix-build &> /dev/null
-then
-  echo "Nix is required for this to work"
-fi
-
 wd=$(pwd)
 
 tmpdir=$(mktemp -d "${TMPDIR:-/tmp}"/tmp.XXXXXXXX)/Shpadoinkle
