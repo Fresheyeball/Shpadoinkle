@@ -116,7 +116,7 @@ features =
   , FeatureCard
     { card'icon        = $(assetLink "/assets/lorem_ipsum_logo.svg")
     , card'title       = "Type Safe"
-    , card'description = "Shpadoinkle facilities type safe UI code. Everything from client server communication with Servant, to compile time checked asset paths, is designed with types in mind."
+    , card'description = "Shpadoinkle facilitates type safe UI code. Everything from client server communication with Servant, to compile time checked asset paths, is designed with types in mind."
     }
   ]
 
