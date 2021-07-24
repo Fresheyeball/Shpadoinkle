@@ -8,7 +8,7 @@ extra-deps:
   commit: REV
   subdirs:
   - core
-  - backends/pardiff
+  - backends/snabbdom
   - html
 - compactable-0.1.2.3@sha256:1dccae8bcf6aa4cfd01e2fd0ec36c98d6efdd3247b6ab1a49a7cfdede4d27d95,1707
 - ghcjs-dom-0.9.4.0@sha256:c2b3d25145e24b66a8a5078c0d750305b577aeff05957cf282d74f6e8d2424dd,32082
