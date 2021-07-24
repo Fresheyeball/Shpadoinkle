@@ -16,6 +16,29 @@ The following command will setup a new "hello world" project for you.
 bash <( curl https://gitlab.com/platonic/shpadoinkle/-/raw/master/snowman/generate.sh )
 ----
 
+=== Building
+
+You can use Nix to build the Haskell server:
+
+[source,bash]
+----
+nix-build
+----
+
+Or you can build the JavaScript frontend single-page application:
+
+[source,bash]
+----
+nix-build --arg isJS true
+----
+
+[CAUTION]
+Building from source can take a long time. If you run `nix-build` or `nix-build --arg isJS true`, it's highly recommended you use <<Cachix>>.
+
+[TIP]
+If you are seeing version errors in your build, or getting something like _"attribute X not found"_, you may need to update your snowman's Nix channel. You can manually set the field `chan` (line 1) in `nix/base.nix` to either a specific https://channels.nixos.org/[nix-channel version], or a Nixpkgs hash (the latest hash that builds Shpadoinkle can be found https://gitlab.com/platonic/shpadoinkle/-/blob/master/nix/chan.nix[here]). Furthermore, you can set the channel for a build with the `--argstr chan` argument -- for instance `nix-build --argstr chan "20.03"`.
+
+
 Once you have your new project you can get live reloads with the following command:
 
 [source,bash]
@@ -24,13 +47,6 @@ nix-shell --run "ghcid --command 'cabal repl' -W -T Main.dev"
 ----
 
 This will use `nix-shell` to setup a development environment for you, then execute `ghcid` inside the environment to watch your files, and execute `Main.dev` inside a repl. You can see results at `http://localhost:8080`. Of course you must have <<Nix>> installed for `nix-shell` to work.
-
-[CAUTION]
-Building from source can take a long time. If you run with `nix-build` it's highly recommended you use <<Cachix>>.
-
-[NOTE]
-.`chan`
-If you are seeing version errors in your build, or getting something like _"attribute X not found"_, you may need to *update your channel*. You can manually set the field `chan` (line 1) in `default.nix` to either a specific https://channels.nixos.org/[nix-channel version], or a specific hash (the latest hash building Shpadoinkle can be found https://gitlab.com/platonic/shpadoinkle/-/blob/master/nix/chan.nix[here]). Furthermore, you can control the channel for a build environment with the `--argstr chan` argument, for instance `nix-build --argstr chan "20.03"`.
 
 == Nix
 
