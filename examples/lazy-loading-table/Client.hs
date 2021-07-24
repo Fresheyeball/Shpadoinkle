@@ -68,7 +68,7 @@ toggleOriginFilter :: MonadJSM m => CountryCode -> Continuation m Model
 toggleOriginFilter cc = voidRunContinuationT $ do
   commit . pur $ toggleOriginFilterPure cc
   commit resetData
-  
+
 
 resetData :: MonadJSM m => Continuation m Model
 resetData = kleisli $ \(tab, sc) -> do

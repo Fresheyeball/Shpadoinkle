@@ -18,11 +18,11 @@ import           Data.Maybe                  (fromMaybe)
 import           Data.Text                   (Text, pack, unpack)
 import           GHC.Generics                (Generic)
 import           Safe                        (readMay)
-import           Shpadoinkle                 (Html, NFData, liftC, text)
+import           Shpadoinkle                 (Html, JSM, NFData, liftC, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (div_, getBody, input', onInput,
                                               onOption, option, select, value)
-import           Shpadoinkle.Run             (runJSorWarp, simple)
+import           Shpadoinkle.Run             (runJSorWarp, simple, live)
 
 
 data Model = Model
@@ -80,7 +80,13 @@ view model = div_
   ]
 
 
-main :: IO ()
-main = runJSorWarp 8080 $
-  simple runParDiff (Model Addition 0 0) view getBody
+app :: JSM ()
+app = simple runParDiff (Model Addition 0 0) view getBody
 
+
+dev :: IO ()
+dev = live 8080 app
+
+
+main :: IO ()
+main = runJSorWarp 8080 app

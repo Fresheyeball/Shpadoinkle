@@ -2,6 +2,8 @@
 :relfileprefix: /
 :icons: font
 
+This article will show you how to build an example project, and how to load the development environment to suit your needs. First, however, you'll need to fetch the source code:
+
 [source,bash]
 ----
 git clone https://gitlab.com/platonic/shpadoinkle.git
@@ -24,14 +26,14 @@ When built with GHCjs, Shpadoinkle Haskell code is compiled to JavaScript. This 
 nix-build --arg isJS true -A Shpadoinkle-examples
 ----
 
-This will generate a folder called `result`. This contains the output of GHCjs. You can now serve an example. Here we use `warp`, which is a static file server written in Haskell, however you can serve `result/bin/counter.jsexe` in any way you'd like.
+This will generate a folder called `result`. This contains the output of GHCjs, which you can serve to browsers. Here we use `warp`, which is a static file server written in Haskell. However, you can serve the output in any way you'd like.
 
 [source,bash]
 ----
-nix-shell -p haskellPackages.wai-app-static --command "warp -d result/bin/counter.jsexe -p 8080"
+nix-shell -p haskellPackages.wai-app-static --command "warp --docroot result/bin/counter.jsexe --port 8080"
 ----
 
-Open `localhost:8080` in your browser.
+Open `localhost:8080` in your browser, and you should see the counter example.
 
 === GHC
 
@@ -49,7 +51,7 @@ This will generate a folder called `result`. This contains the output of GHC. Yo
 ./result/bin/counter
 ----
 
-Open `localhost:8080` in your browser.
+Open `localhost:8080` in your browser, and you should see the counter example.
 
 == Live development
 
@@ -60,32 +62,36 @@ For live development, building a fully optimized build from scratch with `nix-bu
 [quote, ndmitchell]
 Either "GHCi as a daemon" or "GHC + a bit of an IDE". To a first approximation, it opens GHCi and runs :reload whenever your source code changes, formatting the output to fit a fixed-height console.
 
-https://github.com/ndmitchell/ghcid[GHCID] is supplied by the `nix-shell` in Shpadoinkle. You can use GHCID to get rapid feedback as follows:
+https://github.com/ndmitchell/ghcid[GHCID] is supplied out-of-the-box by the `nix-shell` in Shpadoinkle. You can use GHCID to get rapid feedback as follows:
 
 [source,bash]
 ----
-nix-shell examples
+nix-shell
 ghcid --command "cabal repl examples:counter"
 ----
 
-You can also get this with a one-liner
+Or, as a one-liner:
 
 [source,bash]
 ----
-nix-shell examples --command "ghcid --command 'cabal repl examples:counter'"
+nix-shell --command "ghcid --command 'cabal repl examples:counter'"
 ----
 
 === Repl Serving
 
-The easiest way to get changes into your browser as fast as possible is to reload `main` in a REPL.
+The easiest way to get changes into your browser as fast as possible is to reload `main` in a REPL. There are two ways to do this -- with `cabal repl`, or automatically with `ghcid`.
+
+==== Manually
+
+First, load the REPL:
 
 [source,bash]
 ----
-nix-shell examples
+nix-shell
 cabal repl examples:counter
 ----
 
-You can then run the application with `main`. This will serve the application on `localhost:8080`. When you make changes to the code, simply press btn:[Ctrl + C] then reload and run `main` once again.
+Then, run the application by executing `main`. This will serve the application on `localhost:8080`. When you make changes to the code, simply interrupt the process by pressing btn:[Ctrl + C], then reload and run `main` once again:
 
 [source,haskell]
 ----
@@ -93,17 +99,61 @@ You can then run the application with `main`. This will serve the application on
 main
 ----
 
-Refresh your browser to view updates. Live reloading is also possible with JSaddle Warp, but has not yet been implemented.
+Refresh your browser to view updates.
 
+[IMPORTANT]
+Unfortunately, JSaddle's websocket frontend code doesn't yet support FireFox due to https://github.com/ghcjs/jsaddle/issues/64[this issue]. Work is underway to remediate this.
 
-=== Incremental Builds
+==== With GHCID
 
-Right now incremental builds only work with GHC.
+This will execute `:reload` and `main` every time the source code changes, because we're using GHCID:
 
 [source,bash]
 ----
-nix-shell examples
+nix-shell --command "ghcid --command 'cabal repl examples:counter' --run"
+----
+
+Live reloading on the client is also possible:
+
+[source,bash]
+----
+nix-shell --command "ghcid --command 'cabal repl examples:counter' --run='Main.dev'"
+----
+
+=== Incremental Builds
+
+Incremental builds also work just fine. To build the specific example, you can run `nix-build` for the examples attribute:
+
+[source,bash]
+----
+nix-build -A Shpadoinkle-examples
+----
+
+And likewise for GHCjs:
+
+[source,bash]
+----
+nix-build -A Shpadoinkle-examples --arg isJS true
+----
+
+[TIP]
+If you run `nix-build` or `nix-build --arg isJS true` _without_ specifying a specific attribute, there will be _multiple_ `result-<n>` symlinked folders. However, if you _do_ specify an attribute, then `./result/` (without a number suffix) will point to the _most recent attribute built_. However, if you're ever confused as to which result points to where, just run `ls -l`. All symlinks point to an attribute name, so just look for `Shpadoinkle-examples`!
+
+If you want to build _only_ the counter example, though, that's best done with a nix-shell:
+
+[source,bash]
+----
+nix-shell
 cabal build examples:counter
 ----
 
-Using `cabal build` directly will use the standard Haskell incremental builds. Results can be found in the `dist` folder as you would expect.
+Using `cabal build` directly will use the standard Haskell incremental builds. Results can be found in the `./dist-newstyle/` folder, _instead_ of the result symlink elaborated on earlier.
+
+Lastly, to build with GHCjs, just predicate the `nix-shell` with the associated argument:
+
+[source,bash]
+----
+nix-shell --arg isJS true
+cabal build examples:counter
+----
+
