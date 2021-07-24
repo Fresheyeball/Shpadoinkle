@@ -68,6 +68,7 @@ stack build
 This will output your build results under the traditional stack `./.stack-work/` folder, rather than the `./result/` symlink mentioned above.
 
 [NOTE]
+<<<<<<< HEAD
 This build relies on the *operating system environment* for dependencies -- a common build requirement is the presence of Perl-Compatible Regular Expressions (PCRE) C header files. On Ubuntu, this can be resolved with the `libpcre++-dev` APT package.
 
 === Development Environment
@@ -80,6 +81,10 @@ nix-shell --run "ghcid --command 'cabal repl' -W -T Main.dev"
 ----
 
 This will use `nix-shell` to setup a development environment for you, then execute `ghcid` inside the environment to watch your files, and execute `Main.dev` inside a repl. You can see results at `http://localhost:8080`. Of course you must have <<Nix>> installed for `nix-shell` to work.
+=======
+.`chan`
+If you are seeing version errors in your build, or getting something like _"attribute X not found"_, you may need to *update your channel*. You can manually set the field `chan` (line 4) in `nix/base.nix` to either a specific https://channels.nixos.org/[nix-channel version], or a specific hash (the latest hash building Shpadoinkle can be found https://gitlab.com/platonic/shpadoinkle/-/blob/master/nix/chan.nix[here]). Furthermore, you can control the channel for a build environment with the `--argstr chan` argument, for instance `nix-build --argstr chan "20.03"`.
+>>>>>>> dcb87fc6f461bff7a05f7e4fd04fd3450df9ffea
 
 == Installing Nix
 

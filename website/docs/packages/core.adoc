@@ -121,6 +121,7 @@ data Continuation m a
 .Do not use the constructors directly! 
 ====
 It is recommended that you do not use the constructors for Continuation. Instead you can use the functions provided to construct continuations, such as `pur`, `done`, `impur`, `kleisli`, `causes`, `causedBy`, `merge`, `before`, and `after`. You can also build continuations using the `ContinuationT` monad transformer. The reason for not using the constructors for Continuation directly is that we reserve the right to change them.
+====
 
 
 == Backend Class
