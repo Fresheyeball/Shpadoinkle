@@ -24,11 +24,11 @@ import           Data.List.Split             as L
 import           Data.Text                   (Text, pack)
 import           Data.Text.Encoding          (decodeUtf8)
 import           GHC.Generics                (Generic)
-import           Shpadoinkle                 (Html, NFData, liftC)
+import           Shpadoinkle                 (Html, JSM, NFData, liftC)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Console         (askJSM, trapper)
 import           Shpadoinkle.Html            as H
-import           Shpadoinkle.Run             (runJSorWarp, simple)
+import           Shpadoinkle.Run             (runJSorWarp, simple, live)
 
 default (ClassList)
 
@@ -200,9 +200,18 @@ view m = H.div "calculator"
     ]
   ]
 
-main :: IO ()
-main = runJSorWarp 8080 $ do
+
+app :: JSM ()
+app = do
   setTitle "Calculator"
   ctx <- askJSM
   addInlineStyle $ decodeUtf8 $(embedFile "./CalculatorIE.css")
   simple runParDiff initial (Main.view . trapper @ToJSON ctx) getBody
+
+
+dev :: IO ()
+dev = live 8080 app
+
+
+main :: IO ()
+main = runJSorWarp 8080 app

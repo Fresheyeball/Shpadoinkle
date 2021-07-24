@@ -22,7 +22,7 @@ import           Shpadoinkle                             (Html, JSM, TVar,
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom, stage)
 import           Shpadoinkle.Html                        as H (div,
                                                                textProperty)
-import           Shpadoinkle.Run                         (runJSorWarp)
+import           Shpadoinkle.Run                         (runJSorWarp, live)
 import           UnliftIO.Concurrent                     (forkIO, threadDelay)
 
 
@@ -65,9 +65,17 @@ animation w t = void $ requestAnimationFrame w =<< go where
     when (clock < dur) . void $ requestAnimationFrame w r
 
 
-main :: IO ()
-main = runJSorWarp 8080 $ do
+app :: JSM ()
+app = do
   t <- newTVarIO 0
   w <- currentWindowUnchecked
   _ <- forkIO $ threadDelay wait >> animation w t
   shpadoinkle id runSnabbdom t view stage
+
+
+dev :: IO ()
+dev = live 8080 app
+
+
+main :: IO ()
+main = runJSorWarp 8080 app

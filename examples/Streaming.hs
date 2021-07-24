@@ -12,11 +12,11 @@ import           Prelude                     hiding (div)
 import           Control.Concurrent          (threadDelay)
 import           Control.Monad.IO.Class      (MonadIO (liftIO))
 import           Data.Text                   (Text, pack)
-import           Shpadoinkle                 (Html, NFData, liftC)
+import           Shpadoinkle                 (Html, JSM, NFData, liftC)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (button, div, getBody, onClickC,
                                               text)
-import           Shpadoinkle.Run             (runJSorWarp, simple)
+import           Shpadoinkle.Run             (runJSorWarp, simple, live)
 import           Shpadoinkle.Streaming       (consumeStream)
 import           "streaming" Streaming       (Of, Stream)
 import           Streaming.Prelude           (repeatM)
@@ -46,6 +46,13 @@ view (Model ns) =
     ]
 
 
+app :: JSM ()
+app = simple runParDiff (Model []) view getBody
+
+
+dev :: IO ()
+dev = live 8080 app
+
+
 main :: IO ()
-main = runJSorWarp 8080 $
-  simple runParDiff (Model []) view getBody
+main = runJSorWarp 8080 app
