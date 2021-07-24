@@ -9,19 +9,18 @@ See an example of this working by examining {gitlab}snowman/template/nix/base.ni
 
 == GHCjs Challenges
 
-Introducing GHCjs brings a host of problems -- many dependencies require C headers, some require specific outdated versions (or worse yet, forks), and some just need redesign in order to be practical in a JavaScript environment. All of these issues are solved with Nix; it lets us _"overlay"_ dependencies with specific versions we require, while being transparent and compatible to the end-user. As an example, many Haskell packages use a library called https://hackage.haskell.org/package/doctest[doctest] -- this is not compatible with GHCjs, and will prevent any dependencies requiring it from building.
+Introducing GHCjs brings a host of problems -- many dependencies require low-level C headers, some require specific outdated versions (or worse yet, forks) of packages, and some just need redesign in order to be practical in a JavaScript environment. All of these issues are solved with Nix; it lets us _"overlay"_ dependencies with specific versions we require, while being transparent and compatible to the end-user.
 
-// This should be reworded at some point, as it's a garden-path sentence. I can't come up with anything off the top of my head. -ckever
-Likewise, there are other obstacles introduced by testing libraries -- packages that should work just fine, but rely on low-level interfaces, will fail to build with GHCjs.
+For instance, there are other obstacles introduced by testing libraries -- packages that should work just fine, but because they rely on low-level interfaces, they will fail to build with GHCjs. As another example, many Haskell packages use a library called https://hackage.haskell.org/package/doctest[doctest] for verifying example code in documentation -- this is not compatible with GHCjs, and will prevent any dependencies requiring it from building.
 
-Additionally, the stock GHCjs and the GHCjs package set is not optimized. It lacks some critical optimizations that have their source of truth in https://github.com/reflex-frp/reflex-platform[Reflex Platform]. These optimizations require custom compilation of the GHCjs compiler as well as many downstream packages this project depends on.
+If that weren't bad enough, the stock GHCjs and the GHCjs package set is not optimized. However, this has been remediated in the https://github.com/reflex-frp/reflex-platform[Reflex Platform], which supports Nix. These optimizations require some advanced requirements -- custom compilation of the GHCjs compiler, as well as many downstream packages this project depends on.
 
-This is addressed as they come by building up Nix package https://nixos.wiki/wiki/Overlays[overlays].
+*All* of these issues are addressed by building Nix package https://nixos.wiki/wiki/Overlays[overlays].
 
 [quote]
 Overlays provide a method to extend and change nixpkgs. They replace constructs like packageOverride and overridePackages.
 
-By exposing overlays we allow you to compose needed changes into the nixpkgs set for your existing project.
+By exposing overlays, we allow you to compose these necessary changes into your nixpkgs set for your existing project:
 
 [source,nix]
 ----
@@ -45,17 +44,15 @@ pkgs = import
 
 == Extending Nix Haskell
 
-Extending the Haskell package sets in Nix has some pitfalls, as follows:
+Extending the Haskell package sets in Nix has some pitfalls:
 
 === No Implicit GHC Version
 
-These overlays target a specific compiler version, and so are applied to targets such as `pkgs.haskell.packages.ghc863` and **not** applied to targets like `pkgs.haskellPackages`. If you modify `haskellPackages` in your overlay, it will be orthogonal to the ones provided.
-
-You might expect that if the compiler version targeted is the same as the implicit version in `haskellPackages`, modifications would be kept in sync; this is not the case.
+These overlays target a specific compiler version -- they're applied to targets such as `pkgs.haskell.packages.ghc863`, but **not** applied to version-ambiguous targets like `pkgs.haskellPackages`. If you modify `haskellPackages` in your overlay, those changes won't be reflected in the targets we use in our overlays. You might expect that if the compiler version targeted is the same as the implicit version in `haskellPackages`, and modifications would be kept in sync -- this is not the case.
 
 === Compose Extensions
 
-If overlays modifying Haskell package sets do not use `composeExtensions`, new overlays will simply replace previous ones instead of composing together. Follow this pattern and everything will be OK:
+If overlays modifying Haskell package sets do not use `composeExtensions`, new overlays will simply replace previous ones, instead of composing them together. Follow this pattern and everything will be A-OK:
 
 [source,nix]
 ----
