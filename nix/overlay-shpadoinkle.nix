@@ -19,8 +19,8 @@
 
 
   jsaddle-src = builtins.fetchGit
-    { url = https://github.com/ghcjs/jsaddle.git;
-      rev = "97273656e28790ab6e35c827f8086cf47bfbedca";
+    { url = https://github.com/athanclark/jsaddle.git;
+      rev = "ebd898c6b4a7c5181a22d42be28e42677a6828b9";
       ref = "master";
     };
 
