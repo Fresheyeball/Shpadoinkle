@@ -25,19 +25,8 @@ let
       };
 
 
-      # Additional ignore patterns to keep the Nix src clean
-      ignorance = [
-        "*.md"
-        "figlet"
-        "*.nix"
-        "*.sh"
-        "*.yml"
-        "result"
-      ];
-
-
       # Get some utilities
-      inherit (import (shpadoinkle + "/nix/util.nix") { inherit compiler isJS pkgs; }) compilerjs gitignore doCannibalize;
+      inherit (import (shpadoinkle + "/nix/util.nix") { inherit compiler isJS pkgs; }) compilerjs doCannibalize;
 
 
       # Build faster by doing less
@@ -92,7 +81,19 @@ let
 
 
       # We can name him George
-      snowman = pkgs.haskell.packages.${compilerjs}.callCabal2nix "snowman" (gitignore ignorance ../.) {};
+      snowman =
+        with builtins;
+        let l = pkgs.lib; in
+        pkgs.haskell.packages.${compilerjs}.callCabal2nix "snowman"
+          (filterSource
+             (path: _:
+                baseNameOf path == "src"
+                || l.hasSuffix ".hs" path
+                || l.hasSuffix ".cabal" path
+             )
+             ../.
+          )
+          {};
 
 
     in with pkgs; with lib;
