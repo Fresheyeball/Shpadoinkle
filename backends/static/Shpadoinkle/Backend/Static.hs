@@ -12,8 +12,8 @@ module Shpadoinkle.Backend.Static ( renderStatic ) where
 
 import           Control.Compactable (Compactable (fmapMaybe))
 import           Data.Monoid         (mconcat, (<>))
-import           Data.Text.Lazy      (Text, null, unwords, fromStrict)
 import qualified Data.Text           as T
+import           Data.Text.Lazy      (Text, null, unwords, fromStrict)
 
 import           Shpadoinkle         (Html, Prop (PText), cataH, cataProp)
 

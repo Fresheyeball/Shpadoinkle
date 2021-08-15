@@ -60,8 +60,8 @@ import           Data.Maybe                    (isJust)
 import           Data.Proxy                    (Proxy (..))
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
-import qualified Data.Text.Lazy.Encoding       as LTE
 import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
+import qualified Data.Text.Lazy.Encoding       as LTE
 import           GHC.TypeLits                  (KnownSymbol, Symbol, symbolVal)
 import           GHCJS.DOM                     (currentWindowUnchecked,
                                                 syncPoint)
