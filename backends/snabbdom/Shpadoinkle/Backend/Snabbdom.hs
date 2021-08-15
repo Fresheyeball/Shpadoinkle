@@ -317,7 +317,7 @@ foreign import javascript unsafe "window['startApp']($1)" startApp' :: JSVal -> 
 #endif
 
 
--- | Get the @window.container@ DOM node produced by 'setup' (@Setup.js@).
+-- | Get the @<body>@ DOM node after emptying it.
 stage :: MonadJSM m => SnabbdomT a m RawNode
 stage = liftJSM $ do
   doc <- currentDocumentUnchecked
