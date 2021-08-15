@@ -31,8 +31,8 @@ module Shpadoinkle.Disembodied (
 import           Control.Monad              (join, void)
 import           Data.Kind                  (Type)
 import           Data.Proxy                 (Proxy (..))
-import           Data.Text                  (isSuffixOf, pack, unpack)
-import           Data.Text.IO               as T (writeFile)
+import           Data.Text.Lazy             (isSuffixOf, pack, unpack, fromStrict)
+import           Data.Text.Lazy.IO          as LT (writeFile)
 import           Servant.API
 import           System.Directory           (createDirectoryIfMissing)
 import           System.FilePath            ((<.>), (</>))
@@ -186,13 +186,13 @@ writeSiteMap
   -- ^ Specification for the pages of the site relative to a Servant API.
   -> IO ()
 writeSiteMap base fs layout
-    = T.writeFile (fs </> "sitemap" <.> "xml")
+    = LT.writeFile (fs </> "sitemap" <.> "xml")
     . buildSiteMapXML . go mempty $ buildSite @layout layout
   where
   go (x,xs) (SIndex _) = x:xs
   go curr (SChoice x y) = go curr x <> go curr y
   go curr (SCapture f)  = join $ traverse (
-    \c -> go curr $ SPath (unpack $ toUrlPiece c) $ f c
+    \c -> go curr $ SPath (unpack . fromStrict $ toUrlPiece c) $ f c
                                    ) [ minBound .. maxBound ]
   go (x,xs) (SPath path (SIndex _)) | ".html" `isSuffixOf` pack path =
     (x <> "/" <> path):xs
@@ -222,13 +222,13 @@ writeSite
 writeSite fs layout = go fs $ buildSite @layout layout where
 
   go :: FilePath -> Site -> IO ()
-  go curr (SIndex page) = T.writeFile (curr </> "index" <.> "html") $ renderStatic page
+  go curr (SIndex page) = LT.writeFile (curr </> "index" <.> "html") $ renderStatic page
   go curr (SChoice x y) = void $ go curr x `concurrently` go curr y
   go curr (SCapture f)  = forConcurrently_ [ minBound .. maxBound ] $
-    \c -> go curr $ SPath (unpack $ toUrlPiece c) $ f c
+    \c -> go curr $ SPath (unpack . fromStrict $ toUrlPiece c) $ f c
   go curr (SPath path (SIndex page)) | ".html" `isSuffixOf` pack path = do
     createDirectoryIfMissing False curr
-    T.writeFile (curr </> path) $ renderStatic page
+    LT.writeFile (curr </> path) $ renderStatic page
   go curr (SPath path site) = do
     createDirectoryIfMissing False (curr </> path)
     go (curr </> path) site
