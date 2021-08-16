@@ -51,7 +51,7 @@ import           Control.Monad.Catch         (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.Cont          (MonadCont)
 import           Control.Monad.Except        (MonadError)
 import           Control.Monad.RWS           (MonadRWS)
-import           Control.Monad.Reader        (MonadIO, MonadReader (ask),
+import           Control.Monad.Reader        (MonadIO, MonadReader (ask, local),
                                               MonadTrans (..), ReaderT (..),
                                               guard)
 import           Control.Monad.State         (MonadState)
@@ -67,14 +67,15 @@ import           Data.Map.Internal           (Map (Bin, Tip))
 import           Data.Maybe                  (isJust)
 import           Data.Monoid                 ((<>))
 import           Data.Once                   (Once, newOnce, runOnce)
-import           Data.Text                   (Text, intercalate)
-import           Language.Javascript.JSaddle (FromJSVal (fromJSValUnchecked),
-                                              JSString, MakeObject (makeObject),
+import           Data.Text                   (Text)
+import           GHCJS.DOM                   (currentDocumentUnchecked)
+import           GHCJS.DOM.Document          (getBodyUnsafe)
+import           GHCJS.DOM.Element           (setInnerHTML)
+import           Language.Javascript.JSaddle (JSString, MakeObject (makeObject),
                                               Object, ToJSString (toJSString),
-                                              ToJSVal (toJSVal), eval, fun,
-                                              jsFalse, jsTrue, jsg, jsg2,
-                                              liftJSM, unsafeSetProp,
-                                              valMakeText, (#))
+                                              ToJSVal (toJSVal), fun, jsFalse,
+                                              jsTrue, jsg, liftJSM, toJSString,
+                                              unsafeSetProp, valMakeText, (#))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
@@ -100,7 +101,7 @@ newtype ParDiffT model m a = ParDiffT { unParDiff :: ReaderT (TVar model) m a }
   , Alternative
   , Monad
   , MonadIO
-  , MonadReader (TVar model)
+  -- , MonadReader (TVar model) - NOTE do not add this instance, it will mess up your application's MTL stack
   , MonadTrans
   , MonadTransControl
   , MonadThrow
@@ -108,11 +109,16 @@ newtype ParDiffT model m a = ParDiffT { unParDiff :: ReaderT (TVar model) m a }
   , MonadMask
   , MonadWriter w
   , MonadState s
-  , MonadRWS (TVar model) w s
   , MonadError e
   , MonadCont
   )
+instance MonadReader r m => MonadReader r (ParDiffT model m) where
+  ask = ParDiffT (ReaderT (const ask))
+  local f (ParDiffT (ReaderT g)) = ParDiffT (ReaderT (local f . g))
+instance MonadRWS r w s m => MonadRWS r w s (ParDiffT model m)
 
+askModel :: Monad m => ParDiffT model m (TVar model)
+askModel = ParDiffT ask
 
 #ifndef ghcjs_HOST_OS
 deriving instance MonadJSM m => MonadJSM (ParDiffT model m)
@@ -212,15 +218,16 @@ makeProp toJSM i = \case
 
 
 setup' :: JSM () -> JSM ()
-setup' cb = do
-  void $ eval $ intercalate "\n"
-    [ " window.deleteProp = (k, obj) => {"
-    , "   delete obj[k]"
-    , " }"
-    , " window.container = document.createElement('div')"
-    , " document.body.appendChild(container)"
-    ]
-  cb
+setup' cb = cb
+
+#ifndef ghcjs_HOST_OS
+deleteProp :: JSString -> Object -> JSM ()
+deleteProp _ _ = pure () -- can't delete properties from object in GHC
+#else
+foreign import javascript unsafe
+  "delete $2[$1];"
+  deleteProp :: JSString -> Object -> JSM ()
+#endif
 
 
 setFlag :: Object -> Text -> Bool -> JSM ()
@@ -229,7 +236,7 @@ setFlag obj' k b
   | otherwise = case k of
     "checked"  -> unsafeSetProp k' jsFalse obj'
     "disabled" -> void (obj' # "removeAttribute" $ "disabled")
-    _          -> void (jsg2 "deleteProp" k' obj')
+    _          -> deleteProp k' obj'
   where
     k' = toJSString k
 
@@ -275,7 +282,7 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
         "style"     -> void $ obj' # "removeAttribute" $ "style"
         "checked"   -> unsafeSetProp (toJSString k) jsFalse obj'
         "disabled"  -> void $ obj' # "removeAttribute" $ "disabled"
-        _           -> void $ jsg2 "deleteProp" (toJSString k) obj'
+        _           -> deleteProp (toJSString k) obj'
 
   traverseWithKey_ remove toRemove
 
@@ -329,7 +336,7 @@ patch'
   => NFData a
   => RawNode -> ParVNode a -> ParVNode a -> ParDiffT a m (ParVNode a)
 patch' parent old new = do
-  i <- ask
+  i <- askModel
   case (old, new) of
 
     (ParTextNode raw t', ParTextNode _ t)
@@ -375,7 +382,7 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
     mkNode :: Text -> [(Text, Prop (ParDiffT a m) a)] -> [ParDiffT a m (ParVNode a)] -> ParDiffT a m (ParVNode a)
     mkNode name ps cs = do
       cs' <- sequence cs
-      i <- ask
+      i <- askModel
       let ps' = toProps ps
       raw <- liftJSM . newOnce $ do
         doc <- jsg "document"
@@ -391,7 +398,7 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
       return $ ParNode raw name p cs'
 
     mkPotato :: JSM (RawNode, STM (Continuation (ParDiffT a m) a)) -> ParDiffT a m (ParVNode a)
-    mkPotato mrn = ask >>= \i -> liftJSM $ do
+    mkPotato mrn = askModel >>= \i -> liftJSM $ do
       (rn, stm) <- mrn
       let go = atomically stm >>= writeUpdate i . hoist (toJSM . runParDiff i) >> go
       void $ forkIO go
@@ -425,6 +432,10 @@ instance
     Just old -> patch' parent old new
 
 
--- | Get the DOM node produced by 'setup'.
-stage :: FromJSVal b => MonadJSM m => ParDiffT a m b
-stage = liftJSM $ fromJSValUnchecked =<< jsg "container"
+-- | Get the @<body>@ DOM node after emptying it.
+stage :: MonadJSM m => ParDiffT a m RawNode
+stage = liftJSM $ do
+  b <- getBodyUnsafe =<< currentDocumentUnchecked
+  setInnerHTML b ""
+  RawNode <$> toJSVal b
+{-# SPECIALIZE stage :: ParDiffT a JSM RawNode #-}
