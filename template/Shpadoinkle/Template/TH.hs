@@ -6,11 +6,8 @@ module Shpadoinkle.Template.TH where
 
 
 import           Control.Monad              (unless, when)
-import           Data.Maybe                 (fromMaybe)
-import           Data.Text                  (Text, cons, head, null, pack,
-                                             replace, tail, uncons, unpack)
+import           Data.Text                  (Text, cons, pack, replace, unpack)
 import           Data.Text.IO
-import           HTMLEntities.Decoder       (htmlEntityBody)
 import           Language.Haskell.TH.Syntax
 import           Prelude                    hiding (head, null, readFile, tail)
 import           System.Directory           (doesFileExist, removeFile)
@@ -120,28 +117,4 @@ attrToExp (Attr name value) = TupE [name', AppE textProp value']
 
 
 asText :: Text -> Exp
-asText = AppE (UnboundVarE $ mkName "pack") . LitE . StringL . unpack . decodeHtml
-
-
-decodeHtml :: Text -> Text
-decodeHtml s = case uncons s of
-  Nothing -> ""
-  Just ('&', xs) -> fromMaybe ('&' `cons` decodeHtml xs) $ do
-    (before, after) <- breakCharMaybe ';' xs
-    c <- hush $ htmlEntityBody before
-    return $ c <> decodeHtml after
-  Just (x, xs) -> x `cons` decodeHtml xs
-
-
-hush :: Either a b -> Maybe b
-hush (Left _)  = Nothing
-hush (Right x) = Just x
-
-
-breakCharMaybe :: Char -> Text -> Maybe (Text, Text)
-breakCharMaybe c s
-  | null s = Nothing
-  | c == head s = Just ("", tail s)
-  | otherwise = do
-      (next, rest) <- breakCharMaybe c (tail s)
-      Just (cons (head s) next, rest)
+asText = AppE (UnboundVarE $ mkName "pack") . LitE . StringL . unpack

@@ -75,7 +75,8 @@ import           Language.Javascript.JSaddle (JSString, MakeObject (makeObject),
                                               Object, ToJSString (toJSString),
                                               ToJSVal (toJSVal), fun, jsFalse,
                                               jsTrue, jsg, liftJSM, toJSString,
-                                              unsafeSetProp, valMakeText, (#))
+                                              unsafeSetProp, valMakeString,
+                                              valMakeText, (#))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)

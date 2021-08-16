@@ -46,6 +46,7 @@ library
     , containers
     , deepseq
     , ghcjs-dom >=0.9.4 && <0.20
+    , html-entities
     , jsaddle >=0.9.7 && <0.20
     , mtl
     , text >=1.2.3 && <1.3
