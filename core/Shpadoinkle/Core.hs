@@ -38,7 +38,7 @@ module Shpadoinkle.Core (
   -- ** Catamorphisms
   , cataH, cataProp
   -- ** Utilities
-  , mapProps, injectProps, eitherH
+  , mapProps, injectProps, eitherH, htmlDecode
   -- * JSVal Wrappers
   , RawNode(..), RawEvent(..)
   -- * Backend Interface
@@ -60,9 +60,16 @@ import           Data.Map                      as M (Map, foldl', insert,
                                                      toList, unionWithKey)
 import           Data.String                   (IsString (..))
 import           Data.Text                     (Text, pack)
+import           Data.Text.Lazy                (toStrict)
+import           Data.Text.Lazy.Builder        (toLazyText)
 import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
+#ifndef ghcjs_HOST_OS
 import           Language.Javascript.JSaddle   (FromJSVal (..), JSVal,
-                                                ToJSVal (..), askJSM, runJSM)
+                                                ToJSVal (..), JSString, askJSM, runJSM, fromJSString, toJSString)
+#else
+import           Language.Javascript.JSaddle   (FromJSVal (..), JSVal,
+                                                ToJSVal (..), JSString, askJSM, runJSM)
+#endif
 import           Prelude                       hiding ((.))
 import           UnliftIO                      (MonadUnliftIO (..),
                                                 UnliftIO (..))
@@ -74,6 +81,9 @@ import           UnliftIO.STM                  (STM, TVar, atomically,
 import           Shpadoinkle.Continuation      (Continuation, Continuous (..),
                                                 causes, eitherC, hoist, impur,
                                                 pur, shouldUpdate)
+#ifndef ghcjs_HOST_OS
+import           HTMLEntities.Decoder        (htmlEncodedText)
+#endif
 
 
 -- | This is the core type in Backend.
@@ -363,6 +373,17 @@ mapProps f (Html h') = Html $ \n p t -> h' (\t' ps cs -> n t' (f ps) cs) p t
 injectProps :: [(Text, Prop m a)] -> Html m a -> Html m a
 injectProps ps = mapProps (<> ps)
 {-# INLINE injectProps #-}
+
+
+#ifndef ghcjs_HOST_OS
+htmlDecode :: JSString -> JSM JSString
+htmlDecode = pure . toJSString . toStrict . toLazyText . htmlEncodedText . fromJSString
+#else
+foreign import javascript unsafe
+  "{var ta = document.createElement('textarea'); ta.innerHTML = $1; $r = ta.childNodes.length == 0 ? '' : ta.childNodes[0].nodeValue;}"
+  htmlDecode :: JSString -> JSM JSString
+#endif
+
 
 
 -- | The Backend class describes a backend that can render 'Html'.
