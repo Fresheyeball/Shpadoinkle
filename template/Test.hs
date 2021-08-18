@@ -5,9 +5,10 @@
 module Main where
 
 
-import           Data.FileEmbed
+import           Data.FileEmbed             (embedFile)
 import           Data.Text
-import           Data.Text.Encoding
+import           Data.Text.Encoding         (decodeUtf8)
+import qualified Data.Text.Lazy             as LT
 import           Shpadoinkle
 import           Shpadoinkle.Backend.Static
 import           Shpadoinkle.Template
@@ -17,7 +18,7 @@ import           Shpadoinkle.Template.TH
 testHtmlIngestion :: IO ()
 testHtmlIngestion =
   let x = mconcat $ renderStatic <$> $(embedHtml "./test.html")
-      y = decodeUtf8 $(embedFile "./test.html")
+      y = LT.fromStrict $ decodeUtf8 $(embedFile "./test.html")
   in if x == y then pure () else do
      print x
      print y
