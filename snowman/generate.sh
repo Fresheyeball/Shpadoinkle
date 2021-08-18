@@ -17,13 +17,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Shpadoinkle Snowman.  If not, see <https://www.gnu.org/licenses/>.
 
-
 set -eu
 
 wd=$(pwd)
 
+if [[ $# -eq 0 ]]; then
+  branch="master"
+else
+  branch=$1
+fi
+
 tmpdir=$(mktemp -d "${TMPDIR:-/tmp}"/tmp.XXXXXXXX)/Shpadoinkle
-git clone https://gitlab.com/platonic/shpadoinkle.git $tmpdir
+git clone https://gitlab.com/platonic/shpadoinkle.git --branch=$branch $tmpdir
 cd $tmpdir
 rev=$(git rev-parse HEAD)
 echo $rev

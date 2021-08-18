@@ -65,6 +65,19 @@ Developer Tools:
   artifacts:
     untracked: true
 
+Build Snowman with Nix on Linux:
+  stage: Linux Build
+  needs:
+  - Check Style
+  - Hlint
+  script:
+  - cat snowman/generate.sh | bash -s $CI_COMMIT_BRANCH
+  - cd beowulf/
+  - nix-build --argstr shpadoinkle-path $(pwd)/.. --fallback
+  - nix-build --argstr shpadoinkle-path $(pwd)/.. --arg isJS true --fallback
+  - cd ../
+  - rm -rf beowulf/
+
 Packages GHC 8.6.5 on Darwin:
   stage: Darwin Build
   needs:
@@ -80,6 +93,20 @@ Packages GHCJS 8.6 on Darwin:
   - Hlint
   script:
   - nix-build --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
+
+Build Snowman with Nix on Darwin:
+  stage: Darwin Build
+  needs:
+  - Check Style
+  - Hlint
+  - Build Snowman with Nix on Linux
+  script:
+  - cat snowman/generate.sh | bash -s $CI_COMMIT_BRANCH
+  - cd beowulf/
+  - nix-build --argstr shpadoinkle-path $(pwd)/.. --argstr system x86_64-darwin --fallback
+  - nix-build --argstr shpadoinkle-path $(pwd)/.. --argstr system x86_64-darwin --arg isJS true --fallback
+  - cd ../
+  - rm -rf beowulf/
 
 Dev Shell GHC 8.6.5 on Linux:
   stage: Linux Shell

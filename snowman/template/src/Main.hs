@@ -25,5 +25,5 @@ dev = live 8080 app
 main :: IO ()
 main = do
   putStrLn "\nhi, my name is snowman"
-  putStrLn "happy point of view on https://localhost:8080\n"
+  putStrLn "happy point of view on http://localhost:8080\n"
   runJSorWarp 8080 app
