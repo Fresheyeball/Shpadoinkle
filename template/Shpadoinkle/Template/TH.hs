@@ -22,7 +22,11 @@ data CleanUp = CleanUp | LeaveFile deriving Eq
 
 
 embedAsciidoc :: FilePath -> Q Exp
-embedAsciidoc asciiPath = do
+embedAsciidoc = embedAsciidocWithPreprocess (const (pure ()))
+
+
+embedAsciidocWithPreprocess :: (FilePath -> IO ()) -> FilePath -> Q Exp
+embedAsciidocWithPreprocess go asciiPath = do
   let htmlPath = unpack $ replace ".adoc" ".html" $ pack asciiPath
   out@(exit, _, _) <- runIO $ do
     doesAscii <- doesFileExist asciiPath
@@ -31,7 +35,7 @@ embedAsciidoc asciiPath = do
     when doesHtml $ removeFile htmlPath
     readCreateProcessWithExitCode (proc "asciidoctor" [ "-s", asciiPath ]) ""
   case exit of
-    ExitSuccess   -> embedHtml' CleanUp htmlPath
+    ExitSuccess   -> embedHtmlWithPreprocess' go CleanUp htmlPath
     ExitFailure _ -> fail $ show out
 
 
@@ -39,11 +43,20 @@ embedHtml :: FilePath -> Q Exp
 embedHtml = embedHtml' LeaveFile
 
 
+embedHtmlWithPreprocess :: (FilePath -> IO ()) -> FilePath -> Q Exp
+embedHtmlWithPreprocess go = embedHtmlWithPreprocess' go LeaveFile
+
+
 embedHtml' :: CleanUp -> FilePath -> Q Exp
-embedHtml' clean htmlPath = do
+embedHtml' = embedHtmlWithPreprocess' (const (pure ()))
+
+
+embedHtmlWithPreprocess' :: (FilePath -> IO ()) -> CleanUp -> FilePath -> Q Exp
+embedHtmlWithPreprocess' go clean htmlPath = do
   ts  <- runIO $ do
     doesHtml <- doesFileExist htmlPath
     _ <- unless doesHtml . fail $ "Html not found at " <> htmlPath
+    go htmlPath
     ts' <- parseTokens <$> readFile htmlPath
     when (clean == CleanUp) $ removeFile htmlPath
     return ts'
