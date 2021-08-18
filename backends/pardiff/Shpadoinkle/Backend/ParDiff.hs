@@ -75,7 +75,8 @@ import           Language.Javascript.JSaddle (JSString, MakeObject (makeObject),
                                               Object, ToJSString (toJSString),
                                               ToJSVal (toJSVal), fun, jsFalse,
                                               jsTrue, jsg, liftJSM, toJSString,
-                                              unsafeSetProp, valMakeText, (#))
+                                              unsafeSetProp, valMakeString,
+                                              valMakeText, (#))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
@@ -87,8 +88,8 @@ import           Shpadoinkle                 (Backend (..), Continuation,
                                               Prop (..), Props (..),
                                               RawEvent (RawEvent),
                                               RawNode (RawNode, unRawNode),
-                                              hoist, toProps, type (~>),
-                                              writeUpdate)
+                                              hoist, htmlDecode, toProps,
+                                              type (~>), writeUpdate)
 
 
 default (Text)
@@ -346,7 +347,7 @@ patch' parent old new = do
       | otherwise -> liftJSM $ do
         RawNode r <- runOnce raw
         obj' <- makeObject r
-        tNew <- valMakeText t
+        tNew <- valMakeString =<< htmlDecode (toJSString t)
         unsafeSetProp "nodeValue" tNew obj'
         return (ParTextNode raw t)
 
@@ -408,7 +409,7 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
     mkText t = liftJSM $ do
       raw <- newOnce $ do
         doc <- jsg "document"
-        t' <- valMakeText t
+        t' <- valMakeString =<< htmlDecode (toJSString t)
         RawNode <$> (doc # "createTextNode" $ t')
       return $ ParTextNode raw t
 

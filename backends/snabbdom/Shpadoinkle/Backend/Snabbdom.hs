@@ -61,14 +61,15 @@ import           Language.Javascript.JSaddle (FromJSVal (..), JSVal, Object,
                                               function, jsTrue, jsg1, jsg2,
                                               jsg3, toJSBool, toJSString,
                                               unsafeGetProp, unsafeSetProp,
-                                              valMakeText, valToObject)
+                                              valMakeString, valMakeText,
+                                              valToObject)
 #else
 import           Language.Javascript.JSaddle (FromJSVal (..), JSVal, Object,
                                               ToJSVal (..), create, eval, fun,
                                               function, jsTrue, toJSBool,
                                               toJSString, unsafeGetProp,
-                                              unsafeSetProp, valMakeText,
-                                              valToObject)
+                                              unsafeSetProp, valMakeString,
+                                              valMakeText, valToObject)
 #endif
 import           Prelude                     hiding (id, words, (.))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
@@ -294,7 +295,7 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
         void $ forkIO go
         vnodePotato o
 
-      mkText = liftJSM . fmap SnabVNode . valMakeText
+      mkText t = liftJSM . fmap SnabVNode $ valMakeString =<< htmlDecode (toJSString t)
 
 
   patch :: RawNode -> Maybe SnabVNode -> SnabVNode -> SnabbdomT a m SnabVNode
