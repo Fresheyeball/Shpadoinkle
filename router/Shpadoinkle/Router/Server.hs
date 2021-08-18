@@ -25,10 +25,8 @@ module Shpadoinkle.Router.Server where
 #ifndef ghcjs_HOST_OS
 
 
-import           Data.ByteString.Lazy           as BS (ByteString, fromStrict,
-                                                       length)
-import qualified Data.ByteString.Lazy           as BSL
-import           Data.Text.Encoding             (encodeUtf8)
+import           Data.ByteString.Lazy           as BS (ByteString, length)
+import           Data.Text.Lazy.Encoding        (encodeUtf8)
 import           GHC.TypeLits                   (Symbol)
 import           Network.HTTP.Types
 import           Network.Wai                    (Application, responseLBS)
@@ -72,7 +70,7 @@ defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex, ssMaxAg
   settings   = defaultWebAppSettings root
 
   orIndex ps = do
-    let file ps' = toFile ps' . BS.fromStrict . encodeUtf8 . renderStatic
+    let file ps' = toFile ps' . encodeUtf8 . renderStatic
     res <- ssLookupFile settings ps
     html <- mhtml
     return $ case (res, toPieces ["index.html"]) of
@@ -153,5 +151,5 @@ serveDirectoryWithSpa = pure . staticApp
 serveHtml :: Html m a -> Application
 serveHtml html _ respond
   = respond . responseLBS status200 [(hContentType, "text/html")]
-  . BSL.fromStrict . encodeUtf8 $ renderStatic html
+  . encodeUtf8 $ renderStatic html
 #endif

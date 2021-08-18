@@ -61,6 +61,7 @@ import           Data.Proxy                    (Proxy (..))
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
 import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
+import qualified Data.Text.Lazy.Encoding       as LTE
 import           GHC.TypeLits                  (KnownSymbol, Symbol, symbolVal)
 import           GHCJS.DOM                     (currentWindowUnchecked,
                                                 syncPoint)
@@ -107,7 +108,6 @@ import           Shpadoinkle                   (Backend, Continuation, Html,
 #ifndef ghcjs_HOST_OS
 
 
-import qualified Data.ByteString.Lazy          as BSL
 import qualified Data.List.NonEmpty            as NE
 import qualified Network.HTTP.Media            as M
 import qualified Servant                       as S
@@ -489,7 +489,7 @@ instance Accept HTML where
 
 
 instance MimeRender HTML (Html m a) where
-  mimeRender _ =  BSL.fromStrict . encodeUtf8 . renderStatic
+  mimeRender _ = LTE.encodeUtf8 . renderStatic
 
 
 instance S.HasServer (View m a) context where
