@@ -70,6 +70,8 @@ Build Snowman with Nix on Linux:
   needs:
   - Check Style
   - Hlint
+  - Packages GHCJS 8.6 on Linux
+  - Packages GHC 8.6.5 on Linux
   script:
   - cat snowman/generate.sh | bash -s $CI_COMMIT_BRANCH
   - cd beowulf/
@@ -99,7 +101,8 @@ Build Snowman with Nix on Darwin:
   needs:
   - Check Style
   - Hlint
-  - Build Snowman with Nix on Linux
+  - Packages GHCJS 8.6 on Darwin
+  - Packages GHC 8.6.5 on Darwin
   script:
   - cat snowman/generate.sh | bash -s $CI_COMMIT_BRANCH
   - cd beowulf/
