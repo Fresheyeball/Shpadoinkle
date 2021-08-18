@@ -60,6 +60,12 @@ if [[ -z "$path" ]]; then
   path="./$name"
 fi
 
+if [[ -d "$path" ]]; then
+  echo "Oh no! The path at $path already exists! I won't build here, sorry!"
+  echo "Exiting..."
+  exit 1
+fi
+
 mkdir -p "$path"
 cp -r $tmpdir/snowman/template/* "$path" || exit 1
 cp $tmpdir/snowman/figlet "$path/figlet"
