@@ -596,6 +596,10 @@ div.admonitionblock {
   margin: 3rem 0;
   border-radius: 0.75rem;
 }
+div.admonitionblock > table {
+  table-layout: fixed;
+  width: 100%;
+}
 div.admonitionblock td.icon {
   border-radius: 18px;
   color: #fff;
