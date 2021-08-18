@@ -61,6 +61,11 @@ onInputC = mkWithFormVal valToText "input" "value"
 $(mkEventVariantsAfforded "input" ''Text)
 
 
+onBeforeinputC ::  (Text -> Continuation m a) -> (Text, Prop m a)
+onBeforeinputC = mkWithFormVal valToText "beforeinput" "value"
+$(mkEventVariantsAfforded "beforeinput" ''Text)
+
+
 onOptionC ::  (Text -> Continuation m a) -> (Text, Prop m a)
 onOptionC = mkWithFormVal valToText "change" "value"
 $(mkEventVariantsAfforded "option" ''Text)
