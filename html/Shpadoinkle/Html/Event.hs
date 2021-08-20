@@ -94,6 +94,10 @@ preventDefault :: RawEvent -> JSM ()
 preventDefault e = void $ valToObject e # ("preventDefault" :: String) $ ([] :: [()])
 
 
+stopPropagation :: RawEvent -> JSM ()
+stopPropagation e = void $ valToObject e # ("stopPropagation" :: String) $ ([] :: [()])
+
+
 onSubmitC :: Continuation m a -> (Text, Prop m a)
 onSubmitC m = listenRaw "submit" $ \_ e -> preventDefault e >> return m
 $(mkEventVariants "submit")

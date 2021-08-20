@@ -29,19 +29,19 @@ toActive = \case
 
 navLinkDesktop :: MonadJSM m => Route -> Nav -> Html m a
 navLinkDesktop r n = li [ class' nav__link ] $
-  a [ goTo $ toRoute n ] [ text $ humanize n ]
+  a (goTo $ toRoute n) [ text $ humanize n ]
   : [ img' [ class' $ if r == RHome then nav__link_underline else nav__link__underline_docs
            , src $(assetLink "/assets/nav_line.svg") ] | toActive r == Just n ]
 
 
 navLinkMobile :: MonadJSM m => Nav -> Html m a
-navLinkMobile n = a [ class' nav_mobile__link, goTo $ toRoute n ] [ text $ humanize n ]
+navLinkMobile n = a (class' nav_mobile__link : goTo (toRoute n)) [ text $ humanize n ]
 
 
 view :: MonadJSM m => Toggle -> Route -> [Html m Toggle]
 view t r = pure $ div [ class' started_header ] $
   [ H.nav [ class' Style.nav ]
-    [ a [ goTo RHome ]
+    [ a (goTo RHome)
       [ img' [ class' nav__logo, src $(assetLink "/assets/landing_logo.svg") ]
       ]
     , img' [ class' nav__menu_icon, onClick toggle, src $ case t of

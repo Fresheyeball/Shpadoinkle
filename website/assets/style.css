@@ -1101,7 +1101,6 @@ body {
   width: 24rem;
 }
 .feature-button__split {
-  margin-top: 10px;
   --tw-bg-opacity: 1;
   background-color: rgba(241, 226, 85, var(--tw-bg-opacity));
   --tw-text-opacity: 1;
