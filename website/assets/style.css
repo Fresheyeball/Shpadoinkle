@@ -597,6 +597,10 @@ div.admonitionblock {
   border-radius: 0.75rem;
 }
 div.admonitionblock > table {
+  table-layout: fixed;
+  width: 100%;
+}
+div.admonitionblock > table > tr > td:nth-child(2) {
   width: 100%;
 }
 div.admonitionblock td.icon {
