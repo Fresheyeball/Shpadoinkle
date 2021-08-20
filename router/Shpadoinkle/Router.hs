@@ -49,7 +49,7 @@ module Shpadoinkle.Router (
 
 import           Control.Applicative           (Alternative ((<|>)))
 import           Control.Compactable           as C (Compactable (compact, filter))
-import           Control.Monad                 (forever)
+import           Control.Monad                 (forever, when)
 import           Control.Monad.IO.Class        (MonadIO (liftIO))
 import           Data.Aeson                    (FromJSON, ToJSON, decode,
                                                 encode)
@@ -68,7 +68,7 @@ import           GHCJS.DOM                     (currentWindowUnchecked,
 import           GHCJS.DOM.EventM              (on)
 import           GHCJS.DOM.EventTargetClosures (EventName, unsafeEventName)
 import           GHCJS.DOM.History             (pushState)
-import           GHCJS.DOM.Location            (getPathname, getSearch)
+import           GHCJS.DOM.Location            (getHref, getPathname, getSearch)
 import           GHCJS.DOM.PopStateEvent       (PopStateEvent)
 import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
 import           GHCJS.DOM.Window              (Window, getHistory, getLocation,
@@ -97,7 +97,7 @@ import           System.IO.Unsafe              (unsafePerformIO)
 import           UnliftIO.Concurrent           (MVar, forkIO, newEmptyMVar,
                                                 putMVar, takeMVar)
 import           UnliftIO.STM                  (TVar, atomically, newTVarIO,
-                                                writeTVar)
+                                                readTVarIO, writeTVar)
 import           Web.HttpApiData               (parseUrlPiece)
 
 import           Shpadoinkle                   (Backend, Continuation, Html,
@@ -335,7 +335,14 @@ listenStateChange
   :: Router r -> (r -> JSM ()) -> JSM ()
 listenStateChange router handle = do
   w <- currentWindowUnchecked
-  _ <- on w popstate . liftIO $ putMVar syncRoute ()
+  (path,_) <- fmap (T.breakOn "#") $ getHref =<< getLocation w
+  pathVar <- newTVarIO path
+  _ <- on w popstate $ do
+    oldPath <- readTVarIO pathVar
+    (newPath,_) <- fmap (T.breakOn "#") $ getHref =<< getLocation w
+    when (oldPath /= newPath) $ do
+      atomically $ writeTVar pathVar newPath
+      putMVar syncRoute ()
   _ <- forkIO . forever $ do
     liftIO $ takeMVar syncRoute
     getRoute w router $ maybe (return ()) handle

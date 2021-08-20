@@ -753,6 +753,9 @@ h2 {
 h3 {
   font-size: 1.5rem;
 }
+h4 {
+  font-size: 1.25rem;
+}
 @media (min-width: 768px) {
   h1 {
     font-size: 3.75rem;
@@ -1548,8 +1551,17 @@ nav ul li:hover {
 .docs h2, .docs h3{
   margin: 2rem 0 0.5rem 0;
 }
-.docs h3{
+.docs h3, .docs h4{
   font-weight: bold;
+}
+.documentation h2 a, .documentation h3 a:hover, .documentation h4 a:hover {
+  -moz-transition: all .2s ease-in;
+  -o-transition: all .2s ease-in;
+  -webkit-transition: all .2s ease-in;
+  transition: all .2s ease-in;
+}
+.documentation h2 a:hover, .documentation h3 a:hover, .documentation h4 a:hover {
+    color: #D9CE5F;
 }
 .separator {
   --tw-border-opacity: 1;
@@ -1692,7 +1704,7 @@ code.doc {
   overflow: hidden;
 }
 .language-bash{
-  cursor: pointer;
+  cursor: copy;
 }
 #game{
   height: 200px;
