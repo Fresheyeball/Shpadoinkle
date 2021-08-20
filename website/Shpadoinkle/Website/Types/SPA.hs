@@ -20,9 +20,14 @@ import           Data.Proxy                                     (Proxy (Proxy))
 import           Data.Text                                      (Text, pack)
 import           Servant.API                                    (type (:<|>) (..),
                                                                  type (:>))
-import           Shpadoinkle                                    (MonadJSM, Prop)
+import           Shpadoinkle                                    (MonadJSM, Prop,
+                                                                 liftJSM,
+                                                                 listenRaw)
+import           Shpadoinkle.Continuation                       (done)
 import           Shpadoinkle.Html                               (href,
-                                                                 onClickM_)
+                                                                 onClickM_,
+                                                                 preventDefault,
+                                                                 stopPropagation)
 import           Shpadoinkle.Router                             (Redirect (..),
                                                                  Routed (..),
                                                                  View, getURI,
@@ -128,9 +133,19 @@ instance Routed (SPA m) Route where
       Redirect (Proxy @("404" :> View' m)) id
 
 
-goTo :: forall m a. MonadJSM m => Route -> (Text, Prop m a)
+goTo :: forall m a. MonadJSM m => Route -> [(Text, Prop m a)]
 #ifndef ghcjs_HOST_OS
-goTo = href . ("/" <>) . pack . show . getURI @(SPA m)
+goTo r = [href . ("/" <>) . pack . show $ getURI @(SPA m) r]
 #else
-goTo = onClickM_ . navigate @(SPA m)
+goTo r =
+  [ listenRaw "click" (const handleEvent)
+  , href . ("/" <>) . pack . show $ getURI @(SPA m) r
+  ]
+  where
+    handleEvent e = do
+      liftJSM $ do
+        preventDefault e
+        stopPropagation e
+      navigate @(SPA m) r
+      pure done
 #endif

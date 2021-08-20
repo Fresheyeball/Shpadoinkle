@@ -22,8 +22,7 @@ import           Shpadoinkle.Html                               as H hiding
 import           Shpadoinkle.Html.TH.AssetLink                  (assetLink)
 import           Shpadoinkle.Lens                               (onRecord,
                                                                  onRecordEndo)
-import           Shpadoinkle.Router                             (MonadJSM,
-                                                                 navigate)
+import           Shpadoinkle.Router                             (MonadJSM)
 import           Shpadoinkle.Website.Component.LiveExample      as Live (example)
 import           Shpadoinkle.Website.Style                      as Style
 import           Shpadoinkle.Website.Types.Effects.Example      (ExampleEffects)
@@ -34,7 +33,7 @@ import           Shpadoinkle.Website.Types.Nav                  (Nav (NGettingSt
                                                                  toRoute)
 import           Shpadoinkle.Website.Types.Route                (Route (RGettingStarted))
 import           Shpadoinkle.Website.Types.Route.GettingStarted (Route (RGSIndex))
-import           Shpadoinkle.Website.Types.SPA                  (SPA, goTo)
+import           Shpadoinkle.Website.Types.SPA                  (goTo)
 
 
 view :: (MonadJSM m, ExampleEffects m) => Home -> Html m Home
@@ -55,7 +54,7 @@ hero' = div_
       ]
     , div [ class' hero_button ]
       [ div [ class' $ split_button <> hero_button__content ]
-        [ button [ class' split_button__button, type' "button", goTo $ toRoute NGettingStarted ]
+        [ a (class' split_button__button : goTo (toRoute NGettingStarted))
           [ span [ class' $ split_button__split1 <> hero_button__split ]
             [ "Get Started" ]
           , span [ class' $ split_button__split2 <> hero_button__split ]
@@ -130,7 +129,7 @@ featureSection = div [ class' feature__section ]
     ]
   , div [ class' feature_button ]
     [ div [ class' $ split_button <> feature_button__content ]
-      [ button [ class' split_button__button, type' "button", onClickM_ . navigate @(SPA m) $ RGettingStarted RGSIndex ]
+      [ a (class' split_button__button : goTo (RGettingStarted RGSIndex))
         [ span [ class' $ split_button__split1 <> feature_button__split ]
           [ "Checkout the getting started guide" ]
         , span [ class' $ split_button__split2 <> feature_button__split ]

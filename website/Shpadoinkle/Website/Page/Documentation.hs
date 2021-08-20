@@ -64,9 +64,9 @@ top
   :: MonadJSM m
   => Route -> Route -> Text -> Maybe (Html m a, Html m a) -> Html m a
 top cur r t mext = div [ class' side_nav__expand ] $
-  [ a [ class' $ side_nav__expand__button <> asClass (side_nav__bold, r == cur)
-      , goTo r
-      ] $ [ text t ] <> maybeToList (fst <$> mext)
+  [ a ( class' (side_nav__expand__button <> asClass (side_nav__bold, r == cur))
+      : goTo r
+      ) $ [ text t ] <> maybeToList (fst <$> mext)
   ] <> maybeToList (snd <$> mext)
 
 
@@ -93,8 +93,9 @@ expandable cur toR t = let topr = toR $ minBound @r in top cur topr t $ Just
 
 sideNavLink :: MonadJSM m => Humanize r => Route -> (r -> Route) -> r -> Html m a
 sideNavLink cur toR r = li_
-  [ a [ class' $ side_nav__link <> asClass (side_nav__bold, cur == toR r)
-      , goTo (toR r) ] [ text $ humanize r ]
+  [ a ( class' (side_nav__link <> asClass (side_nav__bold, cur == toR r))
+      : goTo (toR r)
+      ) [ text $ humanize r ]
   ]
 
 
