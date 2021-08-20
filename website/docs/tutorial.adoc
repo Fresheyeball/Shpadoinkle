@@ -65,7 +65,7 @@ will render as
 
 [source,html]
 ----
-<div id="mydiv" ></div>
+<div id="mydiv"></div>
 ----
 
 Text nodes, being extremely common, can be used directly as HTML tags provided
@@ -80,7 +80,7 @@ will render as
 
 [source,html]
 ----
-<h1 id="foo" >bar</h1>
+<h1 id="foo">bar</h1>
 ----
 
 (Notice the lack of `text "bar"`.)
@@ -101,7 +101,7 @@ will *each* render as:
 
 [source,html]
 ----
-<div class="foo bar" ></div>
+<div class="foo bar"></div>
 ----
 
 To learn more about the `Shpadoinkle Html` package, see

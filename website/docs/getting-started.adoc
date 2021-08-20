@@ -91,7 +91,7 @@ curl -L https://nixos.org/nix/install | sh
 ----
 
 [WARNING]
-.👏 Follow 👏 Instructions
+.&#128079; Follow &#128079; Instructions
 The install script outputs important instructions you need to follow. Read the output and follow instructions.
 
 Success is indicated by the presence of the Nix toolchain in your terminal...

@@ -33,7 +33,7 @@ embedAsciidocWithPreprocess go asciiPath = do
     _ <- unless doesAscii . fail $ "Document not found at " <> asciiPath
     doesHtml <- doesFileExist htmlPath
     when doesHtml $ removeFile htmlPath
-    readCreateProcessWithExitCode (proc "asciidoctor" [ "-s", asciiPath ]) ""
+    readCreateProcessWithExitCode (proc "asciidoctor" [ "-a", "sectlinks", "-s", asciiPath ]) ""
   case exit of
     ExitSuccess   -> embedHtmlWithPreprocess' go CleanUp htmlPath
     ExitFailure _ -> fail $ show out
