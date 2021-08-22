@@ -13,6 +13,7 @@ module Shpadoinkle.Router.Client
   ( runXHR
   , runXHR'
   , runXHRe
+  , getClientEnv
   , module Servant.Client.JS
   ) where
 
@@ -38,14 +39,13 @@ import           UnliftIO                    (MonadIO (liftIO))
 default (Text)
 
 
--- | Run the ClientM from Servant as an XHR request.
-runXHR :: ClientM a -> JSM a
-runXHR m = do -- TODO cache the base url or make it optional
+getClientEnv :: JSM ClientEnv
+getClientEnv = do
   loc <- jsg ("window" :: Text) >>= (! ("location" :: Text))
   protocol <- mapProtocol <$> (loc ! ("protocol" :: Text) >>= fromJSVal)
   hostname <- fromMaybe "localhost" <$> (loc ! ("hostname" :: Text) >>= fromJSVal)
   port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) <$> (loc ! ("port" :: Text) >>= fromJSVal)
-  runXHR' m . ClientEnv $ BaseUrl protocol hostname port ""
+  return $ ClientEnv $ BaseUrl protocol hostname port ""
   where mapProtocol :: Maybe String -> Scheme
         mapProtocol (Just "https:") = Https
         mapProtocol _               = Http
@@ -53,6 +53,11 @@ runXHR m = do -- TODO cache the base url or make it optional
         defaultPort :: Scheme -> Int
         defaultPort Https = 443
         defaultPort Http  = 80
+
+
+-- | Run the ClientM from Servant as an XHR request.
+runXHR :: ClientM a -> JSM a
+runXHR m = runXHR' m =<< getClientEnv
 
 
 -- | Run the ClientM from Servant as an XHR request with a customized base URL.
