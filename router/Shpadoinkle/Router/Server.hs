@@ -44,7 +44,8 @@ import           WaiAppStatic.Types             (File (..),
                                                  toPieces)
 
 import           Data.Kind                      (Constraint)
-import           GHC.TypeLits
+import           GHC.TypeLits                   (ErrorMessage (Text), Symbol,
+                                                 TypeError)
 import           Shpadoinkle                    (Html)
 import           Shpadoinkle.Backend.Static     (renderStatic)
 import           Shpadoinkle.Router             (HasRouter (..), View)
@@ -90,16 +91,27 @@ defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex, ssMaxAg
 -- If there is no Raw root route, there is no route to serve files
 -- such as ./all.min.js which is required for obvious reasons
 type family HasRoot l :: Constraint where
-  HasRoot (_ :<|> Raw) = ()
-  HasRoot (_ :<|> l') = HasRoot l'
+  -- Is there a Raw root?
+  HasRoot (Raw :<|> _)             = ()
+  HasRoot (_ :<|> Raw)             = ()
+  HasRoot (_ :<|> Raw :<|> _)      = ()
+
+  -- Is there a View root?
+  HasRoot (View m a :<|> _)        = ()
+  HasRoot (_ :<|> View m a)        = ()
+  HasRoot (_ :<|> View m a :<|> _) = ()
+
+  -- Recurse if not found
+  HasRoot (_ :<|> l')              = HasRoot l'
+
+  -- If we dead end, there is no root route, and we inform the user
   HasRoot _ = TypeError
-    ('Text "Your SPA type lacks \n          :<|> Raw \n      at the end. This is important, because without this we have no way to \n      serve the static assets. Please add :<|> Raw as the final alternative \n      in your SPA type.")
+    ('Text "Your SPA type lacks a root route. This is important, because without this we have no way to \n      serve the static assets. Please add :<|> Raw as the final alternative \n      in your SPA type.")
 
 
 serveUI
   :: forall layout route m a
-   . ServeRouter layout route m a
-  => HasRoot layout
+   . (ServeRouter layout route m a, HasRoot layout)
   => FilePath
   -- ^ Where should we look for static assets?
   -> (route -> IO (Html m a))
