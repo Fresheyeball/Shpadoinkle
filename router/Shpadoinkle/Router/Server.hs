@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 
 -- | Since the single page application URIs are specified with Servant, we can automate much
@@ -27,13 +28,14 @@ module Shpadoinkle.Router.Server where
 
 import           Data.ByteString.Lazy           as BS (ByteString, length)
 import           Data.Text.Lazy.Encoding        (encodeUtf8)
-import           GHC.TypeLits                   (Symbol)
-import           Network.HTTP.Types
+import           Network.HTTP.Types             (hContentType, status200)
 import           Network.Wai                    (Application, responseLBS)
 import           Network.Wai.Application.Static (StaticSettings (ssLookupFile, ssMaxAge),
                                                  defaultWebAppSettings,
                                                  staticApp)
-import           Servant.API
+import           Servant.API                    (Capture, QueryFlag, QueryParam,
+                                                 QueryParams, Raw,
+                                                 type (:<|>) (..), type (:>))
 import           Servant.Server                 (HasServer (ServerT), Server)
 import           Servant.Server.StaticFiles     (serveDirectoryWith)
 import           WaiAppStatic.Types             (File (..),
@@ -41,6 +43,9 @@ import           WaiAppStatic.Types             (File (..),
                                                  MaxAge (MaxAgeSeconds), Piece,
                                                  toPieces)
 
+import           Data.Kind                      (Constraint)
+import           GHC.TypeLits                   (ErrorMessage (Text), Symbol,
+                                                 TypeError)
 import           Shpadoinkle                    (Html)
 import           Shpadoinkle.Backend.Static     (renderStatic)
 import           Shpadoinkle.Router             (HasRouter (..), View)
@@ -73,15 +78,53 @@ defaultSPAServerSettings root mhtml = settings { ssLookupFile = orIndex, ssMaxAg
     let file ps' = toFile ps' . encodeUtf8 . renderStatic
     res <- ssLookupFile settings ps
     html <- mhtml
-    return $ case (res, toPieces ["index.html"]) of
-      (LRNotFound, Just [ps'])                                  -> LRFile $ file ps' html
-      (_,          Just [ps']) | [ps'] == ps || Prelude.null ps -> LRFile $ file ps' html
-      _                                                         -> res
+    case (res, toPieces ["index.html"]) of
+      (LRNotFound, Just [ps'])
+        -> LRFile (file ps' html) <$ putStrLn ("LRNotFound " <> show ps)
+      (_,          Just [ps'])
+        | [ps'] == ps || Prelude.null ps
+        -> LRFile (file ps' html) <$ putStrLn ("PRED " <> show ps)
+      _ -> res <$ putStrLn ("RES " <> show ps)
+
+
+-- | This is needed in order for file serving to work.
+-- If there is no Raw root route, there is no route to serve files
+-- such as ./all.min.js which is required for obvious reasons
+type family HasRoot l :: Constraint where
+  -- Is there a Raw root?
+  HasRoot (Raw :<|> _)             = ()
+  HasRoot (_ :<|> Raw)             = ()
+  HasRoot (_ :<|> Raw :<|> _)      = ()
+
+  -- Is there a View root?
+  HasRoot (View m a :<|> _)        = ()
+  HasRoot (_ :<|> View m a)        = ()
+  HasRoot (_ :<|> View m a :<|> _) = ()
+
+  -- Recurse if not found
+  HasRoot (_ :<|> l')              = HasRoot l'
+
+  -- If we dead end, there is no root route, and we inform the user
+  HasRoot _ = TypeError
+    ('Text "Your SPA type lacks a root route. This is important, because without this we have no way to \n      serve the static assets. Please add :<|> Raw as the final alternative \n      in your SPA type.")
+
+
+serveUI
+  :: forall layout route m a
+   . (ServeRouter layout route m a, HasRoot layout)
+  => FilePath
+  -- ^ Where should we look for static assets?
+  -> (route -> IO (Html m a))
+  -- ^ How shall we get the page based on the requested route?
+  -> layout :>> route
+  -- ^ What is the relationship between URIs and routes?
+  -> Server layout
+serveUI = serveUIUnsafe @layout
 
 
 -- | Serve the UI by generating a Servant Server from the SPA URIs
 class ServeRouter layout route m a where
-  serveUI
+  serveUIUnsafe
     :: FilePath
     -- ^ Where should we look for static assets?
     -> (route -> IO (Html m a))
@@ -94,54 +137,55 @@ class ServeRouter layout route m a where
 instance (ServeRouter x r m a, ServeRouter y r m a)
   => ServeRouter (x :<|> y) r m a where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (x :<|> y) :>> r -> Server (x :<|> y)
-  serveUI root view (x :<|> y) = serveUI @x root view x :<|> serveUI @y root view y
-  {-# INLINABLE serveUI #-}
+  serveUIUnsafe :: FilePath -> (r -> IO (Html m a)) -> (x :<|> y) :>> r -> Server (x :<|> y)
+  serveUIUnsafe root view (x :<|> y) = serveUIUnsafe @x root view x :<|> serveUIUnsafe @y root view y
+  {-# INLINABLE serveUIUnsafe #-}
 
 instance ServeRouter sub r m a
   => ServeRouter (Capture sym x :> sub) r m a where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (x -> sub :>> r) -> Server (Capture sym x :> sub)
-  serveUI root view = (serveUI @sub root view .)
-  {-# INLINABLE serveUI #-}
+  serveUIUnsafe :: FilePath -> (r -> IO (Html m a)) -> (x -> sub :>> r) -> Server (Capture sym x :> sub)
+  serveUIUnsafe root view = (serveUIUnsafe @sub root view .)
+  {-# INLINABLE serveUIUnsafe #-}
 
 instance ServeRouter sub r m a
   => ServeRouter (QueryParam sym x :> sub) r m a where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (Maybe x -> sub :>> r) -> Server (QueryParam sym x :> sub)
-  serveUI root view = (serveUI @sub root view .)
-  {-# INLINABLE serveUI #-}
+  serveUIUnsafe :: FilePath -> (r -> IO (Html m a)) -> (Maybe x -> sub :>> r) -> Server (QueryParam sym x :> sub)
+  serveUIUnsafe root view = (serveUIUnsafe @sub root view .)
+  {-# INLINABLE serveUIUnsafe #-}
 
 instance ServeRouter sub r m a
   => ServeRouter (QueryParams sym x :> sub) r m a where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> ([x] -> sub :>> r) -> Server (QueryParams sym x :> sub)
-  serveUI root view = (serveUI @sub root view .)
-  {-# INLINABLE serveUI #-}
+  serveUIUnsafe :: FilePath -> (r -> IO (Html m a)) -> ([x] -> sub :>> r) -> Server (QueryParams sym x :> sub)
+  serveUIUnsafe root view = (serveUIUnsafe @sub root view .)
+  {-# INLINABLE serveUIUnsafe #-}
 
 instance ServeRouter sub r m a
   => ServeRouter (QueryFlag sym :> sub) r m a where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (Bool -> sub :>> r) -> Server (QueryFlag sym :> sub)
-  serveUI root view = (serveUI @sub root view .)
-  {-# INLINABLE serveUI #-}
+  serveUIUnsafe :: FilePath -> (r -> IO (Html m a)) -> (Bool -> sub :>> r) -> Server (QueryFlag sym :> sub)
+  serveUIUnsafe root view = (serveUIUnsafe @sub root view .)
+  {-# INLINABLE serveUIUnsafe #-}
 
 instance ServeRouter sub r m a
   => ServeRouter ((path :: Symbol) :> sub) r m a where
 
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> (path :> sub) :>> r -> Server (path :> sub)
-  serveUI = serveUI @sub
-  {-# INLINABLE serveUI #-}
+  serveUIUnsafe :: FilePath -> (r -> IO (Html m a)) -> (path :> sub) :>> r -> Server (path :> sub)
+  serveUIUnsafe = serveUIUnsafe @sub
+  {-# INLINABLE serveUIUnsafe #-}
 
 instance ServeRouter Raw r m a where
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> Raw :>> r -> Server Raw
-  serveUI root view = serveDirectoryWith . defaultSPAServerSettings root . view
-  {-# INLINABLE serveUI #-}
+  serveUIUnsafe :: FilePath -> (r -> IO (Html m a)) -> Raw :>> r -> Server Raw
+  serveUIUnsafe root view = serveDirectoryWith . defaultSPAServerSettings root . view
+  {-# INLINABLE serveUIUnsafe #-}
+
 
 instance ServeRouter (View n b) r m a where
-  serveUI :: FilePath -> (r -> IO (Html m a)) -> View n b :>> r -> Server (View n b)
-  serveUI root view = serveDirectoryWithSpa . defaultSPAServerSettings root . view
-  {-# INLINABLE serveUI #-}
+  serveUIUnsafe :: FilePath -> (r -> IO (Html m a)) -> View n b :>> r -> Server (View n b)
+  serveUIUnsafe root view = serveDirectoryWithSpa . defaultSPAServerSettings root . view
+  {-# INLINABLE serveUIUnsafe #-}
 
 
 serveDirectoryWithSpa :: Applicative n => StaticSettings -> ServerT (View m a) n
