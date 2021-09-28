@@ -15,7 +15,6 @@ window.startApp = cb => {
     ]);
     window.patchh = (a,b) => patch(a,b);
     window.vnode = h;
-    window.potato = (n,e) => n.elm.appendChild(e);
     window.insertHook = (k,f,o) => {
       const p = o[k]
       o[k] = (vnode) => {

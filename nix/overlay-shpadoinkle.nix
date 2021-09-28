@@ -189,7 +189,16 @@ in {
           });
 
           Shpadoinkle                  = call "Shpadoinkle"                          ../core;
-          Shpadoinkle-backend-snabbdom = call "Shpadoinkle-backend-snabbdom"         ../backends/snabbdom;
+          Shpadoinkle-backend-snabbdom =
+            let snabbdom = import ../backends/snabbdom/snabbdom-bundle.nix;
+                snabbdomBackend = call "Shpadoinkle-backend-snabbdom" ../backends/snabbdom;
+            in  snabbdomBackend.overrideAttrs(old: {
+                  buildInputs = old.buildInputs ++ [ snabbdom ];
+                  prePatch = ''
+                    ls -lah
+                    cp ${snabbdom}/Setup.js ./Shpadoinkle/Backend/Snabbdom/Setup.js
+                  '';
+                });
           Shpadoinkle-backend-static   = call "Shpadoinkle-backend-static"           ../backends/static;
           Shpadoinkle-backend-pardiff  = call "Shpadoinkle-backend-pardiff"          ../backends/pardiff;
           Shpadoinkle-console          = call "Shpadoinkle-console"                  ../console;
