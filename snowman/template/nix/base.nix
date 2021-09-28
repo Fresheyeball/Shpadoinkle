@@ -83,15 +83,21 @@ let
       # We can name him George
       snowman =
         with builtins;
-        let l = pkgs.lib; in
+        let
+          l = pkgs.lib;
+          source = ../.;
+        in
         pkgs.haskell.packages.${compilerjs}.callCabal2nix "snowman"
           (filterSource
-             (path: _:
-                baseNameOf path == "src"
+             (path: type:
+                let
+                  relative = replaceStrings [(toString source + "/")] [""] path;
+                in
+                l.hasPrefix "src" relative && type == "directory"
                 || l.hasSuffix ".hs" path
                 || l.hasSuffix ".cabal" path
              )
-             ../.
+             source
           )
           {};
 
