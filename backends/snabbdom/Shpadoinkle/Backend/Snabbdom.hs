@@ -53,23 +53,25 @@ import           Data.Map.Internal           (Map (Bin, Tip))
 import           Data.Text                   (Text, isPrefixOf, words)
 import           GHCJS.DOM                   (currentDocumentUnchecked)
 import           GHCJS.DOM.Document          (createElement, getBodyUnsafe)
-import           GHCJS.DOM.Element           (setAttribute, setInnerHTML)
+import           GHCJS.DOM.Element           (setId, setInnerHTML)
 import           GHCJS.DOM.Node              (appendChild)
 #ifndef ghcjs_HOST_OS
 import           Language.Javascript.JSaddle (FromJSVal (..), JSVal, Object,
                                               ToJSVal (..), create, eval, fun,
                                               function, jsTrue, jsg1, jsg2,
-                                              jsg3, toJSBool, toJSString,
-                                              unsafeGetProp, unsafeSetProp,
-                                              valMakeString, valMakeText,
-                                              valToObject)
+                                              jsg3, makeObject, toJSBool,
+                                              toJSString, unsafeGetProp,
+                                              unsafeSetProp, valMakeString,
+                                              valMakeText, valToObject, (!),
+                                              (#))
 #else
 import           Language.Javascript.JSaddle (FromJSVal (..), JSVal, Object,
                                               ToJSVal (..), create, eval, fun,
-                                              function, jsTrue, toJSBool,
-                                              toJSString, unsafeGetProp,
-                                              unsafeSetProp, valMakeString,
-                                              valMakeText, valToObject)
+                                              function, jsTrue, makeObject,
+                                              toJSBool, toJSString,
+                                              unsafeGetProp, unsafeSetProp,
+                                              valMakeString, valMakeText,
+                                              valToObject, (!), (#))
 #endif
 import           Prelude                     hiding (id, words, (.))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
@@ -234,15 +236,6 @@ props toJSM i (Props xs) = do
   return o
 
 
-potato :: JSVal -> RawNode -> JSM ()
-#ifndef ghcjs_HOST_OS
-potato n rn           = void $ jsg2 "potato" n rn
-#else
-potato n (RawNode rn) = potato' n rn
-foreign import javascript unsafe "window['potato']($1,$2)" potato' :: JSVal -> JSVal -> JSM ()
-#endif
-
-
 vnode :: Text -> Object -> [SnabVNode] -> JSM SnabVNode
 #ifndef ghcjs_HOST_OS
 vnode name o cs = SnabVNode <$> jsg3 "vnode" name o cs
@@ -282,15 +275,19 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
           vnode name o cs
 
       mkPotato mrn = snabbAsk >>= \i -> liftJSM $ do
-        o <- create
-        hook <- create
-        (rn, stm) <- mrn
+        (RawNode rn, stm) <- mrn
         ins <- toJSVal =<< function (\_ _ -> \case
-          [n] -> potato n rn
+          [n] -> do
+            elm' <- (! "elm") =<< makeObject n
+            void $ elm' # "appendChild" $ rn
           _   -> return ())
+        hook <- create
         unsafeSetProp "insert" ins hook
-        hoo <- toJSVal hook
-        unsafeSetProp "hook" hoo o
+        classes <- create
+        unsafeSetProp "potato" jsTrue classes
+        o <- create
+        flip (unsafeSetProp "hook") o =<< toJSVal hook
+        flip (unsafeSetProp "classes") o =<< toJSVal classes
         let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i) >> go
         void $ forkIO go
         vnodePotato o
@@ -322,11 +319,11 @@ foreign import javascript unsafe "window['startApp']($1)" startApp' :: JSVal -> 
 stage :: MonadJSM m => SnabbdomT a m RawNode
 stage = liftJSM $ do
   doc <- currentDocumentUnchecked
-  elm <- createElement doc ("div" :: Text)
-  setAttribute elm ("id" :: Text) ("stage" :: Text)
+  placeholder <- createElement doc ("div" :: Text)
+  setId placeholder ("stage" :: Text)
   b <- getBodyUnsafe doc
   setInnerHTML b ""
-  _ <- appendChild b elm
-  RawNode <$> toJSVal elm
+  _ <- appendChild b placeholder
+  RawNode <$> toJSVal placeholder
 {-# SPECIALIZE stage :: SnabbdomT a JSM RawNode #-}
 
