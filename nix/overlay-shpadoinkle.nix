@@ -177,6 +177,17 @@ in {
               ln -s ${brand.icons.faviconHTML} favicon.html
               cp -r ${../website/docs} docs
               chmod -R +rw docs
+              cp ${../.git/refs/heads/master} rev
+              REV=$(<rev)
+              cp ${../nix/chan.nix} chan
+              sed -i 's/"//g' chan
+              CHAN=$(<chan)
+              find docs -type f -name '*.adoc' -print | while read FILE
+              do
+                sed -i "1 i :shparev: $REV" $FILE
+                sed -i "1 i :nixchan: $CHAN" $FILE
+                cat $FILE
+              done
               ln -s ${brand.logo.full.svg { color = "bright_yellow"; }} assets/landing_logo.svg
             '';
           }));

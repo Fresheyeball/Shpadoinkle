@@ -22,18 +22,18 @@ Overlays provide a method to extend and change nixpkgs. They replace constructs 
 
 By exposing overlays, we allow you to compose these necessary changes into your nixpkgs set for your existing project:
 
-[source,nix]
+[source,nix,subs=attributes+]
 ----
 shpadoinkle = builtins.fetchGit { # <1>
   url    = https://gitlab.com/platonic/shpadoinkle.git;
-  rev    = "f4a90d2621aeb981bc0b5b1aaf6d86e19f6d0166";
+  rev    = "{shparev}";
 };
 
 shpadoinkle-overlay = # <2>
   import (shpadoinkle + "/nix/overlay.nix") { compiler = "ghc863"; isJS = false; };
 
 pkgs = import
-  (builtins.fetchTarball { url = "https://github.com/${fork}/nixpkgs/archive/${rev}.tar.gz"; })
+  (builtins.fetchTarball { url = "https://github.com/nixos/nixpkgs/archive/{nixchan}.tar.gz"; })
   { overlays = [ shpadoinkle-overlay my-overlay ]; }; # <3>
 ----
 
@@ -54,14 +54,13 @@ These overlays target a specific compiler version -- they're applied to targets 
 
 If overlays modifying Haskell package sets do not use `composeExtensions`, new overlays will simply replace previous ones, instead of composing them together. Follow this pattern and everything will be A-OK:
 
-[source,nix]
+[source,nix,subs=attributes+]
 ----
 self: super:
 let
   shpadoinkle = fetchgit { # <1>
     url    = https://gitlab.com/platonic/shpadoinkle.git;
-    rev    = "243b89a00c29cdce6768be1b743e846a0bc22fea";
-    sha256 = "06v4mgni4nq7asxy96761hgrdzhlva36vzak0l4yxc727zfwrffr";
+    rev    = "{shparev}";
   };
   haskell-overlay = hself: hsuper: { # <2>
     Shpadoinkle      = hself.callCabal2nix "Shpadoinkle"      (shpadoinkle + "/core");

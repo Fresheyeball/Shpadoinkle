@@ -25,6 +25,7 @@ Packages GHC 8.6.5 on Linux:
   - Check Style
   - Hlint
   script:
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-build --argstr compiler ghc865 --fallback
 
 Isreal NixOPS:
@@ -35,6 +36,7 @@ Isreal NixOPS:
   script:
   - eval `ssh-agent -s`
   - ssh-add /run/keys/isreal-deploy
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-shell --command "./nix/test-isreal.sh"
 
 Packages GHCJS 8.6 on Linux:
@@ -43,6 +45,7 @@ Packages GHCJS 8.6 on Linux:
   - Check Style
   - Hlint
   script:
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-build --argstr compiler ghc865 --arg isJS true --fallback
 
 Swan Shell:
@@ -86,6 +89,7 @@ Packages GHC 8.6.5 on Darwin:
   - Check Style
   - Hlint
   script:
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-build --argstr compiler ghc865 --argstr system x86_64-darwin --fallback
 
 Packages GHCJS 8.6 on Darwin:
@@ -94,6 +98,7 @@ Packages GHCJS 8.6 on Darwin:
   - Check Style
   - Hlint
   script:
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-build --argstr compiler ghc865 --argstr system x86_64-darwin --arg isJS true --fallback
 
 Build Snowman with Nix on Darwin:
@@ -116,6 +121,7 @@ Dev Shell GHC 8.6.5 on Linux:
   needs:
   - Packages GHC 8.6.5 on Linux
   script:
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-shell --run "echo works" --arg enableLibraryProfiling true --fallback
 
 Dev Shell GHCJS 8.6 on Linux:
@@ -123,6 +129,7 @@ Dev Shell GHCJS 8.6 on Linux:
   needs:
   - Packages GHCJS 8.6 on Linux
   script:
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-shell --run "echo works" --arg enableLibraryProfiling false --arg isJS true --fallback
 
 Dev Shell GHC 8.6.5 on Darwin:
@@ -130,6 +137,7 @@ Dev Shell GHC 8.6.5 on Darwin:
   needs:
   - Packages GHC 8.6.5 on Darwin
   script:
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-build --run "echo works" --arg enableLibraryProfiling true --argstr system x86_64-darwin --fallback
 
 Dev Shell GHCJS 8.6 on Darwin:
@@ -137,6 +145,7 @@ Dev Shell GHCJS 8.6 on Darwin:
   needs:
   - Packages GHCJS 8.6 on Darwin
   script:
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-shell --run "echo works" --arg enableLibraryProfiling false --argstr system x86_64-darwin --arg isJS true --fallback
 
 Website:
@@ -146,6 +155,7 @@ Website:
   - Packages GHCJS 8.6 on Linux
   - Packages GHC 8.6.5 on Linux
   script:
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-build website --arg ci true --fallback
 
 Isreal:
@@ -156,6 +166,7 @@ Isreal:
   script:
   - eval `ssh-agent -s`
   - ssh-add /run/keys/isreal-deploy
+  - mkdir -p .git/refs/heads/ && echo $CI_COMMIT_SHA > .git/refs/heads/master
   - nix-shell --command "./nix/deploy-isreal.sh"
   only:
   - master
