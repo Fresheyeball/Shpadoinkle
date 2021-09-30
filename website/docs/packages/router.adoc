@@ -1,6 +1,7 @@
 :haddock: https://shpadoinkle.org/
 :gitlab: https://gitlab.com/platonic/shpadoinkle/-/tree/master/
 :icons: font
+:hackage: https://hackage.haskell.org/package/Shpadoinkle
 
 {gitlab}router[icon:gitlab[] Gitlab] | {haddock}router[Haddock]
 
@@ -116,4 +117,4 @@ initial = \case
     AboutPage search $ searchFilter search posts
 ----
 
-For an example that takes advantage of server-side rendering, isomorphic `Servant` route sharing, see the {gitlab}/examples/servant-crud[Servant CRUD Example].
+For an example that takes advantage of server-side rendering and isomorphic `Servant` route sharing, see the {gitlab}examples/servant-crud[Servant CRUD Example].
