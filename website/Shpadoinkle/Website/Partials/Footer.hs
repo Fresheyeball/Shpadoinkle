@@ -65,6 +65,6 @@ view cy =
           ]
         ]
       , div [ class' footer_copyright ]
-        [ text $ "© 2020-" <> humanize cy <> " Platonic Systems Limited" ]
+        [ text $ "© 2020–" <> humanize cy <> " Platonic Systems Limited" ]
       ]
     ]
