@@ -85,11 +85,6 @@ import           Shpadoinkle
 default (Text)
 
 
-newtype SnabVNode = SnabVNode { unVNode :: JSVal }
-instance ToJSVal   SnabVNode where toJSVal   = return . unVNode
-instance FromJSVal SnabVNode where fromJSVal = return . Just . SnabVNode
-
-
 newtype SnabbdomT model m a = Snabbdom { unSnabbdom :: ReaderT (TVar model) m a }
   deriving
   ( Functor
@@ -159,7 +154,16 @@ traverseWithKey_ f = go
 {-# SPECIALIZE traverseWithKey_ :: (k -> a -> JSM ()) -> Map k a -> JSM () #-}
 
 
-insertHook :: Text -> JSVal -> Object -> JSM ()
+newtype SnabVNode = SnabVNode { unVNode :: JSVal }
+instance ToJSVal   SnabVNode where toJSVal   = return . unVNode
+instance FromJSVal SnabVNode where fromJSVal = return . Just . SnabVNode
+
+
+-- | Insert function @f@ in @o@ as field @k@, after already running an existing property function if it exists.
+insertHook :: Text -- ^ @k@
+           -> JSVal -- ^ @f@
+           -> Object -- ^ @o@
+           -> JSM ()
 #ifndef ghcjs_HOST_OS
 insertHook t f' hooksObj = void $ jsg3 "insertHook" t f' hooksObj
 #else
@@ -168,6 +172,7 @@ foreign import javascript unsafe "window['insertHook']($1,$2,$3)" insertHook' ::
 #endif
 
 
+-- | Interpret uninterpreted props into a Snabbdom-formatted JavaScript object
 {-# SPECIALIZE props :: NFData a => (JSM ~> JSM) -> TVar a -> Props (SnabbdomT a JSM) a -> JSM Object #-}
 props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (SnabbdomT a m) a -> JSM Object
 props toJSM i (Props xs) = do
@@ -236,6 +241,7 @@ props toJSM i (Props xs) = do
   return o
 
 
+-- | Call-site for Snabbdom's @h()@ function
 vnode :: Text -> Object -> [SnabVNode] -> JSM SnabVNode
 #ifndef ghcjs_HOST_OS
 vnode name o cs = SnabVNode <$> jsg3 "vnode" name o cs
@@ -245,6 +251,7 @@ foreign import javascript unsafe "window['vnode']($1,$2,$3)" vnode' :: Text -> O
 #endif
 
 
+-- | Alternative invocation of Snabbdom's @h()@ function for potatos, where there are no children
 #ifndef ghcjs_HOST_OS
 vnodePotato :: Object -> JSM SnabVNode
 vnodePotato o = SnabVNode <$> jsg2 "vnode" "div" o
@@ -253,6 +260,7 @@ foreign import javascript unsafe "window['vnode']('div',$1)" vnodePotato :: Obje
 #endif
 
 
+-- | Call-site for Snabbdom's @patch()@ function
 patchh :: JSVal -> SnabVNode -> JSM ()
 #ifndef ghcjs_HOST_OS
 patchh previousNode newNode = void $ jsg2 "patchh" previousNode newNode
@@ -306,6 +314,7 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
     startApp cb
 
 
+-- | Generate the call-site bindings for Snabbdom in @window@
 startApp :: JSM () -> JSM ()
 #ifndef ghcjs_HOST_OS
 startApp cb = void . jsg1 "startApp" . fun $ \_ _ _ -> cb
