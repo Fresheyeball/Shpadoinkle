@@ -525,7 +525,7 @@ p code, table code{
   padding: 5px 3px;
   margin: 0 2px;
 }
-p a{
+p a, td.content a{
   color: #0d6661;
   text-decoration: underline;
 }
