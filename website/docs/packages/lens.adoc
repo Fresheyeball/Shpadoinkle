@@ -10,7 +10,9 @@ Lens combinators for Shpadoinkle applications. The primary use case is the compo
 
 == Heterogeneous Composition
 
-Optics in general are an ideal way to compose heterogeneous `Html` components. Consider usage with https://hackage.haskell.org/package/generic-lens[generic-lens].
+Optics in general are an ideal way to compose heterogeneous `Html` components.
+
+NOTE: The https://hackage.haskell.org/package/lens[lens] library is famous for making bringing first-class lenses to Haskell. However, to _derive_ lenses for any data type, we've found it's best to use https://hackage.haskell.org/package/generic-lens[generic-lens] with `-XOverloadedLabels`.
 
 === On Record
 
@@ -19,6 +21,10 @@ heterogeneous sub-components onto the parent state with `onRecord`.
 
 [source,haskell]
 ----
+{-# LANGUAGE OverloadedLabels #-}
+
+import Data.Generics.Labels () -- Generic Label instances for Lens
+
 data Form = Form
   { name :: Text
   , age  :: Int
@@ -66,6 +72,10 @@ We'll also add a Model to switch between the `Html Form` above and this new comp
 
 [source,haskell]
 ----
+{-# LANGUAGE OverloadedLabels #-}
+
+import Data.Generics.Labels ()
+
 data Model
   = MCounter Counter
   | MForm Form
