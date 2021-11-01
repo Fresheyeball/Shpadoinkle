@@ -50,7 +50,7 @@ let
 
 
       # Top level overlay (for you to extend)
-      snowman-overlay = self: super: {
+      snowman-app-overlay = self: super: {
         haskell = super.haskell //
           { packages = super.haskell.packages //
             { ${compilerjs} = super.haskell.packages.${compilerjs}.override (old: {
@@ -69,7 +69,7 @@ let
         inherit system;
         overlays = [
           shpadoinkle-overlay
-          snowman-overlay
+          snowman-app-overlay
         ];
       };
 
