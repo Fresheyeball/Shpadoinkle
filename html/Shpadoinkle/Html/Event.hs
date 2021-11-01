@@ -37,7 +37,7 @@ module Shpadoinkle.Html.Event
 
 import           Control.Concurrent.STM       (retry)
 import           Control.Lens                 ((^.))
-import           Control.Monad                (void)
+import           Control.Monad                (unless, void)
 import           Control.Monad.IO.Class       (liftIO)
 import           Data.Text
 import           GHCJS.DOM.Types              hiding (Text)
@@ -151,6 +151,26 @@ mkGlobalKey evtName c =
   )
 
 
+mkGlobalKeyNoRepeat :: Text -> (KeyCode -> Continuation m a) -> (Text, Prop m a)
+mkGlobalKeyNoRepeat evtName c =
+  ( "global" <> evtName
+  , PPotato $ \_ -> liftJSM $ do
+
+     (notify, stream) <- mkGlobalMailboxAfforded c
+
+     void $ jsg ("window" :: Text) ^. js2 ("addEventListener" :: Text) evtName
+        (fun $ \_ _ -> \case
+           e:_ -> do
+             eObj <- valToObject e
+             isRepeat <- valToBool =<< unsafeGetProp "repeat" eObj
+             unless isRepeat $
+               notify . round =<< valToNumber =<< unsafeGetProp "keyCode" eObj
+           []  -> return ())
+
+     return stream
+  )
+
+
 onGlobalKeyPressC, onGlobalKeyDownC, onGlobalKeyUpC :: (KeyCode -> Continuation m a) -> (Text, Prop m a)
 onGlobalKeyPressC = mkGlobalKey "keypress"
 onGlobalKeyDownC  = mkGlobalKey "keydown"
@@ -158,6 +178,11 @@ onGlobalKeyUpC    = mkGlobalKey "keyup"
 $(mkEventVariantsAfforded "globalKeyPress" ''KeyCode)
 $(mkEventVariantsAfforded "globalKeyDown"  ''KeyCode)
 $(mkEventVariantsAfforded "globalKeyUp"    ''KeyCode)
+
+
+onGlobalKeyDownNoRepeatC :: (KeyCode -> Continuation m a) -> (Text, Prop m a)
+onGlobalKeyDownNoRepeatC  = mkGlobalKeyNoRepeat "keydown"
+$(mkEventVariantsAfforded "globalKeyDownNoRepeat"  ''KeyCode)
 
 
 onEscapeC :: Continuation m a -> (Text, Prop m a)
