@@ -82,7 +82,7 @@ game :: Game -> Html m Game
 game g = H.div [id' "game"] . pure $ H.div'
   [ id' "avatar"
   , styleProp styles
-  , onGlobalKeyDown $ \case
+  , onGlobalKeyDownNoRepeat $ \case
      LeftArrow  -> \g' -> g' { state = Walking, direction = FaceLeft }
      RightArrow -> \g' -> g' { state = Walking, direction = FaceRight }
      Ctrl       -> \g' -> g' { state = Shooting (clock g') }

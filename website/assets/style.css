@@ -36,6 +36,7 @@ html {
 }
 body {
   margin: 0;
+  height: 100%;
 }
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
@@ -807,6 +808,7 @@ body {
 }
 .nav {
   width: 100%;
+  line-height: 2.25rem;
 }
 @media (min-width: 640px) {
   .nav {
@@ -897,6 +899,7 @@ body {
 }
 .nav-mobile {
   padding-top: 3rem;
+  background-color: rgba(237, 225, 113);
 }
 @media (min-width: 768px) {
   .nav-mobile {
@@ -1358,6 +1361,7 @@ footer {
 .footer__wrapper {
   padding-top: 80px;
   width: 100%;
+  height: 39.5rem;
 }
 @media (min-width: 640px) {
   .footer__wrapper {
@@ -1367,6 +1371,7 @@ footer {
 @media (min-width: 768px) {
   .footer__wrapper {
     max-width: 768px;
+    height: 29.5rem;
   }
 }
 @media (min-width: 1024px) {
@@ -1433,6 +1438,19 @@ nav ul li:hover {
   border-color: rgba(217, 206, 95, var(--tw-border-opacity));
   border-style: solid;
   line-height: 2.25rem;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.documentation > div:nth-child(2) {
+    height: 0;
+    flex-grow: 1;
+    margin-top: -3.5rem;
+}
+@media (min-width: 768px) {
+  .documentation > div:nth-child(2) {
+    margin-top: 0;
+  }
 }
 .mobile-mode {
   background-color: #ede171 !important;
@@ -1706,7 +1724,7 @@ code.doc {
   cursor: copy;
 }
 #game{
-  height: 200px;
+  height: 100%;
   width: 48px;
   margin: 0 auto;
   position: relative;
