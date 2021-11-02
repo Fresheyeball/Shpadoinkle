@@ -102,7 +102,6 @@ newtype ParDiffT model m a = ParDiffT { unParDiff :: ReaderT (TVar model) m a }
   , Alternative
   , Monad
   , MonadIO
-  -- , MonadReader (TVar model) - NOTE do not add this instance, it will mess up your application's MTL stack
   , MonadTrans
   , MonadTransControl
   , MonadThrow
@@ -153,6 +152,16 @@ runParDiff :: TVar model -> ParDiffT model m ~> m
 runParDiff t (ParDiffT r) = runReaderT r t
 
 
+traverseWithKey_ :: Applicative t => (k -> a -> t ()) -> Map k a -> t ()
+traverseWithKey_ f = go
+  where
+    go Tip             = pure ()
+    go (Bin 1 k v _ _) = f k v
+    go (Bin _ k v l r) = go l *> f k v *> go r
+{-# INLINE traverseWithKey_ #-}
+{-# SPECIALIZE traverseWithKey_ :: (k -> a -> JSM ()) -> Map k a -> JSM () #-}
+
+
 data ParVNode :: Type -> Type where
   ParNode     :: Once JSM RawNode -> {-# UNPACK #-} !Text -> ParVProps a -> [ParVNode a] -> ParVNode a
   ParPotato   :: Once JSM RawNode -> ParVNode a
@@ -163,13 +172,28 @@ type ParVProps = Props JSM
 type ParVProp = Prop JSM
 
 
-props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (ParDiffT a m) a -> RawNode -> JSM ()
+-- | Interpret uninterpreted props into the JavaScript DOM node
+props :: Monad m
+      => NFData a
+      => (m ~> JSM)
+      -> TVar a -- ^ Model
+      -> Props (ParDiffT a m) a -- ^ Uninterpreted Props
+      -> RawNode -- ^ DOM Node
+      -> JSM ()
 props toJSM i (Props ps) (RawNode raw) = do
   raw' <- makeObject raw
   traverseWithKey_ (prop toJSM i raw') ps
 
 
-prop :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Object -> Text -> Prop (ParDiffT a m) a -> JSM ()
+-- | Interpret a single prop into the JavaScript DOM node
+prop :: Monad m
+     => NFData a
+     => (m ~> JSM)
+     -> TVar a -- ^ Model
+     -> Object -- ^ DOM Node
+     -> Text -- ^ Property Key
+     -> Prop (ParDiffT a m) a -- ^ Uninterpreted Property
+     -> JSM ()
 prop toJSM i raw k = \case
   PData d     -> unsafeSetProp k' d raw
   PText t     -> do
@@ -183,7 +207,12 @@ prop toJSM i raw k = \case
     k' = toJSString k
 
 
-setProptado :: forall a. NFData a => TVar a -> (RawNode -> JSM (STM (Continuation JSM a))) -> Object -> JSM ()
+-- | Evaluates the proptato and loops the 'STM' continuation in a separate thread
+setProptado :: NFData a
+            => TVar a -- ^ Model
+            -> (RawNode -> JSM (STM (Continuation JSM a))) -- ^ Proptato
+            -> Object -- ^ DOM Node
+            -> JSM ()
 setProptado i f o = do
   elm <- RawNode <$> toJSVal o
   stm <- f elm
@@ -191,7 +220,13 @@ setProptado i f o = do
   void $ forkIO go
 
 
-setListener :: NFData a => TVar a -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -> Object -> JSString -> JSM ()
+-- | Assigns an event handler to the DOM node
+setListener :: NFData a
+            => TVar a -- ^ Model
+            -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -- ^ Event Handler
+            -> Object -- ^ DOM Node
+            -> JSString -- ^ Event Name
+            -> JSM ()
 setListener i m o k = do
   elm <- RawNode <$> toJSVal o
   f <- toJSVal . fun $ \_ _ -> \case
@@ -202,6 +237,7 @@ setListener i m o k = do
   unsafeSetProp ("on" <> k) f o
 
 
+-- | Gets the 'RawNode' from a virtual node, whether evaluated or not
 getRaw :: ParVNode a -> Once JSM RawNode
 getRaw = \case
   ParNode mk _ _ _ -> mk
@@ -209,7 +245,12 @@ getRaw = \case
   ParTextNode mk _ -> mk
 
 
-makeProp :: Monad m => (m ~> JSM) -> TVar a -> Prop (ParDiffT a m) a -> ParVProp a
+-- | Hoists the 'ParDiffT' monad into 'JSM' for props
+makeProp :: Monad m
+         => (m ~> JSM) -- ^ Natural Transformation
+         -> TVar a -- ^ Model
+         -> Prop (ParDiffT a m) a -- ^ Unevaluated Property
+         -> ParVProp a
 makeProp toJSM i = \case
   PText t     -> PText t
   PData t     -> PData t
@@ -217,9 +258,6 @@ makeProp toJSM i = \case
   PListener m -> PListener $ \x y -> hoist (toJSM . runParDiff i) <$> m x y
   PFlag b     -> PFlag b
 
-
-setup' :: JSM () -> JSM ()
-setup' cb = cb
 
 #ifndef ghcjs_HOST_OS
 deleteProp :: JSString -> Object -> JSM ()
@@ -231,26 +269,13 @@ foreign import javascript unsafe
 #endif
 
 
-setFlag :: Object -> Text -> Bool -> JSM ()
-setFlag obj' k b
-  | b = unsafeSetProp k' jsTrue obj'
-  | otherwise = case k of
-    "checked"  -> unsafeSetProp k' jsFalse obj'
-    "disabled" -> void (obj' # "removeAttribute" $ "disabled")
-    _          -> deleteProp k' obj'
-  where
-    k' = toJSString k
-
-
-traverseWithKey_ :: Applicative t => (k -> a -> t ()) -> Map k a -> t ()
-traverseWithKey_ f = go
-  where
-    go Tip             = pure ()
-    go (Bin 1 k v _ _) = f k v
-    go (Bin _ k v l r) = go l *> f k v *> go r
-
-
-managePropertyState :: NFData a => TVar a -> Object -> ParVProps a -> ParVProps a -> JSM ()
+-- | Modify a DOM node in accordance with new properties, and properties to remove
+managePropertyState :: NFData a
+                    => TVar a -- ^ Model
+                    -> Object -- ^ DOM Node
+                    -> ParVProps a -- ^ Old Props
+                    -> ParVProps a -- ^ New Props
+                    -> JSM ()
 managePropertyState i obj' (Props !old) (Props !new) = void $ do
   -- The following step may be necessary if the old DOM and the new VDOM both have checked == False
   -- but the user just checked this checkbox / radio button and the browser set its
@@ -297,13 +322,19 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
             t' <- valMakeText t
             unsafeSetProp k' t' obj'
           -- new flag prop, set
-          PFlag b -> setFlag obj' k b
+          PFlag b
+            | b -> unsafeSetProp k' jsTrue obj'
+            | otherwise -> case k of
+              "checked"  -> unsafeSetProp k' jsFalse obj'
+              "disabled" -> void (obj' # "removeAttribute" $ "disabled")
+              _          -> deleteProp k' obj'
           -- new listener, set
           PListener h -> setListener i h obj' k'
 
   traverseWithKey_ include toInclude
 
 
+-- | Patch sets of virtual nodes (children) together
 patchChildren
   :: MonadUnliftIO m
 #ifndef ghcjs_HOST_OS
@@ -328,6 +359,7 @@ patchChildren parent (old:olds) (new:news) =
   (:) <$> patch' parent old new <*> patchChildren parent olds news
 
 
+-- | Patch a single node together, recursing through their potential children
 patch'
   :: MonadUnliftIO m
 #ifndef ghcjs_HOST_OS
@@ -371,8 +403,8 @@ patch' parent old new = do
         return new
 
 
+-- | Generate virtual nodes to be patched against
 {-# SPECIALIZE interpret' :: forall a. NFData a => (JSM ~> JSM) -> Html (ParDiffT a JSM) a -> ParDiffT a JSM (ParVNode a) #-}
-
 interpret'
   :: forall m a
    . MonadJSM m
@@ -421,7 +453,7 @@ instance
   , Show a ) => Backend (ParDiffT a) m a where
   type VNode (ParDiffT a) m = ParVNode a
   interpret = interpret'
-  setup = setup'
+  setup = id
   patch parent mOld new = case mOld of
     -- first patch
     Nothing ->
