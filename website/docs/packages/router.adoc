@@ -50,7 +50,7 @@ Using the above example, below you describe your types. Note again that URL desc
 
 [source,haskell]
 ----
-type Search = Text
+type Search = Maybe Text
 data Route = Home | About Search
 type SPA = "v2" :> "about" :> QueryParam "search" Search :> Raw
       :<|> "about" :> QueryParam "search" Search :> Raw
