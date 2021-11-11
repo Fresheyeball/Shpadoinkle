@@ -40,7 +40,7 @@ form f = div_
     ]
   , label [ for "age" ] [ "Age" ]
   , onRecord #age $ input' -- <4>
-    [ id "name"
+    [ id "age"
     , value . pack .show $ f ^. #age
     , onInput $ const . fromMaybe 0 . readMay . unpack -- <3>
     ]
