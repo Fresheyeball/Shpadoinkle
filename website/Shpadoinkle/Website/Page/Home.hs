@@ -58,14 +58,14 @@ hero' = div_
           [ span [ class' $ split_button__split1 <> hero_button__split ]
             [ "Get Started" ]
           , span [ class' $ split_button__split2 <> hero_button__split ]
-            [ img' [ alt "Right arrow", src $(assetLink "/assets/right-arrow-white.svg") ]
+            [ img' [ alt "", src $(assetLink "/assets/right-arrow-white.svg") ]
             ]
           ]
         ]
       ]
     ]
-  , img' [ width 2112, height 996, alt "desert cactus", class' hero_bg,        src $(assetLink "/assets/hero_image.svg") ]
-  , img' [ width 322,  height 379, alt "desert cactus", class' hero_bg_mobile, src $(assetLink "/assets/mobile/hero_image.svg") ]
+  , img' [ width 2112, height 996, alt "", class' hero_bg,        src $(assetLink "/assets/hero_image.svg") ]
+  , img' [ width 322,  height 379, alt "", class' hero_bg_mobile, src $(assetLink "/assets/mobile/hero_image.svg") ]
   ]
 
 
@@ -80,7 +80,7 @@ featureCard :: FeatureCard -> Html m a
 featureCard fc = div [ class' feature__card ]
   [ div [ class' feature__card__content ]
     [ div [ class' feature__card__heading ]
-      [ img' [ src $ card'icon fc ]
+      [ img' [ alt "", src $ card'icon fc ]
       , p [ class' feature__card__title ]
         [ text $ card'title fc ]
       ]
@@ -133,12 +133,12 @@ featureSection = div [ class' feature__section ]
         [ span [ class' $ split_button__split1 <> feature_button__split ]
           [ "Checkout the getting started guide" ]
         , span [ class' $ split_button__split2 <> feature_button__split ]
-          [ img' [ alt "Right arrow", src $(assetLink "/assets/right-arrow.svg") ]
+          [ img' [ alt "", src $(assetLink "/assets/right-arrow.svg") ]
           ]
         ]
       ]
     ]
-  , img' [ alt "background transition", class' transition, src $(assetLink "/assets/orange_purple_transition.svg") ]
+  , img' [ alt "", class' transition, src $(assetLink "/assets/orange_purple_transition.svg") ]
   ]
 
 
@@ -176,5 +176,5 @@ componentsSection exs = div [ class' components__section ]
     { title'      = "An Application"
     , description = "Using event handlers, and pure functions we can compose applications without any further abstraction."
     }
-  , img' [ alt "background transition", className "transition", src $(assetLink "/assets/purple_black_transition.svg") ]
+  , img' [ alt "", className "transition", src $(assetLink "/assets/purple_black_transition.svg") ]
   ]
