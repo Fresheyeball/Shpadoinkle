@@ -7,6 +7,7 @@ module Shpadoinkle.Website.Partials.Nav (view, toActive) where
 
 
 import           Prelude                            hiding (div)
+import           Data.Text                          (Text)
 import           Shpadoinkle                        (MonadJSM)
 import           Shpadoinkle.Html                   as H
 import           Shpadoinkle.Html.TH.AssetLink
@@ -42,9 +43,9 @@ view :: MonadJSM m => Toggle -> Route -> [Html m Toggle]
 view t r = pure $ div [ class' started_header ] $
   [ H.nav [ class' Style.nav ]
     [ a (goTo RHome)
-      [ img' [ class' nav__logo, src $(assetLink "/assets/landing_logo.svg") ]
+      [ img' [ class' nav__logo, alt "Shpadoinkle", src $(assetLink "/assets/landing_logo.svg") ]
       ]
-    , img' [ class' nav__menu_icon, onClick toggle, src $ case t of
+    , img' [ class' nav__menu_icon, alt "Toggle menu", H.title "Toggle menu", H.textProperty "role" ("button" :: Text), onClick toggle, src $ case t of
         Closed _ -> $(assetLink "/assets/menu_icon.svg")
         Open     -> $(assetLink "/assets/menu_close_icon.svg")
       ]
