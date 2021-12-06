@@ -36,3 +36,5 @@ Correct version of hlint is also available within `nix-shell`.
 == Actively Maintained
 
 This project is actively maintained by https://platonic.systems[image:https://platonic.systems/logo.svg[Platonic Systems, 25,25] Platonic Systems]
+
+image::https://static.scarf.sh/a.png?x-pxid=a8bc4a6f-783f-4d1b-a41d-4dd180a27dbd[scarf tracking]
