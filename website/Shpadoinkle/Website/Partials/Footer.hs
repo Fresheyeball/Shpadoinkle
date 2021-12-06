@@ -65,6 +65,8 @@ view cy =
           ]
         ]
       , div [ class' footer_copyright ]
-        [ text $ "© 2020–" <> humanize cy <> " Platonic Systems Limited" ]
+        [ text $ "© 2020–" <> humanize cy <> " Platonic Systems Limited" 
+        , img' [ alt "scarf tracking", src "https://static.scarf.sh/a.png?x-pxid=a8bc4a6f-783f-4d1b-a41d-4dd180a27dbd" ]
+        ]
       ]
     ]
