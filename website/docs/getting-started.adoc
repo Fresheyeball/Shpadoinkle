@@ -13,7 +13,7 @@ The following command will setup a new "hello world" project for you.
 
 [source,bash]
 ----
-bash <( curl -L https://snowan.shpadoinkle.org/snowman )
+bash <( curl -L https://snowman.shpadoinkle.org/snowman )
 ----
 
 === Building
