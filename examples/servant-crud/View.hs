@@ -261,7 +261,7 @@ template ev fe stage = H.html_
       ]
     , H.meta [ H.charset "ISO-8859-1" ] []
     , toHydration fe
-    , H.script [ H.src $ entrypoint ev ] []
+    , H.script [ H.src $ entrypoint ev, H.flagProperty "defer" True ] []
     ]
   , H.body_
     [ stage
