@@ -224,6 +224,7 @@ in {
           Shpadoinkle-template         = call "Shpadoinkle-template"                 ../template;
           Shpadoinkle-examples         = call "Shpadoinkle-examples"                 ../examples;
           Shpadoinkle-isreal           = call "Shpadoinkle-isreal"                   ../isreal;
+          Shpadoinkle-jsffi            = call "Shpadoinkle-jsffi"                    ../jsffi;
 
           ease                    = hself.callCabal2nix "ease" ease {};
           ghcjs-base-stub         = hself.callCabal2nix "ghcjs-base-stub" ghcjs-base-stub-src {};
