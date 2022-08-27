@@ -62,14 +62,7 @@ import           Data.String                   (IsString (..))
 import           Data.Text                     (Text, pack)
 import           Data.Text.Lazy                (toStrict)
 import           Data.Text.Lazy.Builder        (toLazyText)
-import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
-#ifndef ghcjs_HOST_OS
-import           Language.Javascript.JSaddle   (FromJSVal (..), JSVal,
-                                                ToJSVal (..), JSString, askJSM, runJSM, fromJSString, toJSString)
-#else
-import           Language.Javascript.JSaddle   (FromJSVal (..), JSVal,
-                                                ToJSVal (..), JSString, askJSM, runJSM)
-#endif
+import Shpadoinkle.JSFFI (JSM, MonadJSM, liftJSM, JSString, askJSM, runJSM, ghcjsOnly, JSVal)
 import           Prelude                       hiding ((.))
 import           UnliftIO                      (MonadUnliftIO (..),
                                                 UnliftIO (..))
@@ -320,14 +313,10 @@ type m ~> n = forall a. m a -> n a
 -- | A DOM node reference.
 -- Useful for building baked potatoes and binding a Backend view to the page
 newtype RawNode  = RawNode  { unRawNode  :: JSVal }
-instance ToJSVal   RawNode where toJSVal   = return . unRawNode
-instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
 
 
 -- | A raw event object reference
 newtype RawEvent = RawEvent { unRawEvent :: JSVal }
-instance ToJSVal   RawEvent where toJSVal   = return . unRawEvent
-instance FromJSVal RawEvent where fromJSVal = return . Just . RawEvent
 
 
 -- | Strings are overloaded as the class property:
@@ -377,7 +366,7 @@ injectProps ps = mapProps (<> ps)
 
 #ifndef ghcjs_HOST_OS
 htmlDecode :: JSString -> JSM JSString
-htmlDecode = pure . toJSString . toStrict . toLazyText . htmlEncodedText . fromJSString
+htmlDecode = ghcjsOnly
 #else
 foreign import javascript unsafe
   "{var ta = document.createElement('textarea'); ta.innerHTML = $1; $r = ta.childNodes.length == 0 ? '' : ta.childNodes[0].nodeValue;}"

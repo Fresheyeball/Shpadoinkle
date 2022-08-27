@@ -40,7 +40,7 @@ import           Control.Lens                 ((^.))
 import           Control.Monad                (unless, void)
 import           Control.Monad.IO.Class       (liftIO)
 import           Data.Text
-import           GHCJS.DOM.Types              hiding (Text)
+import           GHCJS.DOM.Types              hiding (JSM, liftJSM, Text)
 import           Language.Javascript.JSaddle  hiding (JSM, liftJSM, toJSString)
 import           UnliftIO.Concurrent          (forkIO)
 import           UnliftIO.STM
@@ -91,11 +91,11 @@ $(mkEventVariantsAfforded "check" ''Bool)
 
 
 preventDefault :: RawEvent -> JSM ()
-preventDefault e = void $ valToObject e # ("preventDefault" :: String) $ ([] :: [()])
+preventDefault e = void $ (Object . unRawEvent $ e) # ("preventDefault" :: String) $ ([] :: [()])
 
 
 stopPropagation :: RawEvent -> JSM ()
-stopPropagation e = void $ valToObject e # ("stopPropagation" :: String) $ ([] :: [()])
+stopPropagation e = void $ (Object . unRawEvent $ e) # ("stopPropagation" :: String) $ ([] :: [()])
 
 
 onSubmitC :: Continuation m a -> (Text, Prop m a)

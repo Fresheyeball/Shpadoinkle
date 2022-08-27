@@ -3,19 +3,24 @@
 
 module Shpadoinkle.JSFFI
   ( module Shpadoinkle.JSFFI
-  , MonadJSM
   , JSM
+  , MonadJSM
+  , liftJSM
+  , JSVal
+  , JSString
   , Window
   ) where
 
+import Control.Monad.IO.Class (MonadIO)
 #ifdef ghcjs_HOST_OS
+import Control.Monad.IO.Class (liftIO)
 import Unsafe.Coerce (unsafeCoerce)
 import Data.Coerce (coerce)
 import Control.Category ((>>>), (<<<))
 #endif
 
 -- ghcjs imports
-import GHCJS.Types (JSVal)
+import GHCJS.Types (JSVal, JSString)
 #ifdef ghcjs_HOST_OS
 import JavaScript.Array.Internal (toListIO, SomeJSArray (..))
 import GHCJS.Foreign.Callback (OnBlocked (ContinueAsync), syncCallback2, Callback)
@@ -27,11 +32,8 @@ import GHCJS.Foreign.Callback (OnBlocked (ContinueAsync), syncCallback2, Callbac
 -- from Shpadoinkle, these imports will eventually be removed and replaced with
 -- custom counterparts. However, while we are transitioning Shpadoinkle from JSaddle
 -- to this package, it helps for the two to share types.
-import Language.Javascript.JSaddle (JSM, MonadJSM)
+import Language.Javascript.JSaddle (JSM, MonadJSM, liftJSM)
 import GHCJS.DOM.Window (Window)
-#ifdef ghcjs_HOST_OS
-import Language.Javascript.JSaddle (liftJSM)
-#endif
 
 
 ghcjsOnly :: a
@@ -120,3 +122,17 @@ foreign import javascript unsafe
 #else
 clearTimeout = ghcjsOnly
 #endif
+
+
+-- This all is trivial and is included only because S11 re-exports it
+-- WANT: remove it from S11 and then from here
+type JSContextRef = ()
+askJSM :: MonadJSM m => m JSContextRef
+askJSM = pure ()
+runJSM :: MonadIO m => JSM a -> JSContextRef -> m a
+#ifdef ghcjs_HOST_OS
+runJSM act _ = liftIO act
+#else
+runJSM = ghcjsOnly
+#endif
+
