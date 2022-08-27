@@ -51,10 +51,7 @@ import           Control.Monad.Trans.Class           (MonadTrans (..))
 import           Data.Foldable                       (traverse_)
 import           Data.Maybe                          (fromMaybe)
 import           GHC.Conc                            (retry)
-import           GHCJS.DOM                           (currentWindowUnchecked)
-import           GHCJS.DOM.Window                    (Window)
-import           GHCJS.DOM.WindowOrWorkerGlobalScope (clearTimeout, setTimeout)
-import           Language.Javascript.JSaddle         (MonadJSM, fun, JSM)
+import Shpadoinkle.JSFFI (clearTimeout, setTimeout, MonadJSM, mkFun', JSM)
 import           UnliftIO                            (MonadUnliftIO, TVar,
                                                       UnliftIO, askUnliftIO,
                                                       atomically, liftIO,
@@ -427,8 +424,6 @@ shouldUpdate sun prev currentModel = do
   previousModel :: TVar a     <- newTVarIO sampleModel
   -- store the accumulating value in a TVar so we can control when it updates
   currentState  :: TVar b     <- newTVarIO prev
-  -- get the window once
-  window        :: Window     <- currentWindowUnchecked
   -- get the execution context once
   context       :: UnliftIO m <- askUnliftIO
 
@@ -445,10 +440,10 @@ shouldUpdate sun prev currentModel = do
         if new' == old then retry else new' <$ writeTVar previousModel new'
 
       -- if we already had something scheduled to run, cancel it
-      traverse_ (clearTimeout window . Just) frames
+      traverse_ clearTimeout frames
 
       -- generate a callback for the request animation frame
-      let callback = fun $ \_ _ _ -> do
+      callback <- mkFun' $ \_ -> do
              -- get the current state
              x <- readTVarIO currentState
              -- run the action against the current state, and the new model
@@ -457,10 +452,10 @@ shouldUpdate sun prev currentModel = do
              atomically $ writeTVar currentState y
              -- note this means that @newModel@ updates for each call to @go@
              -- but @currentState@ only updates if the frame is actually called
-             traverse_ (clearTimeout window . Just) frames
+             traverse_ clearTimeout frames
 
       -- schedule the action to run on the next frame
-      frameId' <- setTimeout window callback Nothing
+      frameId' <- setTimeout 0 callback
 
       go (frameId':frames)
 
