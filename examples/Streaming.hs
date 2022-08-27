@@ -16,7 +16,7 @@ import           Shpadoinkle                 (Html, JSM, NFData, liftC)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (button, div, getBody, onClickC,
                                               text)
-import           Shpadoinkle.Run             (runJSorWarp, simple, live)
+import           Shpadoinkle.Run             (live, runJSorWarp, simple)
 import           Shpadoinkle.Streaming       (consumeStream)
 import           "streaming" Streaming       (Of, Stream)
 import           Streaming.Prelude           (repeatM)

@@ -1,8 +1,8 @@
 module Shpadoinkle.Website.Component.Hoogle where
 
 
-import Shpadoinkle.Website.Types
-import Shpadoinkle.Html
+import           Shpadoinkle.Html
+import           Shpadoinkle.Website.Types
 
 
 hoogleWidget :: forall m. Hooglable m => MonadJSM m => Hoogle -> Html m Hoogle

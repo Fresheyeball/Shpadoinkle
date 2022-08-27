@@ -22,7 +22,7 @@ import           Shpadoinkle                             (Html, JSM, TVar,
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom, stage)
 import           Shpadoinkle.Html                        as H (div,
                                                                textProperty)
-import           Shpadoinkle.Run                         (runJSorWarp, live)
+import           Shpadoinkle.Run                         (live, runJSorWarp)
 import           UnliftIO.Concurrent                     (forkIO, threadDelay)
 
 

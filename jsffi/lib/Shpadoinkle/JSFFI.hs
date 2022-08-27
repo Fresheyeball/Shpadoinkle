@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP           #-}
 {-# LANGUAGE JavaScriptFFI #-}
 
 module Shpadoinkle.JSFFI
@@ -11,19 +11,21 @@ module Shpadoinkle.JSFFI
   , Window
   ) where
 
-import Control.Monad.IO.Class (MonadIO)
+import           Control.Monad.IO.Class      (MonadIO)
 #ifdef ghcjs_HOST_OS
-import Control.Monad.IO.Class (liftIO)
-import Unsafe.Coerce (unsafeCoerce)
-import Data.Coerce (coerce)
-import Control.Category ((>>>), (<<<))
+import           Control.Category            ((<<<), (>>>))
+import           Control.Monad.IO.Class      (liftIO)
+import           Data.Coerce                 (coerce)
+import           Unsafe.Coerce               (unsafeCoerce)
 #endif
 
 -- ghcjs imports
-import GHCJS.Types (JSVal, JSString)
+import           GHCJS.Types                 (JSString, JSVal)
 #ifdef ghcjs_HOST_OS
-import JavaScript.Array.Internal (toListIO, SomeJSArray (..))
-import GHCJS.Foreign.Callback (OnBlocked (ContinueAsync), syncCallback2, Callback)
+import           GHCJS.Foreign.Callback      (Callback,
+                                              OnBlocked (ContinueAsync),
+                                              syncCallback2)
+import           JavaScript.Array.Internal   (SomeJSArray (..), toListIO)
 #endif
 
 -- Imports from packages which transitively depend on jsaddle
@@ -32,8 +34,8 @@ import GHCJS.Foreign.Callback (OnBlocked (ContinueAsync), syncCallback2, Callbac
 -- from Shpadoinkle, these imports will eventually be removed and replaced with
 -- custom counterparts. However, while we are transitioning Shpadoinkle from JSaddle
 -- to this package, it helps for the two to share types.
-import Language.Javascript.JSaddle (JSM, MonadJSM, liftJSM)
-import GHCJS.DOM.Window (Window)
+import           GHCJS.DOM.Window            (Window)
+import           Language.Javascript.JSaddle (JSM, MonadJSM, liftJSM)
 
 
 ghcjsOnly :: a

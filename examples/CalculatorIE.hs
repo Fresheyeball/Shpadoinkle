@@ -28,7 +28,7 @@ import           Shpadoinkle                 (Html, JSM, NFData, liftC)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Console         (askJSM, trapper)
 import           Shpadoinkle.Html            as H
-import           Shpadoinkle.Run             (runJSorWarp, simple, live)
+import           Shpadoinkle.Run             (live, runJSorWarp, simple)
 
 default (ClassList)
 

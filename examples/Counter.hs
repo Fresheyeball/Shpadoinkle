@@ -12,7 +12,7 @@ import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (br'_, button, div_, h2_, id',
                                               onClick, span)
 import           Shpadoinkle.Html.Utils
-import           Shpadoinkle.Run             (runJSorWarp, simple, live)
+import           Shpadoinkle.Run             (live, runJSorWarp, simple)
 
 
 view :: Int -> Html m Int

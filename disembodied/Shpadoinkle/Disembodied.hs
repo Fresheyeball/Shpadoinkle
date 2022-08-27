@@ -31,7 +31,8 @@ module Shpadoinkle.Disembodied (
 import           Control.Monad              (join, void)
 import           Data.Kind                  (Type)
 import           Data.Proxy                 (Proxy (..))
-import           Data.Text.Lazy             (isSuffixOf, pack, unpack, fromStrict)
+import           Data.Text.Lazy             (fromStrict, isSuffixOf, pack,
+                                             unpack)
 import           Data.Text.Lazy.IO          as LT (writeFile)
 import           Servant.API
 import           System.Directory           (createDirectoryIfMissing)

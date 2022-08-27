@@ -14,24 +14,24 @@
 module Types where
 
 
-import Control.DeepSeq (NFData)
-import Data.Aeson
-import qualified Data.ByteString.Lazy as BSL
-import Data.CountryCodes
-import Data.Set (Set)
-import qualified Data.Set as Set
-import Data.Text
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import GHC.Generics
-import Language.Javascript.JSaddle hiding (val)
-import Servant.API
-import Shpadoinkle.Html (text)
-import Shpadoinkle.Widgets.Table
-import Shpadoinkle.Widgets.Table.Lazy
-import Shpadoinkle.Widgets.Types (Humanize (..))
-import Test.QuickCheck
+import           Control.DeepSeq                (NFData)
+import           Data.Aeson
+import qualified Data.ByteString.Lazy           as BSL
+import           Data.CountryCodes
+import           Data.Set                       (Set)
+import qualified Data.Set                       as Set
+import           Data.Text
+import           Data.Text.Encoding             (decodeUtf8, encodeUtf8)
+import           GHC.Generics
+import           Language.Javascript.JSaddle    hiding (val)
+import           Servant.API
+import           Shpadoinkle.Html               (text)
+import           Shpadoinkle.Widgets.Table
+import           Shpadoinkle.Widgets.Table.Lazy
+import           Shpadoinkle.Widgets.Types      (Humanize (..))
+import           Test.QuickCheck
 
-import StockName
+import           StockName
 
 
 instance ToJSVal CountryCode where

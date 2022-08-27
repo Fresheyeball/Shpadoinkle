@@ -9,22 +9,24 @@
 module Main where
 
 
-import Prelude hiding (div, init, span)
+import           Prelude                        hiding (div, init, span)
 
-import Control.Arrow (first)
-import Data.CountryCodes
-import Data.Proxy
-import qualified Data.Set as Set
-import Data.Text hiding (init, reverse, span)
-import Shpadoinkle
-import Shpadoinkle.Backend.ParDiff
-import Shpadoinkle.Html hiding (a, b, head, max)
-import Shpadoinkle.Router.Client (ClientM, ClientEnv (..), client, runXHR', BaseUrl (..), Scheme (Http))
-import Shpadoinkle.Run (runJSorWarp)
-import Shpadoinkle.Widgets.Table
-import Shpadoinkle.Widgets.Table.Lazy
+import           Control.Arrow                  (first)
+import           Data.CountryCodes
+import           Data.Proxy
+import qualified Data.Set                       as Set
+import           Data.Text                      hiding (init, reverse, span)
+import           Shpadoinkle
+import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle.Html               hiding (a, b, head, max)
+import           Shpadoinkle.Router.Client      (BaseUrl (..), ClientEnv (..),
+                                                 ClientM, Scheme (Http), client,
+                                                 runXHR')
+import           Shpadoinkle.Run                (runJSorWarp)
+import           Shpadoinkle.Widgets.Table
+import           Shpadoinkle.Widgets.Table.Lazy
 
-import Types
+import           Types
 
 default (Text)
 
@@ -91,7 +93,7 @@ getPersonsM = client (Proxy :: Proxy Api)
 
 getPersons :: MonadJSM m => Page -> SortCol FilteredTable -> TableFilters -> m [Person]
 getPersons pg sc fs =
-  liftJSM $ 
+  liftJSM $
   runXHR'
   (getPersonsM pg sc fs)
   (ClientEnv (BaseUrl Http "localhost" 8081 ""))

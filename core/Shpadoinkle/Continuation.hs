@@ -44,21 +44,20 @@ module Shpadoinkle.Continuation (
   ) where
 
 
-import           Control.Arrow                       (first)
-import           Control.DeepSeq                     (NFData (..), force)
-import           Control.Monad                       (void)
-import           Control.Monad.Trans.Class           (MonadTrans (..))
-import           Data.Foldable                       (traverse_)
-import           Data.Maybe                          (fromMaybe)
-import           GHC.Conc                            (retry)
-import Shpadoinkle.JSFFI (clearTimeout, setTimeout, MonadJSM, mkFun', JSM)
-import           UnliftIO                            (MonadUnliftIO, TVar,
-                                                      UnliftIO, askUnliftIO,
-                                                      atomically, liftIO,
-                                                      newTVarIO, readTVar,
-                                                      readTVarIO, unliftIO,
-                                                      writeTVar)
-import           UnliftIO.Concurrent                 (forkIO)
+import           Control.Arrow             (first)
+import           Control.DeepSeq           (NFData (..), force)
+import           Control.Monad             (void)
+import           Control.Monad.Trans.Class (MonadTrans (..))
+import           Data.Foldable             (traverse_)
+import           Data.Maybe                (fromMaybe)
+import           GHC.Conc                  (retry)
+import           Shpadoinkle.JSFFI         (JSM, MonadJSM, clearTimeout, mkFun',
+                                            setTimeout)
+import           UnliftIO                  (MonadUnliftIO, TVar, UnliftIO,
+                                            askUnliftIO, atomically, liftIO,
+                                            newTVarIO, readTVar, readTVarIO,
+                                            unliftIO, writeTVar)
+import           UnliftIO.Concurrent       (forkIO)
 
 
 -- | A Continuation builds up an

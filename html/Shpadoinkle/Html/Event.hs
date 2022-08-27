@@ -40,7 +40,7 @@ import           Control.Lens                 ((^.))
 import           Control.Monad                (unless, void)
 import           Control.Monad.IO.Class       (liftIO)
 import           Data.Text
-import           GHCJS.DOM.Types              hiding (JSM, liftJSM, Text)
+import           GHCJS.DOM.Types              hiding (JSM, Text, liftJSM)
 import           Language.Javascript.JSaddle  hiding (JSM, liftJSM, toJSString)
 import           UnliftIO.Concurrent          (forkIO)
 import           UnliftIO.STM

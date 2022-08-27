@@ -4,20 +4,20 @@
 module Main where
 
 
-#ifdef ghcjs_HOST_OS
-main = putStrLn "server does not compile in ghcjs"
-#else
+#ifndef ghcjs_HOST_OS
 
-import Control.Monad (replicateM)
-import Data.List (sortBy)
-import Data.Proxy
-import Network.Wai.Handler.Warp
-import Servant hiding (Stream)
-import Shpadoinkle.Widgets.Table (SortCol (..), toFilter, sortTable)
-import Shpadoinkle.Widgets.Table.Lazy (Page (..), Offset (..), Length (..))
-import Test.QuickCheck
+import           Control.Monad                  (replicateM)
+import           Data.List                      (sortBy)
+import           Data.Proxy
+import           Network.Wai.Handler.Warp
+import           Servant                        hiding (Stream)
+import           Shpadoinkle.Widgets.Table      (SortCol (..), sortTable,
+                                                 toFilter)
+import           Shpadoinkle.Widgets.Table.Lazy (Length (..), Offset (..),
+                                                 Page (..))
+import           Test.QuickCheck
 
-import Types
+import           Types
 
 
 numPeople :: Int
@@ -55,4 +55,6 @@ main = do
   persons <- arbitraryPersons
   run 8081 . serve api $ server persons
 
+#else
+main = putStrLn "server does not compile in ghcjs"
 #endif

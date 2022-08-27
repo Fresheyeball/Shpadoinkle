@@ -6,8 +6,8 @@
 module Shpadoinkle.Website.Partials.Nav (view, toActive) where
 
 
-import           Prelude                            hiding (div)
 import           Data.Text                          (Text)
+import           Prelude                            hiding (div)
 import           Shpadoinkle                        (MonadJSM)
 import           Shpadoinkle.Html                   as H
 import           Shpadoinkle.Html.TH.AssetLink

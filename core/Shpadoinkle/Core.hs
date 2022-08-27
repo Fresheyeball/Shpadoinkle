@@ -52,30 +52,29 @@ module Shpadoinkle.Core (
   ) where
 
 
-import           Control.Applicative           (liftA2)
-import           Control.Category              ((.))
-import           Data.Kind                     (Type)
-import           Data.Map                      as M (Map, foldl', insert,
-                                                     mapEither, singleton,
-                                                     toList, unionWithKey)
-import           Data.String                   (IsString (..))
-import           Data.Text                     (Text, pack)
-import           Data.Text.Lazy                (toStrict)
-import           Data.Text.Lazy.Builder        (toLazyText)
-import Shpadoinkle.JSFFI (JSM, MonadJSM, liftJSM, JSString, askJSM, runJSM, ghcjsOnly, JSVal)
-import           Prelude                       hiding ((.))
-import           UnliftIO                      (MonadUnliftIO (..),
-                                                UnliftIO (..))
-import           UnliftIO.STM                  (STM, TVar, atomically,
-                                                modifyTVar, newTVarIO, readTVar,
-                                                readTVarIO, retrySTM, writeTVar)
+import           Control.Applicative      (liftA2)
+import           Control.Category         ((.))
+import           Data.Kind                (Type)
+import           Data.Map                 as M (Map, foldl', insert, mapEither,
+                                                singleton, toList, unionWithKey)
+import           Data.String              (IsString (..))
+import           Data.Text                (Text, pack)
+import           Data.Text.Lazy           (toStrict)
+import           Data.Text.Lazy.Builder   (toLazyText)
+import           Prelude                  hiding ((.))
+import           Shpadoinkle.JSFFI        (JSM, JSString, JSVal, MonadJSM,
+                                           askJSM, ghcjsOnly, liftJSM, runJSM)
+import           UnliftIO                 (MonadUnliftIO (..), UnliftIO (..))
+import           UnliftIO.STM             (STM, TVar, atomically, modifyTVar,
+                                           newTVarIO, readTVar, readTVarIO,
+                                           retrySTM, writeTVar)
 
 
-import           Shpadoinkle.Continuation      (Continuation, Continuous (..),
-                                                causes, eitherC, hoist, impur,
-                                                pur, shouldUpdate)
+import           Shpadoinkle.Continuation (Continuation, Continuous (..),
+                                           causes, eitherC, hoist, impur, pur,
+                                           shouldUpdate)
 #ifndef ghcjs_HOST_OS
-import           HTMLEntities.Decoder        (htmlEncodedText)
+import           HTMLEntities.Decoder     (htmlEncodedText)
 #endif
 
 

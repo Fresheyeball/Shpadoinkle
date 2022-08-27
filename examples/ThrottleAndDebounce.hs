@@ -15,7 +15,7 @@ import           Shpadoinkle.Backend.ParDiff (ParDiffT, runParDiff)
 import           Shpadoinkle.Html            (Debounce (..), Throttle (..),
                                               button, debounce, div_, getBody,
                                               input, onClick, onInput, throttle)
-import           Shpadoinkle.Run             (runJSorWarp, live)
+import           Shpadoinkle.Run             (live, runJSorWarp)
 
 
 type Model = (Int, Text)

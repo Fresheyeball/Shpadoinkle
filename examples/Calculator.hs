@@ -22,7 +22,7 @@ import           Shpadoinkle                 (Html, JSM, NFData, liftC, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (div_, getBody, input', onInput,
                                               onOption, option, select, value)
-import           Shpadoinkle.Run             (runJSorWarp, simple, live)
+import           Shpadoinkle.Run             (live, runJSorWarp, simple)
 
 
 data Model = Model

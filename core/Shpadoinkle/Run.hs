@@ -26,8 +26,8 @@ module Shpadoinkle.Run (
   ) where
 
 
-import           Data.Text                              (Text)
 import           Data.ByteString.Lazy                   (ByteString)
+import           Data.Text                              (Text)
 import           GHCJS.DOM.Types                        (JSM)
 import           Shpadoinkle                            (Backend, Html, RawNode,
                                                          TVar, newTVarIO,
@@ -38,7 +38,9 @@ import           Shpadoinkle                            (Backend, Html, RawNode,
 
 
 import           Language.Javascript.JSaddle.Warp       (run, runWithIndex)
-import           Language.Javascript.JSaddle.WebSockets (debug, debugWithIndex, debugOr, debugWithIndexOr)
+import           Language.Javascript.JSaddle.WebSockets (debug, debugOr,
+                                                         debugWithIndex,
+                                                         debugWithIndexOr)
 import           Network.Wai                            (Application)
 import           Network.Wai.Application.Static         (defaultFileServerSettings,
                                                          staticApp)
