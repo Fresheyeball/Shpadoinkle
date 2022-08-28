@@ -16,7 +16,7 @@ import           Shpadoinkle                 (Html, JSM, NFData, liftC)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (button, div, getBody, onClickC,
                                               text)
-import           Shpadoinkle.Run             (live, runJSorWarp, simple)
+import           Shpadoinkle.Run             (run, simple)
 import           Shpadoinkle.Streaming       (consumeStream)
 import           "streaming" Streaming       (Of, Stream)
 import           Streaming.Prelude           (repeatM)
@@ -50,9 +50,5 @@ app :: JSM ()
 app = simple runParDiff (Model []) view getBody
 
 
-dev :: IO ()
-dev = live 8080 app
-
-
 main :: IO ()
-main = runJSorWarp 8080 app
+main = run app

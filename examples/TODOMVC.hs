@@ -31,7 +31,7 @@ import           Shpadoinkle.Html              (a, addStyle, autofocus, button,
                                                 strong_, type', ul, value)
 import           Shpadoinkle.Html.LocalStorage (manageLocalStorage)
 import           Shpadoinkle.Lens              (onRecord)
-import           Shpadoinkle.Run               (runJSorWarp)
+import           Shpadoinkle.Run               (run)
 
 
 default (Text)
@@ -220,4 +220,4 @@ app = do
 main :: IO ()
 main = do
   putStrLn "running app"
-  runJSorWarp 8080 app
+  run app

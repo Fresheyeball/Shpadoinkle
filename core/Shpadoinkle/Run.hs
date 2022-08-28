@@ -6,163 +6,25 @@
 {-# LANGUAGE TypeOperators     #-}
 
 
-module Shpadoinkle.Run (
-  -- * Agnostic Run
-  runJSorWarp
-  , runJSorWarpWithIndex
-  -- * Live Reloads
-  , Env(..), Port
-  , liveWithBackend
-  , liveWithBackendAndIndex
-  , liveWithStatic
-  , liveWithStaticAndIndex
-  , live
-  , liveWithIndex
+module Shpadoinkle.Run
+  ( Env(..), Port
   -- ** Convenience Variants
   , fullPage
   , fullPageJSM
   , simple
+  , run
   , entrypoint
   ) where
 
 
-import           Data.ByteString.Lazy                   (ByteString)
-import           Data.Text                              (Text)
-import           GHCJS.DOM.Types                        (JSM)
-import           Shpadoinkle                            (Backend, Html, RawNode,
-                                                         TVar, newTVarIO,
-                                                         shpadoinkle, type (~>))
-
-
+import           Data.Text         (Text)
+import           GHCJS.DOM.Types   (JSM)
+import           Shpadoinkle       (Backend, Html, RawNode, TVar, newTVarIO,
+                                    shpadoinkle, type (~>))
 #ifndef ghcjs_HOST_OS
-
-
-import           Language.Javascript.JSaddle.Warp       (run, runWithIndex)
-import           Language.Javascript.JSaddle.WebSockets (debug, debugOr,
-                                                         debugWithIndex,
-                                                         debugWithIndexOr)
-import           Network.Wai                            (Application)
-import           Network.Wai.Application.Static         (defaultFileServerSettings,
-                                                         staticApp)
-
-
--- | Serve a web server and a jsaddle warp frontend at the same time.
--- This is useful for live reloads for development purposes.
--- For example:
--- @
---   ghcid -c "cabal repl dev" -W -T "Main.main"
--- @
-liveWithBackend
-  :: Port
-  -- ^ Port to serve the live server
-  -> JSM ()
-  -- ^ Frontend application
-  -> IO Application
-  -- ^ Server API
-  -> IO ()
-liveWithBackend port frontend server = debugOr port frontend =<< server
-
-
--- | Identical to 'liveWithBackend', but with a custom @index.html@ file.
-liveWithBackendAndIndex
-  :: ByteString
-  -- ^ Custom @index.html@
-  -> Port
-  -- ^ Port to serve the live server
-  -> JSM ()
-  -- ^ Frontend application
-  -> IO Application
-  -- ^ Server API
-  -> IO ()
-liveWithBackendAndIndex idx port frontend server = debugWithIndexOr idx port frontend =<< server
-
-
--- | Serve jsaddle warp frontend.
--- This is useful for live reloads for development purposes.
--- For example:
--- @
---   ghcid -c "cabal repl" -W -T "Main.dev"
--- @
-live
-  :: Port
-  -- ^ Port to serve the live server
-  -> JSM ()
-  -- ^ Frontend application
-  -> IO ()
-live = debug
-
-
--- | Identical to 'live', but with a custom @index.html@ file.
-liveWithIndex
-  :: ByteString
-  -- ^ Custom @index.html@
-  -> Port
-  -- ^ Port to serve the live server
-  -> JSM ()
-  -- ^ Frontend application
-  -> IO ()
-liveWithIndex = debugWithIndex
-
-
--- | Serve jsaddle warp frontend with a static file server.
-liveWithStatic
-  :: Port
-  -- ^ Port to serve the live server
-  -> JSM ()
-  -- ^ Frontend application
-  -> FilePath
-  -- ^ Path to static files
-  -> IO ()
-liveWithStatic port frontend =
-  liveWithBackend port frontend . pure . staticApp . defaultFileServerSettings
-
-
--- | Identical to 'liveWithStatic', but with a custom @index.html@ file.
-liveWithStaticAndIndex
-  :: ByteString
-  -- ^ Custom @index.html@
-  -> Port
-  -- ^ Port to serve the live server
-  -> JSM ()
-  -- ^ Frontend application
-  -> FilePath
-  -- ^ Path to static files
-  -> IO ()
-liveWithStaticAndIndex idx port frontend =
-  liveWithBackendAndIndex idx port frontend . pure . staticApp . defaultFileServerSettings
-
-
-#else
-
-
-data Application
-
-
-live :: Port -> JSM () -> IO ()
-live = error "Live reloads require GHC"
-
-
-liveWithIndex :: ByteString -> Port -> JSM () -> IO ()
-liveWithIndex = error "Live reloads require GHC"
-
-
-liveWithStatic :: Port -> JSM () -> FilePath -> IO ()
-liveWithStatic = error "Live reloads require GHC"
-
-
-liveWithStaticAndIndex :: ByteString -> Port -> JSM () -> FilePath -> IO ()
-liveWithStaticAndIndex = error "Live reloads require GHC"
-
-
-liveWithBackend :: Port -> JSM () -> IO Application -> IO ()
-liveWithBackend = error "Live reloads require GHC"
-
-
-liveWithBackendAndIndex :: ByteString -> Port -> JSM () -> IO Application -> IO ()
-liveWithBackendAndIndex = error "Live reloads require GHC"
-
-
+import           Shpadoinkle.JSFFI (ghcjsOnly)
 #endif
+
 
 
 data Env = Dev | Prod
@@ -213,32 +75,6 @@ fullPageJSM = fullPage id
 {-# INLINE fullPageJSM #-}
 
 
--- | Start the program!
---
--- This function works in GHC and GHCjs. I saved you from using C preprocessor directly. You're welcome.
-runJSorWarp :: Int -> JSM () -> IO ()
-#ifdef ghcjs_HOST_OS
-runJSorWarp _ = id
-{-# INLINE runJSorWarp #-}
-#else
-runJSorWarp = run
-{-# INLINE runJSorWarp #-}
-#endif
-
-
--- | Start the program (with a custom @index.html@)!
---
--- This function works in GHC and GHCjs. I saved you from using C preprocessor directly. You're welcome.
-runJSorWarpWithIndex :: ByteString -> Int -> JSM () -> IO ()
-#ifdef ghcjs_HOST_OS
-runJSorWarpWithIndex _ _ = id
-{-# INLINE runJSorWarpWithIndex #-}
-#else
-runJSorWarpWithIndex = runWithIndex
-{-# INLINE runJSorWarpWithIndex #-}
-#endif
-
-
 -- | Simple app
 --
 -- (a good starting place)
@@ -255,6 +91,16 @@ simple
   -> JSM ()
 simple = fullPageJSM
 {-# INLINE simple #-}
+
+
+-- | Start the program!
+run :: JSM () -> IO ()
+#ifdef ghcjs_HOST_OS
+run = id
+#else
+run = ghcjsOnly
+#endif
+{-# INLINE run #-}
 
 
 entrypoint :: Env -> Text

@@ -22,7 +22,7 @@ import           Shpadoinkle                             (Html, JSM, TVar,
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom, stage)
 import           Shpadoinkle.Html                        as H (div,
                                                                textProperty)
-import           Shpadoinkle.Run                         (live, runJSorWarp)
+import           Shpadoinkle.Run                         (run)
 import           UnliftIO.Concurrent                     (forkIO, threadDelay)
 
 
@@ -73,9 +73,5 @@ app = do
   shpadoinkle id runSnabbdom t view stage
 
 
-dev :: IO ()
-dev = live 8080 app
-
-
 main :: IO ()
-main = runJSorWarp 8080 app
+main = run app

@@ -22,7 +22,7 @@ import           Shpadoinkle                 (Html, JSM, NFData, liftC, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (div_, getBody, input', onInput,
                                               onOption, option, select, value)
-import           Shpadoinkle.Run             (live, runJSorWarp, simple)
+import           Shpadoinkle.Run             (run, simple)
 
 
 data Model = Model
@@ -84,9 +84,5 @@ app :: JSM ()
 app = simple runParDiff (Model Addition 0 0) view getBody
 
 
-dev :: IO ()
-dev = live 8080 app
-
-
 main :: IO ()
-main = runJSorWarp 8080 app
+main = run app

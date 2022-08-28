@@ -10,7 +10,7 @@ import           Shpadoinkle.Backend.Snabbdom (runSnabbdom, stage)
 -- import           Shpadoinkle.Backend.ParDiff (runParDiff, stage)
 import           Shpadoinkle.Html             (div_, input', onInput, text,
                                                value)
-import           Shpadoinkle.Run              (live, runJSorWarp, simple)
+import           Shpadoinkle.Run              (run, simple)
 
 
 view :: Text -> Html m Text
@@ -24,9 +24,5 @@ app :: JSM ()
 app = simple runSnabbdom "" view stage
 
 
-dev :: IO ()
-dev = live 8080 app
-
-
 main :: IO ()
-main = runJSorWarp 8080 app
+main = run app

@@ -22,7 +22,7 @@ import           Shpadoinkle.Html               hiding (a, b, head, max)
 import           Shpadoinkle.Router.Client      (BaseUrl (..), ClientEnv (..),
                                                  ClientM, Scheme (Http), client,
                                                  runXHR')
-import           Shpadoinkle.Run                (runJSorWarp)
+import           Shpadoinkle.Run                (run)
 import           Shpadoinkle.Widgets.Table
 import           Shpadoinkle.Widgets.Table.Lazy
 
@@ -133,6 +133,6 @@ main = do
   ds <- debounceRaw 0.25
   let init = ((FilteredTable [] (TableFilters Nothing Set.empty), SortCol Name ASC), CurrentScrollY 0, RowsLoaded 0)
   model <- newTVarIO init
-  runJSorWarp 8080 $ do
+  run $ do
     atomically . modifyTVar model . first3 =<< runContinuation resetData (fst3 init)
     shpadoinkle id runParDiff model (mainView ds) getBody

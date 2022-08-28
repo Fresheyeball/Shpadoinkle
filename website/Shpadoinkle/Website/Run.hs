@@ -52,11 +52,9 @@ import           Shpadoinkle.Router.Client                   (BaseUrl (..),
 import           Shpadoinkle.Widgets.Types                   (Search (..))
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle.Router.Server                   (serveUI)
-import           Shpadoinkle.Run                             (Env (Dev),
-                                                              liveWithBackend,
-                                                              runJSorWarp)
+import           Shpadoinkle.Run                             (Env (Dev), run)
 #else
-import           Shpadoinkle.Run                             (runJSorWarp)
+import           Shpadoinkle.Run                             (run)
 #endif
 
 -- import           Shpadoinkle.DeveloperTools
@@ -136,15 +134,5 @@ app = do
 
 
 main :: IO ()
-main = runJSorWarp 8080 app
+main = run app
 
-
-#ifndef ghcjs_HOST_OS
-
-dev :: IO ()
-dev = liveWithBackend 8080 app . pure $ Servant.serve (Proxy @ (SPA IO)) $ serveUI @(SPA IO) "." (\r -> do
-  vm <- start r
-  cy <- getCurrentYear
-  return $ template @App Dev vm (view cy vm)) routes
-
-#endif

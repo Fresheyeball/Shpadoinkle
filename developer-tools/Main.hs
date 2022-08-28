@@ -32,7 +32,7 @@ import           Shpadoinkle                 (Html, NFData, flagProp,
                                               shpadoinkle, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html
-import           Shpadoinkle.Run             (runJSorWarp)
+import           Shpadoinkle.Run             (run)
 
 
 default (Text)
@@ -156,4 +156,4 @@ app = do
 
 
 main :: IO ()
-main = runJSorWarp 8080 app
+main = run app

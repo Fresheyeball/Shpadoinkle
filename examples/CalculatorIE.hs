@@ -28,7 +28,7 @@ import           Shpadoinkle                 (Html, JSM, NFData, liftC)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Console         (askJSM, trapper)
 import           Shpadoinkle.Html            as H
-import           Shpadoinkle.Run             (live, runJSorWarp, simple)
+import           Shpadoinkle.Run             (run, simple)
 
 default (ClassList)
 
@@ -209,9 +209,5 @@ app = do
   simple runParDiff initial (Main.view . trapper @ToJSON ctx) getBody
 
 
-dev :: IO ()
-dev = live 8080 app
-
-
 main :: IO ()
-main = runJSorWarp 8080 app
+main = run app

@@ -35,7 +35,7 @@ import           Shpadoinkle.Html                  as H (a, button, class', div,
                                                          type')
 import           Shpadoinkle.Html.Utils            (getBody)
 import           Shpadoinkle.Lens                  (onRecord)
-import           Shpadoinkle.Run                   (runJSorWarp)
+import           Shpadoinkle.Run                   (run)
 import           Shpadoinkle.Widgets.Form.Dropdown as Dropdown
 import           Shpadoinkle.Widgets.Types         (Humanize (..), Pick (..),
                                                     Present (..), Selected,
@@ -118,4 +118,4 @@ app = do
 
 
 main :: IO ()
-main = runJSorWarp 8080 app
+main = run app
