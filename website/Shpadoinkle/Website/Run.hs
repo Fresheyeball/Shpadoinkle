@@ -18,9 +18,6 @@ import           Control.Monad.Reader
 import           Data.Proxy                                  (Proxy (..))
 import           Data.Text                                   (Text)
 import           Servant.API                                 (type (:<|>) ((:<|>)))
-#ifndef ghcjs_HOST_OS
-import           Servant.Server                              as Servant (serve)
-#endif
 
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle                                 (JSM, MonadJSM,
@@ -51,10 +48,7 @@ import           Shpadoinkle.Router.Client                   (BaseUrl (..),
                                                               runXHRe)
 import           Shpadoinkle.Widgets.Types                   (Search (..))
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Router.Server                   (serveUI)
-import           Shpadoinkle.Run                             (Env (Dev), run)
-#else
-import           Shpadoinkle.Run                             (run)
+import qualified Shpadoinkle.Run                             as Run (run)
 #endif
 
 -- import           Shpadoinkle.DeveloperTools
@@ -66,14 +60,8 @@ import           Shpadoinkle.Website.Types.Hoogle.API        as Hoogle
 import           Shpadoinkle.Website.Types.Hoogle.Target     (Target)
 import           Shpadoinkle.Website.Types.Route             (Route (RFourOhFour))
 import           Shpadoinkle.Website.Types.SPA               (SPA, routes)
-#ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Website.Partials.Template       (template)
 import           Shpadoinkle.Website.View                    (start, startJS,
                                                               view)
-#else
-import           Shpadoinkle.Website.View                    (start, startJS,
-                                                              view)
-#endif
 
 
 newtype App a = App { runApp :: ReaderT (Examples (TVar (Maybe Code))) JSM a }
@@ -134,5 +122,8 @@ app = do
 
 
 main :: IO ()
-main = run app
-
+#ifndef ghcjs_HOST_OS
+main = Run.run app
+#else
+main = pure ()
+#endif
