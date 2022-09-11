@@ -312,6 +312,7 @@ type m ~> n = forall a. m a -> n a
 -- | A DOM node reference.
 -- Useful for building baked potatoes and binding a Backend view to the page
 newtype RawNode  = RawNode  { unRawNode  :: JSVal }
+-- WANT^ this should be strengthened to JSObject imo
 
 
 -- | A raw event object reference

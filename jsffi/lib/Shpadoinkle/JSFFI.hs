@@ -1,26 +1,87 @@
-{-# LANGUAGE CPP           #-}
-{-# LANGUAGE JavaScriptFFI #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE CPP                    #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE ExplicitForAll         #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE JavaScriptFFI          #-}
+{-# LANGUAGE MonoLocalBinds         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module Shpadoinkle.JSFFI
-  ( module Shpadoinkle.JSFFI
-  , JSM
+  ( JSM
   , MonadJSM
   , liftJSM
+
+  , ghcjsOnly
+
+  , To
+  , PTo
+  , to
+  , purely
+
+  , IsJSVal
+  , fromJSValUnsafe
+
   , JSVal
+  , toJSVal
+
   , JSString
+  , toJSString
+
+  , JSObject
+  , toJSObject
+  , mkEmptyObject
+  , getProp
+  , getPropCoerce
+  , setProp
+  , setPropCoerce
+
+  , JSKey
+  , toJSKey
+
+  , JSArray
+  , toJSArray
+  , jsArrayFromList
+  , jsArrayToList
+
+  , JSFunction
+  , toJSFunction
+  , HSFunction
+  , mkFun
+  , mkFun'
+  , (#)
+  , (#!)
+  , setTimeout
+  , clearTimeout
+
+  , JSBool
+  , toJSBool
+  , jsTrue
+  , jsFalse
+
+  , getGlobal
   , Window
+  , currentWindowUnsafe
+  , JSContextRef
+  , askJSM
+  , runJSM
+  , eval
   ) where
 
+
+import           Control.Monad               ((<=<), (>=>))
 import           Control.Monad.IO.Class      (MonadIO)
-import Control.Monad ((<=<))
-import           Unsafe.Coerce               (unsafeCoerce)
+import           Data.Functor.Identity       (Identity (..))
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
 import           System.IO.Unsafe            (unsafePerformIO)
+import           Unsafe.Coerce               (unsafeCoerce)
 #ifdef ghcjs_HOST_OS
 import           Control.Category            ((<<<), (>>>))
 import           Control.Monad.IO.Class      (liftIO)
 import           Data.Coerce                 (coerce)
-import Data.Traversable (for)
+import           Data.Traversable            (for)
 #endif
 
 -- ghcjs imports
@@ -39,23 +100,84 @@ import           JavaScript.Array.Internal   (SomeJSArray (..), toListIO)
 -- custom counterparts. However, while we are transitioning Shpadoinkle from JSaddle
 -- to this package, it helps for the two to share types.
 import           GHCJS.DOM.Window            (Window)
-import           Language.Javascript.JSaddle (JSM, MonadJSM, PToJSVal,
-                                              ToJSString, ToJSVal, liftJSM,
-                                              pToJSVal, toJSString, toJSVal)
+import           Language.Javascript.JSaddle (JSM, MonadJSM, liftJSM)
+import qualified Language.Javascript.JSaddle as JSaddle
 
 
 ghcjsOnly :: a
 ghcjsOnly = error "Attempted to perform an operation which is permitted on GHCjs only. Are you compiling with GHC? The GHC Shpadoinkle API is intended for typechecking only; you must compile to GHCjs in order to actually run anything that requires Javascript. (This is most things, unless you are using the static backend.)"
 
+class To f b a where
+  to :: a -> f b
+
+type PTo = To Identity
+
+-- |
+--
+-- If exists instance To Identity B A, then have both:
+-- * to :: A -> Identity B
+-- * purely to :: A -> B
+purely :: (a -> Identity b) -> (a -> b)
+purely = fmap runIdentity
+
+
+instance {-# INCOHERENT #-} (JSaddle.ToJSVal a, MonadJSM m) => To m JSVal a where
+  to = liftJSM . JSaddle.toJSVal
+
+instance Applicative m => To m JSVal JSString where
+  to = unsafeCoerce
+
+-- Cannot use since overlaps with previous =(
+--instance {-# INCOHERENT #-} (JSaddle.PToJSVal a, Applicative m) => To m JSVal a where
+--  to = pure . JSaddle.pToJSVal
+
+toJSVal :: To m JSVal a => a -> m JSVal
+toJSVal = to
+
+instance Applicative m => To m JSVal String where
+  to = pure . purely toJSVal . purely toJSString . T.pack
+
+instance Applicative m => To m JSVal Text where
+  to = pure . purely toJSVal . purely toJSString
+
+instance {-# INCOHERENT #-} (JSaddle.ToJSString a, Applicative m) => To m JSString a where
+  to = pure . JSaddle.toJSString
+
+toJSString :: To m JSString a => a -> m JSString
+toJSString = to
+
+
+-- JSVal newtypes
+class PTo JSVal a => IsJSVal a where
+  fromJSValUnsafe :: JSVal -> a
+
 
 --------------------------------------------------------------------------------
 -- JSObject
 
-newtype JSObject = JSObject { unJSObject :: JSVal }
+type JSObject = JSaddle.Object
+
+-- fake a newtype while still backed by JSaddle Object
+_JSObject :: JSVal -> JSObject
+_JSObject = unsafeCoerce
+unJSObject :: JSObject -> JSVal
+unJSObject = unsafeCoerce
+
+toJSObject :: To f JSObject a => a -> f JSObject
+toJSObject = to
+
+instance Applicative m => To m JSObject JSObject where
+  to = pure
+
+instance Applicative m => To m JSVal JSObject where
+  to = pure . unJSObject
+
+instance IsJSVal JSObject where
+  fromJSValUnsafe = _JSObject
 
 mkEmptyObject :: MonadJSM m => m JSObject
 #ifdef ghcjs_HOST_OS
-mkEmptyObject = JSObject <$> liftJSM mkEmptyObject_js
+mkEmptyObject = _JSObject <$> liftJSM mkEmptyObject_js
 foreign import javascript unsafe
   "$r = ({})"
   mkEmptyObject_js :: JSM JSVal
@@ -63,58 +185,78 @@ foreign import javascript unsafe
 mkEmptyObject = ghcjsOnly
 #endif
 
--- string or symbol
-newtype JSKey = JSKey { unJSKey :: JSVal }
-
-class ToJSKey key where
-  toJSKey :: key -> JSM JSKey
-
-instance ToJSKey JSKey where
-  toJSKey = pure
-
-instance ToJSKey String where
-  toJSKey = fmap JSKey . toJSVal
-
-instance ToJSKey Int where
-  toJSKey = fmap JSKey . toJSVal . show
-
-
-getProp :: (ToJSKey key, ToJSObject obj) => key -> obj -> JSM JSVal
-getProp k o = toJSKey k >>= \(JSKey k') -> getPropCoerce k' o
+getProp :: (MonadJSM m, To m JSKey key, To m JSObject obj) => key -> obj -> m JSVal
+getProp k o = do
+  k' <- toJSKey k
+  getPropCoerce k' o
 
 -- | Allows any JSVal as key
-getPropCoerce :: (ToJSVal key, ToJSObject obj) => key -> obj -> JSM JSVal
+getPropCoerce :: (MonadJSM m, To m JSVal key, To m JSObject obj) => key -> obj -> m JSVal
 #ifdef ghcjs_HOST_OS
-getPropCoerce k o = undefined
+getPropCoerce k o = do
+  k' <- toJSVal k
+  o' <- unJSObject <$> toJSObject o
+  liftJSM $ getProp_js k' o'
+
+foreign import javascript unsafe
+  "$r = $2[$1]"
+  getProp_js :: JSVal -> JSVal -> JSM JSVal
 #else
 getPropCoerce = ghcjsOnly
 #endif
 
 
-setProp :: (ToJSKey key, ToJSVal val, ToJSObject obj) => key -> val -> obj -> JSM ()
-setProp k v o = toJSKey k >>= \(JSKey k') -> setPropCoerce k' v o
+setProp :: (MonadJSM m, To m JSKey key, To m JSVal val, To m JSObject obj) => key -> val -> obj -> m ()
+setProp k v o = do
+  k' <- toJSKey k
+  setPropCoerce k' v o
 
 -- | Allows any JSVal as key
-setPropCoerce :: (ToJSVal key, ToJSVal val, ToJSObject obj) => key -> val -> obj -> JSM ()
+setPropCoerce :: (MonadJSM m, To m JSVal key, To m JSVal val, To m JSObject obj) => key -> val -> obj -> m ()
 #ifdef ghcjs_HOST_OS
 setPropCoerce k v o = do
   k' <- toJSVal k
   v' <- toJSVal v
   o' <- unJSObject <$> toJSObject o
-  setProp_js k' v' o'
+  liftJSM $ setProp_js k' v' o'
 
 foreign import javascript unsafe
-  "$1[$2] = $3" 
+  "$3[$1] = $2"
   setProp_js :: JSVal -> JSVal -> JSVal -> JSM ()
 #else
 setPropCoerce = ghcjsOnly
 #endif
 
 
-class ToJSObject o where
-  toJSObject :: o -> JSM JSObject
+--------------------------------------------------------------------------------
+-- JSKey
 
-instance ToJSObject JSObject where toJSObject = pure
+-- string or symbol
+newtype JSKey = JSKey { unJSKey :: JSVal }
+
+toJSKey :: To m JSKey a => a -> m JSKey
+toJSKey = to
+
+instance IsJSVal JSKey where
+  fromJSValUnsafe = JSKey
+
+instance Applicative m => To m JSVal JSKey where
+  to = pure . unJSKey
+
+instance Applicative m => To m JSKey JSKey where
+  to = pure
+
+instance Applicative m => To m JSKey JSString where
+  to = pure . JSKey . purely toJSVal
+
+instance Applicative m => To m JSKey String where
+  to = pure . JSKey . purely toJSVal . purely toJSString . T.pack
+
+instance Applicative m => To m JSKey Text where
+  to = pure . JSKey . purely toJSVal . purely toJSString
+
+instance Applicative m => To m JSKey Int where
+  to = to . show
 
 
 --------------------------------------------------------------------------------
@@ -122,14 +264,26 @@ instance ToJSObject JSObject where toJSObject = pure
 
 newtype JSArray = JSArray { unJSArray :: JSVal }
 
-instance ToJSObject JSArray where
-  toJSObject = pure . JSObject . unJSArray
+toJSArray :: To m JSArray a => a -> m JSArray
+toJSArray = to
+
+instance IsJSVal JSArray where
+  fromJSValUnsafe = JSArray
+
+instance Applicative m => To m JSVal JSArray where
+  to = pure . unJSArray
+
+instance Applicative m => To m JSObject JSArray where
+  to = pure . _JSObject . unJSArray
+
+instance Applicative m => To m JSArray JSArray where
+  to = pure
 
 jsArrayFromList :: [JSVal] -> JSM JSArray
 #ifdef ghcjs_HOST_OS
 jsArrayFromList xs = do
   ar <- newArray_js (intToJSVal $ length xs)
-  let ar' = JSObject ar
+  let ar' = _JSObject ar
   for (zip [0..] xs) $ \(idx, val) -> setProp (idx :: Int) val ar'
   pure $ JSArray ar
 
@@ -144,7 +298,7 @@ jsArrayFromList = ghcjsOnly
 jsArrayToList :: JSArray -> JSM [JSVal]
 #ifdef ghcjs_HOST_OS
 jsArrayToList (JSArray ar) = do
-  let ar' = JSObject ar
+  let ar' = _JSObject ar
   len <- jsValToInt <$> getProp "length" ar'
   for [0 .. len - 1] $ \idx -> getProp (idx :: Int) ar'
 #else
@@ -157,10 +311,20 @@ jsArrayToList = ghcjsOnly
 
 newtype JSFunction = JSFunction { unJSFunction :: JSVal }
 
-instance PToJSVal JSFunction where pToJSVal = unJSFunction
-instance ToJSVal JSFunction where toJSVal = pure . unJSFunction
+toJSFunction :: To m JSFunction a => a -> m JSFunction
+toJSFunction = to
 
-instance ToJSObject JSFunction where toJSObject = pure . JSObject . unJSFunction
+instance IsJSVal JSFunction where
+  fromJSValUnsafe = JSFunction
+
+instance Applicative m => To m JSVal JSFunction where
+  to = pure . unJSFunction
+
+instance Applicative m => To m JSFunction JSFunction where
+  to = pure
+
+instance Applicative m => To m JSObject JSFunction where
+  to = pure . _JSObject . unJSFunction
 
 
 -- Function type for Haskell/JS interpolation
@@ -170,6 +334,7 @@ type HSFunction =
   -> [JSVal] -- ^ function args
   -> JSM ()
 
+-- | Make a JSFunction from a Haskell function (of compatible type)
 mkFun :: MonadJSM m => HSFunction -> m JSFunction
 #ifdef ghcjs_HOST_OS
 mkFun fun =
@@ -193,6 +358,7 @@ foreign import javascript unsafe
 mkFun = ghcjsOnly
 #endif
 
+-- | Like @mkFun@ but for functions which don't use the self-references
 mkFun' :: MonadJSM m => ([JSVal] -> JSM ()) -> m JSFunction
 mkFun' fun = mkFun (\_fun _this args -> fun args)
 
@@ -223,36 +389,54 @@ clearTimeout = ghcjsOnly
 #endif
 
 
-class ToJSArgs args where
-  toJSArgs :: args -> JSM JSArray
+newtype JSArgs = JSArgs { unJSArgs :: JSArray }
 
-instance ToJSArgs JSVal where
-  toJSArgs = jsArrayFromList . (:[])
+toJSArgs :: To m JSArgs a => a -> m JSArgs
+toJSArgs = to
 
-instance ToJSVal a => ToJSArgs [a] where
-  toJSArgs = jsArrayFromList <=< traverse toJSVal
+instance Applicative m => To m JSArgs JSArgs where
+  to = pure
 
-instance (ToJSVal a1, ToJSVal a2) => ToJSArgs (a1, a2) where
-  toJSArgs (a1, a2) = do
+instance MonadJSM m => To m JSArgs JSVal where
+  to = liftJSM . fmap JSArgs . jsArrayFromList . (:[])
+
+instance MonadJSM m => To m JSArgs () where
+  to = toJSVal >=> toJSArgs
+
+instance MonadJSM m => To m JSArgs JSString where
+  to = toJSVal >=> toJSArgs
+
+instance MonadJSM m => To m JSArgs String where
+  to = toJSVal >=> toJSArgs
+
+instance MonadJSM m => To m JSArgs Text where
+  to = toJSVal >=> toJSArgs
+
+instance (MonadJSM m, To m JSVal a) => To m JSArgs [a] where
+  to = liftJSM . fmap JSArgs . jsArrayFromList <=< traverse toJSVal
+
+instance (MonadJSM m, To m JSVal a1, To m JSVal a2) => To m JSArgs (a1, a2) where
+  to (a1, a2) = do
     a1' <- toJSVal a1
     a2' <- toJSVal a2
     toJSArgs [a1', a2']
 
 
 -- | Call a JS function, safe edition
--- WANT: a ToProp would be most appropriate since properties can be string|number|symbol
-(#) :: (ToJSObject this, ToJSString prop, ToJSArgs args) => this -> prop -> args -> JSM JSVal
-(#) = (#!)
+(#) :: (MonadJSM m, To m JSObject this, To m JSKey prop, To m JSArgs args) => this -> prop -> args -> m JSVal
+(#) this prop args = do
+  prop' <- toJSKey prop
+  (#!) this prop' args
 infixr 2 #
 
 -- | Call JS function, unsafe edition
-(#!) :: (ToJSObject this, ToJSVal prop, ToJSArgs args) => this -> prop -> args -> JSM JSVal
+(#!) :: (MonadJSM m, To m JSObject this, To m JSVal prop, To m JSArgs args) => this -> prop -> args -> m JSVal
 #ifdef ghcjs_HOST_OS
 (#!) this prop args = do
   this' <- unJSObject <$> toJSObject this
   prop' <- toJSVal prop
-  args' <- unJSArray <$> toJSArgs args
-  unsafeCall_js this' prop' args'
+  args' <- unJSArray . unJSArgs <$> toJSArgs args
+  liftJSM $ unsafeCall_js this' prop' args'
 
 foreign import javascript unsafe
   "$r = (function (it) { return it[$2].apply(it, $3); })($1)"
@@ -268,8 +452,17 @@ infixr 2 #!
 
 newtype JSBool = JSBool { unJSBool :: JSVal }
 
-instance PToJSVal JSBool where pToJSVal = unJSBool
-instance ToJSVal JSBool where toJSVal = pure . unJSBool
+toJSBool :: To m JSBool a => a -> m JSBool
+toJSBool = to
+
+instance IsJSVal JSBool where
+  fromJSValUnsafe = JSBool
+
+instance Applicative m => To m JSVal JSBool where
+  to = pure . unJSBool
+
+instance Applicative m => To m JSBool JSBool where
+  to = pure
 
 jsTrue, jsFalse :: JSBool
 #ifdef ghcjs_HOST_OS
@@ -286,9 +479,9 @@ jsFalse = ghcjsOnly
 -------------------------------------------------------------------------------
 
 
-getGlobal :: ToJSString s => s -> JSM JSVal
+getGlobal :: (MonadJSM m, To m JSKey k) => k -> m JSVal
 #ifdef ghcjs_HOST_OS
-getGlobal k = getGlobal_js =<< toJSVal k
+getGlobal = (liftJSM <$> getGlobal_js) <=< toJSVal <=< toJSKey
 foreign import javascript unsafe
   "$r = globalThis[$1]"
   getGlobal_js :: JSVal -> JSM JSVal
@@ -324,9 +517,9 @@ runJSM act _ = liftIO act
 runJSM = ghcjsOnly
 #endif
 
-eval :: (ToJSString s, MonadJSM m) => s -> m JSVal
+eval :: (MonadJSM m, To m JSString s) => s -> m JSVal
 #ifdef ghcjs_HOST_OS
-eval = liftJSM . eval_js . toJSString
+eval = toJSString >=> (liftJSM <$> eval_js)
 foreign import javascript unsafe
   "$r = eval($1)"
   eval_js :: JSString -> IO JSVal

@@ -23,6 +23,7 @@ library
       base >=4.12.0 && <4.16
     , jsaddle >=0.9.7 && <0.20
     , ghcjs-dom
+    , text
 
   if impl(ghcjs)
     build-depends:
