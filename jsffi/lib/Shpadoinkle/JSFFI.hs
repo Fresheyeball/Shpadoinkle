@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE JavaScriptFFI          #-}
+{-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MonoLocalBinds         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 
@@ -60,6 +61,7 @@ module Shpadoinkle.JSFFI
   , jsTrue
   , jsFalse
 
+  , global
   , getGlobal
   , Window
   , currentWindowUnsafe
@@ -110,6 +112,9 @@ ghcjsOnly = error "Attempted to perform an operation which is permitted on GHCjs
 class To f b a where
   to :: a -> f b
 
+-- WANT^ This class is used by some client code.
+--       Hence, it could probably use a rename.
+
 type PTo = To Identity
 
 -- |
@@ -120,6 +125,8 @@ type PTo = To Identity
 purely :: (a -> Identity b) -> (a -> b)
 purely = fmap runIdentity
 
+instance To JSM b a => To JSM b (JSM a) where
+  to = (>>= to)
 
 instance {-# INCOHERENT #-} (JSaddle.ToJSVal a, MonadJSM m) => To m JSVal a where
   to = liftJSM . JSaddle.toJSVal
@@ -421,15 +428,22 @@ instance (MonadJSM m, To m JSVal a1, To m JSVal a2) => To m JSArgs (a1, a2) wher
     a2' <- toJSVal a2
     toJSArgs [a1', a2']
 
+instance (MonadJSM m, To m JSVal a1, To m JSVal a2, To m JSVal a3) => To m JSArgs (a1, a2, a3) where
+  to (a1, a2, a3) = do
+    a1' <- toJSVal a1
+    a2' <- toJSVal a2
+    a3' <- toJSVal a3
+    toJSArgs [a1', a2', a3']
 
--- | Call a JS function, safe edition
+
+-- | Call a JS method, safe(r) edition
 (#) :: (MonadJSM m, To m JSObject this, To m JSKey prop, To m JSArgs args) => this -> prop -> args -> m JSVal
 (#) this prop args = do
   prop' <- toJSKey prop
   (#!) this prop' args
 infixr 2 #
 
--- | Call JS function, unsafe edition
+-- | Call a JS method, unsafe edition
 (#!) :: (MonadJSM m, To m JSObject this, To m JSVal prop, To m JSArgs args) => this -> prop -> args -> m JSVal
 #ifdef ghcjs_HOST_OS
 (#!) this prop args = do
@@ -464,6 +478,11 @@ instance Applicative m => To m JSVal JSBool where
 instance Applicative m => To m JSBool JSBool where
   to = pure
 
+instance Applicative m => To m JSBool Bool where
+  to = \case
+    True -> pure jsTrue
+    False -> pure jsFalse
+
 jsTrue, jsFalse :: JSBool
 #ifdef ghcjs_HOST_OS
 jsTrue = JSBool $ unsafePerformIO jsTrue_js
@@ -479,6 +498,17 @@ jsFalse = ghcjsOnly
 -------------------------------------------------------------------------------
 
 
+global :: JSObject
+#ifdef ghcjs_HOST_OS
+global = fromJSValUnsafe $ unsafePerformIO global_js
+foreign import javascript unsafe
+  "$r = globalThis"
+  global_js :: JSM JSVal
+#else
+global = ghcjsOnly
+#endif
+
+-- WANT: replace callsites with 'global' and 'getProp'/'(#)'
 getGlobal :: (MonadJSM m, To m JSKey k) => k -> m JSVal
 #ifdef ghcjs_HOST_OS
 getGlobal = (liftJSM <$> getGlobal_js) <=< toJSVal <=< toJSKey
@@ -517,7 +547,7 @@ runJSM act _ = liftIO act
 runJSM = ghcjsOnly
 #endif
 
-eval :: (MonadJSM m, To m JSString s) => s -> m JSVal
+eval :: forall s m. (MonadJSM m, To m JSString s) => s -> m JSVal
 #ifdef ghcjs_HOST_OS
 eval = toJSString >=> (liftJSM <$> eval_js)
 foreign import javascript unsafe

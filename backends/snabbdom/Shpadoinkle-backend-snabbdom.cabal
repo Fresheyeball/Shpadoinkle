@@ -41,6 +41,7 @@ library
 
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , base >=4.12.0 && <4.16
     , containers
     , exceptions

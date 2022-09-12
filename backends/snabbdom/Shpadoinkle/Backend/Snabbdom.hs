@@ -55,25 +55,14 @@ import           GHCJS.DOM                   (currentDocumentUnchecked)
 import           GHCJS.DOM.Document          (createElement, getBodyUnsafe)
 import           GHCJS.DOM.Element           (setId, setInnerHTML)
 import           GHCJS.DOM.Node              (appendChild)
-#ifndef ghcjs_HOST_OS
-import           Language.Javascript.JSaddle (FromJSVal (..), JSVal, Object,
-                                              ToJSVal (..), create, eval, fun,
-                                              function, jsTrue, jsg1, jsg2,
-                                              jsg3, makeObject, toJSBool,
-                                              toJSString, unsafeGetProp,
-                                              unsafeSetProp, valMakeString,
-                                              valMakeText, valToObject, (!),
-                                              (#))
-#else
-import           Language.Javascript.JSaddle (FromJSVal (..), JSVal, Object,
-                                              ToJSVal (..), create, eval, fun,
-                                              function, jsTrue, makeObject,
-                                              toJSBool, toJSString,
-                                              unsafeGetProp, unsafeSetProp,
-                                              valMakeString, valMakeText,
-                                              valToObject, (!), (#))
-#endif
 import           Prelude                     hiding (id, words, (.))
+import           Shpadoinkle.JSFFI           (IsJSVal (..), JSObject, JSVal,
+                                              To (to), eval, fromJSValUnsafe,
+                                              getProp, global, jsArrayFromList,
+                                              jsTrue, mkEmptyObject, mkFun',
+                                              purely, setProp, toJSBool,
+                                              toJSObject, toJSString, toJSVal,
+                                              (#))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
@@ -155,17 +144,17 @@ traverseWithKey_ f = go
 
 
 newtype SnabVNode = SnabVNode { unVNode :: JSVal }
-instance ToJSVal   SnabVNode where toJSVal   = return . unVNode
-instance FromJSVal SnabVNode where fromJSVal = return . Just . SnabVNode
+instance Applicative m => To m JSVal SnabVNode where to = pure . unVNode
+instance IsJSVal SnabVNode where fromJSValUnsafe = SnabVNode
 
 
 -- | Insert function @f@ in @o@ as field @k@, after already running an existing property function if it exists.
 insertHook :: Text -- ^ @k@
            -> JSVal -- ^ @f@
-           -> Object -- ^ @o@
+           -> JSObject -- ^ @o@
            -> JSM ()
 #ifndef ghcjs_HOST_OS
-insertHook t f' hooksObj = void $ jsg3 "insertHook" t f' hooksObj
+insertHook t f' hooksObj = void $ global # "insertHook" (t, f', hooksObj)
 #else
 insertHook t f' hooksObj = join $ insertHook' <$> toJSVal t <*> pure f' <*> toJSVal hooksObj
 foreign import javascript unsafe "window['insertHook']($1,$2,$3)" insertHook' :: JSVal -> JSVal -> JSVal -> JSM ()
@@ -173,39 +162,39 @@ foreign import javascript unsafe "window['insertHook']($1,$2,$3)" insertHook' ::
 
 
 -- | Interpret uninterpreted props into a Snabbdom-formatted JavaScript object
-{-# SPECIALIZE props :: NFData a => (JSM ~> JSM) -> TVar a -> Props (SnabbdomT a JSM) a -> JSM Object #-}
-props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (SnabbdomT a m) a -> JSM Object
+{-# SPECIALIZE props :: NFData a => (JSM ~> JSM) -> TVar a -> Props (SnabbdomT a JSM) a -> JSM JSObject #-}
+props :: Monad m => NFData a => (m ~> JSM) -> TVar a -> Props (SnabbdomT a m) a -> JSM JSObject
 props toJSM i (Props xs) = do
-  o <- create
-  propsObj     <- create
-  listenersObj <- create
-  classesObj   <- create
-  attrsObj     <- create
-  hooksObj     <- create
+  o <- mkEmptyObject
+  propsObj     <- mkEmptyObject
+  listenersObj <- mkEmptyObject
+  classesObj   <- mkEmptyObject
+  attrsObj     <- mkEmptyObject
+  hooksObj     <- mkEmptyObject
   flip traverseWithKey_ xs $ \k p ->
-    let k' = toJSString k
+    let k' = purely toJSString k
     in  case p of
-      PData d -> unsafeSetProp k' d propsObj
+      PData d -> setProp k' d propsObj
       PPotato pot -> do
-        f' <- toJSVal . fun $ \_ _ ->
+        f' <- mkFun' $
           let
             g vnode'' = do
-              vnode_ <- valToObject vnode''
-              stm <- pot . RawNode =<< unsafeGetProp "elm" vnode_
+              vnode_ <- fromJSValUnsafe @JSObject <$> toJSVal vnode''
+              stm <- pot . RawNode =<< getProp "elm" vnode_
               let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i)
               void $ forkIO go
           in \case
             [vnode_]    -> g vnode_
             [_, vnode_] -> g vnode_
             _           -> return ()
-        insertHook "insert" f' hooksObj
-        insertHook "update" f' hooksObj
+        insertHook "insert" (purely toJSVal f') hooksObj
+        insertHook "update" (purely toJSVal f') hooksObj
       PText t
         | k == "className" -> forM_ (words t) $ \u ->
-            unsafeSetProp (toJSString u) jsTrue classesObj
+            setProp (purely toJSString u) (purely toJSVal jsTrue) classesObj
         | t /= "" -> do
-            t' <- valMakeText t
-            unsafeSetProp k' t' $ case k of
+            t' <- toJSVal t
+            setProp k' t' $ case k of
               "style"                    -> attrsObj
               "type"                     -> attrsObj
               "autofocus"                -> attrsObj
@@ -213,57 +202,61 @@ props toJSM i (Props xs) = do
               d | "data-" `isPrefixOf` d -> attrsObj
               _                          -> propsObj
         | otherwise -> do
-            t' <- valMakeText t
-            unsafeSetProp k' t' propsObj
+            t' <- toJSVal t
+            setProp k' t' propsObj
 
       PListener f -> do
-        f' <- toJSVal . fun $ \_ _ -> \case
+        f' <- mkFun' $ \case
           [] -> return ()
           ev:_ -> do
-            rn <- unsafeGetProp "target" =<< valToObject ev
+            rn <- getProp "target" =<< fromJSValUnsafe @JSObject <$> toJSVal ev
             x <- f (RawNode rn) (RawEvent ev)
             writeUpdate i $ hoist (toJSM . runSnabbdom i) x
-        unsafeSetProp k' f' listenersObj
+        setProp k' (purely toJSVal f') listenersObj
 
       PFlag b ->
-        unsafeSetProp k' (toJSBool b) propsObj
+        setProp k' (purely toJSBool b) propsObj
 
   p  <- toJSVal propsObj
   l  <- toJSVal listenersObj
   k  <- toJSVal classesObj
   a  <- toJSVal attrsObj
   h' <- toJSVal hooksObj
-  unsafeSetProp "props" p  o
-  unsafeSetProp "class" k  o
-  unsafeSetProp "on"    l  o
-  unsafeSetProp "attrs" a  o
-  unsafeSetProp "hook"  h' o
+  setProp "props" p  o
+  setProp "class" k  o
+  setProp "on"    l  o
+  setProp "attrs" a  o
+  setProp "hook"  h' o
   return o
 
 
 -- | Call-site for Snabbdom's @h()@ function
-vnode :: Text -> Object -> [SnabVNode] -> JSM SnabVNode
+vnode :: Text -> JSObject -> [SnabVNode] -> JSM SnabVNode
 #ifndef ghcjs_HOST_OS
-vnode name o cs = SnabVNode <$> jsg3 "vnode" name o cs
+vnode name o cs = SnabVNode <$> global # "vnode" (name, o, cs)
 #else
-vnode t o cs    = join $ vnode' <$> pure t <*> pure o <*> toJSVal cs
-foreign import javascript unsafe "window['vnode']($1,$2,$3)" vnode' :: Text -> Object -> JSVal -> JSM SnabVNode
+vnode t o cs = vnode' t o =<< vNodesToJSVal cs
+  where
+  vNodesToJSVal :: [SnabVNode] -> JSM JSVal
+  vNodesToJSVal = fmap (purely toJSVal) . jsArrayFromList . fmap unVNode
+
+foreign import javascript unsafe "window['vnode']($1,$2,$3)" vnode' :: Text -> JSObject -> JSVal -> JSM SnabVNode
 #endif
 
 
 -- | Alternative invocation of Snabbdom's @h()@ function for potatos, where there are no children
 #ifndef ghcjs_HOST_OS
-vnodePotato :: Object -> JSM SnabVNode
-vnodePotato o = SnabVNode <$> jsg2 "vnode" "div" o
+vnodePotato :: JSObject -> JSM SnabVNode
+vnodePotato o = SnabVNode <$> global # "vnode" ("div", o)
 #else
-foreign import javascript unsafe "window['vnode']('div',$1)" vnodePotato :: Object -> JSM SnabVNode
+foreign import javascript unsafe "window['vnode']('div',$1)" vnodePotato :: JSObject -> JSM SnabVNode
 #endif
 
 
 -- | Call-site for Snabbdom's @patch()@ function
 patchh :: JSVal -> SnabVNode -> JSM ()
 #ifndef ghcjs_HOST_OS
-patchh previousNode newNode = void $ jsg2 "patchh" previousNode newNode
+patchh previousNode newNode = void $ global # "patchh" (previousNode, newNode)
 #else
 patchh p (SnabVNode n)      = patchh' p n
 foreign import javascript unsafe "window['patchh']($1,$2)" patchh' :: JSVal -> JSVal -> JSM ()
@@ -284,23 +277,23 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
 
       mkPotato mrn = snabbAsk >>= \i -> liftJSM $ do
         (RawNode rn, stm) <- mrn
-        ins <- toJSVal =<< function (\_ _ -> \case
+        ins <- toJSVal =<< mkFun' (\case
           [n] -> do
-            elm' <- (! "elm") =<< makeObject n
-            void $ elm' # "appendChild" $ rn
+            elm' <- getProp "elm" (fromJSValUnsafe @JSObject n)
+            void $ fromJSValUnsafe @JSObject elm' # "appendChild" $ rn
           _   -> return ())
-        hook <- create
-        unsafeSetProp "insert" ins hook
-        classes <- create
-        unsafeSetProp "potato" jsTrue classes
-        o <- create
-        flip (unsafeSetProp "hook") o =<< toJSVal hook
-        flip (unsafeSetProp "classes") o =<< toJSVal classes
+        hook <- mkEmptyObject
+        setProp "insert" ins hook
+        classes <- mkEmptyObject
+        setProp "potato" (purely toJSVal jsTrue) classes
+        o <- mkEmptyObject
+        flip (setProp "hook") o =<< toJSVal hook
+        flip (setProp "classes") o =<< toJSVal classes
         let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i) >> go
         void $ forkIO go
         vnodePotato o
 
-      mkText t = liftJSM . fmap SnabVNode $ valMakeString =<< htmlDecode (toJSString t)
+      mkText t = liftJSM . fmap SnabVNode $ toJSVal =<< htmlDecode (purely toJSString t)
 
 
   patch :: RawNode -> Maybe SnabVNode -> SnabVNode -> SnabbdomT a m SnabVNode
@@ -310,16 +303,16 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
 
   setup :: JSM () -> JSM ()
   setup cb = do
-    void $ eval @Text $(embedStringFile "Shpadoinkle/Backend/Snabbdom/Setup.js")
+    void $ eval ($(embedStringFile "Shpadoinkle/Backend/Snabbdom/Setup.js") :: Text)
     startApp cb
 
 
 -- | Generate the call-site bindings for Snabbdom in @window@
 startApp :: JSM () -> JSM ()
 #ifndef ghcjs_HOST_OS
-startApp cb = void . jsg1 "startApp" . fun $ \_ _ _ -> cb
+startApp cb = void $ global "startApp" # (mkFun' $ const cb)
 #else
-startApp cb = startApp' =<< toJSVal =<< function (fun $ \_ _ _ -> cb)
+startApp cb = startApp' =<< toJSVal =<< mkFun' (const cb)
 foreign import javascript unsafe "window['startApp']($1)" startApp' :: JSVal -> JSM ()
 #endif
 
