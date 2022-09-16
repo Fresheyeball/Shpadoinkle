@@ -21,6 +21,8 @@ module Shpadoinkle.JSFFI
   , to
   , purely
 
+  , jsTreq
+
   , IsJSVal
   , fromJSValUnsafe
 
@@ -69,6 +71,8 @@ module Shpadoinkle.JSFFI
   , askJSM
   , runJSM
   , eval
+  , jsValToMaybeText
+  , jsValToMaybeString
   ) where
 
 
@@ -128,6 +132,9 @@ purely = fmap runIdentity
 instance To JSM b a => To JSM b (JSM a) where
   to = (>>= to)
 
+instance Applicative m => To m JSVal JSVal where
+  to = pure
+
 instance {-# INCOHERENT #-} (JSaddle.ToJSVal a, MonadJSM m) => To m JSVal a where
   to = liftJSM . JSaddle.toJSVal
 
@@ -152,6 +159,19 @@ instance {-# INCOHERENT #-} (JSaddle.ToJSString a, Applicative m) => To m JSStri
 
 toJSString :: To m JSString a => a -> m JSString
 toJSString = to
+
+
+-- triple-equals comparison
+jsTreq :: (PTo JSVal a, PTo JSVal b) => a -> b -> Bool
+#ifdef ghcjs_HOST_OS
+jsTreq a b = jsTreq_js (purely toJSVal a) (purely toJSVal b)
+
+foreign import javascript unsafe
+  "$1 === $2"
+  jsTreq_js :: JSVal -> JSVal -> Bool
+#else
+jsTreq = ghcjsOnly
+#endif
 
 
 -- JSVal newtypes
@@ -535,6 +555,37 @@ intToJSVal = fromIntegral >>> (unsafeCoerce :: Double -> JSVal)
 jsValToInt :: JSVal -> Int
 jsValToInt = (unsafeCoerce :: JSVal -> Double) >>> round
   -- 'round' seems fishy, but that's what JSaddle uses ...
+#endif
+
+
+-- JavaScript string is Haskell Data.Text
+jsValToMaybeText :: JSVal -> Maybe Text
+#ifdef ghcjs_HOST_OS
+jsValToMaybeText text =
+  let nullable = jsValToMaybeText_js text
+      isNull = nullable `jsTreq` jsNull
+  in if isNull then Nothing else Just (unsafeCoerce nullable)
+
+foreign import javascript unsafe
+  "typeof $1 === 'string' ? $1 : null"
+  jsValToMaybeText_js :: JSVal -> JSVal
+#else
+jsValToMaybeText = ghcjsOnly
+#endif
+
+
+jsValToMaybeString :: JSVal -> Maybe String
+jsValToMaybeString = fmap T.unpack . jsValToMaybeText
+
+
+jsNull :: JSVal
+#ifdef ghcjs_HOST_OS
+jsNull = unsafePerformIO jsNull_js
+foreign import javascript unsafe
+  "$r = null"
+  jsNull_js :: JSM JSVal
+#else
+jsNull = ghcjsOnly
 #endif
 
 

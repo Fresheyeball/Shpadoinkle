@@ -42,9 +42,9 @@ import           Servant.API               (FromHttpApiData (..),
                                             ToHttpApiData (..))
 
 import           Shpadoinkle
-import qualified Shpadoinkle.Html          as Html
 import           Shpadoinkle.Html          hiding (a, a', max, min, s, s', u,
                                             u')
+import qualified Shpadoinkle.Html          as Html
 import           Shpadoinkle.Widgets.Types
 
 

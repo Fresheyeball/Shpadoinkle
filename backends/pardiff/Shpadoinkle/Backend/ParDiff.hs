@@ -51,10 +51,10 @@ import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
 import           Control.Monad.Catch         (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.Cont          (MonadCont)
 import           Control.Monad.Except        (MonadError)
+import           Control.Monad.RWS           (MonadRWS)
 import           Control.Monad.Reader        (MonadIO, MonadReader (ask, local),
                                               MonadTrans (..), ReaderT (..),
                                               guard)
-import           Control.Monad.RWS           (MonadRWS)
 import           Control.Monad.State         (MonadState)
 import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
                                               MonadTransControl,

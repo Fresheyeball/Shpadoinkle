@@ -70,10 +70,11 @@ import           GHCJS.DOM.EventTargetClosures (EventName, unsafeEventName)
 import           GHCJS.DOM.History             (pushState)
 import           GHCJS.DOM.Location            (getHref, getPathname, getSearch)
 import           GHCJS.DOM.PopStateEvent       (PopStateEvent)
-import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
+import           GHCJS.DOM.Types               (JSM, MonadJSM)
 import           GHCJS.DOM.Window              (Window, getHistory, getLocation,
                                                 scrollTo)
-import           Language.Javascript.JSaddle   (fromJSVal, jsg)
+import           Shpadoinkle.JSFFI             (getProp, global,
+                                                jsValToMaybeText)
 #ifndef ghcjs_HOST_OS
 import           Servant.API                   (Accept (contentTypes), Capture,
                                                 FromHttpApiData, HasLink (..),
@@ -156,7 +157,7 @@ syncRoute = unsafePerformIO newEmptyMVar
 -- this is used on the client side.
 withHydration :: (MonadJSM m, FromJSON a) => (r -> m a) -> r -> m a
 withHydration s r = do
-  i <- liftJSM $ fromJSVal =<< jsg "initState"
+  i <- jsValToMaybeText <$> getProp "initState" global
   case decode . fromStrict . encodeUtf8 =<< i of
     Just fe -> return fe
     _       -> s r

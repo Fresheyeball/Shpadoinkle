@@ -1,6 +1,8 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 {-# OPTIONS_GHC -Wno-type-defaults              #-}
 
@@ -18,22 +20,23 @@ module Shpadoinkle.Router.Client
   ) where
 
 
-import           Control.Monad.Catch         (MonadThrow (throwM))
-import           Data.Maybe                  (fromMaybe)
-import           Data.Text                   (Text)
-import           GHCJS.DOM.Types             (JSM)
-import           Language.Javascript.JSaddle (FromJSVal (fromJSVal), jsg, (!))
-import           Servant.Client.JS           (BaseUrl (..), ClientEnv (..),
-                                              ClientError (..), ClientM (..),
-                                              EmptyClient (..), HasClient (..),
-                                              InvalidBaseUrlException, Response,
-                                              ResponseF (..), Scheme (..),
-                                              StreamingResponse, client,
-                                              parseBaseUrl, runClientM,
-                                              showBaseUrl,
-                                              withStreamingRequestJSM)
-import           Text.Read                   (readMaybe)
-import           UnliftIO                    (MonadIO (liftIO))
+import           Control.Monad.Catch (MonadThrow (throwM))
+import           Data.Function       ((&))
+import           Data.Maybe          (fromMaybe)
+import           Data.Text           (Text)
+import           GHCJS.DOM.Types     (JSM)
+import           Servant.Client.JS   (BaseUrl (..), ClientEnv (..),
+                                      ClientError (..), ClientM (..),
+                                      EmptyClient (..), HasClient (..),
+                                      InvalidBaseUrlException, Response,
+                                      ResponseF (..), Scheme (..),
+                                      StreamingResponse, client, parseBaseUrl,
+                                      runClientM, showBaseUrl,
+                                      withStreamingRequestJSM)
+import           Shpadoinkle.JSFFI   (JSObject, fromJSValUnsafe, getProp,
+                                      global, jsValToMaybeString)
+import           Text.Read           (readMaybe)
+import           UnliftIO            (MonadIO (liftIO))
 
 
 default (Text)
@@ -41,11 +44,17 @@ default (Text)
 
 getClientEnv :: JSM ClientEnv
 getClientEnv = do
-  loc <- jsg ("window" :: Text) >>= (! ("location" :: Text))
-  protocol <- mapProtocol <$> (loc ! ("protocol" :: Text) >>= fromJSVal)
-  hostname <- fromMaybe "localhost" <$> (loc ! ("hostname" :: Text) >>= fromJSVal)
-  port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) <$> (loc ! ("port" :: Text) >>= fromJSVal)
+  loc :: JSObject <-
+    global
+    & getProp ("window" :: Text)
+    & fmap (fromJSValUnsafe @JSObject)
+    & (>>= getProp ("location" :: Text))
+    & fmap (fromJSValUnsafe @JSObject)
+  protocol <- mapProtocol . jsValToMaybeString <$> getProp ("protocol" :: Text) loc
+  hostname <- fromMaybe "localhost" . jsValToMaybeString <$> getProp ("hostname" :: Text) loc
+  port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) . jsValToMaybeString <$> getProp ("port" :: Text) loc
   return $ ClientEnv $ BaseUrl protocol hostname port ""
+
   where mapProtocol :: Maybe String -> Scheme
         mapProtocol (Just "https:") = Https
         mapProtocol _               = Http
