@@ -51,10 +51,10 @@ import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
 import           Control.Monad.Catch         (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.Cont          (MonadCont)
 import           Control.Monad.Except        (MonadError)
-import           Control.Monad.RWS           (MonadRWS)
 import           Control.Monad.Reader        (MonadIO, MonadReader (ask, local),
                                               MonadTrans (..), ReaderT (..),
                                               guard)
+import           Control.Monad.RWS           (MonadRWS)
 import           Control.Monad.State         (MonadState)
 import           Control.Monad.Trans.Control (ComposeSt, MonadBaseControl (..),
                                               MonadTransControl,
@@ -75,8 +75,11 @@ import           GHCJS.DOM.Element           (setInnerHTML)
 import           Shpadoinkle.JSFFI           (JSObject, JSString,
                                               fromJSValUnsafe, getGlobal,
                                               jsFalse, jsTrue, liftJSM, mkFun',
-                                              purely, setProp, toJSObject,
-                                              toJSString, toJSVal, (#))
+                                              purely, setProp, toJSString,
+                                              toJSVal, (#))
+#ifdef ghcjs_HOST_OS
+import           Shpadoinkle.JSFFI           (toJSObject)
+#endif
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)

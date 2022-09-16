@@ -58,11 +58,13 @@ import           GHCJS.DOM.Node              (appendChild)
 import           Prelude                     hiding (id, words, (.))
 import           Shpadoinkle.JSFFI           (IsJSVal (..), JSObject, JSVal,
                                               To (to), eval, fromJSValUnsafe,
-                                              getProp, global, jsArrayFromList,
-                                              jsTrue, mkEmptyObject, mkFun',
-                                              purely, setProp, toJSBool,
-                                              toJSObject, toJSString, toJSVal,
-                                              (#))
+                                              getProp, global, jsTrue,
+                                              mkEmptyObject, mkFun', purely,
+                                              setProp, toJSBool, toJSString,
+                                              toJSVal, (#))
+#ifdef ghcjs_HOST_OS
+import           Shpadoinkle.JSFFI           (jsArrayFromList, toJSObject)
+#endif
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
@@ -154,7 +156,7 @@ insertHook :: Text -- ^ @k@
            -> JSObject -- ^ @o@
            -> JSM ()
 #ifndef ghcjs_HOST_OS
-insertHook t f' hooksObj = void $ global # "insertHook" (t, f', hooksObj)
+insertHook t f' hooksObj = void $ global # "insertHook" $ (t, f', hooksObj)
 #else
 insertHook t f' hooksObj = join $ insertHook' <$> toJSVal t <*> pure f' <*> toJSVal hooksObj
 foreign import javascript unsafe "window['insertHook']($1,$2,$3)" insertHook' :: JSVal -> JSVal -> JSVal -> JSM ()
@@ -233,7 +235,7 @@ props toJSM i (Props xs) = do
 -- | Call-site for Snabbdom's @h()@ function
 vnode :: Text -> JSObject -> [SnabVNode] -> JSM SnabVNode
 #ifndef ghcjs_HOST_OS
-vnode name o cs = SnabVNode <$> global # "vnode" (name, o, cs)
+vnode name o cs = SnabVNode <$> ( global # "vnode" $ (name, o, unVNode <$> cs) )
 #else
 vnode t o cs = vnode' t o =<< vNodesToJSVal cs
   where
@@ -247,7 +249,7 @@ foreign import javascript unsafe "window['vnode']($1,$2,$3)" vnode' :: Text -> J
 -- | Alternative invocation of Snabbdom's @h()@ function for potatos, where there are no children
 #ifndef ghcjs_HOST_OS
 vnodePotato :: JSObject -> JSM SnabVNode
-vnodePotato o = SnabVNode <$> global # "vnode" ("div", o)
+vnodePotato o = SnabVNode <$> ( global # "vnode" $ ("div", o) )
 #else
 foreign import javascript unsafe "window['vnode']('div',$1)" vnodePotato :: JSObject -> JSM SnabVNode
 #endif
@@ -256,7 +258,7 @@ foreign import javascript unsafe "window['vnode']('div',$1)" vnodePotato :: JSOb
 -- | Call-site for Snabbdom's @patch()@ function
 patchh :: JSVal -> SnabVNode -> JSM ()
 #ifndef ghcjs_HOST_OS
-patchh previousNode newNode = void $ global # "patchh" (previousNode, newNode)
+patchh previousNode newNode = void $ ( global # "patchh" $ (previousNode, newNode) )
 #else
 patchh p (SnabVNode n)      = patchh' p n
 foreign import javascript unsafe "window['patchh']($1,$2)" patchh' :: JSVal -> JSVal -> JSM ()
@@ -310,7 +312,9 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
 -- | Generate the call-site bindings for Snabbdom in @window@
 startApp :: JSM () -> JSM ()
 #ifndef ghcjs_HOST_OS
-startApp cb = void $ global "startApp" # (mkFun' $ const cb)
+startApp cb = do
+  f <- mkFun' $ const cb
+  void $ global # "startApp" $ f
 #else
 startApp cb = startApp' =<< toJSVal =<< mkFun' (const cb)
 foreign import javascript unsafe "window['startApp']($1)" startApp' :: JSVal -> JSM ()

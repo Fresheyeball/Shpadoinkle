@@ -419,6 +419,9 @@ instance MonadJSM m => To m JSArgs String where
 instance MonadJSM m => To m JSArgs Text where
   to = toJSVal >=> toJSArgs
 
+instance MonadJSM m => To m JSArgs JSFunction where
+  to = toJSVal >=> toJSArgs
+
 instance (MonadJSM m, To m JSVal a) => To m JSArgs [a] where
   to = liftJSM . fmap JSArgs . jsArrayFromList <=< traverse toJSVal
 
