@@ -78,6 +78,7 @@ executable disembodied
 
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , Shpadoinkle-backend-snabbdom
     , Shpadoinkle-console
     , Shpadoinkle-disembodied
@@ -155,6 +156,7 @@ executable run
 
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , Shpadoinkle-backend-snabbdom
     , Shpadoinkle-console
     , Shpadoinkle-developer-tools
@@ -239,6 +241,7 @@ test-suite unit
 
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , Shpadoinkle-backend-snabbdom
     , Shpadoinkle-console
     , Shpadoinkle-developer-tools

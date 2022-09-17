@@ -31,7 +31,6 @@ import           GHCJS.DOM.RequestAnimationFrameCallback (RequestAnimationFrameC
                                                           newRequestAnimationFrameCallback)
 import           GHCJS.DOM.Window                        (Window,
                                                           requestAnimationFrame)
-import           Language.Javascript.JSaddle             (toJSVal)
 import           Shpadoinkle                             (JSM, NFData,
                                                           RawNode (..),
                                                           newTVarIO,
@@ -39,6 +38,7 @@ import           Shpadoinkle                             (JSM, NFData,
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom)
 import           Shpadoinkle.Html                        as H
 import           Shpadoinkle.Html.TH.AssetLink           (assetLink)
+import           Shpadoinkle.JSFFI                       (toJSVal)
 import           Shpadoinkle.Keyboard                    (pattern Ctrl,
                                                           pattern LeftArrow,
                                                           pattern RightArrow)

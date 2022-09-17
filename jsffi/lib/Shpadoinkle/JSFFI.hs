@@ -65,8 +65,6 @@ module Shpadoinkle.JSFFI
 
   , global
   , getGlobal
-  , Window
-  , currentWindowUnsafe
   , JSContextRef
   , askJSM
   , runJSM
@@ -541,11 +539,6 @@ foreign import javascript unsafe
 #else
 getGlobal = ghcjsOnly
 #endif
-
-
--- nb. Unused at time of writing; remove?
-currentWindowUnsafe :: MonadJSM m => m Window
-currentWindowUnsafe = liftJSM $ unsafeCoerce <$> getGlobal "window"
 
 
 #ifdef ghcjs_HOST_OS
