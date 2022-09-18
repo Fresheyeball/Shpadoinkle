@@ -71,6 +71,9 @@ module Shpadoinkle.JSFFI
   , eval
   , jsValToMaybeText
   , jsValToMaybeString
+  , callToString
+  , callNumber
+  , isTruthy
   ) where
 
 
@@ -324,8 +327,12 @@ jsArrayToList :: JSArray -> JSM [JSVal]
 #ifdef ghcjs_HOST_OS
 jsArrayToList (JSArray ar) = do
   let ar' = _JSObject ar
-  len <- jsValToInt <$> getProp "length" ar'
-  for [0 .. len - 1] $ \idx -> getProp (idx :: Int) ar'
+  len <- toInt =<< getProp "length" ar'
+  for [0 :: Int .. len - 1] $ \idx -> getProp idx ar'
+
+  where
+  toInt = fmap round . callNumber
+    -- nb^ jsValToInt seems to fail sometimes? Possibly when used in TemplateHaskell
 #else
 jsArrayToList = ghcjsOnly
 #endif
@@ -569,6 +576,41 @@ jsValToMaybeText = ghcjsOnly
 
 jsValToMaybeString :: JSVal -> Maybe String
 jsValToMaybeString = fmap T.unpack . jsValToMaybeText
+
+
+-- | Convert to string by calling '.toString()'
+callToString :: JSVal -> JSM Text
+#ifdef ghcjs_HOST_OS
+callToString = callToString_js
+foreign import javascript unsafe
+  "$r = $1.toString()"
+  callToString_js :: JSVal -> JSM Text
+#else
+callToString = ghcjsOnly
+#endif
+
+
+-- | Convert to a number by passig to Number()
+callNumber :: JSVal -> JSM Double
+#ifdef ghcjs_HOST_OS
+callNumber = callNumber_js
+foreign import javascript unsafe
+  "Number($1)"
+  callNumber_js :: JSVal -> JSM Double
+#else
+callNumber = ghcjsOnly
+#endif
+
+
+isTruthy :: JSVal -> JSM Bool
+#ifdef ghcjs_HOST_OS
+isTruthy = isTruthy_js
+foreign import javascript unsafe
+  "!(!$1)"
+  isTruthy_js :: JSVal -> JSM Bool
+#else
+isTruthy = ghcjsOnly
+#endif
 
 
 jsNull :: JSVal

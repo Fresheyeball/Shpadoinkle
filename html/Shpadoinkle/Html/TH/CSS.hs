@@ -16,28 +16,29 @@ module Shpadoinkle.Html.TH.CSS
 
 
 import           Control.Compactable
-import           Data.ByteString.Lazy        as BS (ByteString)
-import qualified Data.ByteString.Lazy.Char8  as BS
-import           Data.Char                   (toLower)
-import           Data.Containers.ListUtils   (nubOrd)
-import qualified Data.Set                    as Set
-import           Data.String                 (IsString)
-import           Data.Text                   (Text)
+import           Data.ByteString.Lazy       as BS (ByteString)
+import qualified Data.ByteString.Lazy.Char8 as BS
+import           Data.Char                  (toLower)
+import           Data.Containers.ListUtils  (nubOrd)
+import qualified Data.Set                   as Set
+import           Data.String                (IsString)
+import           Data.Text                  (Text)
 import           Language.Haskell.TH.Syntax
 
 #ifdef ghcjs_HOST_OS
 import           Data.Text.Encoding
 import           GHCJS.Marshal.Pure
-import           GHCJS.Types                 as T
-import           Language.Javascript.JSaddle
-import           System.IO.Unsafe            (unsafePerformIO)
+import           GHCJS.Types                as T
+import           Shpadoinkle.JSFFI          (JSArray, JSM, callToString,
+                                             fromJSValUnsafe, jsArrayToList)
+import           System.IO.Unsafe           (unsafePerformIO)
 #else
 import           Text.Regex.PCRE
 #endif
 
-import           Shpadoinkle                 (Prop)
-import           Shpadoinkle.Html            (ClassList (..))
-import           Shpadoinkle.Html.Property   (textProperty')
+import           Shpadoinkle                (Prop)
+import           Shpadoinkle.Html           (ClassList (..))
+import           Shpadoinkle.Html.Property  (textProperty')
 
 
 extractNamespace :: FilePath -> Q [Dec]
@@ -51,6 +52,9 @@ extractNamespace fp = do
 foreign import javascript unsafe "Array.from($1.match(new RegExp($2, 'g')))"
   js_match :: T.JSString -> T.JSString -> IO JSVal
 
+match :: T.JSString -> T.JSString -> JSM JSArray
+match a b = fromJSValUnsafe @JSArray <$> js_match a b
+
 
 notMempty :: (Eq m, Monoid m) => m -> Maybe m
 notMempty x | x == mempty = Nothing
@@ -59,8 +63,9 @@ notMempty x | x == mempty = Nothing
 
 getAll :: ByteString -> [ByteString]
 getAll css = unsafePerformIO $ do
-  matches <- js_match (pFromJSVal . pToJSVal $ BS.unpack css) selectors
-  maybe [] (fmapMaybe $ notMempty . BS.fromStrict . encodeUtf8) <$> fromJSVal matches
+  matches <- match (pFromJSVal . pToJSVal $ BS.unpack css) selectors
+  matches' <- traverse callToString =<< jsArrayToList matches
+  pure $ fmapMaybe (notMempty . BS.fromStrict . encodeUtf8) matches'
 
 #else
 

@@ -1,21 +1,26 @@
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TypeApplications           #-}
 
 
 module Shpadoinkle.WebWorker where
 
 
-import           Control.Monad               (void)
+import           Control.Monad          (void)
 import           Data.Text
-import           GHCJS.DOM
-import           Language.Javascript.JSaddle
+import qualified GHCJS.Marshal.Internal
+import           Shpadoinkle.JSFFI      (JSM, JSObject, JSVal, MonadJSM, To,
+                                         eval, fromJSValUnsafe, getProp, global,
+                                         liftJSM, mkFun', purely, toJSObject,
+                                         toJSVal, (#))
 import           Text.RawString.QQ
 
 
-newtype Worker = Worker { unWorker :: JSVal }
-  deriving (ToJSVal)
+newtype Worker = Worker { unWorker :: JSObject }
 
 
 createWorkerJS :: Text
@@ -44,23 +49,28 @@ createWorkerJS = [r|createWorker = function (workerUrl) {
 }|]
 
 
+-- WANTv We should be able to swap this to 'To m JSVal' after jsaddle is removed
+--       and the typeclasses in the jsffi module are cleaned up
+type ToJSVal a = GHCJS.Marshal.Internal.ToJSVal a
+
+
 createWorker :: MonadJSM m => Text -> m Worker
 createWorker url = liftJSM $ do
   _ <- eval createWorkerJS
-  w <- toJSVal =<< currentWindowUnchecked
+  w <- fromJSValUnsafe @JSObject <$> getProp ("window" :: Text) global
   u <- toJSVal url
-  Worker <$> (w # ("createWorker" :: Text) $ [u])
+  Worker . fromJSValUnsafe @JSObject <$> (w # ("createWorker" :: Text) $ [u])
 
 
-postMessage :: ToJSVal a => MonadJSM m => Worker -> a -> m ()
+postMessage :: (MonadJSM m, ToJSVal a) => Worker -> a -> m ()
 postMessage (Worker worker) msg = liftJSM $ do
   v <- toJSVal msg
   () <$ (worker # ("postMessage" :: Text) $ [v])
 
 
-postMessage' :: ToJSVal a => MonadJSM m => a -> m ()
+postMessage' :: (MonadJSM m, ToJSVal a) => a -> m ()
 postMessage' msg = liftJSM $ do
-  self <- jsg ("self" :: Text)
+  self <- fromJSValUnsafe @JSObject <$> getProp ("self" :: Text) global
   m <- toJSVal msg
   () <$ (self # ("postMessage" :: Text) $ m)
 
@@ -69,10 +79,12 @@ hackWindow :: MonadJSM m => m ()
 hackWindow = void . liftJSM $ eval ("window = self" :: Text)
 
 
-onMessage :: ToJSVal mailbox => FromJSVal message => MonadJSM m => mailbox -> (Maybe message -> JSM ()) -> m ()
-onMessage mailbox f = liftJSM $ do
-  box <- toJSVal mailbox
-  (box <# ("onmessage" :: Text)) =<< toJSVal (fun (\_ _ -> \case
-    [v] -> f =<< fromJSVal =<< (v ! ("data" :: Text))
-    _   -> return ()))
+onMessage :: (MonadJSM m, To m JSObject mailbox) => mailbox -> (JSVal -> JSM ()) -> m ()
+onMessage mailbox f = do
+  box <- toJSObject mailbox
+  liftJSM $ do
+    fun <- mkFun' $ \case
+      [v] -> f =<< getProp ("data" :: Text) (fromJSValUnsafe @JSObject v)
+      _   -> return ()
+    void $ box # ("onmessage" :: Text) $ purely toJSVal fun
 
