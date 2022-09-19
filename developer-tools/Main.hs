@@ -6,12 +6,13 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE TypeApplications     #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Main where
 
 
-import           Control.Lens
+import           Control.Lens                hiding ((#))
 import           Control.Monad               (void, when)
 import           Control.Monad.IO.Class      (liftIO)
 import           Data.Map                    as Map (Map, insert, lookup,
@@ -20,10 +21,12 @@ import           Data.Text                   (Text, pack, unpack)
 import           Data.Time                   (UTCTime, defaultTimeLocale,
                                               formatTime, getCurrentTime)
 import           GHC.Generics                (Generic)
-import           Language.Javascript.JSaddle (FromJSVal (fromJSVal), JSM,
-                                              MonadJSM, fun, js, js1, js2, jsg,
-                                              liftJSM, obj, strictEqual, (<#))
 import           Prelude                     hiding (div, span)
+import           Shpadoinkle.JSFFI           (JSM, JSObject, MonadJSM, jsValToMaybeText,
+                                              fromJSValUnsafe, getProp, global,
+                                              jsStringToJSVal, liftJSM,
+                                              mkEmptyObject, mkFun', setProp, jsTreq,
+                                              (#))
 import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
                                               newTVarIO)
@@ -54,16 +57,21 @@ emptyModel :: Model
 emptyModel = Model mempty Nothing True
 
 
+o ! k = fromJSValUnsafe @JSObject <$> (getProp k =<< o)
+
+
 listenForOutput :: TVar Model -> JSM ()
-listenForOutput model = void $ jsg "chrome" ^. (js "runtime" . js "onMessage" . js1 "addListener" (fun $ \ _ _ args -> do
-  let x = Prelude.head args
-  t <- x ^. js "type"
-  isRight <- strictEqual t "shpadoinkle_output_state"
-  when isRight $ do
-    msg <- x ^. js "msg"
-    now <- liftIO getCurrentTime
-    history' <- maybe (error "how could this not be a string") History <$> fromJSVal msg
-    atomically . modifyTVar model $ heard now history'))
+listenForOutput model = do
+  onMessage <- pure global ! "chrome" ! "runtime" ! "onMessage"
+  void $ (onMessage # "addListener") =<< mkFun' (\args -> do
+    let x = fromJSValUnsafe @JSObject $ Prelude.head args
+    t <- getProp "type" x
+    let isRight = t `jsTreq` jsStringToJSVal "shpadoinkle_output_state"
+    when isRight $ do
+      msg <- getProp "msg" x
+      now <- liftIO getCurrentTime
+      let history' = maybe (error "how could this not be a string") History $ jsValToMaybeText msg
+      atomically . modifyTVar model $ heard now history')
 
 
 heard :: UTCTime -> History -> Model -> Model
@@ -88,13 +96,13 @@ row sel k history' = div "record"
 
 sendHistory :: History -> JSM ()
 sendHistory (History history') = void $ do
-  tabId <- jsg "chrome" ^. (js "devtools" . js "inspectedWindow" . js "tabId")
+  tabId <- (pure global ! "chrome" ! "devtools" ! "inspectedWindow") >>= getProp "tabId"
 
-  msg <- obj
-  (msg <# "type") "shpadoinkle_set_state"
-  (msg <# "msg") history'
+  msg <- mkEmptyObject
+  msg & setProp "type" (jsStringToJSVal "shpadoinkle_set_state")
+  msg & setProp "msg" history'
 
-  void $ jsg "chrome" ^. (js "tabs" . js2 "sendMessage" tabId msg)
+  void $ (pure global ! "chrome" ! "tabs") >>= (\t -> t # "sendMessage" $ (tabId, msg))
 
 
 prettyHtml :: Monad m => Int -> Pretty.Value -> Html m a
