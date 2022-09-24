@@ -51,9 +51,12 @@ executable animation
 
   hs-source-dirs: ./.
 
+  ghc-options: -DDEVELOPMENT
+
   build-depends:
       Shpadoinkle
     , Shpadoinkle-backend-snabbdom
+    , Shpadoinkle-developer-tools
     , Shpadoinkle-html
     , base >=4.12.0 && <4.16
     , ease

@@ -20,6 +20,7 @@ import           Shpadoinkle                             (Html, JSM, TVar,
                                                           newTVarIO,
                                                           shpadoinkle)
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom, stage)
+import           Shpadoinkle.DeveloperTools              (withDeveloperTools)
 import           Shpadoinkle.Html                        as H (div,
                                                                textProperty)
 import           Shpadoinkle.Run                         (run)
@@ -68,6 +69,7 @@ animation w t = void $ requestAnimationFrame w =<< go where
 app :: JSM ()
 app = do
   t <- newTVarIO 0
+  withDeveloperTools t
   w <- currentWindowUnchecked
   _ <- forkIO $ threadDelay wait >> animation w t
   shpadoinkle id runSnabbdom t view stage
