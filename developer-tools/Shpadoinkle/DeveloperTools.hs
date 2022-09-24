@@ -4,8 +4,6 @@
 #ifdef DEVELOPMENT
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TupleSections        #-}
-{-# LANGUAGE TypeApplications     #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 #endif
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
@@ -14,15 +12,12 @@
 module Shpadoinkle.DeveloperTools (withDeveloperTools) where
 
 
-import           Shpadoinkle.JSFFI   (JSM, JSObject, JSString, fromJSValUnsafe,
-                                      getProp, global, jsStringToJSVal, jsTreq,
-                                      jsValToMaybeString, mkEmptyObject, mkFun',
-                                      purely, setProp, toJSString, (#))
+import           Language.Javascript.JSaddle
 import           UnliftIO
 #ifdef DEVELOPMENT
-import           Control.Lens        hiding ((#))
+import           Control.Lens
 import           Control.Monad
-import           Control.Monad.STM   (retry)
+import           Control.Monad.STM           (retry)
 import           UnliftIO.Concurrent
 #endif
 
@@ -36,7 +31,7 @@ withDeveloperTools x = do
   i' <- readTVarIO x
   y  <- newTVarIO i'
   outputState i'
-  -- syncPoint
+  syncPoint
   listenForSetState x
   () <$ forkIO (f y)
   where
@@ -51,20 +46,19 @@ withDeveloperTools x = do
 
 outputState :: forall a. Show a => a -> JSM ()
 outputState x = void . (try :: forall b. JSM b -> JSM (Either SomeException b)) $ do
-  o <- mkEmptyObject
-  o & setProp "type" (jsStringToJSVal $ "shpadoinkle_output_state")
-  o & setProp "msg" (jsStringToJSVal $ purely toJSString $ show x)
-  global # "postMessage" $ (o, "*")
+  o <- obj
+  (o <# "type") "shpadoinkle_output_state"
+  (o <# "msg") $ toJSString $ show x
+  jsg "window" ^. js2 "postMessage" o "*"
 
 
 listenForSetState :: forall a. Read a => TVar a -> JSM ()
-listenForSetState model =
-  void $ (global # "addEventListener") . ("message",) =<< (mkFun' $ \args -> do
-    let e = fromJSValUnsafe @JSObject $ Prelude.head args
-    isWindow <- (`jsTreq` global) <$> getProp "source" e
-    d <- fromJSValUnsafe @JSObject <$> getProp "data" e
-    isRightType <- (`jsTreq` (jsStringToJSVal "shpadoinkle_set_state")) <$> getProp "type" d
-    msg <- jsValToMaybeString <$> getProp "msg" d
+listenForSetState model = void $ jsg "window" ^. js2 "addEventListener" "message" (fun $ \_ _ args -> do
+    let e = Prelude.head args
+    isWindow <- strictEqual (e ^. js "source") (jsg "window")
+    d <- e ^. js "data"
+    isRightType <- strictEqual (d ^. js "type") "shpadoinkle_set_state"
+    msg <- fromJSVal =<< (d ^. js "msg")
     case msg of
       Just msg' | isWindow && isRightType ->
         atomically . writeTVar model $ read msg'

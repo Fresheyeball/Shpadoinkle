@@ -28,7 +28,6 @@ module Shpadoinkle.JSFFI
 
   , JSVal
   , toJSVal
-  , jsStringToJSVal
 
   , JSString
   , toJSString
@@ -149,10 +148,6 @@ instance Applicative m => To m JSVal JSString where
 
 toJSVal :: To m JSVal a => a -> m JSVal
 toJSVal = to
-
--- WANTv remove after jsaddle is gone
-jsStringToJSVal :: JSString -> JSVal
-jsStringToJSVal = unsafeCoerce
 
 instance Applicative m => To m JSVal String where
   to = pure . purely toJSVal . purely toJSString . T.pack
