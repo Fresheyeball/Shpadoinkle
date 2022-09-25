@@ -32,6 +32,7 @@ module Shpadoinkle.Backend.Snabbdom
 
 
 import           Control.Category            ((.))
+import           Data.Function               ((&))
 #ifdef ghcjs_HOST_OS
 import           Control.Monad               (join)
 #endif
@@ -51,15 +52,13 @@ import           Control.Monad.Writer        (MonadWriter)
 import           Data.FileEmbed              (embedStringFile)
 import           Data.Map.Internal           (Map (Bin, Tip))
 import           Data.Text                   (Text, isPrefixOf, words)
-import           GHCJS.DOM                   (currentDocumentUnchecked)
-import           GHCJS.DOM.Document          (createElement, getBodyUnsafe)
-import           GHCJS.DOM.Element           (setId, setInnerHTML)
-import           GHCJS.DOM.Node              (appendChild)
 import           Prelude                     hiding (id, words, (.))
 import           Shpadoinkle.JSFFI           (IsJSVal (..), JSObject, JSVal,
-                                              To (to), eval, fromJSValUnsafe,
-                                              getProp, global, jsTrue,
-                                              mkEmptyObject, mkFun', purely,
+                                              To (to), appendChild, body,
+                                              createElement, eval,
+                                              fromJSValUnsafe, getProp, global,
+                                              jsTrue, mkEmptyObject, mkFun',
+                                              purely, setId, setInnerHTML,
                                               setProp, toJSBool, toJSString,
                                               toJSVal, (#))
 #ifdef ghcjs_HOST_OS
@@ -324,12 +323,10 @@ foreign import javascript unsafe "window['startApp']($1)" startApp' :: JSVal -> 
 -- | Get the @<body>@ DOM node after emptying it.
 stage :: MonadJSM m => SnabbdomT a m RawNode
 stage = liftJSM $ do
-  doc <- currentDocumentUnchecked
-  placeholder <- createElement doc ("div" :: Text)
-  setId placeholder ("stage" :: Text)
-  b <- getBodyUnsafe doc
-  setInnerHTML b ""
-  _ <- appendChild b placeholder
+  placeholder <- createElement ("div" :: Text)
+  placeholder & setId ("stage" :: Text)
+  body & setInnerHTML ""
+  _ <- body & appendChild placeholder
   RawNode <$> toJSVal placeholder
 {-# SPECIALIZE stage :: SnabbdomT a JSM RawNode #-}
 

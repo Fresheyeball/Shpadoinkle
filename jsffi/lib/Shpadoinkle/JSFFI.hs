@@ -62,6 +62,9 @@ module Shpadoinkle.JSFFI
   , JSElement
   , toJSElement
   , setInnerHTML
+  , createElement
+  , appendChild
+  , setId
 
   , JSBool
   , toJSBool
@@ -69,6 +72,10 @@ module Shpadoinkle.JSFFI
   , jsFalse
 
   , global
+  , window
+  , document
+  , body
+
   , getGlobal
   , JSContextRef
   , askJSM
@@ -527,6 +534,39 @@ foreign import javascript unsafe
 setInnerHTML = ghcjsOnly
 #endif
 
+createElement :: MonadJSM m => Text -> m JSElement
+#ifdef ghcjs_HOST_OS
+createElement name = toJSVal name >>= (fmap JSElement . liftJSM <$> createElement_js)
+
+foreign import javascript unsafe
+  "$r = document.createElement($1)"
+  createElement_js :: JSVal -> JSM JSVal
+#else
+createElement = ghcjsOnly
+#endif
+
+appendChild :: MonadJSM m => JSElement -> JSElement -> m ()
+#ifdef ghcjs_HOST_OS
+appendChild child parent = liftJSM $ appendChild_js (unJSElement parent) (unJSElement child)
+
+foreign import javascript unsafe
+  "$1.appendChild($2)"
+  appendChild_js :: JSVal -> JSVal -> JSM ()
+#else
+appendChild = ghcjsOnly
+#endif
+
+setId :: MonadJSM m => Text -> JSElement -> m ()
+#ifdef ghcjs_HOST_OS
+setId newId el = liftJSM $ setId_js (unJSElement el) (purely toJSVal newId)
+
+foreign import javascript unsafe
+  "$1.id = $2"
+  setId_js :: JSVal -> JSVal -> JSM ()
+#else
+setId = ghcjsOnly
+#endif
+
 
 --------------------------------------------------------------------------------
 -- JSBool
@@ -573,6 +613,36 @@ foreign import javascript unsafe
   global_js :: JSM JSVal
 #else
 global = ghcjsOnly
+#endif
+
+window :: JSObject
+#ifdef ghcjs_HOST_OS
+window = fromJSValUnsafe $ unsafePerformIO window_js
+foreign import javascript unsafe
+  "$r = window"
+  window_js :: JSM JSVal
+#else
+window = ghcjsOnly
+#endif
+
+document :: JSObject
+#ifdef ghcjs_HOST_OS
+document = fromJSValUnsafe $ unsafePerformIO document_js
+foreign import javascript unsafe
+  "$r = document"
+  document_js :: JSM JSVal
+#else
+document = ghcjsOnly
+#endif
+
+body :: JSElement
+#ifdef ghcjs_HOST_OS
+body = fromJSValUnsafe $ unsafePerformIO body_js
+foreign import javascript unsafe
+  "$r = document.body"
+  body_js :: JSM JSVal
+#else
+body = ghcjsOnly
 #endif
 
 -- WANT: replace callsites with 'global' and 'getProp'/'(#)'
