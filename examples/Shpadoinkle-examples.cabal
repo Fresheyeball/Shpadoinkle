@@ -143,6 +143,7 @@ executable lazy-loading-table-client
 
   build-depends:
       base >=4.12.0 && <4.16
+    , Shpadoinkle-jsffi
     , bytestring
     , aeson
     , containers
@@ -181,6 +182,7 @@ executable lazy-loading-table-server
 
   build-depends:
       base >=4.12.0 && <4.16
+    , Shpadoinkle-jsffi
     , aeson
     , bytestring
     , containers
