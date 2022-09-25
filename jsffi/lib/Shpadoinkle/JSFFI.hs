@@ -59,6 +59,10 @@ module Shpadoinkle.JSFFI
   , setTimeout
   , clearTimeout
 
+  , JSElement
+  , toJSElement
+  , setInnerHTML
+
   , JSBool
   , toJSBool
   , jsTrue
@@ -494,6 +498,34 @@ foreign import javascript unsafe
 (#!) = ghcjsOnly
 #endif
 infixr 2 #!
+
+
+--------------------------------------------------------------------------------
+-- JSElement
+
+newtype JSElement = JSElement { unJSElement :: JSVal }
+
+toJSElement :: To m JSElement a => a -> m JSElement
+toJSElement = to
+
+instance Applicative m => To m JSVal JSElement where
+  to = pure . unJSElement
+
+instance IsJSVal JSElement where
+  fromJSValUnsafe = JSElement
+
+setInnerHTML :: (MonadJSM m, To m JSString s) => s -> JSElement -> m ()
+#ifdef ghcjs_HOST_OS
+setInnerHTML str el = do
+  str' <- toJSVal =<< toJSString str
+  liftJSM $ setInnerHTML_js (unJSElement el) str'
+
+foreign import javascript unsafe
+  "$1.innerHTML = $2"
+  setInnerHTML_js :: JSVal -> JSVal -> JSM ()
+#else
+setInnerHTML = ghcjsOnly
+#endif
 
 
 --------------------------------------------------------------------------------

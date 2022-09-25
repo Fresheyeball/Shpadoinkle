@@ -69,13 +69,11 @@ import           Data.Maybe                  (isJust)
 import           Data.Monoid                 ((<>))
 import           Data.Once                   (Once, newOnce, runOnce)
 import           Data.Text                   (Text)
-import           GHCJS.DOM                   (currentDocumentUnchecked)
-import           GHCJS.DOM.Document          (getBodyUnsafe)
-import           GHCJS.DOM.Element           (setInnerHTML)
-import           Shpadoinkle.JSFFI           (JSObject, JSString,
+import           Shpadoinkle.JSFFI           (JSElement, JSObject, JSString,
                                               fromJSValUnsafe, getGlobal,
-                                              jsFalse, jsTrue, liftJSM, mkFun',
-                                              purely, setProp, toJSString,
+                                              getProp, global, jsFalse, jsTrue,
+                                              liftJSM, mkFun', purely,
+                                              setInnerHTML, setProp, toJSString,
                                               toJSVal, (#))
 #ifdef ghcjs_HOST_OS
 import           Shpadoinkle.JSFFI           (toJSObject)
@@ -471,7 +469,9 @@ instance
 -- | Get the @<body>@ DOM node after emptying it.
 stage :: MonadJSM m => ParDiffT a m RawNode
 stage = liftJSM $ do
-  b <- getBodyUnsafe =<< currentDocumentUnchecked
-  setInnerHTML b ""
-  RawNode <$> toJSVal b
+  body <- do
+    document <- fromJSValUnsafe @JSObject <$> getProp "document" global
+    fromJSValUnsafe @JSElement <$> getProp "body" document
+  setInnerHTML "" body
+  RawNode <$> toJSVal body
 {-# SPECIALIZE stage :: ParDiffT a JSM RawNode #-}
