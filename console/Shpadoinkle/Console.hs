@@ -1,11 +1,13 @@
 {-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE ExtendedDefaultRules       #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
@@ -30,17 +32,18 @@ module Shpadoinkle.Console (
   ) where
 
 
-import           Control.Lens                ((^.))
+import           Control.Monad               (void)
 import           Data.Aeson                  (ToJSON, encode)
 import           Data.Kind                   (Constraint, Type)
 import           Data.String                 (IsString)
 import           Data.Text                   (Text, pack)
 import           Data.Text.Lazy              (toStrict)
 import           Data.Text.Lazy.Encoding     (decodeUtf8)
-import           Language.Javascript.JSaddle (JSContextRef, MonadJSM,
-                                              ToJSVal (toJSVal), askJSM, js1,
-                                              js2, jsg, liftJSM, runJSM)
+import           Language.Javascript.JSaddle (ToJSVal, toJSVal)
 import           Prelude                     hiding (log)
+import           Shpadoinkle.JSFFI           (JSObject, MonadJSM, askJSM,
+                                              fromJSValUnsafe, getProp, global,
+                                              liftJSM, runJSM, (#))
 import           System.IO.Unsafe            (unsafePerformIO)
 
 
@@ -74,24 +77,27 @@ class LogJS (c :: Type -> Constraint) where
 -- native <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse JSON.parse> before being sent to the console.
 instance LogJS ToJSON where
   logJS t a = liftJSM $ do
-    console <- jsg "console"
-    json    <- jsg "JSON"
-    parsed  <- json ^. js1 "parse" (toStrict . decodeUtf8 $ encode a)
-    () <$ console ^. js1 t parsed
+    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    json    <- fromJSValUnsafe @JSObject <$> getProp "JSON" global
+    parsed  <- json # "parse" $ (toStrict . decodeUtf8 $ encode a)
+    void ( console # t $ parsed )
 
 
 -- | Logs against 'Show' will be converted to a 'String' before being sent to the console.
 instance LogJS Show where
   logJS t a = liftJSM $ do
-    console <- jsg "console"
-    () <$ console ^. js1 t (pack $ show a)
+    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    void ( console # t $ pack (show a) )
 
+
+-- WANTv this needs to be changed once jsaddle is removed
+--type ToJSVal = To JSM JSVal
 
 -- | Logs against 'ToJSVal' will be converted to a 'JSVal' before being sent to the console.
 instance LogJS ToJSVal where
   logJS t a = liftJSM $ do
-    console <- jsg "console"
-    () <$ console ^. js1 t (toJSVal a)
+    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    void ( console # t $ toJSVal a )
 
 
 {-|
@@ -108,7 +114,7 @@ instance LogJS ToJSVal where
   @
 -}
 class LogJS c => Trapper c where
-  trapper :: c a => JSContextRef -> a -> a
+  trapper :: c a => () -> a -> a
   trapper ctx x = unsafePerformIO $ runJSM (x <$ debug @c x) ctx
   {-# NOINLINE trapper #-}
 
@@ -127,20 +133,20 @@ class Assert (c :: Type -> Constraint) where
 
 instance Assert ToJSON where
   assert b x = liftJSM $ do
-    console <- jsg "console"
-    json <- jsg "JSON"
-    parsed <- json ^. js1 "parse" (toStrict . decodeUtf8 $ encode x)
-    () <$ console ^. js2 "assert" (toJSVal b) parsed
+    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    json <- fromJSValUnsafe @JSObject <$> getProp "JSON" global
+    parsed <- json # "parse" $ (toStrict . decodeUtf8 $ encode x)
+    void ( console # "assert" $ (toJSVal b, parsed) )
 
 instance Assert Show where
   assert b x = liftJSM $ do
-    console <- jsg "console"
-    () <$ console ^. js2 "assert" (toJSVal b) (pack $ show x)
+    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    void ( console # "assert" $ (toJSVal b, pack $ show x) )
 
 instance Assert ToJSVal where
   assert b x = liftJSM $ do
-    console <- jsg "console"
-    () <$ console ^. js2 "assert" (toJSVal b) (toJSVal x)
+    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    void ( console # "assert" $ (toJSVal b, toJSVal x) )
 
 
 -- | Log a list of JSON objects to the console where it will rendered as a table using <https://developer.mozilla.org/en-US/docs/Web/API/Console/table console.table>
@@ -176,12 +182,12 @@ newtype TimeLabel = TimeLabel { unTimeLabel :: Text }
 -- | Start a timer using <https://developer.mozilla.org/en-US/docs/Web/API/Console/time console.time>
 time :: MonadJSM m => TimeLabel -> m ()
 time (TimeLabel l) = liftJSM $ do
-  console <- jsg "console"
-  () <$ console ^. js1 "time" l
+  console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+  void ( console # "time" $ l )
 
 
 -- | End a timer and print the milliseconds elapsed since it started using <https://developer.mozilla.org/en-US/docs/Web/API/Console/timeEnd console.timeEnd>
 timeEnd :: MonadJSM m => TimeLabel -> m ()
 timeEnd (TimeLabel l) = liftJSM $ do
-  console <- jsg "console"
-  () <$ console ^. js1 "timeEnd" l
+  console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+  void ( console # "timeEnd" $ l )
