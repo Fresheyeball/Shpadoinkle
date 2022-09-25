@@ -74,7 +74,6 @@ library
     , edit-distance >=0.2.2 && <0.3
     , either >=5.0 && <5.1
     , email-validate >=2.3.2 && <2.4
-    , jsaddle >=0.9.7 && <0.20
     , mtl >=2.2.2 && <2.3
     , servant >=0.16 && <0.19
     , stm >=2.5.0 && <2.6

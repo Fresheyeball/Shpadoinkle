@@ -149,7 +149,6 @@ executable lazy-loading-table-client
     , containers
     , country-codes
     , deepseq
-    , jsaddle
     , QuickCheck
     , servant
     , servant-client-core
@@ -188,7 +187,6 @@ executable lazy-loading-table-server
     , containers
     , country-codes
     , deepseq
-    , jsaddle
     , text
     , QuickCheck
     , servant
@@ -249,7 +247,6 @@ executable servant-crud-client
     , containers
     , exceptions
     , generic-lens
-    , jsaddle
     , lens
     , mtl
     , servant
@@ -302,7 +299,6 @@ executable servant-crud-dev
     , file-embed
     , generic-lens
     , generic-monoid
-    , jsaddle
     , lens
     , mtl
     , optparse-applicative
