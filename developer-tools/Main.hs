@@ -22,10 +22,11 @@ import           Data.Time                   (UTCTime, defaultTimeLocale,
                                               formatTime, getCurrentTime)
 import           GHC.Generics                (Generic)
 import           Prelude                     hiding (div, span)
-import           Shpadoinkle.JSFFI           (JSM, JSObject, MonadJSM, jsValToMaybeText,
-                                              fromJSValUnsafe, getProp, global,
-                                              jsStringToJSVal, liftJSM,
-                                              mkEmptyObject, mkFun', setProp, jsTreq,
+import           Shpadoinkle.JSFFI           (JSKey, JSM, JSObject, MonadJSM,
+                                              To, fromJSValUnsafe, getProp,
+                                              global, jsStringToJSVal, jsTreq,
+                                              jsValToMaybeText, liftJSM,
+                                              mkEmptyObject, mkFun', setProp,
                                               (#))
 import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
@@ -34,7 +35,7 @@ import           UnliftIO                    (TVar, atomically, modifyTVar,
 import           Shpadoinkle                 (Html, NFData, flagProp,
                                               shpadoinkle, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
-import           Shpadoinkle.Html
+import           Shpadoinkle.Html            hiding (onMessage)
 import           Shpadoinkle.Run             (run)
 
 
@@ -57,6 +58,7 @@ emptyModel :: Model
 emptyModel = Model mempty Nothing True
 
 
+(!) :: (MonadJSM m, To m JSKey key, To m JSObject obj) => m obj -> key -> m JSObject
 o ! k = fromJSValUnsafe @JSObject <$> (getProp k =<< o)
 
 

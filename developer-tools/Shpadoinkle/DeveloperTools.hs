@@ -14,15 +14,16 @@
 module Shpadoinkle.DeveloperTools (withDeveloperTools) where
 
 
-import           Shpadoinkle.JSFFI   (JSM, JSObject, JSString, fromJSValUnsafe,
-                                      getProp, global, jsStringToJSVal, jsTreq,
-                                      jsValToMaybeString, mkEmptyObject, mkFun',
-                                      purely, setProp, toJSString, (#))
+import           Shpadoinkle.JSFFI   (JSM, JSString)
 import           UnliftIO
 #ifdef DEVELOPMENT
 import           Control.Lens        hiding ((#))
 import           Control.Monad
 import           Control.Monad.STM   (retry)
+import           Shpadoinkle.JSFFI   (JSObject, fromJSValUnsafe, getProp,
+                                      global, jsStringToJSVal, jsTreq,
+                                      jsValToMaybeString, mkEmptyObject, mkFun',
+                                      purely, setProp, toJSString, (#))
 import           UnliftIO.Concurrent
 #endif
 
