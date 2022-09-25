@@ -75,6 +75,8 @@ module Shpadoinkle.JSFFI
   , callToString
   , callNumber
   , isTruthy
+  , intToJSVal
+  , jsValToInt
   ) where
 
 
@@ -553,13 +555,21 @@ getGlobal = ghcjsOnly
 #endif
 
 
-#ifdef ghcjs_HOST_OS
--- nb I don't know if these are correct
+-- | nb DON'T USE THIS! it makes things break. To be investigated.
 intToJSVal :: Int -> JSVal
+#ifdef ghcjs_HOST_OS
 intToJSVal = fromIntegral >>> (unsafeCoerce :: Double -> JSVal)
+#else
+intToJSVal = ghcjsOnly
+#endif
+
+-- | nb DON'T USE THIS! it makes things break. To be investigated.
 jsValToInt :: JSVal -> Int
+#ifdef ghcjs_HOST_OS
 jsValToInt = (unsafeCoerce :: JSVal -> Double) >>> round
   -- 'round' seems fishy, but that's what JSaddle uses ...
+#else
+jsValToInt = ghcjsOnly
 #endif
 
 

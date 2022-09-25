@@ -9,6 +9,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE UndecidableSuperClasses    #-}
@@ -34,20 +35,20 @@ module Shpadoinkle.Widgets.Table.Lazy
   ) where
 
 
-import           Prelude                     hiding (div)
+import           Prelude                   hiding (div)
 
-import           Control.Arrow               (second)
-import           Control.Monad.Trans.Class   (lift)
+import           Control.Arrow             (second)
+import           Control.Monad.Trans.Class (lift)
 import           Data.Aeson
-import           Data.List                   (sortBy)
-import           Data.Maybe                  (fromMaybe)
+import           Data.List                 (sortBy)
 import           Data.Proxy
-import           Data.Text                   hiding (filter, find, take)
+import           Data.Text                 hiding (filter, find, take)
 import           GHC.Generics
-import           Language.Javascript.JSaddle hiding (JSM, MonadJSM)
+import           Shpadoinkle.JSFFI         (JSM, JSObject, callNumber,
+                                            fromJSValUnsafe, getProp)
 
 import           Shpadoinkle
-import           Shpadoinkle.Html            (div)
+import           Shpadoinkle.Html          (div)
 import           Shpadoinkle.Widgets.Table
 import           Shpadoinkle.Widgets.Types
 
@@ -81,8 +82,6 @@ newtype RowsToShow = RowsToShow { unRowsToShow :: Int }
 
 instance ToJSON    RowsToShow
 instance FromJSON  RowsToShow
-instance ToJSVal   RowsToShow
-instance FromJSVal RowsToShow
 
 
 newtype RowsLoaded = RowsLoaded { unRowsLoaded :: Int }
@@ -90,8 +89,6 @@ newtype RowsLoaded = RowsLoaded { unRowsLoaded :: Int }
 
 instance ToJSON    RowsLoaded
 instance FromJSON  RowsLoaded
-instance ToJSVal   RowsLoaded
-instance FromJSVal RowsLoaded
 
 
 data instance (Row (LazyTable a)) = LazyRow (Row a) | FakeRow
@@ -307,12 +304,11 @@ lazyLoadingTable paginator rowsLoaded theme tableHeight rowHeight@(AssumedRowHei
       TbodyIsScrollable _ -> id
 
     scrollHandlerContainer (RawNode n) _ =
-      pur . second3 . const . CurrentScrollY . fromMaybe 0
-        <$> (fromJSVal =<< n ! "scrollTop")
+      pur . second3 . const . CurrentScrollY . round <$> (callNumber =<< getProp ("scrollTop" :: Text) (fromJSValUnsafe @JSObject n))
 
     scrollHandlerTbody :: RawNode -> RawEvent -> JSM (Continuation m (LazyTable a, SortCol (LazyTable a)))
     scrollHandlerTbody (RawNode n) _ = do
-      sy <- CurrentScrollY . fromMaybe 0 <$> (fromJSVal =<< n ! "scrollTop")
+      sy <- CurrentScrollY . round <$> (callNumber =<< getProp "scrollTop" (fromJSValUnsafe @JSObject n))
       let totalRows' = computeRowsToShow tableHeight rowHeight sy
           offset     = Offset $ unRowsLoaded rowsLoaded
           newRows    = Length $ totalRows' - unRowsLoaded rowsLoaded
