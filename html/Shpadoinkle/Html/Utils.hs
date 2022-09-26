@@ -2,6 +2,7 @@
 {-# LANGUAGE ExplicitForAll       #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE MonoLocalBinds       #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeApplications     #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -13,14 +14,14 @@ module Shpadoinkle.Html.Utils where
 import           Control.Monad     (forM_)
 import           Data.Function     ((&))
 import           Data.Text         (Text)
-import           Shpadoinkle.JSFFI as JSFFI (JSElement, JSString, MonadJSM, To,
-                                    appendChild, body, createElement,
-                                    createTextNode, document, fromJSValUnsafe, setTitle,
-                                    getElementById, getProp, jsElementToJSVal,
-                                    jsNull, liftJSM, purely, setAttribute,
-                                    setInnerHTML, toJSVal)
-
 import           Shpadoinkle       (MonadJSM, RawNode (RawNode))
+import           Shpadoinkle.JSFFI as JSFFI (JSElement, JSString, To,
+                                             appendChild, body, createElement,
+                                             createTextNode, document,
+                                             fromJSValUnsafe, getElementById,
+                                             getProp, jsElementToJSVal, jsNull,
+                                             liftJSM, setAttribute,
+                                             setInnerHTML, setTitle, toJSVal)
 
 
 default (Text)

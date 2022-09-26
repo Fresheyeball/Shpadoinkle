@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MonoLocalBinds             #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TypeApplications           #-}
@@ -10,13 +11,11 @@
 module Shpadoinkle.WebWorker where
 
 
-import           Control.Monad          (void)
+import           Control.Monad     (void)
 import           Data.Text
-import qualified GHCJS.Marshal.Internal
-import           Shpadoinkle.JSFFI      (JSM, JSObject, JSVal, MonadJSM, To,
-                                         eval, fromJSValUnsafe, getProp, global,
-                                         liftJSM, mkFun', purely, toJSObject,
-                                         toJSVal, (#))
+import           Shpadoinkle.JSFFI (JSM, JSObject, JSVal, MonadJSM, To, eval,
+                                    fromJSValUnsafe, getProp, global, liftJSM,
+                                    mkFun', purely, toJSObject, toJSVal, (#))
 import           Text.RawString.QQ
 
 
@@ -49,9 +48,7 @@ createWorkerJS = [r|createWorker = function (workerUrl) {
 }|]
 
 
--- WANTv We should be able to swap this to 'To m JSVal' after jsaddle is removed
---       and the typeclasses in the jsffi module are cleaned up
-type ToJSVal a = GHCJS.Marshal.Internal.ToJSVal a
+type ToJSVal a = To JSM JSVal a
 
 
 createWorker :: MonadJSM m => Text -> m Worker

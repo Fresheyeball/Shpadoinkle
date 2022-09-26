@@ -12,21 +12,20 @@
 module Shpadoinkle.Html.LocalStorage where
 
 
-import           Control.Monad             (void)
-import           Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
-import           Data.Function             ((&))
-import           Data.Maybe                (fromMaybe)
-import           Data.String               (IsString)
-import           Data.Text                 (Text, unpack)
-import           GHC.Generics              (Generic)
-import           Shpadoinkle.JSFFI         (MonadJSM, getItem, jsStringToText,
-                                            liftJSM, localStorage, setItem)
-import           Text.Read                 (readMaybe)
-import           UnliftIO                  (MonadIO (liftIO), MonadUnliftIO,
-                                            TVar, newTVarIO)
-import           UnliftIO.Concurrent       (forkIO)
+import           Control.Monad       (void)
+import           Data.Function       ((&))
+import           Data.Maybe          (fromMaybe)
+import           Data.String         (IsString)
+import           Data.Text           (Text, unpack)
+import           GHC.Generics        (Generic)
+import           Shpadoinkle.JSFFI   (MonadJSM, getItem, jsStringToText,
+                                      liftJSM, localStorage, setItem)
+import           Text.Read           (readMaybe)
+import           UnliftIO            (MonadIO (liftIO), MonadUnliftIO, TVar,
+                                      newTVarIO)
+import           UnliftIO.Concurrent (forkIO)
 
-import           Shpadoinkle               (shouldUpdate)
+import           Shpadoinkle         (shouldUpdate)
 
 
 -- | The key for a specific state kept in local storage

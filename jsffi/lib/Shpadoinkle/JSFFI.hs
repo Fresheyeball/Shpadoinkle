@@ -105,28 +105,28 @@ module Shpadoinkle.JSFFI
   ) where
 
 
-import           Control.Monad               ((<=<), (>=>))
-import           Control.Monad.IO.Class      (MonadIO)
-import           Data.Functor.Identity       (Identity (..))
-import           Data.Text                   (Text)
-import qualified Data.Text                   as T
-import           System.IO.Unsafe            (unsafePerformIO)
-import           Unsafe.Coerce               (unsafeCoerce)
+import           Control.Monad                     ((<=<), (>=>))
+import           Control.Monad.IO.Class            (MonadIO)
+import           Data.Functor.Identity             (Identity (..))
+import           Data.Text                         (Text)
+import qualified Data.Text                         as T
+import           System.IO.Unsafe                  (unsafePerformIO)
+import           Unsafe.Coerce                     (unsafeCoerce)
 #ifdef ghcjs_HOST_OS
-import           Control.Category            ((<<<), (>>>))
-import           Control.Monad.IO.Class      (liftIO)
-import           Data.Coerce                 (coerce)
-import           Data.Traversable            (for)
-import           GHCJS.Nullable              (Nullable, nullableToMaybe)
+import           Control.Category                  ((<<<), (>>>))
+import           Control.Monad.IO.Class            (liftIO)
+import           Data.Coerce                       (coerce)
+import           Data.Traversable                  (for)
+import           GHCJS.Nullable                    (Nullable, nullableToMaybe)
 #endif
 
 -- ghcjs imports
-import           GHCJS.Types                 (JSString, JSVal)
+import           GHCJS.Types                       (JSString, JSVal)
 #ifdef ghcjs_HOST_OS
-import           GHCJS.Foreign.Callback      (Callback,
-                                              OnBlocked (ContinueAsync),
-                                              syncCallback2)
-import           JavaScript.Array.Internal   (SomeJSArray (..), toListIO)
+import           GHCJS.Foreign.Callback            (Callback,
+                                                    OnBlocked (ContinueAsync),
+                                                    syncCallback2)
+import           JavaScript.Array.Internal         (SomeJSArray (..), toListIO)
 #endif
 
 -- Imports from packages which transitively depend on jsaddle
@@ -135,10 +135,10 @@ import           JavaScript.Array.Internal   (SomeJSArray (..), toListIO)
 -- from Shpadoinkle, these imports will eventually be removed and replaced with
 -- custom counterparts. However, while we are transitioning Shpadoinkle from JSaddle
 -- to this package, it helps for the two to share types.
-import           GHCJS.DOM.Window            (Window)
-import           Language.Javascript.JSaddle (JSM, MonadJSM, liftJSM)
+import           GHCJS.DOM.Window                  (Window)
+import           Language.Javascript.JSaddle       (JSM, MonadJSM, liftJSM)
+import qualified Language.Javascript.JSaddle       as JSaddle
 import           Language.Javascript.JSaddle.Value (valMakeString)
-import qualified Language.Javascript.JSaddle as JSaddle
 
 
 ghcjsOnly :: a
@@ -170,7 +170,11 @@ instance {-# INCOHERENT #-} (JSaddle.ToJSVal a, MonadJSM m) => To m JSVal a wher
   to = liftJSM . JSaddle.toJSVal
 
 instance Applicative m => To m JSVal JSString where
+#ifdef ghcjs_HOST_OS
   to = pure . unsafePerformIO . valMakeString
+#else
+  to = ghcjsOnly
+#endif
 
 -- Cannot use since overlaps with previous =(
 --instance {-# INCOHERENT #-} (JSaddle.PToJSVal a, Applicative m) => To m JSVal a where
@@ -181,7 +185,11 @@ toJSVal = to
 
 -- WANTv remove after jsaddle is gone
 jsStringToJSVal :: JSString -> JSVal
+#ifdef ghcjs_HOST_OS
 jsStringToJSVal = unsafePerformIO . valMakeString
+#else
+jsStringToJSVal = ghcjsOnly
+#endif
 jsElementToJSVal :: JSElement -> JSVal
 jsElementToJSVal = unsafeCoerce
 
@@ -667,8 +675,13 @@ instance Applicative m => To m JSVal JSStorage where
   to = pure . unJSStorage
 
 localStorage, sessionStorage :: JSStorage
+#ifdef ghcjs_HOST_OS
 localStorage = JSStorage $ unsafePerformIO (getProp "localStorage" window)
 sessionStorage = JSStorage $ unsafePerformIO (getProp "sessionStorage" window)
+#else
+localStorage = ghcjsOnly
+sessionStorage = ghcjsOnly
+#endif
 
 setItem :: (MonadJSM m, To m JSString key, To m JSString val) => key -> val -> JSStorage -> m ()
 #ifdef ghcjs_HOST_OS

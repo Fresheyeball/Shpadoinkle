@@ -54,8 +54,7 @@ library
 
   if !impl(ghcjs)
     build-depends:
-        jsaddle-warp >=0.9.7 && <0.20
-      , wai
+        wai
       , wai-app-static
       , warp
 
