@@ -55,12 +55,12 @@ executable animation
 
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , Shpadoinkle-backend-snabbdom
     , Shpadoinkle-developer-tools
     , Shpadoinkle-html
     , base >=4.12.0 && <4.16
     , ease
-    , ghcjs-dom
     , stm
     , text
     , unliftio

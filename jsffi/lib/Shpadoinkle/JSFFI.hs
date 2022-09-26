@@ -9,6 +9,7 @@
 {-# LANGUAGE MonoLocalBinds         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
 
 module Shpadoinkle.JSFFI
   ( JSM
@@ -102,10 +103,13 @@ module Shpadoinkle.JSFFI
   , createTextNode
   , jsNull
   , jsStringToText
+
+  , requestAnimationFrame
+  , requestAnimationFrame_
   ) where
 
 
-import           Control.Monad                     ((<=<), (>=>))
+import           Control.Monad                     (void, (<=<), (>=>))
 import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Functor.Identity             (Identity (..))
 import           Data.Text                         (Text)
@@ -903,3 +907,16 @@ createTextNode = ghcjsOnly
 
 jsStringToText :: JSString -> Text
 jsStringToText = unsafeCoerce
+
+
+requestAnimationFrame :: (Double -> JSM ()) -> JSM Int
+requestAnimationFrame cb = do
+  fun <- mkFun' $ \case
+    [t] -> callNumber t >>= cb
+    _ -> pure ()
+  ret <- window # "requestAnimationFrame" $ fun
+  round <$> callNumber ret
+
+requestAnimationFrame_ :: (Double -> JSM ()) -> JSM ()
+requestAnimationFrame_ = void . requestAnimationFrame
+

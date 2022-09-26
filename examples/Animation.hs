@@ -7,24 +7,19 @@
 module Main where
 
 
-import           Control.Concurrent.STM                  (atomically, writeTVar)
-import           Control.Monad                           (void, when)
-import           Control.Monad.IO.Class                  (MonadIO (liftIO))
-import           Data.Text                               (Text, pack)
-import           Ease                                    (bounceOut)
-import           GHCJS.DOM                               (currentWindowUnchecked)
-import           GHCJS.DOM.RequestAnimationFrameCallback (newRequestAnimationFrameCallback)
-import           GHCJS.DOM.Window                        (Window,
-                                                          requestAnimationFrame)
-import           Shpadoinkle                             (Html, JSM, TVar,
-                                                          newTVarIO,
-                                                          shpadoinkle)
-import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom, stage)
-import           Shpadoinkle.DeveloperTools              (withDeveloperTools)
-import           Shpadoinkle.Html                        as H (div,
-                                                               textProperty)
-import           Shpadoinkle.Run                         (run)
-import           UnliftIO.Concurrent                     (forkIO, threadDelay)
+import           Control.Concurrent.STM       (atomically, writeTVar)
+import           Control.Monad                (when)
+import           Control.Monad.IO.Class       (MonadIO (liftIO))
+import           Data.Text                    (Text, pack)
+import           Ease                         (bounceOut)
+import           Shpadoinkle                  (Html, JSM, TVar, newTVarIO,
+                                               shpadoinkle)
+import           Shpadoinkle.Backend.Snabbdom (runSnabbdom, stage)
+import           Shpadoinkle.DeveloperTools   (withDeveloperTools)
+import           Shpadoinkle.Html             as H (div, textProperty)
+import           Shpadoinkle.JSFFI            (requestAnimationFrame_)
+import           Shpadoinkle.Run              (run)
+import           UnliftIO.Concurrent          (forkIO, threadDelay)
 
 
 default (Text)
@@ -57,21 +52,19 @@ wait :: Num n => n
 wait = 3000000
 
 
-animation :: Window -> TVar Double -> JSM ()
-animation w t = void $ requestAnimationFrame w =<< go where
-  go = newRequestAnimationFrameCallback $ \clock' -> do
+animation :: TVar Double -> JSM ()
+animation t = requestAnimationFrame_ go where
+  go clock' = do
     let clock = clock' - (wait / 1000)
     liftIO . atomically $ writeTVar t clock
-    r <- go
-    when (clock < dur) . void $ requestAnimationFrame w r
+    when (clock < dur) $ requestAnimationFrame_ go
 
 
 app :: JSM ()
 app = do
   t <- newTVarIO 0
   withDeveloperTools t
-  w <- currentWindowUnchecked
-  _ <- forkIO $ threadDelay wait >> animation w t
+  _ <- forkIO $ threadDelay wait >> animation t
   shpadoinkle id runSnabbdom t view stage
 
 
