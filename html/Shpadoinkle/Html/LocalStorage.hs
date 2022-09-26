@@ -14,14 +14,13 @@ module Shpadoinkle.Html.LocalStorage where
 
 import           Control.Monad             (void)
 import           Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
+import           Data.Function             ((&))
 import           Data.Maybe                (fromMaybe)
 import           Data.String               (IsString)
-import           Data.Text                 (Text)
+import           Data.Text                 (Text, unpack)
 import           GHC.Generics              (Generic)
-import           GHCJS.DOM                 (currentWindow)
-import           GHCJS.DOM.Storage         (getItem, setItem)
-import           GHCJS.DOM.Types           (MonadJSM, liftJSM)
-import           GHCJS.DOM.Window          (getLocalStorage)
+import           Shpadoinkle.JSFFI         (MonadJSM, getItem, jsStringToText,
+                                            liftJSM, localStorage, setItem)
 import           Text.Read                 (readMaybe)
 import           UnliftIO                  (MonadIO (liftIO), MonadUnliftIO,
                                             TVar, newTVarIO)
@@ -36,21 +35,13 @@ newtype LocalStorageKey a = LocalStorageKey { unLocalStorageKey :: Text }
 
 
 setStorage :: MonadJSM m => Show a => LocalStorageKey a -> a -> m ()
-setStorage (LocalStorageKey k) m = do
-  w <- currentWindow
-  case w of
-    Just w' -> do
-      s <- getLocalStorage w'
-      setItem s k $ show m
-      return ()
-    Nothing -> return ()
+setStorage (LocalStorageKey k) m =
+  localStorage & setItem k (show m)
 
 
 getStorage :: MonadJSM m => Read a => LocalStorageKey a -> m (Maybe a)
-getStorage (LocalStorageKey k) = runMaybeT $ do
-  w <- MaybeT currentWindow
-  s <- MaybeT $ Just <$> getLocalStorage w
-  MaybeT $ (>>= readMaybe) <$> getItem s k
+getStorage (LocalStorageKey k) =
+  (>>= (readMaybe . unpack . jsStringToText)) <$> (localStorage & getItem k)
 
 
 -- When we should update we save

@@ -40,11 +40,10 @@ import           Control.Concurrent.STM       (retry)
 import           Control.Monad                (unless, void)
 import           Control.Monad.IO.Class       (liftIO)
 import           Data.Text
-import           GHCJS.DOM.Types              hiding (JSM, Text, liftJSM)
-import           Shpadoinkle.JSFFI            (JSObject, callNumber,
-                                               callToString, fromJSValUnsafe,
-                                               getProp, global, isTruthy,
-                                               mkFun', (#))
+import           Shpadoinkle.JSFFI            (JSObject, JSString, JSVal,
+                                               callNumber, callToString,
+                                               fromJSValUnsafe, getProp, global,
+                                               isTruthy, mkFun', (#))
 import           UnliftIO.Concurrent          (forkIO)
 import           UnliftIO.STM
 

@@ -1,29 +1,33 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ExplicitForAll       #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TypeApplications     #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
 module Shpadoinkle.Html.Utils where
 
 
-import           Control.Monad                  (forM_)
-import           Data.Text                      (Text)
-import           GHCJS.DOM                      (currentDocumentUnchecked)
-import           GHCJS.DOM.Document             as Doc (createElement,
-                                                        createTextNode,
-                                                        getBodyUnsafe,
-                                                        getHeadUnsafe, setTitle)
-import           GHCJS.DOM.Element              (setAttribute, setInnerHTML)
-import           GHCJS.DOM.Node                 (appendChild)
-import           GHCJS.DOM.NonElementParentNode (getElementById)
-import           GHCJS.DOM.Types                (ToJSString, liftJSM, toJSVal)
+import           Control.Monad     (forM_)
+import           Data.Function     ((&))
+import           Data.Text         (Text)
+import           Shpadoinkle.JSFFI as JSFFI (JSElement, JSString, MonadJSM, To,
+                                    appendChild, body, createElement,
+                                    createTextNode, document, fromJSValUnsafe, setTitle,
+                                    getElementById, getProp, jsElementToJSVal,
+                                    jsNull, liftJSM, purely, setAttribute,
+                                    setInnerHTML, toJSVal)
 
-import           Shpadoinkle                    (MonadJSM, RawNode (RawNode))
+import           Shpadoinkle       (MonadJSM, RawNode (RawNode))
 
 
 default (Text)
+
+
+getHead :: MonadJSM m => m JSElement
+getHead = fromJSValUnsafe @JSElement <$> getProp "head" document
 
 
 -- | Add a stylesheet to the page via @link@ tag.
@@ -33,82 +37,66 @@ addStyle
   -- ^ The URI for the @href@ attribute
   -> m ()
 addStyle x = do
-  doc <- currentDocumentUnchecked
-  link <- createElement doc "link"
-  setAttribute link "href" x
-  setAttribute link "rel" "stylesheet"
-  headRaw <- Doc.getHeadUnsafe doc
-  () <$ appendChild headRaw link
+  link <- createElement "link"
+  link & setAttribute "href" x
+  link & setAttribute "rel" "stylesheet"
+  getHead >>= appendChild link
 
 
-addInlineStyle :: ToJSString css => MonadJSM m => css -> m ()
+addInlineStyle :: (To m JSString css, MonadJSM m) => css -> m ()
 addInlineStyle bs = do
-  doc <- currentDocumentUnchecked
-  style <- createElement doc "style"
-  setInnerHTML style bs
-  headRaw <- Doc.getHeadUnsafe doc
-  () <$ appendChild headRaw style
+  style <- createElement "style"
+  style & setInnerHTML bs
+  getHead >>= appendChild style
 
 
 setTitle :: MonadJSM m => Text -> m ()
-setTitle t = do
-  doc <- currentDocumentUnchecked
-  Doc.setTitle doc t
+setTitle = JSFFI.setTitle
 
 
 getBody :: MonadJSM m => m RawNode
 getBody = do
-  doc <- currentDocumentUnchecked
-  body <- Doc.getBodyUnsafe doc
-  setInnerHTML body ""
+  body & setInnerHTML ""
   liftJSM $ RawNode <$> toJSVal body
 
 
 addMeta :: MonadJSM m => [(Text, Text)] -> m ()
 addMeta ps = liftJSM $ do
-  doc <- currentDocumentUnchecked
-  tag <- createElement doc ("meta" :: Text)
-  forM_ ps $ uncurry (setAttribute tag)
-  headRaw <- Doc.getHeadUnsafe doc
-  () <$ appendChild headRaw tag
+  tag <- createElement ("meta" :: Text)
+  forM_ ps $ (\(k, v) -> setAttribute k v tag)
+  getHead >>= appendChild tag
 
 
 createDivWithId :: MonadJSM m => Text -> m ()
 createDivWithId did = liftJSM $ do
-  doc <- currentDocumentUnchecked
-  tag <- createElement doc ("div" :: Text)
-  setAttribute tag "id" did
-  body <- Doc.getHeadUnsafe doc
-  () <$ appendChild body tag
+  tag <- createElement ("div" :: Text)
+  tag & setAttribute "id" did
+  body & appendChild tag
 
 
 addScriptSrc :: MonadJSM m => Text -> m ()
 addScriptSrc src = liftJSM $ do
-  doc <- currentDocumentUnchecked
-  tag <- createElement doc ("script" :: Text)
-  setAttribute tag ("src" :: Text) src
-  headRaw <- Doc.getHeadUnsafe doc
-  () <$ appendChild headRaw tag
+  tag <- createElement ("script" :: Text)
+  tag & setAttribute ("src" :: Text) src
+  getHead >>= appendChild tag
 
 
 addScriptText :: MonadJSM m => Text -> m ()
 addScriptText js = liftJSM $ do
-  doc <- currentDocumentUnchecked
-  tag <- createElement doc ("script" :: Text)
-  setAttribute tag ("type" :: Text) ("text/javascript" :: Text)
-  headRaw <- Doc.getHeadUnsafe doc
-  jsn <- createTextNode doc js
-  _ <- appendChild tag jsn
-  () <$ appendChild headRaw tag
+  tag <- createElement ("script" :: Text)
+  tag & setAttribute ("type" :: Text) ("text/javascript" :: Text)
+  jsn <- createTextNode js
+  tag & appendChild jsn
+  getHead >>= appendChild tag
 
 
 getById :: MonadJSM m => Text -> m RawNode
-getById did = liftJSM $ do
-  doc <- currentDocumentUnchecked
-  fmap RawNode . toJSVal =<< getElementById doc did
+getById eid = do
+  mEl <- getElementById eid
+  pure $ case mEl of
+    Nothing -> RawNode jsNull
+    Just el -> RawNode (jsElementToJSVal el)
 
 
 treatEmpty :: Foldable f => Functor f => a -> (f a -> a) -> (b -> a) -> f b -> a
 treatEmpty zero plural singular xs = if Prelude.null xs then zero else plural $ singular <$> xs
-
-

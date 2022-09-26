@@ -65,8 +65,6 @@ library
     , compactable
     , containers >=0.6.0 && <0.7
     , directory
-    , ghcjs-dom
-    , jsaddle >=0.9.7 && <0.20
     , lens
     , process
     , raw-strings-qq

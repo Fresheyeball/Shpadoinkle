@@ -8,6 +8,7 @@
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MonoLocalBinds         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 
 module Shpadoinkle.JSFFI
   ( JSM
@@ -29,6 +30,7 @@ module Shpadoinkle.JSFFI
   , JSVal
   , toJSVal
   , jsStringToJSVal
+  , jsElementToJSVal
 
   , JSString
   , toJSString
@@ -65,16 +67,25 @@ module Shpadoinkle.JSFFI
   , createElement
   , appendChild
   , setId
+  , setAttribute
+  , getElementById
 
   , JSBool
   , toJSBool
   , jsTrue
   , jsFalse
 
+  , JSStorage
+  , localStorage
+  , sessionStorage
+  , getItem
+  , setItem
+
   , global
   , window
   , document
   , body
+  , setTitle
 
   , getGlobal
   , JSContextRef
@@ -88,6 +99,9 @@ module Shpadoinkle.JSFFI
   , isTruthy
   , intToJSVal
   , jsValToInt
+  , createTextNode
+  , jsNull
+  , jsStringToText
   ) where
 
 
@@ -103,6 +117,7 @@ import           Control.Category            ((<<<), (>>>))
 import           Control.Monad.IO.Class      (liftIO)
 import           Data.Coerce                 (coerce)
 import           Data.Traversable            (for)
+import           GHCJS.Nullable              (Nullable, nullableToMaybe)
 #endif
 
 -- ghcjs imports
@@ -122,6 +137,7 @@ import           JavaScript.Array.Internal   (SomeJSArray (..), toListIO)
 -- to this package, it helps for the two to share types.
 import           GHCJS.DOM.Window            (Window)
 import           Language.Javascript.JSaddle (JSM, MonadJSM, liftJSM)
+import           Language.Javascript.JSaddle.Value (valMakeString)
 import qualified Language.Javascript.JSaddle as JSaddle
 
 
@@ -154,7 +170,7 @@ instance {-# INCOHERENT #-} (JSaddle.ToJSVal a, MonadJSM m) => To m JSVal a wher
   to = liftJSM . JSaddle.toJSVal
 
 instance Applicative m => To m JSVal JSString where
-  to = unsafeCoerce
+  to = pure . unsafePerformIO . valMakeString
 
 -- Cannot use since overlaps with previous =(
 --instance {-# INCOHERENT #-} (JSaddle.PToJSVal a, Applicative m) => To m JSVal a where
@@ -165,7 +181,9 @@ toJSVal = to
 
 -- WANTv remove after jsaddle is gone
 jsStringToJSVal :: JSString -> JSVal
-jsStringToJSVal = unsafeCoerce
+jsStringToJSVal = unsafePerformIO . valMakeString
+jsElementToJSVal :: JSElement -> JSVal
+jsElementToJSVal = unsafeCoerce
 
 instance Applicative m => To m JSVal String where
   to = pure . purely toJSVal . purely toJSString . T.pack
@@ -536,7 +554,8 @@ setInnerHTML = ghcjsOnly
 
 createElement :: MonadJSM m => Text -> m JSElement
 #ifdef ghcjs_HOST_OS
-createElement name = toJSVal name >>= (fmap JSElement . liftJSM <$> createElement_js)
+createElement name =
+  toJSVal name >>= (fmap JSElement . liftJSM <$> createElement_js)
 
 foreign import javascript unsafe
   "$r = document.createElement($1)"
@@ -545,9 +564,11 @@ foreign import javascript unsafe
 createElement = ghcjsOnly
 #endif
 
-appendChild :: MonadJSM m => JSElement -> JSElement -> m ()
+appendChild :: (MonadJSM m, To m JSVal ch) => ch -> JSElement -> m ()
 #ifdef ghcjs_HOST_OS
-appendChild child parent = liftJSM $ appendChild_js (unJSElement parent) (unJSElement child)
+appendChild child parent = do
+  child' <- toJSVal child
+  liftJSM $ appendChild_js (unJSElement parent) child'
 
 foreign import javascript unsafe
   "$1.appendChild($2)"
@@ -558,13 +579,39 @@ appendChild = ghcjsOnly
 
 setId :: MonadJSM m => Text -> JSElement -> m ()
 #ifdef ghcjs_HOST_OS
-setId newId el = liftJSM $ setId_js (unJSElement el) (purely toJSVal newId)
+setId newId el =
+  liftJSM $ setId_js (unJSElement el) (purely toJSVal newId)
 
 foreign import javascript unsafe
   "$1.id = $2"
   setId_js :: JSVal -> JSVal -> JSM ()
 #else
 setId = ghcjsOnly
+#endif
+
+setAttribute :: MonadJSM m => Text -> Text -> JSElement -> m ()
+#ifdef ghcjs_HOST_OS
+setAttribute attr val el =
+  liftJSM $ setAttribute_js (unJSElement el) (purely toJSVal attr) (purely toJSVal val)
+
+foreign import javascript unsafe
+  "$1.setAttribute($2, $3)"
+  setAttribute_js :: JSVal -> JSVal -> JSVal -> JSM ()
+#else
+setAttribute = ghcjsOnly
+#endif
+
+getElementById :: MonadJSM m => Text -> m (Maybe JSElement)
+#ifdef ghcjs_HOST_OS
+getElementById eid = do
+  el <- liftJSM $ getElementById_js (purely toJSVal eid)
+  pure $ JSElement <$> nullableToMaybe el
+
+foreign import javascript unsafe
+  "$r = document.getElementById($1)"
+  getElementById_js :: JSVal -> JSM (Nullable JSVal)
+#else
+getElementById = ghcjsOnly
 #endif
 
 
@@ -599,6 +646,55 @@ foreign import javascript unsafe "$r = false" jsFalse_js :: JSM JSVal
 #else
 jsTrue = ghcjsOnly
 jsFalse = ghcjsOnly
+#endif
+
+
+--------------------------------------------------------------------------------
+-- JSBool
+
+newtype JSStorage = JSStorage { unJSStorage :: JSVal }
+
+toJSStorage :: To m JSStorage a => a -> m JSStorage
+toJSStorage = to
+
+instance IsJSVal JSStorage where
+  fromJSValUnsafe = JSStorage
+
+instance Applicative m => To m JSStorage JSStorage where
+  to = pure
+
+instance Applicative m => To m JSVal JSStorage where
+  to = pure . unJSStorage
+
+localStorage, sessionStorage :: JSStorage
+localStorage = JSStorage $ unsafePerformIO (getProp "localStorage" window)
+sessionStorage = JSStorage $ unsafePerformIO (getProp "sessionStorage" window)
+
+setItem :: (MonadJSM m, To m JSString key, To m JSString val) => key -> val -> JSStorage -> m ()
+#ifdef ghcjs_HOST_OS
+setItem key val store = do
+  key' <- toJSVal =<< toJSString key
+  val' <- toJSVal =<< toJSString val
+  liftJSM $ setItem_js (unJSStorage store) key' val'
+
+foreign import javascript unsafe
+  "$1.setItem($2, $3)"
+  setItem_js :: JSVal -> JSVal -> JSVal -> JSM ()
+#else
+setItem = ghcjsOnly
+#endif
+
+getItem :: (MonadJSM m, To m JSString key) => key -> JSStorage -> m (Maybe JSString)
+#ifdef ghcjs_HOST_OS
+getItem key store = do
+  key' <- toJSVal =<< toJSString key
+  liftJSM $ nullableToMaybe <$> getItem_js (unJSStorage store) key'
+
+foreign import javascript unsafe
+  "$r = $1.getItem($2)"
+  getItem_js :: JSVal -> JSVal -> JSM (Nullable JSString)
+#else
+getItem = ghcjsOnly
 #endif
 
 
@@ -644,6 +740,22 @@ foreign import javascript unsafe
 #else
 body = ghcjsOnly
 #endif
+
+
+setTitle :: forall m s. (MonadJSM m, To m JSString s) => s -> m ()
+#ifdef ghcjs_HOST_OS
+setTitle title = do
+  title' :: JSString <- to title
+  title'' :: JSVal <- to title'
+  liftJSM $ setTitle_js title''
+
+foreign import javascript unsafe
+  "document.title = $1"
+  setTitle_js :: JSVal -> JSM ()
+#else
+setTitle = ghcjsOnly
+#endif
+
 
 -- WANT: replace callsites with 'global' and 'getProp'/'(#)'
 getGlobal :: (MonadJSM m, To m JSKey k) => k -> m JSVal
@@ -762,3 +874,19 @@ foreign import javascript unsafe
 #else
 eval = ghcjsOnly
 #endif
+
+
+createTextNode :: MonadJSM m => Text -> m JSVal
+#ifdef ghcjs_HOST_OS
+createTextNode = liftJSM . createTextNode_js
+
+foreign import javascript unsafe
+  "$r = document.createTextNode($1)"
+  createTextNode_js :: Text -> JSM JSVal
+#else
+createTextNode = ghcjsOnly
+#endif
+
+
+jsStringToText :: JSString -> Text
+jsStringToText = unsafeCoerce
