@@ -39,6 +39,7 @@ module Shpadoinkle.Html.Event
 import           Control.Concurrent.STM       (retry)
 import           Control.Monad                (unless, void)
 import           Control.Monad.IO.Class       (liftIO)
+import           Data.Function                ((&))
 import           Data.Text
 import           Shpadoinkle.JSFFI            (JSObject, JSString, JSVal,
                                                callNumber, callToString,
@@ -133,7 +134,7 @@ onClickAwayC c =
         (mkFun' $ \case
           evt:_ -> void . forkIO $ do
 
-            target   <- fromJSValUnsafe @JSObject evt # ("target" :: Text) $ ()
+            target   <- fromJSValUnsafe @JSObject evt & getProp ("target" :: Text)
             onTarget <- fromJSValUnsafe @JSObject elm # ("contains" :: Text) $ target
             isTruthy onTarget >>= \case
               False -> notify

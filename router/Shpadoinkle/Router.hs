@@ -47,74 +47,66 @@ module Shpadoinkle.Router (
     ) where
 
 
-import           Control.Applicative           (Alternative ((<|>)))
-import           Control.Compactable           as C (Compactable (compact, filter))
-import           Control.Monad                 (forever, when)
-import           Control.Monad.IO.Class        (MonadIO (liftIO))
-import           Data.Aeson                    (FromJSON, ToJSON, decode,
-                                                encode)
-import           Data.ByteString.Lazy          (fromStrict, toStrict)
-import           Data.Functor.Identity         (Identity (..))
-import           Data.Kind                     (Type)
-import           Data.Maybe                    (isJust)
-import           Data.Proxy                    (Proxy (..))
-import           Data.Text                     (Text)
-import qualified Data.Text                     as T
-import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
-import qualified Data.Text.Lazy.Encoding       as LTE
-import           GHC.TypeLits                  (KnownSymbol, Symbol, symbolVal)
-import           GHCJS.DOM                     (currentWindowUnchecked,
-                                                syncPoint)
-import           GHCJS.DOM.EventM              (on)
-import           GHCJS.DOM.EventTargetClosures (EventName, unsafeEventName)
-import           GHCJS.DOM.History             (pushState)
-import           GHCJS.DOM.Location            (getHref, getPathname, getSearch)
-import           GHCJS.DOM.PopStateEvent       (PopStateEvent)
-import           GHCJS.DOM.Types               (JSM, MonadJSM)
-import           GHCJS.DOM.Window              (Window, getHistory, getLocation,
-                                                scrollTo)
-import           Shpadoinkle.JSFFI             (getProp, global,
-                                                jsValToMaybeText)
+import           Control.Applicative        (Alternative ((<|>)))
+import           Control.Compactable        as C (Compactable (compact, filter))
+import           Control.Monad              (forever, when)
+import           Control.Monad.IO.Class     (MonadIO (liftIO))
+import           Data.Aeson                 (FromJSON, ToJSON, decode, encode)
+import           Data.ByteString.Lazy       (fromStrict, toStrict)
+import           Data.Functor.Identity      (Identity (..))
+import           Data.Kind                  (Type)
+import           Data.Maybe                 (isJust)
+import           Data.Proxy                 (Proxy (..))
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
+import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
+import qualified Data.Text.Lazy.Encoding    as LTE
+import           GHC.TypeLits               (KnownSymbol, Symbol, symbolVal)
+import           Shpadoinkle.JSFFI          (JSM, MonadJSM, getLocationHref,
+                                             getLocationPathname,
+                                             getLocationSearch, getProp, global,
+                                             historyPushState, jsValToMaybeText,
+                                             onWindowPopstateWithoutEvent,
+                                             scrollTo)
 #ifndef ghcjs_HOST_OS
-import           Servant.API                   (Accept (contentTypes), Capture,
-                                                FromHttpApiData, HasLink (..),
-                                                IsElem, MimeRender (..),
-                                                QueryFlag, QueryParam,
-                                                QueryParam', QueryParams, Raw,
-                                                Required, parseQueryParam,
-                                                type (:<|>) (..), type (:>))
+import           Servant.API                (Accept (contentTypes), Capture,
+                                             FromHttpApiData, HasLink (..),
+                                             IsElem, MimeRender (..), QueryFlag,
+                                             QueryParam, QueryParam',
+                                             QueryParams, Raw, Required,
+                                             parseQueryParam, type (:<|>) (..),
+                                             type (:>))
 #else
-import           Servant.API                   (Capture, FromHttpApiData,
-                                                HasLink (..), IsElem, QueryFlag,
-                                                QueryParam, QueryParam',
-                                                QueryParams, Raw, Required,
-                                                parseQueryParam,
-                                                type (:<|>) (..), type (:>))
+import           Servant.API                (Capture, FromHttpApiData,
+                                             HasLink (..), IsElem, QueryFlag,
+                                             QueryParam, QueryParam',
+                                             QueryParams, Raw, Required,
+                                             parseQueryParam, type (:<|>) (..),
+                                             type (:>))
 #endif
-import           Servant.Links                 (Link, URI (..), linkURI,
-                                                safeLink)
-import qualified Servant.RawM                  as S
-import           System.IO.Unsafe              (unsafePerformIO)
-import           UnliftIO.Concurrent           (MVar, forkIO, newEmptyMVar,
-                                                putMVar, takeMVar)
-import           UnliftIO.STM                  (TVar, atomically, newTVarIO,
-                                                readTVarIO, writeTVar)
-import           Web.HttpApiData               (parseUrlPiece)
+import           Servant.Links              (Link, URI (..), linkURI, safeLink)
+import qualified Servant.RawM               as S
+import           System.IO.Unsafe           (unsafePerformIO)
+import           UnliftIO.Concurrent        (MVar, forkIO, newEmptyMVar,
+                                             putMVar, takeMVar)
+import           UnliftIO.STM               (TVar, atomically, newTVarIO,
+                                             readTVarIO, writeTVar)
+import           Web.HttpApiData            (parseUrlPiece)
 
-import           Shpadoinkle                   (Backend, Continuation, Html,
-                                                NFData, RawNode, h, hoist,
-                                                kleisli, pur, shpadoinkle, text,
-                                                type (~>), writeUpdate)
+import           Shpadoinkle                (Backend, Continuation, Html,
+                                             NFData, RawNode, h, hoist, kleisli,
+                                             pur, shpadoinkle, text, type (~>),
+                                             writeUpdate)
 
 #ifndef ghcjs_HOST_OS
 
 
-import qualified Data.List.NonEmpty            as NE
-import qualified Network.HTTP.Media            as M
-import qualified Servant                       as S
-import           Servant.RawM.Server           ()
+import qualified Data.List.NonEmpty         as NE
+import qualified Network.HTTP.Media         as M
+import qualified Servant                    as S
+import           Servant.RawM.Server        ()
 
-import           Shpadoinkle.Backend.Static    (renderStatic)
+import           Shpadoinkle.Backend.Static (renderStatic)
 
 
 #endif
@@ -175,10 +167,8 @@ toHydration fe =
 -- | Change the browser's URL to the canonical URL for a given route `r`.
 navigate :: forall a m r. (MonadJSM m, Routed a r) => r -> m ()
 navigate r = do
-  w <- currentWindowUnchecked
-  history <- getHistory w
   let uri = getURI @a @r r
-  pushState history () "" . Just . T.pack $
+  historyPushState () "" . Just . T.pack $
     "/" ++ uriPath uri ++ uriQuery uri ++ uriFragment uri
   liftIO $ putMVar syncRoute ()
 
@@ -220,8 +210,7 @@ fullPageSPAC :: forall layout b a r m
   -> JSM ()
 fullPageSPAC toJSM backend i' view getStage onRoute routes = do
   let router = route @layout @r routes
-  window <- currentWindowUnchecked
-  getRoute window router $ \case
+  getRoute router $ \case
     Nothing -> return ()
     Just r -> do
       i <- toJSM $ i' r
@@ -229,7 +218,6 @@ fullPageSPAC toJSM backend i' view getStage onRoute routes = do
       _ <- listenStateChange router $ writeUpdate model . kleisli . const
            . (fmap (hoist toJSM) . toJSM) . onRoute
       shpadoinkle toJSM backend model view getStage
-      syncPoint
 
 
 -- | This method wraps @shpadoinkle@, providing for a convenient entrypoint
@@ -292,8 +280,7 @@ fullPageSPA' :: forall layout b a r m
   -> JSM ()
 fullPageSPA' toJSM backend model i' view getStage onRoute routes = do
   let router = route @layout @r routes
-  window <- currentWindowUnchecked
-  getRoute window router $ \case
+  getRoute router $ \case
     Nothing -> return ()
     Just r -> do
       i <- toJSM $ i' r
@@ -301,7 +288,6 @@ fullPageSPA' toJSM backend model i' view getStage onRoute routes = do
       _ <- listenStateChange router $ writeUpdate model . kleisli . const
            . (fmap (hoist toJSM) . toJSM) . onRoute
       shpadoinkle toJSM backend model view getStage
-      syncPoint
 
 
 -- | ?foo=bar&baz=qux -> [("foo","bar"),("baz","qux")]
@@ -317,16 +303,11 @@ parseSegments :: Text -> [Text]
 parseSegments = C.filter (/= "") .  T.splitOn "/"
 
 
-popstate :: EventName Window PopStateEvent
-popstate = unsafeEventName "popstate"
-
-
 getRoute
-  :: Window -> Router r -> (Maybe r -> JSM a) -> JSM a
-getRoute window router handle = do
-  location <- getLocation window
-  path     <- getPathname location
-  search   <- getSearch location
+  :: Router r -> (Maybe r -> JSM a) -> JSM a
+getRoute router handle = do
+  path     <- getLocationPathname
+  search   <- getLocationSearch
   let query = parseQuery search
       segs  = parseSegments path
   handle $ fromRouter query segs router
@@ -335,20 +316,18 @@ getRoute window router handle = do
 listenStateChange
   :: Router r -> (r -> JSM ()) -> JSM ()
 listenStateChange router handle = do
-  w <- currentWindowUnchecked
-  (path,_) <- fmap (T.breakOn "#") $ getHref =<< getLocation w
+  (path,_) <- fmap (T.breakOn "#") $ getLocationHref
   pathVar <- newTVarIO path
-  _ <- on w popstate $ do
+  _ <- onWindowPopstateWithoutEvent $ do
     oldPath <- readTVarIO pathVar
-    (newPath,_) <- fmap (T.breakOn "#") $ getHref =<< getLocation w
+    (newPath,_) <- fmap (T.breakOn "#") $ getLocationHref
     when (oldPath /= newPath) $ do
       atomically $ writeTVar pathVar newPath
       putMVar syncRoute ()
   _ <- forkIO . forever $ do
     liftIO $ takeMVar syncRoute
-    getRoute w router $ maybe (return ()) handle
-    syncPoint
-    scrollTo w 0 0
+    getRoute router $ maybe (return ()) handle
+    scrollTo 0 0
   return ()
 
 

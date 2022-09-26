@@ -24,7 +24,6 @@ import           Control.Monad.Catch (MonadThrow (throwM))
 import           Data.Function       ((&))
 import           Data.Maybe          (fromMaybe)
 import           Data.Text           (Text)
-import           GHCJS.DOM.Types     (JSM)
 import           Servant.Client.JS   (BaseUrl (..), ClientEnv (..),
                                       ClientError (..), ClientM (..),
                                       EmptyClient (..), HasClient (..),
@@ -33,7 +32,7 @@ import           Servant.Client.JS   (BaseUrl (..), ClientEnv (..),
                                       StreamingResponse, client, parseBaseUrl,
                                       runClientM, showBaseUrl,
                                       withStreamingRequestJSM)
-import           Shpadoinkle.JSFFI   (JSObject, fromJSValUnsafe, getProp,
+import           Shpadoinkle.JSFFI   (JSM, JSObject, fromJSValUnsafe, getProp,
                                       global, jsValToMaybeString)
 import           Text.Read           (readMaybe)
 import           UnliftIO            (MonadIO (liftIO))

@@ -106,6 +106,14 @@ module Shpadoinkle.JSFFI
 
   , requestAnimationFrame
   , requestAnimationFrame_
+
+  , getLocation
+  , getLocationHref
+  , getLocationPathname
+  , getLocationSearch
+  , onWindowPopstateWithoutEvent
+  , scrollTo
+  , historyPushState
   ) where
 
 
@@ -920,3 +928,32 @@ requestAnimationFrame cb = do
 requestAnimationFrame_ :: (Double -> JSM ()) -> JSM ()
 requestAnimationFrame_ = void . requestAnimationFrame
 
+
+getLocation :: JSM JSObject
+getLocation = fromJSValUnsafe @JSObject <$> getProp "location" window
+
+getLocationHref, getLocationPathname, getLocationSearch :: JSM Text
+getLocationHref     = callToString =<< getProp prop =<< getLocation where prop = "href"
+getLocationPathname = callToString =<< getProp prop =<< getLocation where prop = "pathname"
+getLocationSearch   = callToString =<< getProp prop =<< getLocation where prop = "search"
+
+-- yeah i write generic code
+onWindowPopstateWithoutEvent :: JSM () -> JSM ()
+#ifdef ghcjs_HOST_OS
+onWindowPopstateWithoutEvent cb = do
+  cb' <- mkFun' (\_ -> cb)
+  void $ window # "addEventListener" $ ("popstate", cb')
+#else
+onWindowPopstateWithoutEvent = ghcjsOnly
+#endif
+
+scrollTo :: MonadJSM m => Double -> Double -> m ()
+scrollTo x y = void $ window # "scrollTo" $ (x, y)
+
+historyPushState
+  :: (MonadJSM m, JSaddle.ToJSVal data_, JSaddle.ToJSVal title, JSaddle.ToJSVal url)
+  => data_ -> title -> Maybe url -> m ()
+historyPushState data_ title mUrl = do
+  history <- liftJSM $ fromJSValUnsafe @JSObject <$> getProp "history" window
+  args <- liftJSM $ toJSArgs (data_, title, mUrl)
+  void . liftJSM $ history # "pushState" $ args
