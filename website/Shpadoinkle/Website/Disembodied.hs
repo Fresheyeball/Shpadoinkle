@@ -36,7 +36,7 @@ import           System.Environment                          (getArgs)
 
 
 newtype Noop a = Noop (JSM a)
-  deriving newtype (Functor, Applicative, Monad, MonadJSM, MonadIO)
+  deriving newtype (Functor, Applicative, Monad, MonadIO)
   deriving anyclass (Hooglable, Swan, MonadReader (Examples (TVar (Maybe Code))))
 
 

@@ -20,7 +20,7 @@ import           Data.Text                                   (Text)
 import           Servant.API                                 (type (:<|>) ((:<|>)))
 
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle                                 (JSM, MonadJSM,
+import           Shpadoinkle                                 (JSM,
                                                               MonadUnliftIO (..),
                                                               TVar, constUpdate,
                                                               liftJSM,
@@ -66,9 +66,6 @@ import           Shpadoinkle.Website.View                    (start, startJS,
 
 newtype App a = App { runApp :: ReaderT (Examples (TVar (Maybe Code))) JSM a }
   deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadReader (Examples (TVar (Maybe Code))))
-#ifndef ghcjs_HOST_OS
-  deriving (MonadJSM)
-#endif
 
 
 instance MonadUnliftIO App where

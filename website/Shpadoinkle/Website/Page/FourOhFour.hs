@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -19,6 +20,7 @@ module Shpadoinkle.Website.Page.FourOhFour where
 
 import           Control.Concurrent.STM                  (TVar, atomically,
                                                           modifyTVar, retry)
+import           Control.Monad                           (void)
 import           Control.Monad.IO.Class                  (liftIO)
 import           Data.Text                               (Text)
 import           GHC.Generics                            (Generic)
@@ -31,6 +33,8 @@ import           GHCJS.DOM.RequestAnimationFrameCallback (RequestAnimationFrameC
                                                           newRequestAnimationFrameCallback)
 import           GHCJS.DOM.Window                        (Window,
                                                           requestAnimationFrame)
+import           Language.Javascript.JSaddle             (toJSVal)
+import qualified Language.Javascript.JSaddle             as JSaddle
 import           Shpadoinkle                             (JSM, NFData,
                                                           RawNode (..),
                                                           newTVarIO,
@@ -38,11 +42,33 @@ import           Shpadoinkle                             (JSM, NFData,
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom)
 import           Shpadoinkle.Html                        as H
 import           Shpadoinkle.Html.TH.AssetLink           (assetLink)
-import           Shpadoinkle.JSFFI                       (toJSVal)
+import           Shpadoinkle.JSFFI                       (JSVal)
+#ifndef ghcjs_HOST_OS
+import           Shpadoinkle.JSFFI                       (ghcjsOnly)
+#endif
 import           Shpadoinkle.Keyboard                    (pattern Ctrl,
                                                           pattern LeftArrow,
                                                           pattern RightArrow)
 import           UnliftIO.Concurrent                     (forkIO, threadDelay)
+import           Unsafe.Coerce                           (unsafeCoerce)
+
+
+jsmFromJSaddle :: JSaddle.JSM a -> JSM a
+#ifdef ghcjs_HOST_OS
+jsmFromJSaddle = id
+#else
+jsmFromJSaddle = ghcjsOnly
+#endif
+
+jsmToJSaddle :: JSM a -> JSaddle.JSM a
+#ifdef ghcjs_HOST_OS
+jsmToJSaddle = id
+#else
+jsmToJSaddle = ghcjsOnly
+#endif
+
+jsValFromJSaddle :: JSaddle.JSVal -> JSVal
+jsValFromJSaddle = unsafeCoerce
 
 
 default (Text)
@@ -147,26 +173,27 @@ tick d g = g
 
 
 animate :: Window -> TVar Game -> JSM RequestAnimationFrameCallback
-animate win model = newRequestAnimationFrameCallback $ \d -> () <$ do
-  liftIO . atomically . modifyTVar model . tick $ Clock d
-  requestAnimationFrame win =<< animate win model
+animate win model = jsmFromJSaddle $
+  newRequestAnimationFrameCallback $ \d -> void $ do
+    liftIO . atomically . modifyTVar model . tick $ Clock d
+    requestAnimationFrame win =<< jsmToJSaddle (animate win model)
 
 
 play :: JSM RawNode
-play = do
+play = jsmFromJSaddle $ do
   let gameId = "game"
   doc <- currentDocumentUnchecked
   isSubsequent <- traverse toJSVal =<< getElementById doc gameId
   case isSubsequent of
-    Just raw -> return $ RawNode raw
+    Just raw -> return $ RawNode (jsValFromJSaddle raw)
     Nothing -> do
       win <- currentWindowUnchecked
       elm <- createElement doc "div"
       setId elm gameId
       model <- newTVarIO $ Game 24 0 Idle FaceRight
-      _ <- requestAnimationFrame win =<< animate win model
-      raw <- RawNode <$> toJSVal elm
-      _ <- forkIO $ threadDelay 1
+      _ <- requestAnimationFrame win =<< jsmToJSaddle (animate win model)
+      raw <- RawNode . jsValFromJSaddle <$> toJSVal elm
+      _ <- jsmToJSaddle . forkIO $ threadDelay 1
         >> shpadoinkle id runSnabbdom model game (pure raw)
       return raw
 
