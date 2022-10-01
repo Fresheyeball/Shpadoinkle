@@ -19,9 +19,9 @@ import           Shpadoinkle.JSFFI as JSFFI (JSElement, JSString, To,
                                              appendChild, body, createElement,
                                              createTextNode, document,
                                              fromJSValUnsafe, getElementById,
-                                             getProp, jsElementToJSVal, jsNull,
-                                             liftJSM, setAttribute,
-                                             setInnerHTML, setTitle, toJSVal)
+                                             getProp, jsNull, liftJSM, purely,
+                                             setAttribute, setInnerHTML,
+                                             setTitle, toJSVal)
 
 
 default (Text)
@@ -96,7 +96,7 @@ getById eid = do
   mEl <- getElementById eid
   pure $ case mEl of
     Nothing -> RawNode jsNull
-    Just el -> RawNode (jsElementToJSVal el)
+    Just el -> RawNode (purely toJSVal el)
 
 
 treatEmpty :: Foldable f => Functor f => a -> (f a -> a) -> (b -> a) -> f b -> a

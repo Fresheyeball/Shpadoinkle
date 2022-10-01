@@ -14,6 +14,7 @@
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -121,9 +122,6 @@ instance MonadRWS r w s m => MonadRWS r w s (ParDiffT model m)
 askModel :: Monad m => ParDiffT model m (TVar model)
 askModel = ParDiffT ask
 
-#ifndef ghcjs_HOST_OS
-deriving instance MonadJSM m => MonadJSM (ParDiffT model m)
-#endif
 
 
 instance MonadBase n m => MonadBase n (ParDiffT model m) where
@@ -338,9 +336,6 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
 -- | Patch sets of virtual nodes (children) together
 patchChildren
   :: MonadUnliftIO m
-#ifndef ghcjs_HOST_OS
-  => MonadJSM m
-#endif
   => Show a
   => NFData a
   => RawNode -> [ParVNode a] -> [ParVNode a] -> ParDiffT a m [ParVNode a]
@@ -363,9 +358,6 @@ patchChildren parent (old:olds) (new:news) =
 -- | Patch a single node together, recursing through their potential children
 patch'
   :: MonadUnliftIO m
-#ifndef ghcjs_HOST_OS
-  => MonadJSM m
-#endif
   => Show a
   => NFData a
   => RawNode -> ParVNode a -> ParVNode a -> ParDiffT a m (ParVNode a)

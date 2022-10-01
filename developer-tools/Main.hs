@@ -24,10 +24,9 @@ import           GHC.Generics                (Generic)
 import           Prelude                     hiding (div, span)
 import           Shpadoinkle.JSFFI           (JSKey, JSM, JSObject, MonadJSM,
                                               To, fromJSValUnsafe, getProp,
-                                              global, jsStringToJSVal, jsTreq,
-                                              jsValToMaybeText, liftJSM,
-                                              mkEmptyObject, mkFun', setProp,
-                                              (#))
+                                              global, jsTreq, jsValToMaybeText,
+                                              liftJSM, mkEmptyObject, mkFun',
+                                              purely, setProp, toJSVal, (#))
 import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
                                               newTVarIO)
@@ -68,7 +67,7 @@ listenForOutput model = do
   void $ (onMessage # "addListener") =<< mkFun' (\args -> do
     let x = fromJSValUnsafe @JSObject $ Prelude.head args
     t <- getProp "type" x
-    let isRight = t `jsTreq` jsStringToJSVal "shpadoinkle_output_state"
+    let isRight = t `jsTreq` purely toJSVal "shpadoinkle_output_state"
     when isRight $ do
       msg <- getProp "msg" x
       now <- liftIO getCurrentTime
@@ -101,7 +100,7 @@ sendHistory (History history') = void $ do
   tabId <- (pure global ! "chrome" ! "devtools" ! "inspectedWindow") >>= getProp "tabId"
 
   msg <- mkEmptyObject
-  msg & setProp "type" (jsStringToJSVal "shpadoinkle_set_state")
+  msg & setProp "type" (purely toJSVal "shpadoinkle_set_state")
   msg & setProp "msg" history'
 
   void $ (pure global ! "chrome" ! "tabs") >>= (\t -> t # "sendMessage" $ (tabId, msg))

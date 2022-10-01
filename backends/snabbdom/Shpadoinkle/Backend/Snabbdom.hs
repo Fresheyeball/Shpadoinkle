@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ExtendedDefaultRules       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
@@ -15,6 +16,7 @@
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -95,11 +97,6 @@ newtype SnabbdomT model m a = Snabbdom { unSnabbdom :: ReaderT (TVar model) m a 
 
 snabbAsk :: Monad m => SnabbdomT model m (TVar model)
 snabbAsk = Snabbdom ask
-
-
-#ifndef ghcjs_HOST_OS
-deriving instance MonadJSM m => MonadJSM (SnabbdomT model m)
-#endif
 
 
 instance MonadBase n m => MonadBase n (SnabbdomT model m) where

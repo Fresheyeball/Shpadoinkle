@@ -20,29 +20,41 @@ module Shpadoinkle.Router.Client
   ) where
 
 
-import           Control.Monad.Catch (MonadThrow (throwM))
-import           Data.Function       ((&))
-import           Data.Maybe          (fromMaybe)
-import           Data.Text           (Text)
-import           Servant.Client.JS   (BaseUrl (..), ClientEnv (..),
-                                      ClientError (..), ClientM (..),
-                                      EmptyClient (..), HasClient (..),
-                                      InvalidBaseUrlException, Response,
-                                      ResponseF (..), Scheme (..),
-                                      StreamingResponse, client, parseBaseUrl,
-                                      runClientM, showBaseUrl,
-                                      withStreamingRequestJSM)
-import           Shpadoinkle.JSFFI   (JSM, JSObject, fromJSValUnsafe, getProp,
-                                      global, jsValToMaybeString)
-import           Text.Read           (readMaybe)
-import           UnliftIO            (MonadIO (liftIO))
+import           Control.Monad.Catch         (MonadThrow (throwM))
+import           Data.Function               ((&))
+import           Data.Maybe                  (fromMaybe)
+import           Data.Text                   (Text)
+import qualified Language.Javascript.JSaddle as JSaddle
+import           Servant.Client.JS           (BaseUrl (..), ClientEnv (..),
+                                              ClientError (..), ClientM (..),
+                                              EmptyClient (..), HasClient (..),
+                                              InvalidBaseUrlException, Response,
+                                              ResponseF (..), Scheme (..),
+                                              StreamingResponse, client,
+                                              parseBaseUrl, runClientM,
+                                              showBaseUrl,
+                                              withStreamingRequestJSM)
+import           Shpadoinkle.JSFFI           (JSM, JSObject, fromJSValUnsafe,
+                                              getProp, ghcjsOnly, global,
+                                              jsValToMaybeString)
+import           Text.Read                   (readMaybe)
+import           UnliftIO                    (MonadIO (liftIO))
 
 
 default (Text)
 
 
+-- Witness to only compiling on GHCjs, where JSM ~ IO.
+convJSM :: JSaddle.JSM a -> JSM a
+#ifdef ghcjs_HOST_OS
+convJSM = id
+#else
+convJSM = ghcjsOnly
+#endif
+
+
 getClientEnv :: JSM ClientEnv
-getClientEnv = do
+getClientEnv = convJSM $ do
   loc :: JSObject <-
     global
     & getProp ("window" :: Text)
@@ -70,8 +82,8 @@ runXHR m = runXHR' m =<< getClientEnv
 
 -- | Run the ClientM from Servant as an XHR request with a customized base URL.
 runXHR' :: ClientM a -> ClientEnv -> JSM a
-runXHR' m env = either (liftIO . throwM) pure =<< runClientM m env
+runXHR' m env = convJSM $ either (liftIO . throwM) pure =<< runClientM m env
 
 
 runXHRe :: ClientM a -> ClientEnv -> JSM (Either ClientError a)
-runXHRe = runClientM
+runXHRe = (fmap . fmap) convJSM runClientM

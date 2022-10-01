@@ -5,6 +5,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuantifiedConstraints      #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
@@ -32,19 +33,18 @@ module Shpadoinkle.Console (
   ) where
 
 
-import           Control.Monad               (void)
-import           Data.Aeson                  (ToJSON, encode)
-import           Data.Kind                   (Constraint, Type)
-import           Data.String                 (IsString)
-import           Data.Text                   (Text, pack)
-import           Data.Text.Lazy              (toStrict)
-import           Data.Text.Lazy.Encoding     (decodeUtf8)
-import           Language.Javascript.JSaddle (ToJSVal, toJSVal)
-import           Prelude                     hiding (log)
-import           Shpadoinkle.JSFFI           (JSObject, MonadJSM, askJSM,
-                                              fromJSValUnsafe, getProp, global,
-                                              liftJSM, runJSM, (#))
-import           System.IO.Unsafe            (unsafePerformIO)
+import           Control.Monad           (void)
+import           Data.Aeson              (ToJSON, encode)
+import           Data.Kind               (Constraint, Type)
+import           Data.String             (IsString)
+import           Data.Text               (Text, pack)
+import           Data.Text.Lazy          (toStrict)
+import           Data.Text.Lazy.Encoding (decodeUtf8)
+import           Prelude                 hiding (log)
+import           Shpadoinkle.JSFFI       (JSObject, JSVal, MonadJSM, To, askJSM,
+                                          fromJSValUnsafe, getProp, global,
+                                          liftJSM, runJSM, toJSVal, (#))
+import           System.IO.Unsafe        (unsafePerformIO)
 
 
 default (Text)
@@ -73,6 +73,10 @@ class LogJS (c :: Type -> Constraint) where
   logJS :: MonadJSM m => c a => Text -> a -> m ()
 
 
+-- wow, I'm surprised this class declaration is legal. haskell rox!
+class (forall m. MonadJSM m => To m JSVal a) => ToJSVal a
+
+
 -- | Logs against 'ToJSON' will be encoded via 'Aeson' then parsed using
 -- native <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse JSON.parse> before being sent to the console.
 instance LogJS ToJSON where
@@ -90,14 +94,12 @@ instance LogJS Show where
     void ( console # t $ pack (show a) )
 
 
--- WANTv this needs to be changed once jsaddle is removed
---type ToJSVal = To JSM JSVal
-
 -- | Logs against 'ToJSVal' will be converted to a 'JSVal' before being sent to the console.
 instance LogJS ToJSVal where
   logJS t a = liftJSM $ do
     console <- fromJSValUnsafe @JSObject <$> getProp "console" global
-    void ( console # t $ toJSVal a )
+    a' <- toJSVal a
+    void ( console # t $ a' )
 
 
 {-|
@@ -136,17 +138,21 @@ instance Assert ToJSON where
     console <- fromJSValUnsafe @JSObject <$> getProp "console" global
     json <- fromJSValUnsafe @JSObject <$> getProp "JSON" global
     parsed <- json # "parse" $ (toStrict . decodeUtf8 $ encode x)
-    void ( console # "assert" $ (toJSVal b, parsed) )
+    b' <- toJSVal b
+    void $ console # "assert" $ (b', parsed)
 
 instance Assert Show where
   assert b x = liftJSM $ do
     console <- fromJSValUnsafe @JSObject <$> getProp "console" global
-    void ( console # "assert" $ (toJSVal b, pack $ show x) )
+    b' <- toJSVal b
+    void $ console # "assert" $ (b', pack $ show x)
 
 instance Assert ToJSVal where
   assert b x = liftJSM $ do
     console <- fromJSValUnsafe @JSObject <$> getProp "console" global
-    void ( console # "assert" $ (toJSVal b, toJSVal x) )
+    b' <- toJSVal b
+    x' <- toJSVal x
+    void $ console # "assert" $ (b', x')
 
 
 -- | Log a list of JSON objects to the console where it will rendered as a table using <https://developer.mozilla.org/en-US/docs/Web/API/Console/table console.table>

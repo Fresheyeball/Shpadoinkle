@@ -14,21 +14,18 @@
 module Shpadoinkle.DeveloperTools (withDeveloperTools) where
 
 
-import           Shpadoinkle.JSFFI   (JSM, JSString)
+import           Shpadoinkle.JSFFI   (JSM)
 import           UnliftIO
 #ifdef DEVELOPMENT
 import           Control.Lens        hiding ((#))
 import           Control.Monad
 import           Control.Monad.STM   (retry)
 import           Shpadoinkle.JSFFI   (JSObject, fromJSValUnsafe, getProp,
-                                      global, jsStringToJSVal, jsTreq,
-                                      jsValToMaybeString, mkEmptyObject, mkFun',
-                                      purely, setProp, toJSString, (#))
+                                      global, jsTreq, jsValToMaybeString,
+                                      mkEmptyObject, mkFun', purely, setProp,
+                                      toJSString, toJSVal, (#))
 import           UnliftIO.Concurrent
 #endif
-
-
-default (JSString)
 
 
 #ifdef DEVELOPMENT
@@ -53,8 +50,8 @@ withDeveloperTools x = do
 outputState :: forall a. Show a => a -> JSM ()
 outputState x = void . (try :: forall b. JSM b -> JSM (Either SomeException b)) $ do
   o <- mkEmptyObject
-  o & setProp "type" (jsStringToJSVal $ "shpadoinkle_output_state")
-  o & setProp "msg" (jsStringToJSVal $ purely toJSString $ show x)
+  o & setProp "type" (purely toJSVal $ "shpadoinkle_output_state")
+  o & setProp "msg" (purely toJSVal $ purely toJSString $ show x)
   global # "postMessage" $ (o, "*")
 
 
@@ -64,7 +61,7 @@ listenForSetState model =
     let e = fromJSValUnsafe @JSObject $ Prelude.head args
     isWindow <- (`jsTreq` global) <$> getProp "source" e
     d <- fromJSValUnsafe @JSObject <$> getProp "data" e
-    isRightType <- (`jsTreq` (jsStringToJSVal "shpadoinkle_set_state")) <$> getProp "type" d
+    isRightType <- (`jsTreq` (purely toJSVal "shpadoinkle_set_state")) <$> getProp "type" d
     msg <- jsValToMaybeString <$> getProp "msg" d
     case msg of
       Just msg' | isWindow && isRightType ->

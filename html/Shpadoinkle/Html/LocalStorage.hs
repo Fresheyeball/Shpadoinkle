@@ -51,9 +51,6 @@ saveOnChange k = liftJSM . shouldUpdate (const $ setStorage k) ()
 
 manageLocalStorage
   :: MonadUnliftIO m
-#ifndef ghcjs_HOST_OS
-  => MonadJSM m
-#endif
   => Show a
   => Read a
   => Eq a
