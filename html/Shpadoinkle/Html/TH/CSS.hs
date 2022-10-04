@@ -29,8 +29,8 @@ import           Language.Haskell.TH.Syntax
 import           Data.Text.Encoding
 import           GHCJS.Marshal.Pure
 import           GHCJS.Types                as T
-import           Shpadoinkle.JSFFI          (JSArray, JSM, callToString,
-                                             fromJSValUnsafe, jsArrayToList)
+import           Shpadoinkle.JSFFI          (JSArray, JSM, fromJSValUnsafe,
+                                             jsArrayToList, toTextLax)
 import           System.IO.Unsafe           (unsafePerformIO)
 #else
 import           Text.Regex.PCRE
@@ -64,7 +64,7 @@ notMempty x | x == mempty = Nothing
 getAll :: ByteString -> [ByteString]
 getAll css = unsafePerformIO $ do
   matches <- match (pFromJSVal . pToJSVal $ BS.unpack css) selectors
-  matches' <- traverse callToString =<< jsArrayToList matches
+  matches' <- traverse toTextLax =<< jsArrayToList matches
   pure $ fmapMaybe (notMempty . BS.fromStrict . encodeUtf8) matches'
 
 #else

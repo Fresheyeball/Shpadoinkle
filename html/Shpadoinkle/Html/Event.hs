@@ -42,9 +42,9 @@ import           Control.Monad.IO.Class       (liftIO)
 import           Data.Function                ((&))
 import           Data.Text
 import           Shpadoinkle.JSFFI            (JSObject, JSString, JSVal,
-                                               callNumber, callToString,
                                                fromJSValUnsafe, getProp, global,
-                                               isTruthy, mkFun', (#))
+                                               mkFun', toBoolLax, toNumberLax,
+                                               toTextLax, (#))
 import           UnliftIO.Concurrent          (forkIO)
 import           UnliftIO.STM
 
@@ -60,23 +60,23 @@ mkWithFormVal valTo evt from f = listenRaw evt $ \(RawNode n) _ ->
 
 
 onInputC ::  (Text -> Continuation m a) -> (Text, Prop m a)
-onInputC = mkWithFormVal callToString "input" "value"
+onInputC = mkWithFormVal toTextLax "input" "value"
 $(mkEventVariantsAfforded "input" ''Text)
 
 
 onBeforeinputC ::  (Text -> Continuation m a) -> (Text, Prop m a)
-onBeforeinputC = mkWithFormVal callToString "beforeinput" "value"
+onBeforeinputC = mkWithFormVal toTextLax "beforeinput" "value"
 $(mkEventVariantsAfforded "beforeinput" ''Text)
 
 
 onOptionC ::  (Text -> Continuation m a) -> (Text, Prop m a)
-onOptionC = mkWithFormVal callToString "change" "value"
+onOptionC = mkWithFormVal toTextLax "change" "value"
 $(mkEventVariantsAfforded "option" ''Text)
 
 
 mkOnKey ::  Text -> (KeyCode -> Continuation m a) -> (Text, Prop m a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
-  f <$> liftJSM (fmap round $ callNumber =<< getProp ("keyCode" :: Text) (fromJSValUnsafe @JSObject e))
+  f <$> liftJSM (fmap round $ toNumberLax =<< getProp ("keyCode" :: Text) (fromJSValUnsafe @JSObject e))
 
 
 onKeyupC, onKeydownC, onKeypressC :: (KeyCode -> Continuation m a) -> (Text, Prop m a)
@@ -89,7 +89,7 @@ $(mkEventVariantsAfforded "keypress" ''KeyCode)
 
 
 onCheckC ::  (Bool -> Continuation m a) -> (Text, Prop m a)
-onCheckC = mkWithFormVal isTruthy "change" "checked"
+onCheckC = mkWithFormVal toBoolLax "change" "checked"
 $(mkEventVariantsAfforded "check" ''Bool)
 
 
@@ -136,7 +136,7 @@ onClickAwayC c =
 
             target   <- fromJSValUnsafe @JSObject evt & getProp ("target" :: Text)
             onTarget <- fromJSValUnsafe @JSObject elm # ("contains" :: Text) $ target
-            isTruthy onTarget >>= \case
+            toBoolLax onTarget >>= \case
               False -> notify
               _     -> return ()
 
@@ -156,7 +156,7 @@ mkGlobalKey evtName c =
 
      void $ (global # ("addEventListener" :: Text)) . (evtName,) =<<
         (mkFun' $ \case
-           e:_ -> notify . round =<< callNumber =<< getProp ("keyCode" :: Text) (fromJSValUnsafe @JSObject e)
+           e:_ -> notify . round =<< toNumberLax =<< getProp ("keyCode" :: Text) (fromJSValUnsafe @JSObject e)
            []  -> return ())
 
      return stream
@@ -174,9 +174,9 @@ mkGlobalKeyNoRepeat evtName c =
         (mkFun' $ \case
            e:_ -> do
              let eObj = fromJSValUnsafe @JSObject e
-             isRepeat <- isTruthy =<< getProp ("repeat" :: Text) eObj
+             isRepeat <- toBoolLax =<< getProp ("repeat" :: Text) eObj
              unless isRepeat $
-               notify . round =<< callNumber =<< getProp ("keyCode" :: Text) eObj
+               notify . round =<< toNumberLax =<< getProp ("keyCode" :: Text) eObj
            []  -> return ())
 
      return stream
@@ -204,6 +204,6 @@ $(mkEventVariants "escape")
 
 onEnterC :: (Text -> Continuation m a) -> (Text, Prop m a)
 onEnterC f = listenRaw "keyup" $ \(RawNode n) _ -> liftJSM $
-  f <$> (callToString =<< getProp ("value" :: Text) (fromJSValUnsafe @JSObject n))
+  f <$> (toTextLax =<< getProp ("value" :: Text) (fromJSValUnsafe @JSObject n))
 $(mkEventVariantsAfforded "enter" ''Text)
 

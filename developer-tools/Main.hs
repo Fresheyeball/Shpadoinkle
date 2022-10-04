@@ -23,10 +23,10 @@ import           Data.Time                   (UTCTime, defaultTimeLocale,
 import           GHC.Generics                (Generic)
 import           Prelude                     hiding (div, span)
 import           Shpadoinkle.JSFFI           (JSKey, JSM, JSObject, MonadJSM,
-                                              To, fromJSValUnsafe, getProp,
-                                              global, jsTreq, jsValToMaybeText,
-                                              liftJSM, mkEmptyObject, mkFun',
-                                              purely, setProp, toJSVal, (#))
+                                              To, asText, fromJSValUnsafe,
+                                              getProp, global, jsTreq, liftJSM,
+                                              mkEmptyObject, mkFun', purely,
+                                              setProp, toJSVal, (#))
 import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
                                               newTVarIO)
@@ -71,7 +71,7 @@ listenForOutput model = do
     when isRight $ do
       msg <- getProp "msg" x
       now <- liftIO getCurrentTime
-      let history' = maybe (error "how could this not be a string") History $ jsValToMaybeText msg
+      history' <- maybe (error "how could this not be a string") History <$> asText msg
       atomically . modifyTVar model $ heard now history')
 
 

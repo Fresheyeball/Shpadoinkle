@@ -34,6 +34,8 @@ module Shpadoinkle.JSFFI
 
   , JSString
   , toJSString
+  , jsStringToString
+  , jsStringToText
 
   , JSObject
   , toJSObject
@@ -52,8 +54,8 @@ module Shpadoinkle.JSFFI
   , jsArrayToList
 
   , JSFunction
-  , toJSFunction
   , HSFunction
+  , toJSFunction
   , mkFun
   , mkFun'
   , (#)
@@ -92,16 +94,18 @@ module Shpadoinkle.JSFFI
   , askJSM
   , runJSM
   , eval
-  , jsValToMaybeText
-  , jsValToMaybeString
-  , callToString
-  , callNumber
-  , isTruthy
-  , intToJSVal
-  , jsValToInt
   , createTextNode
+
   , jsNull
-  , jsStringToText
+  , jsUndefined
+
+  , toStringLax
+  , asString
+  , toTextLax
+  , asText
+  , toNumberLax
+  , toIntLax
+  , toBoolLax
 
   , requestAnimationFrame
   , requestAnimationFrame_
@@ -110,6 +114,7 @@ module Shpadoinkle.JSFFI
   , getLocationHref
   , getLocationPathname
   , getLocationSearch
+
   , onWindowPopstateWithoutEvent
   , scrollTo
   , historyPushState
@@ -272,9 +277,15 @@ instance Applicative m => To m JSString Text where
   to = ghcjsOnly
 #endif
 
+jsStringToText :: JSString -> Text
+jsStringToText = unsafeCoerce
+  -- WANT^ to test
+
+jsStringToString :: JSString -> String
+jsStringToString = T.unpack . jsStringToText
+
 instance IsJSVal JSString where
   fromJSValUnsafe = JSString
-
 
 instance IsString JSString where
   fromString = purely to
@@ -423,7 +434,7 @@ instance Applicative m => To m JSArray JSArray where
 jsArrayFromList :: [JSVal] -> JSM JSArray
 #ifdef ghcjs_HOST_OS
 jsArrayFromList xs = do
-  ar <- newArray_js (intToJSVal $ length xs)
+  ar <- newArray_js (purely toJSVal $ length xs)
   let ar' = JSObject ar
   for (zip [0..] xs) $ \(idx, val) -> setProp (idx :: Int) val ar'
   pure $ JSArray ar
@@ -440,12 +451,8 @@ jsArrayToList :: JSArray -> JSM [JSVal]
 #ifdef ghcjs_HOST_OS
 jsArrayToList (JSArray ar) = do
   let ar' = JSObject ar
-  len <- toInt =<< getProp "length" ar'
+  len <- toIntLax =<< getProp "length" ar'
   for [0 :: Int .. len - 1] $ \idx -> getProp idx ar'
-
-  where
-  toInt = fmap round . callNumber
-    -- nb^ jsValToInt seems to fail sometimes? Possibly when used in TemplateHaskell
 #else
 jsArrayToList = ghcjsOnly
 #endif
@@ -510,7 +517,7 @@ mkFun' fun = mkFun (\_fun _this args -> fun args)
 setTimeout :: MonadJSM m => Int -> JSFunction -> m Int
 #ifdef ghcjs_HOST_OS
 setTimeout delay (JSFunction fun) =
-    liftJSM $ jsValToInt <$> setTimeout_js fun (intToJSVal delay)
+    liftJSM $ toIntLax =<< setTimeout_js fun (purely toJSVal delay)
 
 foreign import javascript unsafe
   "$r = globalThis.setTimeout($1, $2)"
@@ -523,7 +530,7 @@ setTimeout = ghcjsOnly
 clearTimeout :: MonadJSM m => Int -> m ()
 #ifdef ghcjs_HOST_OS
 clearTimeout tid =
-    liftJSM $ clearTimeout_js (intToJSVal tid)
+    liftJSM $ clearTimeout_js (purely toJSVal tid)
 
 foreign import javascript unsafe
   "globalThis.clearTimeout($1)"
@@ -848,76 +855,57 @@ getGlobal = ghcjsOnly
 #endif
 
 
--- | nb DON'T USE THIS! it makes things break. To be investigated.
-intToJSVal :: Int -> JSVal
-#ifdef ghcjs_HOST_OS
-intToJSVal = fromIntegral >>> (unsafeCoerce :: Double -> JSVal)
-#else
-intToJSVal = ghcjsOnly
-#endif
-
--- | nb DON'T USE THIS! it makes things break. To be investigated.
-jsValToInt :: JSVal -> Int
-#ifdef ghcjs_HOST_OS
-jsValToInt = (unsafeCoerce :: JSVal -> Double) >>> round
-  -- 'round' seems fishy, but that's what JSaddle uses ...
-#else
-jsValToInt = ghcjsOnly
-#endif
-
-
--- JavaScript string is Haskell Data.Text
-jsValToMaybeText :: JSVal -> Maybe Text
-#ifdef ghcjs_HOST_OS
-jsValToMaybeText text =
-  let nullable = jsValToMaybeText_js text
-      isNull = nullable `jsTreq` jsNull
-  in if isNull then Nothing else Just (unsafeCoerce nullable)
-
-foreign import javascript unsafe
-  "typeof $1 === 'string' ? $1 : null"
-  jsValToMaybeText_js :: JSVal -> JSVal
-#else
-jsValToMaybeText = ghcjsOnly
-#endif
-
-
-jsValToMaybeString :: JSVal -> Maybe String
-jsValToMaybeString = fmap T.unpack . jsValToMaybeText
-
-
 -- | Convert to string by calling '.toString()'
-callToString :: JSVal -> JSM Text
+toTextLax :: MonadJSM m => JSVal -> m Text
 #ifdef ghcjs_HOST_OS
-callToString = callToString_js
+toTextLax = liftJSM . toTextLax_js
 foreign import javascript unsafe
   "$r = $1.toString()"
-  callToString_js :: JSVal -> JSM Text
+  toTextLax_js :: JSVal -> JSM Text
 #else
-callToString = ghcjsOnly
+toTextLax = ghcjsOnly
 #endif
 
-
--- | Convert to a number by passig to Number()
-callNumber :: JSVal -> JSM Double
+asText :: MonadJSM m => JSVal -> m (Maybe Text)
 #ifdef ghcjs_HOST_OS
-callNumber = callNumber_js
+asText = liftJSM . fmap nullableToMaybe . asText_js
+foreign import javascript unsafe
+  "$r = typeof $1 === 'string' ? $1 : null"
+  asText_js :: JSVal -> JSM (Nullable Text)
+#else
+asText = ghcjsOnly
+#endif
+
+toStringLax :: MonadJSM m => JSVal -> m String
+toStringLax = fmap T.unpack . toTextLax
+
+asString :: MonadJSM m => JSVal -> m (Maybe String)
+asString = (fmap . fmap) T.unpack . asText
+
+-- | Convert to a number by passing to 'Number()'
+toNumberLax :: MonadJSM m => JSVal -> m Double
+#ifdef ghcjs_HOST_OS
+toNumberLax = liftJSM . toNumberLax_js
 foreign import javascript unsafe
   "Number($1)"
-  callNumber_js :: JSVal -> JSM Double
+  toNumberLax_js :: JSVal -> JSM Double
 #else
-callNumber = ghcjsOnly
+toNumberLax = ghcjsOnly
 #endif
 
+-- | 'toNumberLax' followed by 'round'
+toIntLax :: JSVal -> JSM Int
+toIntLax = fmap round . toNumberLax
 
-isTruthy :: JSVal -> JSM Bool
+-- | Is the value truthy?
+toBoolLax :: JSVal -> JSM Bool
 #ifdef ghcjs_HOST_OS
-isTruthy = isTruthy_js
+toBoolLax = toBoolLax_js
 foreign import javascript unsafe
   "!(!$1)"
-  isTruthy_js :: JSVal -> JSM Bool
+  toBoolLax_js :: JSVal -> JSM Bool
 #else
-isTruthy = ghcjsOnly
+toBoolLax = ghcjsOnly
 #endif
 
 
@@ -978,17 +966,13 @@ createTextNode = ghcjsOnly
 #endif
 
 
-jsStringToText :: JSString -> Text
-jsStringToText = unsafeCoerce
-
-
 requestAnimationFrame :: (Double -> JSM ()) -> JSM Int
 requestAnimationFrame cb = do
   fun <- mkFun' $ \case
-    [t] -> callNumber t >>= cb
+    [t] -> toNumberLax t >>= cb
     _ -> pure ()
   ret <- window # "requestAnimationFrame" $ fun
-  round <$> callNumber ret
+  round <$> toNumberLax ret
 
 requestAnimationFrame_ :: (Double -> JSM ()) -> JSM ()
 requestAnimationFrame_ = void . requestAnimationFrame
@@ -998,9 +982,9 @@ getLocation :: JSM JSObject
 getLocation = fromJSValUnsafe @JSObject <$> getProp "location" window
 
 getLocationHref, getLocationPathname, getLocationSearch :: JSM Text
-getLocationHref     = callToString =<< getProp prop =<< getLocation where prop = "href"
-getLocationPathname = callToString =<< getProp prop =<< getLocation where prop = "pathname"
-getLocationSearch   = callToString =<< getProp prop =<< getLocation where prop = "search"
+getLocationHref     = toTextLax =<< getProp prop =<< getLocation where prop = "href"
+getLocationPathname = toTextLax =<< getProp prop =<< getLocation where prop = "pathname"
+getLocationSearch   = toTextLax =<< getProp prop =<< getLocation where prop = "search"
 
 -- yeah i write generic code
 onWindowPopstateWithoutEvent :: JSM () -> JSM ()

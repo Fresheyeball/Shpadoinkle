@@ -62,10 +62,11 @@ import qualified Data.Text                  as T
 import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy.Encoding    as LTE
 import           GHC.TypeLits               (KnownSymbol, Symbol, symbolVal)
-import           Shpadoinkle.JSFFI          (JSM, MonadJSM, getLocationHref,
+import           Shpadoinkle.JSFFI          (JSM, MonadJSM, asText,
+                                             getLocationHref,
                                              getLocationPathname,
                                              getLocationSearch, getProp, global,
-                                             historyPushState, jsValToMaybeText,
+                                             historyPushState,
                                              onWindowPopstateWithoutEvent,
                                              scrollTo)
 #ifndef ghcjs_HOST_OS
@@ -149,7 +150,7 @@ syncRoute = unsafePerformIO newEmptyMVar
 -- this is used on the client side.
 withHydration :: (MonadJSM m, FromJSON a) => (r -> m a) -> r -> m a
 withHydration s r = do
-  i <- jsValToMaybeText <$> getProp "initState" global
+  i <- asText =<< getProp "initState" global
   case decode . fromStrict . encodeUtf8 =<< i of
     Just fe -> return fe
     _       -> s r

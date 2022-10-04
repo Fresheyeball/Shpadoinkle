@@ -20,10 +20,10 @@ import           UnliftIO
 import           Control.Lens        hiding ((#))
 import           Control.Monad
 import           Control.Monad.STM   (retry)
-import           Shpadoinkle.JSFFI   (JSObject, fromJSValUnsafe, getProp,
-                                      global, jsTreq, jsValToMaybeString,
-                                      mkEmptyObject, mkFun', purely, setProp,
-                                      toJSString, toJSVal, (#))
+import           Shpadoinkle.JSFFI   (JSObject, asString, fromJSValUnsafe,
+                                      getProp, global, jsTreq, mkEmptyObject,
+                                      mkFun', purely, setProp, toJSString,
+                                      toJSVal, (#))
 import           UnliftIO.Concurrent
 #endif
 
@@ -62,7 +62,7 @@ listenForSetState model =
     isWindow <- (`jsTreq` global) <$> getProp "source" e
     d <- fromJSValUnsafe @JSObject <$> getProp "data" e
     isRightType <- (`jsTreq` (purely toJSVal "shpadoinkle_set_state")) <$> getProp "type" d
-    msg <- jsValToMaybeString <$> getProp "msg" d
+    msg <- asString =<< getProp "msg" d
     case msg of
       Just msg' | isWindow && isRightType ->
         atomically . writeTVar model $ read msg'

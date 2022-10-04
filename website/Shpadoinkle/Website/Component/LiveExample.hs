@@ -40,10 +40,9 @@ import           Shpadoinkle.Html                          (br'_, class', div,
                                                             onInput, src)
 import           Shpadoinkle.Isreal.Types                  as Swan
 import           Shpadoinkle.JSFFI                         (JSM, JSObject,
-                                                            MonadJSM,
+                                                            MonadJSM, asText,
                                                             fromJSValUnsafe,
                                                             global,
-                                                            jsValToMaybeText,
                                                             mkEmptyObject,
                                                             mkFun', setProp,
                                                             setTimeout, (#))
@@ -161,7 +160,7 @@ mirror cc = baked $ do
   let cmo :: JSObject = fromJSValUnsafe cm
   onChange <- mkFun' $ \_ -> do
         jsv <- cmo # "getValue" $ ()
-        let raw :: Maybe Text = jsValToMaybeText jsv
+        raw :: Maybe Text <- asText jsv
         maybe (pure ()) (notify . Code . encodeUtf8 . TL.fromStrict) raw
   _ <- cmo # "on" $ ("change", onChange)
   _ <- setTimeout 33 =<< (mkFun' $ \_ -> void $ cmo # "refresh" $ ())

@@ -34,9 +34,9 @@ import           Servant.Client.JS           (BaseUrl (..), ClientEnv (..),
                                               parseBaseUrl, runClientM,
                                               showBaseUrl,
                                               withStreamingRequestJSM)
-import           Shpadoinkle.JSFFI           (JSM, JSObject, fromJSValUnsafe,
-                                              getProp, ghcjsOnly, global,
-                                              jsValToMaybeString)
+import           Shpadoinkle.JSFFI           (JSM, JSObject, asString,
+                                              fromJSValUnsafe, getProp,
+                                              ghcjsOnly, global)
 import           Text.Read                   (readMaybe)
 import           UnliftIO                    (MonadIO (liftIO))
 
@@ -61,9 +61,9 @@ getClientEnv = convJSM $ do
     & fmap (fromJSValUnsafe @JSObject)
     & (>>= getProp ("location" :: Text))
     & fmap (fromJSValUnsafe @JSObject)
-  protocol <- mapProtocol . jsValToMaybeString <$> getProp ("protocol" :: Text) loc
-  hostname <- fromMaybe "localhost" . jsValToMaybeString <$> getProp ("hostname" :: Text) loc
-  port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) . jsValToMaybeString <$> getProp ("port" :: Text) loc
+  protocol <- mapProtocol <$> (asString =<< getProp ("protocol" :: Text) loc)
+  hostname <- fromMaybe "localhost" <$> (asString =<< getProp ("hostname" :: Text) loc)
+  port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) <$> (asString =<< getProp ("port" :: Text) loc)
   return $ ClientEnv $ BaseUrl protocol hostname port ""
 
   where mapProtocol :: Maybe String -> Scheme
