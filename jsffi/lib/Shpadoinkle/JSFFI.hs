@@ -72,8 +72,8 @@ module Shpadoinkle.JSFFI
   , setTimeout
   , clearTimeout
 
-  , JSElement
-  , toJSElement
+  , JSHTMLElement
+  , toJSHTMLElement
   , setInnerHTML
   , createElement
   , appendChild
@@ -98,7 +98,6 @@ module Shpadoinkle.JSFFI
   , body
   , setTitle
 
-  , getGlobal
   , JSContextRef
   , askJSM
   , runJSM
@@ -270,32 +269,33 @@ class sub <: sup where
 
 type Refines sup sub = sub <: sup
 
--- | @<:@ is rx
-rxUc :: a -> a
-rxUc = id
+-- | @<:@ is reflexive
+rxUp :: a -> a
+rxUp = id
 rxDn :: a -> Maybe a
 rxDn = Just
 
 -- | @<:@ is transitive
-trUc :: forall a b c. (a <: b, b <: c) => a -> c
-trUc = (upcast :: a -> b) >>> (upcast :: b -> c)
+trUp :: forall a b c. (a <: b, b <: c) => a -> c
+trUp = (upcast :: a -> b) >>> (upcast :: b -> c)
 trDn :: forall a b c. (a <: b, b <: c) => c -> Maybe a
 trDn = (downcast :: c -> Maybe b) >=> (downcast :: b -> Maybe a)
 
 -- This is the reflexive+transitive closure of the (<:) relation.
 -- This is generated code and ought to be done with TemplateHaskell (WANT)
-instance JSString <: JSString where { upcast = rxUc; downcast = rxDn; }
-instance JSObject <: JSObject where { upcast = rxUc; downcast = rxDn; }
-instance JSKey <: JSKey where { upcast = rxUc; downcast = rxDn; }
-instance JSArray <: JSArray where { upcast = rxUc; downcast = rxDn; }
-instance JSFunction <: JSFunction where { upcast = rxUc; downcast = rxDn; }
-instance JSArgs <: JSArgs where { upcast = rxUc; downcast = rxDn; }
-instance JSElement <: JSElement where { upcast = rxUc; downcast = rxDn; }
-instance JSBool <: JSBool where { upcast = rxUc; downcast = rxDn; }
-instance JSStorage <: JSStorage where { upcast = rxUc; downcast = rxDn; }
-instance JSVal <: JSVal where { upcast = rxUc; downcast = rxDn; }
-instance JSArgs <: JSVal where { upcast = trUc @JSArgs @JSArray @JSVal; downcast = trDn @JSArgs @JSArray @JSVal; }
-instance JSElement <: JSVal where { upcast = trUc @JSElement @JSObject @JSVal; downcast = trDn @JSElement @JSObject @JSVal; }
+instance JSString <: JSString where { upcast = rxUp; downcast = rxDn; }
+instance JSObject <: JSObject where { upcast = rxUp; downcast = rxDn; }
+instance JSKey <: JSKey where { upcast = rxUp; downcast = rxDn; }
+instance JSArray <: JSArray where { upcast = rxUp; downcast = rxDn; }
+instance JSFunction <: JSFunction where { upcast = rxUp; downcast = rxDn; }
+instance JSArgs <: JSArgs where { upcast = rxUp; downcast = rxDn; }
+instance JSHTMLElement <: JSHTMLElement where { upcast = rxUp; downcast = rxDn; }
+instance JSBool <: JSBool where { upcast = rxUp; downcast = rxDn; }
+instance JSStorage <: JSStorage where { upcast = rxUp; downcast = rxDn; }
+instance JSVal <: JSVal where { upcast = rxUp; downcast = rxDn; }
+instance JSArgs <: JSVal where { upcast = trUp @JSArgs @JSArray @JSVal; downcast = trDn @JSArgs @JSArray @JSVal; }
+instance JSHTMLElement <: JSVal where { upcast = trUp @JSHTMLElement @JSObject @JSVal; downcast = trDn @JSHTMLElement @JSObject @JSVal; }
+instance JSStorage <: JSVal where { upcast = trUp @JSStorage @JSObject @JSVal; downcast = trDn @JSStorage @JSObject @JSVal; }
 
 -- | Perform a downcast. Throws in JSM if the downcast is invalid.
 downcastJSM :: forall sub sup. (Typeable sup, Typeable sub, sub <: sup, sup <: JSVal) => sup -> JSM sub
@@ -738,7 +738,7 @@ instance MonadJSM m => To m JSArgs Text where
 instance MonadJSM m => To m JSArgs JSFunction where
   to = toJSVal >=> toJSArgs
 
-instance MonadJSM m => To m JSArgs JSElement where
+instance MonadJSM m => To m JSArgs JSHTMLElement where
   to = toJSVal >=> toJSArgs
 
 instance MonadJSM m => To m JSArgs JSObject where
@@ -793,32 +793,31 @@ infixr 2 #!
 
 --------------------------------------------------------------------------------
 
--- WANTv: this should actually be HTMLElement
-newtype JSElement = JSElement { unJSElement :: JSObject }
+newtype JSHTMLElement = JSHTMLElement { unJSHTMLElement :: JSObject }
   deriving (Typeable)
 
-instance JSElement <: JSObject where
-  upcast = unJSElement
+instance JSHTMLElement <: JSObject where
+  upcast = unJSHTMLElement
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap (JSElement . JSObject) . nullableToMaybe . downcast_JSElement_js . unJSObject
+  downcast = fmap (JSHTMLElement . JSObject) . nullableToMaybe . downcast_JSHTMLElement_js . unJSObject
 
 foreign import javascript unsafe
   "$r = $1 instanceof Element ? $1 : null"
-  downcast_JSElement_js :: JSVal -> Nullable JSVal
+  downcast_JSHTMLElement_js :: JSVal -> Nullable JSVal
 #endif
 
-toJSElement :: To m JSElement a => a -> m JSElement
-toJSElement = to
+toJSHTMLElement :: To m JSHTMLElement a => a -> m JSHTMLElement
+toJSHTMLElement = to
 
-instance Applicative m => To m JSVal JSElement where
+instance Applicative m => To m JSVal JSHTMLElement where
   to = pure . upcast
 
-instance Applicative m => To m JSObject JSElement where
+instance Applicative m => To m JSObject JSHTMLElement where
   to = pure . upcast
 
-setInnerHTML :: (MonadJSM m, To m JSString s) => s -> JSElement -> m ()
+setInnerHTML :: (MonadJSM m, To m JSString s) => s -> JSHTMLElement -> m ()
 #ifdef ghcjs_HOST_OS
 setInnerHTML str el = do
   str' <- toJSVal =<< toJSString str
@@ -831,10 +830,10 @@ foreign import javascript unsafe
 setInnerHTML = ghcjsOnly
 #endif
 
-createElement :: MonadJSM m => Text -> m JSElement
+createElement :: MonadJSM m => Text -> m JSHTMLElement
 #ifdef ghcjs_HOST_OS
 createElement name =
-  toJSVal name >>= (fmap (JSElement . JSObject) . liftJSM <$> createElement_js)
+  toJSVal name >>= (fmap (JSHTMLElement . JSObject) . liftJSM <$> createElement_js)
 
 foreign import javascript unsafe
   "$r = document.createElement($1)"
@@ -843,7 +842,7 @@ foreign import javascript unsafe
 createElement = ghcjsOnly
 #endif
 
-appendChild :: (MonadJSM m, To m JSVal ch) => ch -> JSElement -> m ()
+appendChild :: (MonadJSM m, To m JSVal ch) => ch -> JSHTMLElement -> m ()
 #ifdef ghcjs_HOST_OS
 appendChild child parent = do
   child' <- toJSVal child
@@ -856,7 +855,7 @@ foreign import javascript unsafe
 appendChild = ghcjsOnly
 #endif
 
-setId :: MonadJSM m => Text -> JSElement -> m ()
+setId :: MonadJSM m => Text -> JSHTMLElement -> m ()
 #ifdef ghcjs_HOST_OS
 setId newId el =
   liftJSM $ setId_js (upcast el) (purely toJSVal newId)
@@ -868,7 +867,7 @@ foreign import javascript unsafe
 setId = ghcjsOnly
 #endif
 
-setAttribute :: MonadJSM m => Text -> Text -> JSElement -> m ()
+setAttribute :: MonadJSM m => Text -> Text -> JSHTMLElement -> m ()
 #ifdef ghcjs_HOST_OS
 setAttribute attr val el =
   liftJSM $ setAttribute_js (upcast el) (purely toJSVal attr) (purely toJSVal val)
@@ -880,11 +879,11 @@ foreign import javascript unsafe
 setAttribute = ghcjsOnly
 #endif
 
-getElementById :: MonadJSM m => Text -> m (Maybe JSElement)
+getElementById :: MonadJSM m => Text -> m (Maybe JSHTMLElement)
 #ifdef ghcjs_HOST_OS
 getElementById eid = do
   el <- liftJSM $ getElementById_js (purely toJSVal eid)
-  pure $ JSElement . JSObject <$> nullableToMaybe el
+  pure $ JSHTMLElement . JSObject <$> nullableToMaybe el
 
 foreign import javascript unsafe
   "$r = document.getElementById($1)"
@@ -939,16 +938,15 @@ jsFalse = ghcjsOnly
 
 --------------------------------------------------------------------------------
 
--- WANTv this should contain a JSObject
-newtype JSStorage = JSStorage { unJSStorage :: JSVal }
+newtype JSStorage = JSStorage { unJSStorage :: JSObject }
   deriving (Typeable)
 
-instance JSStorage <: JSVal where
+instance JSStorage <: JSObject where
   upcast = unJSStorage
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap JSStorage . nullableToMaybe . downcast_JSStorage_js
+  downcast = fmap (JSStorage . JSObject) . nullableToMaybe . downcast_JSStorage_js . upcast
 
 foreign import javascript unsafe
   "$r = $1 instanceof Storage ? $1 : null"
@@ -962,12 +960,12 @@ instance Applicative m => To m JSStorage JSStorage where
   to = pure
 
 instance Applicative m => To m JSVal JSStorage where
-  to = pure . unJSStorage
+  to = toJSVal . unJSStorage
 
 localStorage, sessionStorage :: JSStorage
 #ifdef ghcjs_HOST_OS
-localStorage = JSStorage $ unsafePerformIO (getProp "localStorage" window)
-sessionStorage = JSStorage $ unsafePerformIO (getProp "sessionStorage" window)
+localStorage = unsafePerformIO $ getProp' "localStorage" window
+sessionStorage = unsafePerformIO $ getProp' "sessionStorage" window
 #else
 localStorage = ghcjsOnly
 sessionStorage = ghcjsOnly
@@ -978,7 +976,7 @@ setItem :: (MonadJSM m, To m JSString key, To m JSString val) => key -> val -> J
 setItem key val store = do
   key' <- toJSVal =<< toJSString key
   val' <- toJSVal =<< toJSString val
-  liftJSM $ setItem_js (unJSStorage store) key' val'
+  liftJSM $ setItem_js (upcast store) key' val'
 
 foreign import javascript unsafe
   "$1.setItem($2, $3)"
@@ -991,7 +989,7 @@ getItem :: (MonadJSM m, To m JSString key) => key -> JSStorage -> m (Maybe JSStr
 #ifdef ghcjs_HOST_OS
 getItem key store = do
   key' <- toJSVal =<< toJSString key
-  mStr <- liftJSM $ nullableToMaybe <$> getItem_js (unJSStorage store) key'
+  mStr <- liftJSM $ nullableToMaybe <$> getItem_js (upcast store) key'
   pure $ JSString <$> mStr
 
 foreign import javascript unsafe
@@ -1016,34 +1014,13 @@ global = ghcjsOnly
 #endif
 
 window :: JSObject
-#ifdef ghcjs_HOST_OS
-window = unsafePerformIO $ downcastJSM =<< window_js
-foreign import javascript unsafe
-  "$r = window"
-  window_js :: JSM JSVal
-#else
-window = ghcjsOnly
-#endif
+window = unsafePerformIO $ getProp' "window" global
 
 document :: JSObject
-#ifdef ghcjs_HOST_OS
-document = unsafePerformIO $ downcastJSM =<< document_js
-foreign import javascript unsafe
-  "$r = document"
-  document_js :: JSM JSVal
-#else
-document = ghcjsOnly
-#endif
+document = unsafePerformIO $ getProp' "document" global
 
-body :: JSElement
-#ifdef ghcjs_HOST_OS
-body = unsafePerformIO $ downcastJSM =<< body_js
-foreign import javascript unsafe
-  "$r = document.body"
-  body_js :: JSM JSVal
-#else
-body = ghcjsOnly
-#endif
+body :: JSHTMLElement
+body = unsafePerformIO $ getProp' "body" document
 
 
 setTitle :: forall m s. (MonadJSM m, To m JSString s) => s -> m ()
@@ -1058,18 +1035,6 @@ foreign import javascript unsafe
   setTitle_js :: JSVal -> JSM ()
 #else
 setTitle = ghcjsOnly
-#endif
-
-
--- WANT: replace callsites with 'global' and 'getProp'/'(#)'
-getGlobal :: (MonadJSM m, To m JSKey k) => k -> m JSVal
-#ifdef ghcjs_HOST_OS
-getGlobal = (liftJSM <$> getGlobal_js) <=< toJSVal <=< toJSKey
-foreign import javascript unsafe
-  "$r = globalThis[$1]"
-  getGlobal_js :: JSVal -> JSM JSVal
-#else
-getGlobal = ghcjsOnly
 #endif
 
 

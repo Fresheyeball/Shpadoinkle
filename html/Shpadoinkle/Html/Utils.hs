@@ -15,7 +15,7 @@ import           Control.Monad     (forM_)
 import           Data.Function     ((&))
 import           Data.Text         (Text)
 import           Shpadoinkle       (MonadJSM, RawNode (RawNode))
-import           Shpadoinkle.JSFFI as JSFFI (JSElement, JSString, To,
+import           Shpadoinkle.JSFFI as JSFFI (JSHTMLElement, JSString, To,
                                              appendChild, body, createElement,
                                              createTextNode, document,
                                              getElementById, getProp', liftJSM,
@@ -26,7 +26,7 @@ import           Shpadoinkle.JSFFI as JSFFI (JSElement, JSString, To,
 default (Text)
 
 
-getHead :: MonadJSM m => m JSElement
+getHead :: MonadJSM m => m JSHTMLElement
 getHead = getProp' "head" document
 
 

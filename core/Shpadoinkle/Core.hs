@@ -62,9 +62,9 @@ import           Data.Text                (Text, pack)
 import           Data.Text.Lazy           (toStrict)
 import           Data.Text.Lazy.Builder   (toLazyText)
 import           Prelude                  hiding ((.))
-import           Shpadoinkle.JSFFI        (JSElement, JSM, JSObject, JSString,
-                                           JSVal, MonadJSM, askJSM, ghcjsOnly,
-                                           liftJSM, runJSM)
+import           Shpadoinkle.JSFFI        (JSHTMLElement, JSM, JSObject,
+                                           JSString, JSVal, MonadJSM, askJSM,
+                                           ghcjsOnly, liftJSM, runJSM)
 import           UnliftIO                 (MonadUnliftIO (..), UnliftIO (..))
 import           UnliftIO.STM             (STM, TVar, atomically, modifyTVar,
                                            newTVarIO, readTVar, readTVarIO,

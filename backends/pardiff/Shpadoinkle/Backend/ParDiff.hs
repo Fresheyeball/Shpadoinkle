@@ -70,7 +70,7 @@ import           Data.Maybe                  (isJust)
 import           Data.Monoid                 ((<>))
 import           Data.Once                   (Once, newOnce, runOnce)
 import           Data.Text                   (Text)
-import           Shpadoinkle.JSFFI           (JSElement, JSObject, JSString,
+import           Shpadoinkle.JSFFI           (JSHTMLElement, JSObject, JSString,
                                               downcastJSM, getProp', global,
                                               jsFalse, jsTrue, liftJSM, mkFun',
                                               purely, setInnerHTML, setProp,
@@ -459,7 +459,7 @@ instance
 -- | Get the @<body>@ DOM node after emptying it.
 stage :: MonadJSM m => ParDiffT a m RawNode
 stage = liftJSM $ do
-  body :: JSElement <- do
+  body :: JSHTMLElement <- do
     document :: JSObject <- getProp' "document" global
     getProp' "body" document
   setInnerHTML "" body
