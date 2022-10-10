@@ -42,8 +42,8 @@ import           Data.Text.Lazy          (toStrict)
 import           Data.Text.Lazy.Encoding (decodeUtf8)
 import           Prelude                 hiding (log)
 import           Shpadoinkle.JSFFI       (JSObject, JSVal, MonadJSM, To, askJSM,
-                                          fromJSValUnsafe, getProp, global,
-                                          liftJSM, runJSM, toJSVal, (#))
+                                          getProp', global, liftJSM, runJSM,
+                                          toJSVal, (#))
 import           System.IO.Unsafe        (unsafePerformIO)
 
 
@@ -81,8 +81,8 @@ class (forall m. MonadJSM m => To m JSVal a) => ToJSVal a
 -- native <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse JSON.parse> before being sent to the console.
 instance LogJS ToJSON where
   logJS t a = liftJSM $ do
-    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
-    json    <- fromJSValUnsafe @JSObject <$> getProp "JSON" global
+    console :: JSObject <- getProp' "console" global
+    json :: JSObject    <- getProp' "JSON" global
     parsed  <- json # "parse" $ (toStrict . decodeUtf8 $ encode a)
     void ( console # t $ parsed )
 
@@ -90,14 +90,14 @@ instance LogJS ToJSON where
 -- | Logs against 'Show' will be converted to a 'String' before being sent to the console.
 instance LogJS Show where
   logJS t a = liftJSM $ do
-    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    console :: JSObject <- getProp' "console" global
     void ( console # t $ pack (show a) )
 
 
 -- | Logs against 'ToJSVal' will be converted to a 'JSVal' before being sent to the console.
 instance LogJS ToJSVal where
   logJS t a = liftJSM $ do
-    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    console :: JSObject <- getProp' "console" global
     a' <- toJSVal a
     void ( console # t $ a' )
 
@@ -135,21 +135,21 @@ class Assert (c :: Type -> Constraint) where
 
 instance Assert ToJSON where
   assert b x = liftJSM $ do
-    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
-    json <- fromJSValUnsafe @JSObject <$> getProp "JSON" global
+    console :: JSObject <- getProp' "console" global
+    json :: JSObject <- getProp' "JSON" global
     parsed <- json # "parse" $ (toStrict . decodeUtf8 $ encode x)
     b' <- toJSVal b
     void $ console # "assert" $ (b', parsed)
 
 instance Assert Show where
   assert b x = liftJSM $ do
-    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    console :: JSObject <- getProp' "console" global
     b' <- toJSVal b
     void $ console # "assert" $ (b', pack $ show x)
 
 instance Assert ToJSVal where
   assert b x = liftJSM $ do
-    console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+    console :: JSObject <- getProp' "console" global
     b' <- toJSVal b
     x' <- toJSVal x
     void $ console # "assert" $ (b', x')
@@ -188,12 +188,12 @@ newtype TimeLabel = TimeLabel { unTimeLabel :: Text }
 -- | Start a timer using <https://developer.mozilla.org/en-US/docs/Web/API/Console/time console.time>
 time :: MonadJSM m => TimeLabel -> m ()
 time (TimeLabel l) = liftJSM $ do
-  console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+  console :: JSObject <- getProp' "console" global
   void ( console # "time" $ l )
 
 
 -- | End a timer and print the milliseconds elapsed since it started using <https://developer.mozilla.org/en-US/docs/Web/API/Console/timeEnd console.timeEnd>
 timeEnd :: MonadJSM m => TimeLabel -> m ()
 timeEnd (TimeLabel l) = liftJSM $ do
-  console <- fromJSValUnsafe @JSObject <$> getProp "console" global
+  console :: JSObject <- getProp' "console" global
   void ( console # "timeEnd" $ l )

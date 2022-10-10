@@ -62,8 +62,9 @@ import           Data.Text                (Text, pack)
 import           Data.Text.Lazy           (toStrict)
 import           Data.Text.Lazy.Builder   (toLazyText)
 import           Prelude                  hiding ((.))
-import           Shpadoinkle.JSFFI        (JSM, JSString, JSVal, MonadJSM,
-                                           askJSM, ghcjsOnly, liftJSM, runJSM)
+import           Shpadoinkle.JSFFI        (JSElement, JSM, JSObject, JSString,
+                                           JSVal, MonadJSM, askJSM, ghcjsOnly,
+                                           liftJSM, runJSM)
 import           UnliftIO                 (MonadUnliftIO (..), UnliftIO (..))
 import           UnliftIO.STM             (STM, TVar, atomically, modifyTVar,
                                            newTVarIO, readTVar, readTVarIO,
@@ -311,12 +312,14 @@ type m ~> n = forall a. m a -> n a
 
 -- | A DOM node reference.
 -- Useful for building baked potatoes and binding a Backend view to the page
-newtype RawNode  = RawNode  { unRawNode  :: JSVal }
--- WANT^ this should be strengthened to JSObject imo
+-- Not necessarily an element; may be for instance a text node
+newtype RawNode  = RawNode  { unRawNode  :: JSObject }
+-- WANT: strengthen to some kind of Node type
 
 
 -- | A raw event object reference
-newtype RawEvent = RawEvent { unRawEvent :: JSVal }
+newtype RawEvent = RawEvent { unRawEvent :: JSObject }
+-- WANT: strengthen to some kind of event type
 
 
 -- | Strings are overloaded as the class property:

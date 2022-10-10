@@ -42,7 +42,7 @@ import           Shpadoinkle                             (JSM, NFData,
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom)
 import           Shpadoinkle.Html                        as H
 import           Shpadoinkle.Html.TH.AssetLink           (assetLink)
-import           Shpadoinkle.JSFFI                       (JSVal)
+import           Shpadoinkle.JSFFI                       (JSVal, downcastJSM)
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle.JSFFI                       (ghcjsOnly)
 #endif
@@ -185,14 +185,14 @@ play = jsmFromJSaddle $ do
   doc <- currentDocumentUnchecked
   isSubsequent <- traverse toJSVal =<< getElementById doc gameId
   case isSubsequent of
-    Just raw -> return $ RawNode (jsValFromJSaddle raw)
+    Just raw -> jsmToJSaddle $ pure . RawNode =<< downcastJSM . jsValFromJSaddle =<< pure raw
     Nothing -> do
       win <- currentWindowUnchecked
       elm <- createElement doc "div"
       setId elm gameId
       model <- newTVarIO $ Game 24 0 Idle FaceRight
       _ <- requestAnimationFrame win =<< jsmToJSaddle (animate win model)
-      raw <- RawNode . jsValFromJSaddle <$> toJSVal elm
+      raw <- jsmToJSaddle $ pure . RawNode =<< downcastJSM . jsValFromJSaddle =<< jsmFromJSaddle (toJSVal elm)
       _ <- jsmToJSaddle . forkIO $ threadDelay 1
         >> shpadoinkle id runSnabbdom model game (pure raw)
       return raw

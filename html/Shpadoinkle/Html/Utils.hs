@@ -18,17 +18,16 @@ import           Shpadoinkle       (MonadJSM, RawNode (RawNode))
 import           Shpadoinkle.JSFFI as JSFFI (JSElement, JSString, To,
                                              appendChild, body, createElement,
                                              createTextNode, document,
-                                             fromJSValUnsafe, getElementById,
-                                             getProp, jsNull, liftJSM, purely,
+                                             getElementById, getProp', liftJSM,
                                              setAttribute, setInnerHTML,
-                                             setTitle, toJSVal)
+                                             setTitle, upcast)
 
 
 default (Text)
 
 
 getHead :: MonadJSM m => m JSElement
-getHead = fromJSValUnsafe @JSElement <$> getProp "head" document
+getHead = getProp' "head" document
 
 
 -- | Add a stylesheet to the page via @link@ tag.
@@ -58,7 +57,7 @@ setTitle = JSFFI.setTitle
 getBody :: MonadJSM m => m RawNode
 getBody = do
   body & setInnerHTML ""
-  liftJSM $ RawNode <$> toJSVal body
+  pure $ RawNode (upcast body)
 
 
 addMeta :: MonadJSM m => [(Text, Text)] -> m ()
@@ -91,12 +90,8 @@ addScriptText js = liftJSM $ do
   getHead >>= appendChild tag
 
 
-getById :: MonadJSM m => Text -> m RawNode
-getById eid = do
-  mEl <- getElementById eid
-  pure $ case mEl of
-    Nothing -> RawNode jsNull
-    Just el -> RawNode (purely toJSVal el)
+getById :: MonadJSM m => Text -> m (Maybe RawNode)
+getById eid = (fmap . fmap) (RawNode . upcast) (getElementById eid)
 
 
 treatEmpty :: Foldable f => Functor f => a -> (f a -> a) -> (b -> a) -> f b -> a

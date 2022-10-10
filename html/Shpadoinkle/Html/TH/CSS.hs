@@ -29,8 +29,8 @@ import           Language.Haskell.TH.Syntax
 import           Data.Text.Encoding
 import           GHCJS.Marshal.Pure
 import           GHCJS.Types                as T
-import           Shpadoinkle.JSFFI          (JSArray, JSM, fromJSValUnsafe,
-                                             jsArrayToList, toTextLax)
+import           Shpadoinkle.JSFFI          (JSArray, JSM, downcastJSM,
+                                             jsArrayToList, toTextLax, upcast)
 import           System.IO.Unsafe           (unsafePerformIO)
 #else
 import           Text.Regex.PCRE
@@ -53,7 +53,7 @@ foreign import javascript unsafe "Array.from($1.match(new RegExp($2, 'g')))"
   js_match :: T.JSString -> T.JSString -> IO JSVal
 
 match :: T.JSString -> T.JSString -> JSM JSArray
-match a b = fromJSValUnsafe @JSArray <$> js_match a b
+match a b = downcastJSM @JSArray =<< js_match a b
 
 
 notMempty :: (Eq m, Monoid m) => m -> Maybe m

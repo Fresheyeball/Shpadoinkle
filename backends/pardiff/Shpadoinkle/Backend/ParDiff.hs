@@ -71,14 +71,11 @@ import           Data.Monoid                 ((<>))
 import           Data.Once                   (Once, newOnce, runOnce)
 import           Data.Text                   (Text)
 import           Shpadoinkle.JSFFI           (JSElement, JSObject, JSString,
-                                              fromJSValUnsafe, getGlobal,
-                                              getProp, global, jsFalse, jsTrue,
-                                              liftJSM, mkFun', purely,
-                                              setInnerHTML, setProp, toJSString,
-                                              toJSVal, (#))
-#ifdef ghcjs_HOST_OS
-import           Shpadoinkle.JSFFI           (toJSObject)
-#endif
+                                              downcastJSM, getProp', global,
+                                              jsFalse, jsTrue, liftJSM, mkFun',
+                                              purely, setInnerHTML, setProp,
+                                              toJSObject, toJSString, toJSVal,
+                                              upcast, (#))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
@@ -180,7 +177,7 @@ props :: Monad m
       -> RawNode -- ^ DOM Node
       -> JSM ()
 props toJSM i (Props ps) (RawNode raw) = do
-  let raw' = fromJSValUnsafe raw
+  raw' <- downcastJSM raw
   traverseWithKey_ (prop toJSM i raw') ps
 
 
@@ -213,7 +210,7 @@ setProptado :: NFData a
             -> JSObject -- ^ DOM Node
             -> JSM ()
 setProptado i f o = do
-  elm <- RawNode <$> toJSVal o
+  elm <- RawNode <$> toJSObject o
   stm <- f elm
   let go = atomically stm >>= writeUpdate i >> go
   void $ forkIO go
@@ -227,10 +224,11 @@ setListener :: NFData a
             -> JSString -- ^ Event Name
             -> JSM ()
 setListener i m o k = do
-  elm <- RawNode <$> toJSVal o
+  elm <- RawNode <$> toJSObject o
   f <- toJSVal <=< mkFun' $ \case
     e:_ -> do
-      x <- m elm (RawEvent e)
+      e' :: JSObject <- downcastJSM e
+      x <- m elm (RawEvent e')
       writeUpdate i x
     _ -> return ()
   setProp ("on" <> k) f o
@@ -314,7 +312,7 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
   let include k v =
         let k' = purely toJSString $ k
         in  case v of
-          PPotato p -> void . p . RawNode =<< toJSVal obj' -- FIXME why throw away continuation...???
+          PPotato p -> void . p . RawNode =<< toJSObject obj' -- FIXME why throw away continuation...???
           PData j -> setProp k' j obj'
           -- new text prop, set
           PText t -> do
@@ -342,14 +340,14 @@ patchChildren
 patchChildren (RawNode p) [] new = liftJSM $ do
   forM_ new $ \newChild -> do
     RawNode cRaw <- runOnce (getRaw newChild)
-    fromJSValUnsafe @JSObject p # "appendChild" $ cRaw
+    downcastJSM @JSObject =<< ( p # "appendChild" $ cRaw )
   pure new
 patchChildren _ old [] = liftJSM $ do
-  doc <- getGlobal "document"
-  tmp <- fromJSValUnsafe @JSObject doc # "createElement" $ "div"
+  doc :: JSObject <- getProp' "document" global
+  tmp <- downcastJSM @JSObject =<< (doc # "createElement" $ "div")
   old' <- traverse (fmap unRawNode . runOnce . getRaw) old
-  void (fromJSValUnsafe @JSObject tmp # "replaceChildren" $ old')
-  void (fromJSValUnsafe @JSObject tmp # "remove" $ ())
+  void (downcastJSM @JSObject =<< (tmp # "replaceChildren" $ old'))
+  void (downcastJSM @JSObject =<< (tmp # "remove" $ ()))
   pure []
 patchChildren parent (old:olds) (new:news) =
   (:) <$> patch' parent old new <*> patchChildren parent olds news
@@ -371,7 +369,7 @@ patch' parent old new = do
       -- text node changed
       | otherwise -> liftJSM $ do
         RawNode r <- runOnce raw
-        let obj' :: JSObject = fromJSValUnsafe r
+        obj' :: JSObject <- downcastJSM r
         tNew <- fmap (purely toJSVal) . htmlDecode . purely toJSString $ t
         setProp "nodeValue" tNew obj'
         return (ParTextNode raw t)
@@ -381,7 +379,7 @@ patch' parent old new = do
       | name == name' -> do
         raw' <- liftJSM $ do
           RawNode r <- runOnce raw
-          let obj' = fromJSValUnsafe r
+          obj' <- downcastJSM r
           managePropertyState i obj' ps ps'
           pure (RawNode r)
         cs'' <- patchChildren raw' cs cs'
@@ -389,7 +387,7 @@ patch' parent old new = do
 
     -- node definitely has changed
     _ -> liftJSM $ do
-        let p :: JSObject = fromJSValUnsafe . unRawNode $ parent
+        p :: JSObject <- downcastJSM (unRawNode parent)
         RawNode r <- runOnce $ getRaw old
         RawNode c <- runOnce $ getRaw new
         _ <- p # "replaceChild" $ (c, r)
@@ -411,12 +409,12 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
       i <- askModel
       let ps' = toProps ps
       raw <- liftJSM . newOnce $ do
-        doc <- getGlobal "document"
-        raw' <- fromJSValUnsafe @JSObject doc # "createElement" $ name
+        doc :: JSObject <- getProp' "document" global
+        raw' :: JSObject <- downcastJSM =<< ( doc # "createElement" $ name )
         props toJSM i ps' (RawNode raw')
         forM_ cs' $ \c -> do
           RawNode cRaw <- runOnce (getRaw c)
-          fromJSValUnsafe @JSObject raw' # "appendChild" $ cRaw
+          downcastJSM @JSObject =<< (raw' # "appendChild" $ cRaw)
         return (RawNode raw')
 
       let p = Props (makeProp toJSM i <$> getProps ps')
@@ -433,9 +431,9 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
     mkText :: Text -> ParDiffT a m (ParVNode a)
     mkText t = liftJSM $ do
       raw <- newOnce $ do
-        doc :: JSObject <- fromJSValUnsafe <$> getGlobal "document"
+        doc :: JSObject <- getProp' "document" global
         t' <- fmap (purely toJSVal) . htmlDecode . purely toJSString $ t
-        RawNode <$> (doc # "createTextNode" $ t')
+        fmap RawNode $ downcastJSM =<< (doc # "createTextNode" $ t')
       return $ ParTextNode raw t
 
 
@@ -451,7 +449,7 @@ instance
     -- first patch
     Nothing ->
       liftJSM $ do
-        let p :: JSObject = fromJSValUnsafe . unRawNode $ parent
+        p :: JSObject <- downcastJSM (unRawNode parent)
         RawNode c <- runOnce (getRaw new)
         _ <- p # "appendChild" $ c
         return new
@@ -461,9 +459,9 @@ instance
 -- | Get the @<body>@ DOM node after emptying it.
 stage :: MonadJSM m => ParDiffT a m RawNode
 stage = liftJSM $ do
-  body <- do
-    document <- fromJSValUnsafe @JSObject <$> getProp "document" global
-    fromJSValUnsafe @JSElement <$> getProp "body" document
+  body :: JSElement <- do
+    document :: JSObject <- getProp' "document" global
+    getProp' "body" document
   setInnerHTML "" body
-  RawNode <$> toJSVal body
+  pure . RawNode $ upcast body
 {-# SPECIALIZE stage :: ParDiffT a JSM RawNode #-}

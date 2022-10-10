@@ -39,10 +39,9 @@ module Shpadoinkle.Html.Event
 import           Control.Concurrent.STM       (retry)
 import           Control.Monad                (unless, void)
 import           Control.Monad.IO.Class       (liftIO)
-import           Data.Function                ((&))
 import           Data.Text
 import           Shpadoinkle.JSFFI            (JSObject, JSString, JSVal,
-                                               fromJSValUnsafe, getProp, global,
+                                               downcastJSM, getProp, global,
                                                mkFun', toBoolLax, toNumberLax,
                                                toTextLax, (#))
 import           UnliftIO.Concurrent          (forkIO)
@@ -56,7 +55,7 @@ import           Shpadoinkle.Keyboard
 
 mkWithFormVal ::  (JSVal -> JSM v) -> Text -> JSString -> (v -> Continuation m a) -> (Text, Prop m a)
 mkWithFormVal valTo evt from f = listenRaw evt $ \(RawNode n) _ ->
-  f <$> liftJSM (valTo =<< getProp from (fromJSValUnsafe @JSObject n))
+  f <$> liftJSM (valTo =<< getProp from n)
 
 
 onInputC ::  (Text -> Continuation m a) -> (Text, Prop m a)
@@ -76,7 +75,7 @@ $(mkEventVariantsAfforded "option" ''Text)
 
 mkOnKey ::  Text -> (KeyCode -> Continuation m a) -> (Text, Prop m a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
-  f <$> liftJSM (fmap round $ toNumberLax =<< getProp ("keyCode" :: Text) (fromJSValUnsafe @JSObject e))
+  f <$> liftJSM (fmap round $ toNumberLax =<< getProp ("keyCode" :: Text) e)
 
 
 onKeyupC, onKeydownC, onKeypressC :: (KeyCode -> Continuation m a) -> (Text, Prop m a)
@@ -94,11 +93,11 @@ $(mkEventVariantsAfforded "check" ''Bool)
 
 
 preventDefault :: RawEvent -> JSM ()
-preventDefault e = void $ (fromJSValUnsafe @JSObject . unRawEvent $ e) # ("preventDefault" :: String) $ ([] :: [()])
+preventDefault e = void $ (unRawEvent $ e) # ("preventDefault" :: String) $ ([] :: [()])
 
 
 stopPropagation :: RawEvent -> JSM ()
-stopPropagation e = void $ (fromJSValUnsafe @JSObject . unRawEvent $ e) # ("stopPropagation" :: String) $ ([] :: [()])
+stopPropagation e = void $ (unRawEvent $ e) # ("stopPropagation" :: String) $ ([] :: [()])
 
 
 onSubmitC :: Continuation m a -> (Text, Prop m a)
@@ -134,8 +133,8 @@ onClickAwayC c =
         (mkFun' $ \case
           evt:_ -> void . forkIO $ do
 
-            target   <- fromJSValUnsafe @JSObject evt & getProp ("target" :: Text)
-            onTarget <- fromJSValUnsafe @JSObject elm # ("contains" :: Text) $ target
+            target   <- downcastJSM @JSObject evt >>= getProp ("target" :: Text)
+            onTarget <- downcastJSM @JSObject elm >>= (\e -> e # ("contains" :: Text) $ target)
             toBoolLax onTarget >>= \case
               False -> notify
               _     -> return ()
@@ -156,7 +155,7 @@ mkGlobalKey evtName c =
 
      void $ (global # ("addEventListener" :: Text)) . (evtName,) =<<
         (mkFun' $ \case
-           e:_ -> notify . round =<< toNumberLax =<< getProp ("keyCode" :: Text) (fromJSValUnsafe @JSObject e)
+           e:_ -> notify . round =<< toNumberLax =<< getProp ("keyCode" :: Text) =<< downcastJSM @JSObject e
            []  -> return ())
 
      return stream
@@ -173,7 +172,7 @@ mkGlobalKeyNoRepeat evtName c =
      void $ (global # ("addEventListener" :: Text)) . (evtName,) =<<
         (mkFun' $ \case
            e:_ -> do
-             let eObj = fromJSValUnsafe @JSObject e
+             eObj <- downcastJSM @JSObject e
              isRepeat <- toBoolLax =<< getProp ("repeat" :: Text) eObj
              unless isRepeat $
                notify . round =<< toNumberLax =<< getProp ("keyCode" :: Text) eObj
@@ -204,6 +203,6 @@ $(mkEventVariants "escape")
 
 onEnterC :: (Text -> Continuation m a) -> (Text, Prop m a)
 onEnterC f = listenRaw "keyup" $ \(RawNode n) _ -> liftJSM $
-  f <$> (toTextLax =<< getProp ("value" :: Text) (fromJSValUnsafe @JSObject n))
+  f <$> (toTextLax =<< getProp ("value" :: Text) =<< downcastJSM @JSObject n)
 $(mkEventVariantsAfforded "enter" ''Text)
 

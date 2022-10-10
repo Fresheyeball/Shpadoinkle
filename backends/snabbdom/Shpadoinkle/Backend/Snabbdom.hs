@@ -55,16 +55,17 @@ import           Data.FileEmbed              (embedStringFile)
 import           Data.Map.Internal           (Map (Bin, Tip))
 import           Data.Text                   (Text, isPrefixOf, words)
 import           Prelude                     hiding (id, words, (.))
-import           Shpadoinkle.JSFFI           (IsJSVal (..), JSObject, JSVal,
-                                              To (to), appendChild, body,
-                                              createElement, eval,
-                                              fromJSValUnsafe, getProp, global,
-                                              jsTrue, mkEmptyObject, mkFun',
-                                              purely, setId, setInnerHTML,
-                                              setProp, toJSBool, toJSString,
+import           Shpadoinkle.JSFFI           (JSObject, JSVal, appendChild,
+                                              body, createElement, downcastJSM,
+                                              downcastUnsafe, eval, getProp,
+                                              getProp', global, jsTrue,
+                                              mkEmptyObject, mkFun', purely,
+                                              setId, setInnerHTML, setProp,
+                                              toJSBool, toJSObject, toJSString,
                                               toJSVal, (#))
 #ifdef ghcjs_HOST_OS
-import           Shpadoinkle.JSFFI           (jsArrayFromList, toJSObject)
+import           Shpadoinkle.JSFFI           (jsArrayFromList, toJSObject,
+                                              upcast)
 #endif
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
@@ -142,8 +143,7 @@ traverseWithKey_ f = go
 
 
 newtype SnabVNode = SnabVNode { unVNode :: JSVal }
-instance Applicative m => To m JSVal SnabVNode where to = pure . unVNode
-instance IsJSVal SnabVNode where fromJSValUnsafe = SnabVNode
+-- WANT: strengthen to some JSNode type
 
 
 -- | Insert function @f@ in @o@ as field @k@, after already running an existing property function if it exists.
@@ -177,8 +177,8 @@ props toJSM i (Props xs) = do
         f' <- mkFun' $
           let
             g vnode'' = do
-              vnode_ <- fromJSValUnsafe @JSObject <$> toJSVal vnode''
-              stm <- pot . RawNode =<< getProp "elm" vnode_
+              vnode_ <- downcastJSM @JSObject vnode''
+              stm <- pot . RawNode =<< getProp' "elm" vnode_
               let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i)
               void $ forkIO go
           in \case
@@ -207,8 +207,9 @@ props toJSM i (Props xs) = do
         f' <- mkFun' $ \case
           [] -> return ()
           ev:_ -> do
-            rn <- getProp "target" =<< fromJSValUnsafe @JSObject <$> toJSVal ev
-            x <- f (RawNode rn) (RawEvent ev)
+            rn <- getProp' "target" =<< downcastJSM @JSObject ev
+            ev' <- downcastJSM ev
+            x <- f (RawNode rn) (RawEvent ev')
             writeUpdate i $ hoist (toJSM . runSnabbdom i) x
         setProp k' (purely toJSVal f') listenersObj
 
@@ -252,11 +253,11 @@ foreign import javascript unsafe "window['vnode']('div',$1)" vnodePotato :: JSOb
 
 
 -- | Call-site for Snabbdom's @patch()@ function
-patchh :: JSVal -> SnabVNode -> JSM ()
+patchh :: JSObject -> SnabVNode -> JSM ()
 #ifndef ghcjs_HOST_OS
-patchh previousNode newNode = void $ ( global # "patchh" $ (previousNode, newNode) )
+patchh previousNode (SnabVNode newNode) = void $ ( global # "patchh" $ (previousNode, newNode) )
 #else
-patchh p (SnabVNode n)      = patchh' p n
+patchh p (SnabVNode n) = patchh' (upcast p) n
 foreign import javascript unsafe "window['patchh']($1,$2)" patchh' :: JSVal -> JSVal -> JSM ()
 #endif
 
@@ -277,8 +278,8 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
         (RawNode rn, stm) <- mrn
         ins <- toJSVal =<< mkFun' (\case
           [n] -> do
-            elm' <- getProp "elm" (fromJSValUnsafe @JSObject n)
-            void $ fromJSValUnsafe @JSObject elm' # "appendChild" $ rn
+            elm' <- getProp "elm" =<< downcastJSM @JSObject n
+            void $ downcastJSM @JSObject elm' >>= (\e -> e # "appendChild" $ rn)
           _   -> return ())
         hook <- mkEmptyObject
         setProp "insert" ins hook
@@ -296,7 +297,7 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
 
   patch :: RawNode -> Maybe SnabVNode -> SnabVNode -> SnabbdomT a m SnabVNode
   patch (RawNode container) mPreviousNode newNode = liftJSM $ newNode <$ patchh previousNode newNode
-    where previousNode = maybe container unVNode mPreviousNode
+    where previousNode = maybe container (downcastUnsafe . unVNode) mPreviousNode
 
 
   setup :: JSM () -> JSM ()
@@ -324,6 +325,6 @@ stage = liftJSM $ do
   placeholder & setId ("stage" :: Text)
   body & setInnerHTML ""
   _ <- body & appendChild placeholder
-  RawNode <$> toJSVal placeholder
+  RawNode <$> toJSObject placeholder
 {-# SPECIALIZE stage :: SnabbdomT a JSM RawNode #-}
 

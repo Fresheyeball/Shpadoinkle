@@ -41,8 +41,7 @@ import           Shpadoinkle.Html                          (br'_, class', div,
 import           Shpadoinkle.Isreal.Types                  as Swan
 import           Shpadoinkle.JSFFI                         (JSM, JSObject,
                                                             MonadJSM, asText,
-                                                            fromJSValUnsafe,
-                                                            global,
+                                                            downcastJSM, global,
                                                             mkEmptyObject,
                                                             mkFun', setProp,
                                                             setTimeout, (#))
@@ -157,11 +156,12 @@ mirror cc = baked $ do
   container' <- global # "createElement" $ "div"
   cfg <- mirrorCfg cc
   cm  <- global # "CodeMirror" $ (container', cfg)
-  let cmo :: JSObject = fromJSValUnsafe cm
+  cmo :: JSObject <- downcastJSM cm
   onChange <- mkFun' $ \_ -> do
         jsv <- cmo # "getValue" $ ()
         raw :: Maybe Text <- asText jsv
         maybe (pure ()) (notify . Code . encodeUtf8 . TL.fromStrict) raw
   _ <- cmo # "on" $ ("change", onChange)
   _ <- setTimeout 33 =<< (mkFun' $ \_ -> void $ cmo # "refresh" $ ())
-  return (RawNode container', stream)
+  container'' <- downcastJSM container'
+  return (RawNode container'', stream)

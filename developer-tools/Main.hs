@@ -23,8 +23,8 @@ import           Data.Time                   (UTCTime, defaultTimeLocale,
 import           GHC.Generics                (Generic)
 import           Prelude                     hiding (div, span)
 import           Shpadoinkle.JSFFI           (JSKey, JSM, JSObject, MonadJSM,
-                                              To, asText, fromJSValUnsafe,
-                                              getProp, global, jsTreq, liftJSM,
+                                              To, asText, downcastJSM, getProp,
+                                              global, jsTreq, liftJSM,
                                               mkEmptyObject, mkFun', purely,
                                               setProp, toJSVal, (#))
 import qualified Text.Show.Pretty            as Pretty
@@ -58,14 +58,14 @@ emptyModel = Model mempty Nothing True
 
 
 (!) :: (MonadJSM m, To m JSKey key, To m JSObject obj) => m obj -> key -> m JSObject
-o ! k = fromJSValUnsafe @JSObject <$> (getProp k =<< o)
+o ! k = (liftJSM . downcastJSM @JSObject) =<< (getProp k =<< o)
 
 
 listenForOutput :: TVar Model -> JSM ()
 listenForOutput model = do
   onMessage <- pure global ! "chrome" ! "runtime" ! "onMessage"
   void $ (onMessage # "addListener") =<< mkFun' (\args -> do
-    let x = fromJSValUnsafe @JSObject $ Prelude.head args
+    x <- downcastJSM @JSObject $ Prelude.head args
     t <- getProp "type" x
     let isRight = t `jsTreq` purely toJSVal "shpadoinkle_output_state"
     when isRight $ do

@@ -5,6 +5,7 @@
 {-# LANGUAGE MonoLocalBinds             #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeApplications           #-}
 
 
@@ -13,9 +14,10 @@ module Shpadoinkle.WebWorker where
 
 import           Control.Monad     (void)
 import           Data.Text
-import           Shpadoinkle.JSFFI (JSM, JSObject, JSVal, MonadJSM, To, eval,
-                                    fromJSValUnsafe, getProp, global, liftJSM,
-                                    mkFun', purely, toJSObject, toJSVal, (#))
+import           Shpadoinkle.JSFFI (JSM, JSObject, JSVal, MonadJSM, To,
+                                    downcastJSM, eval, getProp, getProp',
+                                    global, liftJSM, mkFun', purely, toJSObject,
+                                    toJSVal, (#))
 import           Text.RawString.QQ
 
 
@@ -54,9 +56,9 @@ type ToJSVal a = To JSM JSVal a
 createWorker :: MonadJSM m => Text -> m Worker
 createWorker url = liftJSM $ do
   _ <- eval createWorkerJS
-  w <- fromJSValUnsafe @JSObject <$> getProp ("window" :: Text) global
+  w :: JSObject <- getProp' ("window" :: Text) global
   u <- toJSVal url
-  Worker . fromJSValUnsafe @JSObject <$> (w # ("createWorker" :: Text) $ [u])
+  fmap Worker $ downcastJSM @JSObject =<< (w # ("createWorker" :: Text) $ [u])
 
 
 postMessage :: (MonadJSM m, ToJSVal a) => Worker -> a -> m ()
@@ -67,7 +69,7 @@ postMessage (Worker worker) msg = liftJSM $ do
 
 postMessage' :: (MonadJSM m, ToJSVal a) => a -> m ()
 postMessage' msg = liftJSM $ do
-  self <- fromJSValUnsafe @JSObject <$> getProp ("self" :: Text) global
+  self <- downcastJSM @JSObject =<< getProp ("self" :: Text) global
   m <- toJSVal msg
   () <$ (self # ("postMessage" :: Text) $ m)
 
@@ -81,7 +83,7 @@ onMessage mailbox f = do
   box <- toJSObject mailbox
   liftJSM $ do
     fun <- mkFun' $ \case
-      [v] -> f =<< getProp ("data" :: Text) (fromJSValUnsafe @JSObject v)
+      [v] -> f =<< getProp ("data" :: Text) =<< downcastJSM @JSObject v
       _   -> return ()
     void $ box # ("onmessage" :: Text) $ purely toJSVal fun
 
