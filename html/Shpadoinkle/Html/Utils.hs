@@ -1,10 +1,12 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ExplicitForAll       #-}
+{-# LANGUAGE ExplicitNamespaces   #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE MonoLocalBinds       #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeApplications     #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
@@ -15,12 +17,12 @@ import           Control.Monad     (forM_)
 import           Data.Function     ((&))
 import           Data.Text         (Text)
 import           Shpadoinkle       (MonadJSM, RawNode (RawNode))
-import           Shpadoinkle.JSFFI as JSFFI (JSHTMLElement, JSString, To,
+import           Shpadoinkle.JSFFI as JSFFI (JSHTMLElement, JSString,
                                              appendChild, body, createElement,
                                              createTextNode, document,
                                              getElementById, getProp', liftJSM,
                                              setAttribute, setInnerHTML,
-                                             setTitle, upcast)
+                                             setTitle, type (<:), upcast)
 
 
 default (Text)
@@ -43,7 +45,7 @@ addStyle x = do
   getHead >>= appendChild link
 
 
-addInlineStyle :: (To m JSString css, MonadJSM m) => css -> m ()
+addInlineStyle :: (css <: JSString, MonadJSM m) => css -> m ()
 addInlineStyle bs = do
   style <- createElement "style"
   style & setInnerHTML bs

@@ -40,7 +40,7 @@ import           Shpadoinkle.Html                          (br'_, class', div,
                                                             onInput, src)
 import           Shpadoinkle.Isreal.Types                  as Swan
 import           Shpadoinkle.JSFFI                         (JSM, JSObject,
-                                                            MonadJSM, asText,
+                                                            MonadJSM, downcast,
                                                             downcastJSM, global,
                                                             mkEmptyObject,
                                                             mkFun', setProp,
@@ -159,7 +159,7 @@ mirror cc = baked $ do
   cmo :: JSObject <- downcastJSM cm
   onChange <- mkFun' $ \_ -> do
         jsv <- cmo # "getValue" $ ()
-        raw :: Maybe Text <- asText jsv
+        let raw :: Maybe Text = downcast jsv
         maybe (pure ()) (notify . Code . encodeUtf8 . TL.fromStrict) raw
   _ <- cmo # "on" $ ("change", onChange)
   _ <- setTimeout 33 =<< (mkFun' $ \_ -> void $ cmo # "refresh" $ ())

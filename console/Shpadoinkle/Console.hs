@@ -1,6 +1,8 @@
 {-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE ExplicitNamespaces         #-}
 {-# LANGUAGE ExtendedDefaultRules       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
@@ -8,6 +10,7 @@
 {-# LANGUAGE QuantifiedConstraints      #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -41,9 +44,9 @@ import           Data.Text               (Text, pack)
 import           Data.Text.Lazy          (toStrict)
 import           Data.Text.Lazy.Encoding (decodeUtf8)
 import           Prelude                 hiding (log)
-import           Shpadoinkle.JSFFI       (JSObject, JSVal, MonadJSM, To, askJSM,
-                                          getProp', global, liftJSM, runJSM,
-                                          toJSVal, (#))
+import           Shpadoinkle.JSFFI       (JSObject, JSVal, MonadJSM, askJSM,
+                                          getProp', global, jsAs, liftJSM,
+                                          runJSM, type (<:), (#))
 import           System.IO.Unsafe        (unsafePerformIO)
 
 
@@ -73,8 +76,7 @@ class LogJS (c :: Type -> Constraint) where
   logJS :: MonadJSM m => c a => Text -> a -> m ()
 
 
--- wow, I'm surprised this class declaration is legal. haskell rox!
-class (forall m. MonadJSM m => To m JSVal a) => ToJSVal a
+class a <: JSVal => ToJSVal a
 
 
 -- | Logs against 'ToJSON' will be encoded via 'Aeson' then parsed using
@@ -98,7 +100,7 @@ instance LogJS Show where
 instance LogJS ToJSVal where
   logJS t a = liftJSM $ do
     console :: JSObject <- getProp' "console" global
-    a' <- toJSVal a
+    a' <- pure . jsAs @JSVal $ a
     void ( console # t $ a' )
 
 
@@ -138,20 +140,20 @@ instance Assert ToJSON where
     console :: JSObject <- getProp' "console" global
     json :: JSObject <- getProp' "JSON" global
     parsed <- json # "parse" $ (toStrict . decodeUtf8 $ encode x)
-    b' <- toJSVal b
+    b' <- pure . jsAs @JSVal $ b
     void $ console # "assert" $ (b', parsed)
 
 instance Assert Show where
   assert b x = liftJSM $ do
     console :: JSObject <- getProp' "console" global
-    b' <- toJSVal b
+    b' <- pure . jsAs @JSVal $ b
     void $ console # "assert" $ (b', pack $ show x)
 
 instance Assert ToJSVal where
   assert b x = liftJSM $ do
     console :: JSObject <- getProp' "console" global
-    b' <- toJSVal b
-    x' <- toJSVal x
+    b' <- pure . jsAs @JSVal $ b
+    x' <- pure . jsAs @JSVal $ x
     void $ console # "assert" $ (b', x')
 
 

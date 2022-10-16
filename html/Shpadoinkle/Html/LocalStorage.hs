@@ -18,8 +18,8 @@ import           Data.Maybe          (fromMaybe)
 import           Data.String         (IsString)
 import           Data.Text           (Text, unpack)
 import           GHC.Generics        (Generic)
-import           Shpadoinkle.JSFFI   (MonadJSM, getItem, jsStringToText,
-                                      liftJSM, localStorage, setItem)
+import           Shpadoinkle.JSFFI   (MonadJSM, getItem, jsAs, liftJSM,
+                                      localStorage, setItem)
 import           Text.Read           (readMaybe)
 import           UnliftIO            (MonadIO (liftIO), MonadUnliftIO, TVar,
                                       newTVarIO)
@@ -40,7 +40,7 @@ setStorage (LocalStorageKey k) m =
 
 getStorage :: MonadJSM m => Read a => LocalStorageKey a -> m (Maybe a)
 getStorage (LocalStorageKey k) =
-  (>>= (readMaybe . unpack . jsStringToText)) <$> (localStorage & getItem k)
+  (>>= (readMaybe . unpack . jsAs)) <$> (localStorage & getItem k)
 
 
 -- When we should update we save

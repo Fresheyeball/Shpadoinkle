@@ -47,7 +47,7 @@ module Shpadoinkle.Backend.ParDiff
 
 
 import           Control.Applicative         (Alternative)
-import           Control.Monad               (forM_, void, when, (<=<))
+import           Control.Monad               (forM_, void, when)
 import           Control.Monad.Base          (MonadBase (..), liftBaseDefault)
 import           Control.Monad.Catch         (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.Cont          (MonadCont)
@@ -72,9 +72,8 @@ import           Data.Once                   (Once, newOnce, runOnce)
 import           Data.Text                   (Text)
 import           Shpadoinkle.JSFFI           (JSHTMLElement, JSObject, JSString,
                                               downcastJSM, getProp', global,
-                                              jsFalse, jsTrue, liftJSM, mkFun',
-                                              purely, setInnerHTML, setProp,
-                                              toJSObject, toJSString, toJSVal,
+                                              jsAs, jsFalse, jsTrue, liftJSM,
+                                              mkFun', setInnerHTML, setProp,
                                               upcast, (#))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
@@ -191,16 +190,13 @@ prop :: Monad m
      -> Prop (ParDiffT a m) a -- ^ Uninterpreted Property
      -> JSM ()
 prop toJSM i raw k = \case
-  PData d     -> setProp k' d raw
+  PData d     -> setProp k d raw
   PText t     -> do
-    let t' = purely toJSVal t
-    setProp k' t' raw
+    setProp k t raw
   PPotato p   -> setProptado i (fmap (fmap (hoist (toJSM . runParDiff i))) . p) raw
-  PListener f -> setListener i (\x y -> hoist (toJSM . runParDiff i) <$> f x y) raw k'
-  PFlag True  -> setProp k' (purely toJSVal jsTrue) raw
+  PListener f -> setListener i (\x y -> hoist (toJSM . runParDiff i) <$> f x y) raw (jsAs k)
+  PFlag True  -> setProp k jsTrue raw
   PFlag False -> return ()
-  where
-    k' = purely toJSString $ k
 
 
 -- | Evaluates the proptato and loops the 'STM' continuation in a separate thread
@@ -210,7 +206,7 @@ setProptado :: NFData a
             -> JSObject -- ^ DOM Node
             -> JSM ()
 setProptado i f o = do
-  elm <- RawNode <$> toJSObject o
+  elm <- pure . RawNode $  o
   stm <- f elm
   let go = atomically stm >>= writeUpdate i >> go
   void $ forkIO go
@@ -224,8 +220,8 @@ setListener :: NFData a
             -> JSString -- ^ Event Name
             -> JSM ()
 setListener i m o k = do
-  elm <- RawNode <$> toJSObject o
-  f <- toJSVal <=< mkFun' $ \case
+  elm <- pure . RawNode $ o
+  f <- mkFun' $ \case
     e:_ -> do
       e' :: JSObject <- downcastJSM e
       x <- m elm (RawEvent e')
@@ -290,7 +286,7 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
   let isFalseFlag (PFlag f) = not f
       isFalseFlag _         = False
   when (isJust (M.lookup "checked" new >>= guard . isFalseFlag))
-    (setProp "checked" (purely toJSVal jsFalse) obj')
+    (setProp "checked" jsFalse obj')
 
   let toRemove = M.difference old new
       willInclude new' old'
@@ -303,26 +299,25 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
         "href"      -> void $ obj' # "removeAttribute" $ "href"
         "htmlFor"   -> void $ obj' # "removeAttribute" $ "for"
         "style"     -> void $ obj' # "removeAttribute" $ "style"
-        "checked"   -> setProp (purely toJSString $ k) (purely toJSVal jsFalse) obj'
+        "checked"   -> setProp k jsFalse obj'
         "disabled"  -> void $ obj' # "removeAttribute" $ "disabled"
-        _           -> deleteProp (purely toJSString $ k) obj'
+        _           -> deleteProp (jsAs k) obj'
 
   traverseWithKey_ remove toRemove
 
   let include k v =
-        let k' = purely toJSString $ k
-        in  case v of
-          PPotato p -> void . p . RawNode =<< toJSObject obj' -- FIXME why throw away continuation...???
+        let k' = jsAs k
+        in case v of
+          PPotato p -> void . p . RawNode =<< pure obj' -- FIXME why throw away continuation...???
           PData j -> setProp k' j obj'
           -- new text prop, set
           PText t -> do
-            let t' = purely toJSVal t
-            setProp k' t' obj'
+            setProp k' t obj'
           -- new flag prop, set
           PFlag b
-            | b -> setProp k' (purely toJSVal jsTrue) obj'
+            | b -> setProp k' jsTrue obj'
             | otherwise -> case k of
-              "checked"  -> setProp k' (purely toJSVal jsFalse) obj'
+              "checked"  -> setProp k' jsFalse obj'
               "disabled" -> void (obj' # "removeAttribute" $ "disabled")
               _          -> deleteProp k' obj'
           -- new listener, set
@@ -370,7 +365,7 @@ patch' parent old new = do
       | otherwise -> liftJSM $ do
         RawNode r <- runOnce raw
         obj' :: JSObject <- downcastJSM r
-        tNew <- fmap (purely toJSVal) . htmlDecode . purely toJSString $ t
+        tNew <- htmlDecode . jsAs $ t
         setProp "nodeValue" tNew obj'
         return (ParTextNode raw t)
 
@@ -432,7 +427,7 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
     mkText t = liftJSM $ do
       raw <- newOnce $ do
         doc :: JSObject <- getProp' "document" global
-        t' <- fmap (purely toJSVal) . htmlDecode . purely toJSString $ t
+        t' <- htmlDecode . jsAs $ t
         fmap RawNode $ downcastJSM =<< (doc # "createTextNode" $ t')
       return $ ParTextNode raw t
 

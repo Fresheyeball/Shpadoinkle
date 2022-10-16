@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass       #-}
 {-# LANGUAGE DeriveGeneric        #-}
+{-# LANGUAGE ExplicitNamespaces   #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE LambdaCase           #-}
@@ -7,6 +8,7 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeApplications     #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Main where
@@ -23,10 +25,10 @@ import           Data.Time                   (UTCTime, defaultTimeLocale,
 import           GHC.Generics                (Generic)
 import           Prelude                     hiding (div, span)
 import           Shpadoinkle.JSFFI           (JSKey, JSM, JSObject, MonadJSM,
-                                              To, asText, downcastJSM, getProp,
-                                              global, jsTreq, liftJSM,
-                                              mkEmptyObject, mkFun', purely,
-                                              setProp, toJSVal, (#))
+                                              downcast, downcastJSM, getProp,
+                                              global, jsAs, liftJSM,
+                                              mkEmptyObject, mkFun', setProp,
+                                              type (<:), (#), (===))
 import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
                                               newTVarIO)
@@ -57,8 +59,8 @@ emptyModel :: Model
 emptyModel = Model mempty Nothing True
 
 
-(!) :: (MonadJSM m, To m JSKey key, To m JSObject obj) => m obj -> key -> m JSObject
-o ! k = (liftJSM . downcastJSM @JSObject) =<< (getProp k =<< o)
+(!) :: (MonadJSM m, key <: JSKey, obj <: JSObject) => m obj -> key -> m JSObject
+o ! k = (liftJSM . downcastJSM @JSObject) =<< (getProp (jsAs @JSKey k) =<< o)
 
 
 listenForOutput :: TVar Model -> JSM ()
@@ -67,11 +69,11 @@ listenForOutput model = do
   void $ (onMessage # "addListener") =<< mkFun' (\args -> do
     x <- downcastJSM @JSObject $ Prelude.head args
     t <- getProp "type" x
-    let isRight = t `jsTreq` purely toJSVal "shpadoinkle_output_state"
+    let isRight = t === "shpadoinkle_output_state"
     when isRight $ do
       msg <- getProp "msg" x
       now <- liftIO getCurrentTime
-      history' <- maybe (error "how could this not be a string") History <$> asText msg
+      let history' = maybe (error "how could this not be a string") History $ downcast msg
       atomically . modifyTVar model $ heard now history')
 
 
@@ -100,7 +102,7 @@ sendHistory (History history') = void $ do
   tabId <- (pure global ! "chrome" ! "devtools" ! "inspectedWindow") >>= getProp "tabId"
 
   msg <- mkEmptyObject
-  msg & setProp "type" (purely toJSVal "shpadoinkle_set_state")
+  msg & setProp "type" "shpadoinkle_set_state"
   msg & setProp "msg" history'
 
   void $ (pure global ! "chrome" ! "tabs") >>= (\t -> t # "sendMessage" $ (tabId, msg))
