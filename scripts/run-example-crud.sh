@@ -1,5 +1,5 @@
 # run from repo root!
-./scripts/build-all.sh
+./scripts/build-all.sh -A Shpadoinkle-examples
 mkdir clientw &&
 trap 'rm -rf ./clientw' SIGINT SIGTERM &&
 cp -r client/. clientw &&
