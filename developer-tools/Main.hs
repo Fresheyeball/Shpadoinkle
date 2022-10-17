@@ -24,11 +24,11 @@ import           Data.Time                   (UTCTime, defaultTimeLocale,
                                               formatTime, getCurrentTime)
 import           GHC.Generics                (Generic)
 import           Prelude                     hiding (div, span)
-import           Shpadoinkle.JSFFI           (JSKey, JSM, JSObject, MonadJSM,
-                                              downcast, downcastJSM, getProp,
-                                              global, jsAs, liftJSM,
-                                              mkEmptyObject, mkFun', setProp,
-                                              type (<:), (#), (===))
+import           Shpadoinkle.JSFFI           (JSKey, JSM, JSObject, JSVal,
+                                              MonadJSM, downcastJSM, getProp,
+                                              getPropMaybe, global, jsAs,
+                                              liftJSM, mkEmptyObject, mkFun',
+                                              setProp, type (<:), (#), (===))
 import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
                                               newTVarIO)
@@ -60,7 +60,7 @@ emptyModel = Model mempty Nothing True
 
 
 (!) :: (MonadJSM m, key <: JSKey, obj <: JSObject) => m obj -> key -> m JSObject
-o ! k = (liftJSM . downcastJSM @JSObject) =<< (getProp (jsAs @JSKey k) =<< o)
+o ! k = getProp (jsAs @JSKey k) =<< o
 
 
 listenForOutput :: TVar Model -> JSM ()
@@ -68,12 +68,12 @@ listenForOutput model = do
   onMessage <- pure global ! "chrome" ! "runtime" ! "onMessage"
   void $ (onMessage # "addListener") =<< mkFun' (\args -> do
     x <- downcastJSM @JSObject $ Prelude.head args
-    t <- getProp "type" x
+    t :: Text <- getProp "type" x
     let isRight = t === "shpadoinkle_output_state"
     when isRight $ do
-      msg <- getProp "msg" x
+      msg :: Maybe Text <- getPropMaybe "msg" x
       now <- liftIO getCurrentTime
-      let history' = maybe (error "how could this not be a string") History $ downcast msg
+      let history' = maybe (error "how could this not be a string") History $ msg
       atomically . modifyTVar model $ heard now history')
 
 
@@ -99,7 +99,7 @@ row sel k history' = div "record"
 
 sendHistory :: History -> JSM ()
 sendHistory (History history') = void $ do
-  tabId <- (pure global ! "chrome" ! "devtools" ! "inspectedWindow") >>= getProp "tabId"
+  tabId <- (pure global ! "chrome" ! "devtools" ! "inspectedWindow") >>= getProp @JSVal "tabId"
 
   msg <- mkEmptyObject
   msg & setProp "type" "shpadoinkle_set_state"

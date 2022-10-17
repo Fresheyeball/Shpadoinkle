@@ -17,8 +17,8 @@ module Shpadoinkle.WebWorker where
 import           Control.Monad     (void)
 import           Data.Text
 import           Shpadoinkle.JSFFI (JSM, JSObject, JSVal, MonadJSM, downcastJSM,
-                                    eval, getProp, getProp', global, jsAs,
-                                    liftJSM, mkFun', type (<:), (#))
+                                    eval, getProp, global, jsAs, liftJSM,
+                                    mkFun', type (<:), (#))
 import           Text.RawString.QQ
 
 
@@ -57,7 +57,7 @@ type ToJSVal a = (a <: JSVal)
 createWorker :: MonadJSM m => Text -> m Worker
 createWorker url = liftJSM $ do
   _ <- eval createWorkerJS
-  w :: JSObject <- getProp' ("window" :: Text) global
+  w :: JSObject <- getProp ("window" :: Text) global
   pure . Worker =<< downcastJSM =<< (w # ("createWorker" :: Text) $ [jsAs @JSVal url])
 
 
@@ -68,7 +68,7 @@ postMessage (Worker worker) msg = liftJSM $ do
 
 postMessage' :: (MonadJSM m, ToJSVal a) => a -> m ()
 postMessage' msg = liftJSM $ do
-  self <- downcastJSM @JSObject =<< getProp ("self" :: Text) global
+  self :: JSObject <- getProp ("self" :: Text) global
   () <$ (self # ("postMessage" :: Text) $ jsAs @JSVal msg)
 
 

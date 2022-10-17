@@ -20,7 +20,7 @@ import           Shpadoinkle       (MonadJSM, RawNode (RawNode))
 import           Shpadoinkle.JSFFI as JSFFI (JSHTMLElement, JSString,
                                              appendChild, body, createElement,
                                              createTextNode, document,
-                                             getElementById, getProp', liftJSM,
+                                             getElementById, getProp, liftJSM,
                                              setAttribute, setInnerHTML,
                                              setTitle, type (<:), upcast)
 
@@ -29,7 +29,7 @@ default (Text)
 
 
 getHead :: MonadJSM m => m JSHTMLElement
-getHead = getProp' "head" document
+getHead = getProp "head" document
 
 
 -- | Add a stylesheet to the page via @link@ tag.

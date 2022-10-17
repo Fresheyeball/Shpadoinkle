@@ -58,12 +58,11 @@ import           Prelude                     hiding (id, words, (.))
 import           Shpadoinkle.JSFFI           (JSObject, JSVal, appendChild,
                                               body, createElement, downcastJSM,
                                               downcastUnsafe, eval, getProp,
-                                              getProp', global, jsAs, jsTrue,
+                                              global, jsAs, jsTrue,
                                               mkEmptyObject, mkFun', setId,
                                               setInnerHTML, setProp, (#))
 #ifdef ghcjs_HOST_OS
-import           Shpadoinkle.JSFFI           (jsArrayFromList, toJSObject,
-                                              upcast)
+import           Shpadoinkle.JSFFI           (jsAs, upcast)
 #endif
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
@@ -152,7 +151,7 @@ insertHook :: Text -- ^ @k@
 #ifndef ghcjs_HOST_OS
 insertHook t f' hooksObj = void $ global # "insertHook" $ (t, f', hooksObj)
 #else
-insertHook t f' hooksObj = join $ insertHook' <$> upcast t <*> pure f' <*> upcast hooksObj
+insertHook t f' hooksObj = join $ insertHook' <$> pure (upcast t) <*> pure f' <*> pure (upcast hooksObj)
 foreign import javascript unsafe "window['insertHook']($1,$2,$3)" insertHook' :: JSVal -> JSVal -> JSVal -> JSM ()
 #endif
 
@@ -176,7 +175,7 @@ props toJSM i (Props xs) = do
           let
             g vnode'' = do
               vnode_ <- downcastJSM @JSObject vnode''
-              stm <- pot . RawNode =<< getProp' "elm" vnode_
+              stm <- pot . RawNode =<< getProp "elm" vnode_
               let go = atomically stm >>= writeUpdate i . hoist (toJSM . runSnabbdom i)
               void $ forkIO go
           in \case
@@ -203,7 +202,7 @@ props toJSM i (Props xs) = do
         f' <- mkFun' $ \case
           [] -> return ()
           ev:_ -> do
-            rn <- getProp' "target" =<< downcastJSM @JSObject ev
+            rn <- getProp "target" =<< downcastJSM @JSObject ev
             ev' <- downcastJSM ev
             x <- f (RawNode rn) (RawEvent ev')
             writeUpdate i $ hoist (toJSM . runSnabbdom i) x
@@ -230,10 +229,10 @@ vnode :: Text -> JSObject -> [SnabVNode] -> JSM SnabVNode
 #ifndef ghcjs_HOST_OS
 vnode name o cs = SnabVNode <$> ( global # "vnode" $ (name, o, unVNode <$> cs) )
 #else
-vnode t o cs = vnode' t o =<< vNodesToJSVal cs
+vnode t o cs = vnode' t o $ vNodesToJSVal cs
   where
-  vNodesToJSVal :: [SnabVNode] -> JSM JSVal
-  vNodesToJSVal = fmap (jsAs) . jsArrayFromList . fmap unVNode
+  vNodesToJSVal :: [SnabVNode] -> JSVal
+  vNodesToJSVal = jsAs . fmap unVNode
 
 foreign import javascript unsafe "window['vnode']($1,$2,$3)" vnode' :: Text -> JSObject -> JSVal -> JSM SnabVNode
 #endif
@@ -274,8 +273,8 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
         (RawNode rn, stm) <- mrn
         ins <- mkFun' (\case
           [n] -> do
-            elm' <- getProp "elm" =<< downcastJSM @JSObject n
-            void $ downcastJSM @JSObject elm' >>= (\e -> e # "appendChild" $ rn)
+            elm' :: JSObject <- getProp "elm" =<< downcastJSM @JSObject n
+            void $ elm' # "appendChild" $ rn
           _   -> return ())
         hook <- mkEmptyObject
         setProp "insert" ins hook
@@ -309,7 +308,7 @@ startApp cb = do
   f <- mkFun' $ const cb
   void $ global # "startApp" $ f
 #else
-startApp cb = startApp' =<< toJSVal =<< mkFun' (const cb)
+startApp cb = startApp' =<< pure . upcast =<< mkFun' (const cb)
 foreign import javascript unsafe "window['startApp']($1)" startApp' :: JSVal -> JSM ()
 #endif
 

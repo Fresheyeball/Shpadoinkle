@@ -71,7 +71,7 @@ import           Data.Monoid                 ((<>))
 import           Data.Once                   (Once, newOnce, runOnce)
 import           Data.Text                   (Text)
 import           Shpadoinkle.JSFFI           (JSHTMLElement, JSObject, JSString,
-                                              downcastJSM, getProp', global,
+                                              downcastJSM, getProp, global,
                                               jsAs, jsFalse, jsTrue, liftJSM,
                                               mkFun', setInnerHTML, setProp,
                                               upcast, (#))
@@ -338,7 +338,7 @@ patchChildren (RawNode p) [] new = liftJSM $ do
     downcastJSM @JSObject =<< ( p # "appendChild" $ cRaw )
   pure new
 patchChildren _ old [] = liftJSM $ do
-  doc :: JSObject <- getProp' "document" global
+  doc :: JSObject <- getProp "document" global
   tmp <- downcastJSM @JSObject =<< (doc # "createElement" $ "div")
   old' <- traverse (fmap unRawNode . runOnce . getRaw) old
   void (downcastJSM @JSObject =<< (tmp # "replaceChildren" $ old'))
@@ -404,7 +404,7 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
       i <- askModel
       let ps' = toProps ps
       raw <- liftJSM . newOnce $ do
-        doc :: JSObject <- getProp' "document" global
+        doc :: JSObject <- getProp "document" global
         raw' :: JSObject <- downcastJSM =<< ( doc # "createElement" $ name )
         props toJSM i ps' (RawNode raw')
         forM_ cs' $ \c -> do
@@ -426,7 +426,7 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
     mkText :: Text -> ParDiffT a m (ParVNode a)
     mkText t = liftJSM $ do
       raw <- newOnce $ do
-        doc :: JSObject <- getProp' "document" global
+        doc :: JSObject <- getProp "document" global
         t' <- htmlDecode . jsAs $ t
         fmap RawNode $ downcastJSM =<< (doc # "createTextNode" $ t')
       return $ ParTextNode raw t
@@ -455,8 +455,8 @@ instance
 stage :: MonadJSM m => ParDiffT a m RawNode
 stage = liftJSM $ do
   body :: JSHTMLElement <- do
-    document :: JSObject <- getProp' "document" global
-    getProp' "body" document
+    document :: JSObject <- getProp "document" global
+    getProp "body" document
   setInnerHTML "" body
   pure . RawNode $ upcast body
 {-# SPECIALIZE stage :: ParDiffT a JSM RawNode #-}

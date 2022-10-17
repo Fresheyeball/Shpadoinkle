@@ -20,9 +20,9 @@ import           UnliftIO
 import           Control.Lens        hiding ((#))
 import           Control.Monad
 import           Control.Monad.STM   (retry)
-import           Shpadoinkle.JSFFI   (JSObject, downcast, downcastJSM, getProp,
-                                      getProp', global, mkEmptyObject, mkFun',
-                                      setProp, (#), (===))
+import           Shpadoinkle.JSFFI   (JSObject, JSVal, downcastJSM, getProp,
+                                      getPropMaybe, global, mkEmptyObject,
+                                      mkFun', setProp, (#), (===))
 import           UnliftIO.Concurrent
 #endif
 
@@ -58,10 +58,10 @@ listenForSetState :: forall a. Read a => TVar a -> JSM ()
 listenForSetState model =
   void $ (global # "addEventListener") . ("message",) =<< (mkFun' $ \args -> do
     e <- downcastJSM @JSObject $ Prelude.head args
-    isWindow <- (=== global) <$> getProp "source" e
-    d :: JSObject <- getProp' "data" e
-    isRightType <- (=== "shpadoinkle_set_state") <$> getProp "type" d
-    msg <- downcast <$> getProp "msg" d
+    isWindow <- (=== global) <$> getProp @JSVal "source" e
+    d :: JSObject <- getProp "data" e
+    isRightType <- (=== "shpadoinkle_set_state") <$> getProp @JSVal "type" d
+    msg <- getPropMaybe "msg" d
     case msg of
       Just msg' | isWindow && isRightType ->
         atomically . writeTVar model $ read msg'

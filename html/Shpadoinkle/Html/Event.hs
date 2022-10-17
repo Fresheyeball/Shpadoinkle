@@ -133,7 +133,7 @@ onClickAwayC c =
         (mkFun' $ \case
           evt:_ -> void . forkIO $ do
 
-            target   <- downcastJSM @JSObject evt >>= getProp ("target" :: Text)
+            target :: JSVal <- downcastJSM @JSObject evt >>= getProp ("target" :: Text)
             onTarget <- downcastJSM @JSObject elm >>= (\e -> e # ("contains" :: Text) $ target)
             toBoolLax onTarget >>= \case
               False -> notify
