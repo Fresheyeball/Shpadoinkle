@@ -292,7 +292,7 @@ downcastJSMReticent x =
     Nothing -> impossible <$> downcastFailureReticent
 
 foreign import javascript unsafe
-  "'Failure while downcasting (downcastJSMReticent)'"
+  "throw 'Failure while downcasting (downcastJSMReticent)'"
   downcastFailureReticent :: JSM ()
 #else
 downcastJSMReticent = ghcjsOnly
