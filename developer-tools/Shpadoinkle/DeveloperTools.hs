@@ -59,13 +59,16 @@ listenForSetState model =
   void $ (global # "addEventListener") . ("message",) =<< (mkFun' $ \args -> do
     e <- downcastJSM @JSObject $ Prelude.head args
     isWindow <- (=== global) <$> getProp @JSVal "source" e
-    d :: JSObject <- getProp "data" e
-    isRightType <- (=== "shpadoinkle_set_state") <$> getProp @JSVal "type" d
-    msg <- getPropMaybe "msg" d
-    case msg of
-      Just msg' | isWindow && isRightType ->
-        atomically . writeTVar model $ read msg'
-      _ -> return ())
+    d :: Maybe JSObject <- getPropMaybe "data" e
+    case d of
+      Nothing -> pure ()
+      Just d' -> do
+        isRightType <- (=== "shpadoinkle_set_state") <$> getProp @JSVal "type" d'
+        msg <- getPropMaybe "msg" d'
+        case msg of
+          Just msg' | isWindow && isRightType ->
+            atomically . writeTVar model $ read msg'
+          _ -> return ())
 
 #else
 withDeveloperTools :: forall a. Eq a => Read a => Show a => TVar a -> JSM ()
