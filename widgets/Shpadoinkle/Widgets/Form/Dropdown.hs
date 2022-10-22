@@ -181,7 +181,9 @@ dropdown toTheme Config {..} x =
   let
     Theme {..} = toTheme x
     ifClickAway = case _clickAway of
-      ClosesOnClickAway    -> [ onClickAway close ]
+      ClosesOnClickAway    -> -- [ onClickAway close ]
+                              []  -- TODO: seems 'onClick' and 'onClickAway'
+                                  --       are mutually exclusive?
       StaysOpenOnClickAway -> []
 
   in injectProps
