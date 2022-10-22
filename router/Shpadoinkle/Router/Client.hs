@@ -24,7 +24,6 @@ import           Control.Monad.Catch         (MonadThrow (throwM))
 import           Data.Function               ((&))
 import           Data.Maybe                  (fromMaybe)
 import           Data.Text                   (Text)
-import qualified Language.Javascript.JSaddle as JSaddle
 import           Servant.Client.JS           (BaseUrl (..), ClientEnv (..),
                                               ClientError (..), ClientM (..),
                                               EmptyClient (..), HasClient (..),
@@ -43,8 +42,7 @@ import           UnliftIO                    (MonadIO (liftIO))
 default (Text)
 
 
--- Witness to only compiling on GHCjs, where JSM ~ IO.
-convJSM :: JSaddle.JSM a -> JSM a
+convJSM :: JSM a -> JSM a
 #ifdef ghcjs_HOST_OS
 convJSM = id
 #else

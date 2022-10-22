@@ -38,6 +38,10 @@ import Control.Monad.Trans.Control
 import Control.Monad.Trans.Except
 import Data.Binary.Builder (toLazyByteString)
 import qualified Data.ByteString.Char8 as BS
+#ifdef ghcjs_HOST_OS
+import qualified Data.ByteString.Builder as BB
+import Data.Int (Int8)
+#endif
 import qualified Data.ByteString.Lazy as BL
 import Data.CaseInsensitive
 import Data.Maybe (fromMaybe)
@@ -48,19 +52,36 @@ import Data.Text
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import GHC.Conc
 import GHC.Generics
-import GHCJS.Buffer
+import Data.Function ((&))
+#ifdef ghcjs_HOST_OS
 import GHCJS.Marshal.Internal
+#endif
+import Shpadoinkle.JSFFI (
+  JSM (..)
+  , liftJSM
+  , JSString
+  , mkEmptyObject
+  , (#)
+  , global
+  , getProp
+  , getPropMaybe
+  , setProp
+  , toBoolLax
+  , mkFun
+  , jsAs
+  , jsTo
+  , JSObject
+#ifdef ghcjs_HOST_OS
+  , JSArray
+  , consoleLog
+#endif
+  , ghcjsOnly
+  , JSVal
+  , downcast
+  )
 #ifdef ghcjs_HOST_OS
 import GHCJS.Prim hiding (getProp, fromJSString)
-import Language.Javascript.JSaddle (fromJSString)
-#else
-import "jsaddle" GHCJS.Prim hiding (fromJSString)
-#endif 
-import Language.Javascript.JSaddle (
-#ifndef ghcjs_HOST_OS
-  MonadJSM,
 #endif
-  JSM (..), liftJSM, jsg, toJSVal, obj, (#), (<#), fun, fromJSVal, (!), JSString (..), makeObject, isTruthy, ghcjsPure )
 import Network.HTTP.Media (renderHeader)
 import Network.HTTP.Types
 import Servant.Client.Core
@@ -69,6 +90,8 @@ import qualified Servant.Types.SourceT as S
 
 default (Text)
 
+o ! k = getProp k o
+
 
 newtype ClientEnv = ClientEnv { baseUrl :: BaseUrl }
   deriving (Eq, Show)
@@ -76,9 +99,6 @@ newtype ClientEnv = ClientEnv { baseUrl :: BaseUrl }
 newtype ClientM a = ClientM
   { runClientM' :: ReaderT ClientEnv (ExceptT ClientError JSM) a }
   deriving ( Functor, Applicative, Monad, MonadIO
-#ifndef ghcjs_HOST_OS
-           , MonadJSM
-#endif
            , Generic, MonadReader ClientEnv, MonadError ClientError
            , MonadThrow, MonadCatch )
 
@@ -87,11 +107,6 @@ client api = api `clientIn` (Proxy :: Proxy ClientM)
 
 runClientM :: ClientM a -> ClientEnv -> JSM (Either ClientError a)
 runClientM m env = runExceptT $ runReaderT (runClientM' m) env
-
-#ifndef ghcjs_HOST_OS
-deriving instance MonadBase IO JSM
-deriving instance MonadBaseControl IO JSM
-#endif
 
 instance MonadBase IO ClientM where
   liftBase = ClientM . liftBase
@@ -114,115 +129,128 @@ instance RunStreamingClient ClientM where
   withStreamingRequest req handler = withStreamingRequestJSM req (liftIO . handler)
 
 
-#ifdef ghcjs_HOST_OS
 unJSString :: JSString -> Text
-unJSString = fromJSString
-#else
-unJSString :: JSString -> Text
-unJSString (JSString s) = s
-#endif
+unJSString = jsAs
 
 
 getFetchArgs :: ClientEnv -> Request -> JSM [JSVal]
 getFetchArgs (ClientEnv (BaseUrl urlScheme host port basePath))
           (Request reqPath reqQs reqBody reqAccept reqHdrs _reqVer reqMethod) = do
-  self <- jsg "self"
   let schemeStr :: Text
       schemeStr = case urlScheme of
                     Http -> "http://"
                     Https -> "https://"
-  url <- toJSVal $ schemeStr <> pack host <> ":" <> pack (show port) <> pack basePath
+  url <- text2jsval $ schemeStr <> pack host <> ":" <> pack (show port) <> pack basePath
                              <> decodeUtf8 (BL.toStrict (toLazyByteString reqPath))
                              <> (if Prelude.null reqQs then "" else "?" ) <> (intercalate "&" 
                                         $ (\(k,v) -> decodeUtf8 k <> "="
                                                            <> maybe "" decodeUtf8 v)
                                          <$> Prelude.foldr (:) [] reqQs)
-  init <- obj
-  methodStr <- toJSVal $ decodeUtf8 reqMethod
-  init <# "method" $ methodStr
-  headers <- obj
+  init <- mkEmptyObject
+  methodStr <- text2jsval $ decodeUtf8 reqMethod
+  init & setProp "method" methodStr
+  headers <- mkEmptyObject
   forM_  reqHdrs $ \(original -> k, v) -> do
-    v' <- toJSVal (decodeUtf8 v)
-    headers <# decodeUtf8 k $ v'
+    v' <- text2jsval (decodeUtf8 v)
+    headers & setProp (decodeUtf8 k) v'
   forM_ reqAccept $ \mt -> do
-    mt' <- toJSVal (decodeUtf8 (renderHeader mt))
-    headers <# "Accept" $ mt'
-  init <# "headers" $ headers
+    mt' <- text2jsval (decodeUtf8 (renderHeader mt))
+    headers & setProp "Accept" mt'
+  init & setProp "headers" headers
   case reqBody of
     Just (RequestBodyLBS x, mt) -> do
-      v <- toJSVal (decodeUtf8 (BL.toStrict x))
-      init <# "body" $ v
-      mt' <- toJSVal (decodeUtf8 (renderHeader mt))
-      headers <# "Content-Type" $ mt'
+      v <- text2jsval (decodeUtf8 (BL.toStrict x))
+      init & setProp "body" v
+      mt' <- text2jsval (decodeUtf8 (renderHeader mt))
+      headers & setProp "Content-Type" mt'
     Just (RequestBodyBS x, mt) -> do
-      v <- toJSVal (decodeUtf8 x)
-      init <# "body" $ v
-      mt' <- toJSVal (decodeUtf8 (renderHeader mt))
-      headers <# "Content-Type" $ mt'
+      v <- text2jsval (decodeUtf8 x)
+      init & setProp "body" v
+      mt' <- text2jsval (decodeUtf8 (renderHeader mt))
+      headers & setProp "Content-Type" mt'
     Just (RequestBodySource _, _) -> error "Servant.Client.JS.withStreamingRequest(JSM) does not (yet) support RequestBodySource"
     Nothing -> return ()
-  init' <- toJSVal init
+  init' <- pure . jsAs @JSVal $ init
   return [url, init']
+
+  where
+
+  text2jsval :: Text -> JSM JSVal
+  text2jsval = pure . jsAs
 
 
 getResponseMeta :: JSVal -> JSM (Status, Seq.Seq Header, HttpVersion)
 getResponseMeta res = do
+  res' <- jsTo @JSObject res
   status <- toEnum . fromMaybe 200
-            <$> (fromJSVal =<< res ! ("status" :: Text))
-  resHeadersObj <- makeObject =<< res ! ("headers" :: Text)
+            <$> (getPropMaybe ("status" :: Text) res')
+  resHeadersObj :: JSObject <- res' ! ("headers" :: Text)
   resHeaderNames <- (resHeadersObj # ("keys" :: Text) $ ([] :: [JSVal]))
     >>= fix (\go names ->
-      do x <- names # ("next" :: Text) $ ([] :: [JSVal])
-         isDone <- fromJSVal =<< (x ! ("done" :: Text))
+      do x <- jsTo @JSObject names >>= (\n -> n # ("next" :: Text) $ ([] :: [JSVal]))
+         x' <- jsTo @JSObject x
+         isDone <- getPropMaybe ("done" :: Text) x'
          if isDone == Just True || isDone == Nothing
            then return []
            else do
              rest <- go names
-             v <- fromJSVal =<< x ! "value"
+             v <- getPropMaybe "value" x'
              case v of
                Just k -> return (k : rest)
                Nothing -> return rest)
   resHeaders <- fmap (Prelude.foldr (Seq.:<|) Seq.Empty)
              .  forM resHeaderNames $ \headerName -> do
-    headerValue <- fmap (fromMaybe "") . fromJSVal 
-                   =<< (resHeadersObj # ("get" :: Text) $ [headerName])
+    headerValue <- fmap (fromMaybe "" . (downcast :: JSVal -> Maybe Text))
+                   $ (resHeadersObj # ("get" :: Text) $ [headerName])
     return (mk (encodeUtf8 (unJSString headerName)), encodeUtf8 headerValue)
   return (status, resHeaders, http11) -- http11 is made up
 
 
 uint8arrayToByteString :: JSVal -> JSM BS.ByteString
-uint8arrayToByteString val = do
-  abuf <- val ! "buffer"
-  buf  <- ghcjsPure (createFromArrayBuffer (pFromJSVal abuf)) >>= freeze
-  len  <- ghcjsPure (byteLength buf)
-  ghcjsPure $ toByteString 0 (Just len) buf
+#ifdef ghcjs_HOST_OS
+uint8arrayToByteString ar = do
+  _Array :: JSObject <- getProp "Array" global
+  asArray :: [JSVal] <- pure . jsAs =<< jsTo @JSArray =<< (_Array # "from" $ ar)
+  let asInt8s = asInt8Unchecked <$> asArray
+  pure . BL.toStrict . BB.toLazyByteString $ foldMap BB.int8 asInt8s
+
+foreign import javascript unsafe
+  "$r = $1"  -- unchecked
+  asInt8Unchecked :: JSVal -> Int8
+#else
+uint8arrayToByteString = ghcjsOnly
+#endif
 
 
 parseChunk :: JSVal -> JSM (Maybe BS.ByteString)
 parseChunk chunk = do
-  isDone <- ghcjsPure =<< isTruthy
-              <$> (chunk ! ("done" :: Text))
+  chunk' <- jsTo @JSObject chunk
+  isDone <- toBoolLax
+              =<< getProp ("done" :: Text) chunk'
   case isDone of
     True -> return Nothing
-    False -> Just <$> (uint8arrayToByteString =<< chunk ! ("value" :: Text))
+    False -> pure . Just =<< uint8arrayToByteString =<< getProp ("value" :: Text) chunk'
 
 
 fetch :: Request -> ClientM Response
 fetch req = ClientM . ReaderT $ \env -> do
-  self <- liftJSM $ jsg ("self" :: Text)
+  self :: JSObject <- liftJSM $ getProp ("self" :: Text) global
   args <- liftJSM $ getFetchArgs env req
-  promise <- liftJSM $ self # ("fetch" :: Text) $ args
+  promise :: JSVal <- liftJSM $ self # ("fetch" :: Text) $ args
+  promise' <- jsTo @JSObject promise
   contents <- liftIO $ newTVarIO (mempty :: BS.ByteString)
   result <- liftIO newEmptyMVar
-  promiseHandler <- liftJSM . toJSVal . fun $ \_ _ args -> do
+  promiseHandler <- liftJSM $ mkFun (\_ _ args -> do
     case args of
       [res] -> do
         meta <- getResponseMeta res
-        stream <- res ! ("body" :: Text)
+        stream :: JSObject <- getProp ("body" :: Text) =<< jsTo @JSObject res
         rdr <- stream # ("getReader" :: Text) $ ([] :: [JSVal])
+        rdr' <- jsTo @JSObject rdr
         _ <- fix $ \go -> do
-          rdrPromise <- rdr # ("read" :: Text) $ ([] :: [JSVal])
-          rdrHandler <- toJSVal . fun $ \_ _ args -> do
+          rdrPromise <- rdr' # ("read" :: Text) $ ([] :: [JSVal])
+          rdrPromise' <- jsTo @JSObject rdrPromise
+          rdrHandler <- mkFun (\_ _ args -> do
             case args of
               [chunk] -> do
                 next <- parseChunk chunk
@@ -232,12 +260,12 @@ fetch req = ClientM . ReaderT $ \env -> do
                     liftIO . atomically $ writeTVar contents . (<> x) =<< readTVar contents
                     go
               _ -> do
-                error "fetch read promise handler received wrong number of arguments"
-          _ <- rdrPromise # ("then" :: Text) $ [rdrHandler]
+                error "fetch read promise handler received wrong number of arguments")
+          _ <- rdrPromise' # ("then" :: Text) $ [rdrHandler]
           return ()
         return ()
-      _ -> error "fetch promise handler received wrong number of arguments"
-  liftJSM $ promise # ("then" :: Text) $ [promiseHandler]
+      _ -> error "fetch promise handler received wrong number of arguments")
+  liftJSM $ promise' # ("then" :: Text) $ [promiseHandler]
   ((status, hdrs, ver), body) <- liftIO $ takeMVar result
   return $ Response status hdrs ver (BL.fromStrict body)
 
@@ -248,20 +276,25 @@ fetch req = ClientM . ReaderT $ \env -> do
 withStreamingRequestJSM :: Request -> (StreamingResponse -> JSM a) -> ClientM a
 withStreamingRequestJSM req handler =
   ClientM . ReaderT $ \env -> do
-    self <- liftJSM $ jsg "self"
+    self :: JSObject <- liftJSM $ getProp "self" global
     fetchArgs <- liftJSM $ getFetchArgs env req
     fetchPromise <- liftJSM $ self # "fetch" $ fetchArgs
+    fetchPromise' <- jsTo @JSObject fetchPromise
     push <- liftIO newEmptyMVar
     result <- liftIO newEmptyMVar
-    fetchPromiseHandler <- liftJSM . toJSVal . fun $ \_ _ args ->
+    fetchPromiseHandler <- liftJSM $ mkFun (\_ _ args ->
       case args of
         [res] -> do
           (status, hdrs, ver) <- getResponseMeta res
-          stream <- res ! ("body" :: Text)
-          rdr <- stream # ("getReader" :: Text) $ ([] :: [JSVal])
+          res' <- jsTo @JSObject res
+          stream :: JSVal <- res' ! ("body" :: Text)
+          stream' <- jsTo @JSObject stream
+          rdr <- stream' # ("getReader" :: Text) $ ([] :: [JSVal])
+          rdr' <- jsTo @JSObject rdr
           _ <- fix $ \go -> do
-            rdrPromise <- rdr # ("read" :: Text) $ ([] :: [JSVal])
-            rdrHandler <- toJSVal . fun $ \_ _ args ->
+            rdrPromise <- rdr' # ("read" :: Text) $ ([] :: [JSVal])
+            rdrPromise' <- jsTo @JSObject rdrPromise
+            rdrHandler <- mkFun (\_ _ args ->
               case args of
                 [chunk] -> do
                   next <- parseChunk chunk
@@ -270,8 +303,8 @@ withStreamingRequestJSM req handler =
                       liftIO $ putMVar push (Just bs)
                       go
                     Nothing -> liftIO $ putMVar push Nothing
-                _ -> error "wrong number of arguments to rdrHandler"
-            _ <- rdrPromise # ("then" :: Text) $ [rdrHandler]
+                _ -> error "wrong number of arguments to rdrHandler")
+            _ <- rdrPromise' # ("then" :: Text) $ [rdrHandler]
             return ()
           let out :: forall b. (S.StepT IO BS.ByteString -> IO b) -> IO b 
               out handler' = handler' .  S.Effect . fix $ \go -> do
@@ -280,6 +313,6 @@ withStreamingRequestJSM req handler =
                   Nothing -> return S.Stop
                   Just x -> return $ S.Yield x (S.Effect go)
           liftIO . putMVar result . Response status hdrs ver $ S.SourceT @IO out
-        _ -> error "wrong number of arguments to Promise.then() callback"
-    liftJSM $ fetchPromise # "then" $ [fetchPromiseHandler]
+        _ -> error "wrong number of arguments to Promise.then() callback")
+    liftJSM $ fetchPromise' # "then" $ [fetchPromiseHandler]
     liftJSM . handler =<< liftIO (takeMVar result)

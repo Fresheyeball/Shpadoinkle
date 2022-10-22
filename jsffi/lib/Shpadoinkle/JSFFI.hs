@@ -101,6 +101,8 @@ module Shpadoinkle.JSFFI
   , toIntLax
   , toBoolLax
 
+  , consoleLog
+
   , eval
   , createTextNode
 
@@ -281,6 +283,9 @@ foreign import javascript unsafe
 #else
 downcastJSM = ghcjsOnly
 #endif
+
+
+-- WANT: double-check that Nullable uses null, not undefined
 
 
 -- | Like 'downcastJSM', but with fewer constraints and worse error reporting
@@ -466,9 +471,8 @@ foreign import javascript unsafe
 --
 -- Refines 'JSVal' to only objects
 --
--- A value 'x' is considered to be an object if both of the following hold:
--- - @typeof x === 'object'@
--- - @x !== null@
+-- A value 'x' is considered to be an object if the following condition holds:
+-- prop> (typeof x === 'object' && x !== null) || (typeof x === 'function')
 newtype JSObject = JSObject { unJSObject :: JSVal }
   deriving (Typeable)
 
@@ -481,7 +485,7 @@ instance JSObject <: JSVal where
   downcast = fmap JSObject . nullableToMaybe . downcast_JSObject_js
 
 foreign import javascript unsafe
-  "$r = typeof $1 === 'object' && $1 !== null ? $1 : null"
+  "$r = (typeof $1 === 'object' && $1 !== null) || typeof $1 === 'function' ? $1 : null"
   downcast_JSObject_js :: JSVal -> Nullable JSVal
 #endif
 
@@ -1094,6 +1098,14 @@ foreign import javascript unsafe
 #else
 toBoolLax = ghcjsOnly
 #endif
+
+
+consoleLog :: (MonadJSM m, Make m JSArgs a) => a -> m ()
+consoleLog a = do
+  args <- makeJSArgs a
+  console :: JSObject <- getProp "console" global
+  console # "log" $ args
+  pure ()
 
 
 eval :: forall s m. (MonadJSM m, s <: JSString) => s -> m JSVal
