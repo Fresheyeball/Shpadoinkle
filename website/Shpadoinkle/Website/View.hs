@@ -59,6 +59,7 @@ view cy vm = div [ class' $ topClass cur ] . wrapper cy (vm ^. #mobileMenu) cur 
     (RPackages pr,        MStatic) -> Documentation.packages       pr   cur
     (RTutorial tutr,      MStatic) -> Documentation.tutorial       tutr cur
     (RSandbox,            MStatic) -> ""
+    (RFourOhFour, _)               -> FourOhFour.view
     _                              -> FourOhFour.view
     where cur = vm ^. #currentRoute
 

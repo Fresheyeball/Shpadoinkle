@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE TypeApplications                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -24,17 +25,6 @@ import           Control.Monad                           (void)
 import           Control.Monad.IO.Class                  (liftIO)
 import           Data.Text                               (Text)
 import           GHC.Generics                            (Generic)
-import           GHCJS.DOM                               (currentDocumentUnchecked,
-                                                          currentWindowUnchecked)
-import           GHCJS.DOM.Document                      (createElement)
-import           GHCJS.DOM.Element                       (setId)
-import           GHCJS.DOM.NonElementParentNode          (getElementById)
-import           GHCJS.DOM.RequestAnimationFrameCallback (RequestAnimationFrameCallback,
-                                                          newRequestAnimationFrameCallback)
-import           GHCJS.DOM.Window                        (Window,
-                                                          requestAnimationFrame)
-import           Language.Javascript.JSaddle             (toJSVal)
-import qualified Language.Javascript.JSaddle             as JSaddle
 import           Shpadoinkle                             (JSM, NFData,
                                                           RawNode (..),
                                                           newTVarIO,
@@ -42,7 +32,7 @@ import           Shpadoinkle                             (JSM, NFData,
 import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom)
 import           Shpadoinkle.Html                        as H
 import           Shpadoinkle.Html.TH.AssetLink           (assetLink)
-import           Shpadoinkle.JSFFI                       (JSVal, downcastJSM)
+import           Shpadoinkle.JSFFI                       (JSVal, downcastJSM, JSObject, jsAs, consoleLog, document, requestAnimationFrame, getElementById, setId, createElement)
 #ifndef ghcjs_HOST_OS
 import           Shpadoinkle.JSFFI                       (ghcjsOnly)
 #endif
@@ -51,24 +41,6 @@ import           Shpadoinkle.Keyboard                    (pattern Ctrl,
                                                           pattern RightArrow)
 import           UnliftIO.Concurrent                     (forkIO, threadDelay)
 import           Unsafe.Coerce                           (unsafeCoerce)
-
-
-jsmFromJSaddle :: JSaddle.JSM a -> JSM a
-#ifdef ghcjs_HOST_OS
-jsmFromJSaddle = id
-#else
-jsmFromJSaddle = ghcjsOnly
-#endif
-
-jsmToJSaddle :: JSM a -> JSaddle.JSM a
-#ifdef ghcjs_HOST_OS
-jsmToJSaddle = id
-#else
-jsmToJSaddle = ghcjsOnly
-#endif
-
-jsValFromJSaddle :: JSaddle.JSVal -> JSVal
-jsValFromJSaddle = unsafeCoerce
 
 
 default (Text)
@@ -172,28 +144,26 @@ tick d g = g
   }
 
 
-animate :: Window -> TVar Game -> JSM RequestAnimationFrameCallback
-animate win model = jsmFromJSaddle $
-  newRequestAnimationFrameCallback $ \d -> void $ do
+animate :: TVar Game -> JSM ()
+animate model = void $ do
+  requestAnimationFrame $ \d -> void $ do
     liftIO . atomically . modifyTVar model . tick $ Clock d
-    requestAnimationFrame win =<< jsmToJSaddle (animate win model)
+    animate model
 
 
 play :: JSM RawNode
-play = jsmFromJSaddle $ do
+play = do
   let gameId = "game"
-  doc <- currentDocumentUnchecked
-  isSubsequent <- traverse toJSVal =<< getElementById doc gameId
+  isSubsequent <- getElementById gameId
   case isSubsequent of
-    Just raw -> jsmToJSaddle $ pure . RawNode =<< downcastJSM . jsValFromJSaddle =<< pure raw
+    Just raw -> pure . RawNode . jsAs @JSObject $ raw
     Nothing -> do
-      win <- currentWindowUnchecked
-      elm <- createElement doc "div"
-      setId elm gameId
+      elm <- createElement "div"
+      setId gameId elm
       model <- newTVarIO $ Game 24 0 Idle FaceRight
-      _ <- requestAnimationFrame win =<< jsmToJSaddle (animate win model)
-      raw <- jsmToJSaddle $ pure . RawNode =<< downcastJSM . jsValFromJSaddle =<< jsmFromJSaddle (toJSVal elm)
-      _ <- jsmToJSaddle . forkIO $ threadDelay 1
+      animate model
+      let raw = RawNode (jsAs @JSObject elm)
+      _ <- forkIO $ threadDelay 1
         >> shpadoinkle id runSnabbdom model game (pure raw)
       return raw
 
