@@ -20,23 +20,22 @@ module Shpadoinkle.Router.Client
   ) where
 
 
-import           Control.Monad.Catch         (MonadThrow (throwM))
-import           Data.Function               ((&))
-import           Data.Maybe                  (fromMaybe)
-import           Data.Text                   (Text)
-import           Servant.Client.JS           (BaseUrl (..), ClientEnv (..),
-                                              ClientError (..), ClientM (..),
-                                              EmptyClient (..), HasClient (..),
-                                              InvalidBaseUrlException, Response,
-                                              ResponseF (..), Scheme (..),
-                                              StreamingResponse, client,
-                                              parseBaseUrl, runClientM,
-                                              showBaseUrl,
-                                              withStreamingRequestJSM)
-import           Shpadoinkle.JSFFI           (JSM, JSObject, getProp,
-                                              getPropMaybe, ghcjsOnly, global)
-import           Text.Read                   (readMaybe)
-import           UnliftIO                    (MonadIO (liftIO))
+import           Control.Monad.Catch (MonadThrow (throwM))
+import           Data.Function       ((&))
+import           Data.Maybe          (fromMaybe)
+import           Data.Text           (Text)
+import           Servant.Client.JS   (BaseUrl (..), ClientEnv (..),
+                                      ClientError (..), ClientM (..),
+                                      EmptyClient (..), HasClient (..),
+                                      InvalidBaseUrlException, Response,
+                                      ResponseF (..), Scheme (..),
+                                      StreamingResponse, client, parseBaseUrl,
+                                      runClientM, showBaseUrl,
+                                      withStreamingRequestJSM)
+import           Shpadoinkle.JSFFI   (JSM, JSObject, getProp, getPropMaybe,
+                                      ghcjsOnly, global)
+import           Text.Read           (readMaybe)
+import           UnliftIO            (MonadIO (liftIO))
 
 
 default (Text)

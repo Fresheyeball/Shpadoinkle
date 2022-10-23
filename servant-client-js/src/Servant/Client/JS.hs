@@ -9,8 +9,8 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TupleSections              #-}
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE ViewPatterns               #-}
@@ -28,65 +28,48 @@ module Servant.Client.JS
   ) where
 
 
-import Control.Concurrent
-import Control.Monad (forM_)
-import Control.Monad.Base
-import Control.Monad.Catch
-import Control.Monad.Error.Class
-import Control.Monad.Reader
-import Control.Monad.Trans.Control
-import Control.Monad.Trans.Except
-import Data.Binary.Builder (toLazyByteString)
-import qualified Data.ByteString.Char8 as BS
+import           Control.Concurrent
+import           Control.Monad                (forM_)
+import           Control.Monad.Base
+import           Control.Monad.Catch
+import           Control.Monad.Error.Class
+import           Control.Monad.Reader
+import           Control.Monad.Trans.Control
+import           Control.Monad.Trans.Except
+import           Data.Binary.Builder          (toLazyByteString)
+import qualified Data.ByteString.Char8        as BS
 #ifdef ghcjs_HOST_OS
-import qualified Data.ByteString.Builder as BB
-import Data.Int (Int8)
+import qualified Data.ByteString.Builder      as BB
+import           Data.Int                     (Int8)
 #endif
-import qualified Data.ByteString.Lazy as BL
-import Data.CaseInsensitive
-import Data.Maybe (fromMaybe)
-import Data.Proxy
-import Data.Functor.Alt
-import qualified Data.Sequence as Seq
-import Data.Text
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import GHC.Conc
-import GHC.Generics
-import Data.Function ((&))
+import qualified Data.ByteString.Lazy         as BL
+import           Data.CaseInsensitive
+import           Data.Function                ((&))
+import           Data.Functor.Alt
+import           Data.Maybe                   (fromMaybe)
+import           Data.Proxy
+import qualified Data.Sequence                as Seq
+import           Data.Text
+import           Data.Text.Encoding           (decodeUtf8, encodeUtf8)
+import           GHC.Conc
+import           GHC.Generics
 #ifdef ghcjs_HOST_OS
-import GHCJS.Marshal.Internal
+import           GHCJS.Marshal.Internal
 #endif
-import Shpadoinkle.JSFFI (
-  JSM (..)
-  , liftJSM
-  , JSString
-  , mkEmptyObject
-  , (#)
-  , global
-  , getProp
-  , getPropMaybe
-  , setProp
-  , toBoolLax
-  , mkFun
-  , jsAs
-  , jsTo
-  , JSObject
+import           Shpadoinkle.JSFFI            (JSArray, JSM (..), JSObject,
+                                               JSString, JSVal, consoleLog,
+                                               downcast, getProp, getPropMaybe,
+                                               ghcjsOnly, global, jsAs, jsTo,
+                                               liftJSM, mkEmptyObject, mkFun,
+                                               setProp, toBoolLax, (#))
 #ifdef ghcjs_HOST_OS
-  , JSArray
-  , consoleLog
+import           GHCJS.Prim                   hiding (fromJSString, getProp)
 #endif
-  , ghcjsOnly
-  , JSVal
-  , downcast
-  )
-#ifdef ghcjs_HOST_OS
-import GHCJS.Prim hiding (getProp, fromJSString)
-#endif
-import Network.HTTP.Media (renderHeader)
-import Network.HTTP.Types
-import Servant.Client.Core
-import Servant.Client.Core.Reexport
-import qualified Servant.Types.SourceT as S
+import           Network.HTTP.Media           (renderHeader)
+import           Network.HTTP.Types
+import           Servant.Client.Core
+import           Servant.Client.Core.Reexport
+import qualified Servant.Types.SourceT        as S
 
 default (Text)
 
@@ -142,7 +125,7 @@ getFetchArgs (ClientEnv (BaseUrl urlScheme host port basePath))
                     Https -> "https://"
   url <- text2jsval $ schemeStr <> pack host <> ":" <> pack (show port) <> pack basePath
                              <> decodeUtf8 (BL.toStrict (toLazyByteString reqPath))
-                             <> (if Prelude.null reqQs then "" else "?" ) <> (intercalate "&" 
+                             <> (if Prelude.null reqQs then "" else "?" ) <> (intercalate "&"
                                         $ (\(k,v) -> decodeUtf8 k <> "="
                                                            <> maybe "" decodeUtf8 v)
                                          <$> Prelude.foldr (:) [] reqQs)
@@ -306,7 +289,7 @@ withStreamingRequestJSM req handler =
                 _ -> error "wrong number of arguments to rdrHandler")
             _ <- rdrPromise' # ("then" :: Text) $ [rdrHandler]
             return ()
-          let out :: forall b. (S.StepT IO BS.ByteString -> IO b) -> IO b 
+          let out :: forall b. (S.StepT IO BS.ByteString -> IO b) -> IO b
               out handler' = handler' .  S.Effect . fix $ \go -> do
                 next <- takeMVar push
                 case next of

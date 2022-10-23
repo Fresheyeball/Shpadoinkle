@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP                        #-}
-{-# LANGUAGE TypeApplications                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -13,34 +12,36 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TupleSections              #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults              #-}
 
 
 module Shpadoinkle.Website.Page.FourOhFour where
 
 
-import           Control.Concurrent.STM                  (TVar, atomically,
-                                                          modifyTVar, retry)
-import           Control.Monad                           (void)
-import           Control.Monad.IO.Class                  (liftIO)
-import           Data.Text                               (Text)
-import           GHC.Generics                            (Generic)
-import           Shpadoinkle                             (JSM, NFData,
-                                                          RawNode (..),
-                                                          newTVarIO,
-                                                          shpadoinkle)
-import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom)
-import           Shpadoinkle.Html                        as H
-import           Shpadoinkle.Html.TH.AssetLink           (assetLink)
-import           Shpadoinkle.JSFFI                       (JSVal, downcastJSM, JSObject, jsAs, consoleLog, document, requestAnimationFrame, getElementById, setId, createElement)
+import           Control.Concurrent.STM        (TVar, atomically, modifyTVar,
+                                                retry)
+import           Control.Monad                 (void)
+import           Control.Monad.IO.Class        (liftIO)
+import           Data.Text                     (Text)
+import           GHC.Generics                  (Generic)
+import           Shpadoinkle                   (JSM, NFData, RawNode (..),
+                                                newTVarIO, shpadoinkle)
+import           Shpadoinkle.Backend.Snabbdom  (runSnabbdom)
+import           Shpadoinkle.Html              as H
+import           Shpadoinkle.Html.TH.AssetLink (assetLink)
+import           Shpadoinkle.JSFFI             (JSObject, JSVal, consoleLog,
+                                                createElement, document,
+                                                downcastJSM, getElementById,
+                                                jsAs, requestAnimationFrame,
+                                                setId)
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle.JSFFI                       (ghcjsOnly)
+import           Shpadoinkle.JSFFI             (ghcjsOnly)
 #endif
-import           Shpadoinkle.Keyboard                    (pattern Ctrl,
-                                                          pattern LeftArrow,
-                                                          pattern RightArrow)
-import           UnliftIO.Concurrent                     (forkIO, threadDelay)
-import           Unsafe.Coerce                           (unsafeCoerce)
+import           Shpadoinkle.Keyboard          (pattern Ctrl, pattern LeftArrow,
+                                                pattern RightArrow)
+import           UnliftIO.Concurrent           (forkIO, threadDelay)
+import           Unsafe.Coerce                 (unsafeCoerce)
 
 
 default (Text)
