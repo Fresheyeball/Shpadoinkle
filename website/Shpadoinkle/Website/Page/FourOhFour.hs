@@ -30,18 +30,12 @@ import           Shpadoinkle                   (JSM, NFData, RawNode (..),
 import           Shpadoinkle.Backend.Snabbdom  (runSnabbdom)
 import           Shpadoinkle.Html              as H
 import           Shpadoinkle.Html.TH.AssetLink (assetLink)
-import           Shpadoinkle.JSFFI             (JSObject, JSVal, consoleLog,
-                                                createElement, document,
-                                                downcastJSM, getElementById,
-                                                jsAs, requestAnimationFrame,
-                                                setId)
-#ifndef ghcjs_HOST_OS
-import           Shpadoinkle.JSFFI             (ghcjsOnly)
-#endif
+import           Shpadoinkle.JSFFI             (JSObject, createElement,
+                                                getElementById, jsAs,
+                                                requestAnimationFrame, setId)
 import           Shpadoinkle.Keyboard          (pattern Ctrl, pattern LeftArrow,
                                                 pattern RightArrow)
 import           UnliftIO.Concurrent           (forkIO, threadDelay)
-import           Unsafe.Coerce                 (unsafeCoerce)
 
 
 default (Text)

@@ -55,13 +55,14 @@ import           GHC.Conc
 import           GHC.Generics
 #ifdef ghcjs_HOST_OS
 import           GHCJS.Marshal.Internal
+import           Shpadoinkle.JSFFI            (JSArray)
 #endif
-import           Shpadoinkle.JSFFI            (JSArray, JSM (..), JSObject,
-                                               JSString, JSVal, consoleLog,
-                                               downcast, getProp, getPropMaybe,
-                                               ghcjsOnly, global, jsAs, jsTo,
-                                               liftJSM, mkEmptyObject, mkFun,
-                                               setProp, toBoolLax, (#))
+import           Shpadoinkle.JSFFI            (JSM (..), JSObject, JSString,
+                                               JSVal, downcast, getProp,
+                                               getPropMaybe, ghcjsOnly, global,
+                                               jsAs, jsTo, liftJSM,
+                                               mkEmptyObject, mkFun, setProp,
+                                               toBoolLax, (#))
 #ifdef ghcjs_HOST_OS
 import           GHCJS.Prim                   hiding (fromJSString, getProp)
 #endif
