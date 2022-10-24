@@ -25,10 +25,10 @@ import           Data.Time                   (UTCTime, defaultTimeLocale,
 import           GHC.Generics                (Generic)
 import           Prelude                     hiding (div, span)
 import           Shpadoinkle.JSFFI           (JSKey, JSM, JSObject, JSVal,
-                                              MonadJSM, downcastJSM, getProp,
-                                              getPropMaybe, global, jsAs,
-                                              liftJSM, mkEmptyObject, mkFun',
-                                              setProp, type (<:), (#-), (===))
+                                              MonadJSM, getProp, getPropMaybe,
+                                              global, jsAs, jsTo, liftJSM,
+                                              mkEmptyObject, mkFun', setProp,
+                                              type (<:), (#-), (===))
 import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
                                               newTVarIO)
@@ -67,7 +67,7 @@ listenForOutput :: TVar Model -> JSM ()
 listenForOutput model = do
   onMessage <- pure global ! "chrome" ! "runtime" ! "onMessage"
   (onMessage #- "addListener") =<< mkFun' (\args -> do
-    x <- downcastJSM @JSObject $ Prelude.head args
+    x <- jsTo @JSObject $ Prelude.head args
     t :: Text <- getProp "type" x
     let isRight = t === "shpadoinkle_output_state"
     when isRight $ do

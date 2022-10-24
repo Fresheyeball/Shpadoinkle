@@ -20,9 +20,9 @@ import           UnliftIO
 import           Control.Lens        hiding ((#))
 import           Control.Monad
 import           Control.Monad.STM   (retry)
-import           Shpadoinkle.JSFFI   (JSObject, JSVal, downcastJSM, getProp,
-                                      getPropMaybe, global, mkEmptyObject,
-                                      mkFun', setProp, (#-), (===))
+import           Shpadoinkle.JSFFI   (JSObject, JSVal, getProp, getPropMaybe,
+                                      global, jsTo, mkEmptyObject, mkFun',
+                                      setProp, (#-), (===))
 import           UnliftIO.Concurrent
 #endif
 
@@ -57,7 +57,7 @@ outputState x = void . (try :: forall b. JSM b -> JSM (Either SomeException b)) 
 listenForSetState :: forall a. Read a => TVar a -> JSM ()
 listenForSetState model =
   (global #- "addEventListener") . ("message",) =<< (mkFun' $ \args -> do
-    e <- downcastJSM @JSObject $ Prelude.head args
+    e <- jsTo @JSObject $ Prelude.head args
     isWindow <- (=== global) <$> getProp @JSVal "source" e
     d :: Maybe JSObject <- getPropMaybe "data" e
     case d of
