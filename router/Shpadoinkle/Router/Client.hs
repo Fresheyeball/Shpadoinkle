@@ -21,7 +21,6 @@ module Shpadoinkle.Router.Client
 
 
 import           Control.Monad.Catch (MonadThrow (throwM))
-import           Data.Function       ((&))
 import           Data.Maybe          (fromMaybe)
 import           Data.Text           (Text)
 import           Servant.Client.JS   (BaseUrl (..), ClientEnv (..),
@@ -32,8 +31,7 @@ import           Servant.Client.JS   (BaseUrl (..), ClientEnv (..),
                                       StreamingResponse, client, parseBaseUrl,
                                       runClientM, showBaseUrl,
                                       withStreamingRequestJSM)
-import           Shpadoinkle.JSFFI   (JSM, JSObject, getProp, getPropMaybe,
-                                      ghcjsOnly, global)
+import           Shpadoinkle.JSFFI   (JSM, JSObject, getLocation, getPropMaybe)
 import           Text.Read           (readMaybe)
 import           UnliftIO            (MonadIO (liftIO))
 
@@ -41,20 +39,9 @@ import           UnliftIO            (MonadIO (liftIO))
 default (Text)
 
 
-convJSM :: JSM a -> JSM a
-#ifdef ghcjs_HOST_OS
-convJSM = id
-#else
-convJSM = ghcjsOnly
-#endif
-
-
 getClientEnv :: JSM ClientEnv
-getClientEnv = convJSM $ do
-  loc :: JSObject <-
-    global
-    & getProp @JSObject ("window" :: Text)
-    & (>>= getProp ("location" :: Text))
+getClientEnv = do
+  loc :: JSObject <- getLocation
   protocol <- mapProtocol <$> (getPropMaybe ("protocol" :: Text) loc)
   hostname <- fromMaybe "localhost" <$> (getPropMaybe ("hostname" :: Text) loc)
   port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) <$> (getPropMaybe ("port" :: Text) loc)
@@ -76,8 +63,8 @@ runXHR m = runXHR' m =<< getClientEnv
 
 -- | Run the ClientM from Servant as an XHR request with a customized base URL.
 runXHR' :: ClientM a -> ClientEnv -> JSM a
-runXHR' m env = convJSM $ either (liftIO . throwM) pure =<< runClientM m env
+runXHR' m env = either (liftIO . throwM) pure =<< runClientM m env
 
 
 runXHRe :: ClientM a -> ClientEnv -> JSM (Either ClientError a)
-runXHRe = (fmap . fmap) convJSM runClientM
+runXHRe = runClientM

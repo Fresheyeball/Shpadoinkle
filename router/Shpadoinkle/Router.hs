@@ -218,6 +218,7 @@ fullPageSPAC toJSM backend i' view getStage onRoute routes = do
       _ <- listenStateChange router $ writeUpdate model . kleisli . const
            . (fmap (hoist toJSM) . toJSM) . onRoute
       shpadoinkle toJSM backend model view getStage
+      -- syncPoint
 
 
 -- | This method wraps @shpadoinkle@, providing for a convenient entrypoint
@@ -288,6 +289,7 @@ fullPageSPA' toJSM backend model i' view getStage onRoute routes = do
       _ <- listenStateChange router $ writeUpdate model . kleisli . const
            . (fmap (hoist toJSM) . toJSM) . onRoute
       shpadoinkle toJSM backend model view getStage
+      -- syncPoint
 
 
 -- | ?foo=bar&baz=qux -> [("foo","bar"),("baz","qux")]
@@ -327,6 +329,7 @@ listenStateChange router handle = do
   _ <- forkIO . forever $ do
     liftIO $ takeMVar syncRoute
     getRoute router $ maybe (return ()) handle
+    -- syncPoint
     scrollTo 0 0
   return ()
 
