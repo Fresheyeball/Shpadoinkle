@@ -13,7 +13,6 @@ module Shpadoinkle.Website.Component.LiveExample where
 
 import           Control.Lens                              ((%~), (&), (.~),
                                                             (^.))
-import           Control.Monad                             (void)
 import           Control.Monad.Reader                      (asks)
 import           Data.ByteString.Lazy                      as BS (fromStrict)
 import           Data.FileEmbed                            (embedFile)
@@ -40,11 +39,13 @@ import           Shpadoinkle.Html                          (br'_, class', div,
                                                             onInput, src)
 import           Shpadoinkle.Isreal.Types                  as Swan
 import           Shpadoinkle.JSFFI                         (JSM, JSObject,
-                                                            MonadJSM, downcast,
+                                                            JSVal, MonadJSM,
+                                                            downcast,
                                                             downcastJSM, global,
                                                             mkEmptyObject,
                                                             mkFun', setProp,
-                                                            setTimeout, (#))
+                                                            setTimeout, (#),
+                                                            (#-))
 import           Shpadoinkle.Lens                          (onRecord)
 import           Shpadoinkle.Website.Style
 import           Shpadoinkle.Website.Types.Effects.Example (ExampleEffects,
@@ -153,15 +154,15 @@ mirrorCfg (Code cc) = do
 mirror :: Code -> Html m Code
 mirror cc = baked $ do
   (notify, stream) <- mkGlobalMailboxAfforded constUpdate
-  container' <- global # "createElement" $ "div"
+  container' :: JSVal <- global # "createElement" $ "div"
   cfg <- mirrorCfg cc
-  cm  <- global # "CodeMirror" $ (container', cfg)
+  cm :: JSVal  <- global # "CodeMirror" $ (container', cfg)
   cmo :: JSObject <- downcastJSM cm
   onChange <- mkFun' $ \_ -> do
-        jsv <- cmo # "getValue" $ ()
+        jsv :: JSVal <- cmo # "getValue" $ ()
         let raw :: Maybe Text = downcast jsv
         maybe (pure ()) (notify . Code . encodeUtf8 . TL.fromStrict) raw
-  _ <- cmo # "on" $ ("change", onChange)
-  _ <- setTimeout 33 =<< (mkFun' $ \_ -> void $ cmo # "refresh" $ ())
+  cmo #- "on" $ ("change", onChange)
+  _ <- setTimeout 33 =<< (mkFun' $ \_ -> cmo #- "refresh" $ ())
   container'' <- downcastJSM container'
   return (RawNode container'', stream)

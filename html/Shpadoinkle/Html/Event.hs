@@ -43,7 +43,7 @@ import           Data.Text
 import           Shpadoinkle.JSFFI            (JSObject, JSString, JSVal,
                                                downcastJSM, getProp, global,
                                                mkFun', toBoolLax, toNumberLax,
-                                               toTextLax, (#))
+                                               toTextLax, (#), (#-))
 import           UnliftIO.Concurrent          (forkIO)
 import           UnliftIO.STM
 
@@ -93,11 +93,11 @@ $(mkEventVariantsAfforded "check" ''Bool)
 
 
 preventDefault :: RawEvent -> JSM ()
-preventDefault e = void $ (unRawEvent $ e) # ("preventDefault" :: String) $ ([] :: [()])
+preventDefault e = (unRawEvent $ e) #- ("preventDefault" :: String) $ ([] :: [()])
 
 
 stopPropagation :: RawEvent -> JSM ()
-stopPropagation e = void $ (unRawEvent $ e) # ("stopPropagation" :: String) $ ([] :: [()])
+stopPropagation e = (unRawEvent $ e) #- ("stopPropagation" :: String) $ ([] :: [()])
 
 
 onSubmitC :: Continuation m a -> (Text, Prop m a)
@@ -129,7 +129,7 @@ onClickAwayC c =
 
      (notify, stream) <- mkGlobalMailbox c
 
-     void $ (global # ("addEventListener" :: Text)) . ("click" :: Text,) =<<
+     (global #- ("addEventListener" :: Text)) . ("click" :: Text,) =<<
         (mkFun' $ \case
           evt:_ -> void . forkIO $ do
 
@@ -153,7 +153,7 @@ mkGlobalKey evtName c =
 
      (notify, stream) <- mkGlobalMailboxAfforded c
 
-     void $ (global # ("addEventListener" :: Text)) . (evtName,) =<<
+     (global #- ("addEventListener" :: Text)) . (evtName,) =<<
         (mkFun' $ \case
            e:_ -> notify . round =<< toNumberLax =<< getProp ("keyCode" :: Text) =<< downcastJSM @JSObject e
            []  -> return ())
@@ -169,7 +169,7 @@ mkGlobalKeyNoRepeat evtName c =
 
      (notify, stream) <- mkGlobalMailboxAfforded c
 
-     void $ (global # ("addEventListener" :: Text)) . (evtName,) =<<
+     (global #- ("addEventListener" :: Text)) . (evtName,) =<<
         (mkFun' $ \case
            e:_ -> do
              eObj <- downcastJSM @JSObject e

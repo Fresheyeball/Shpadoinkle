@@ -54,6 +54,7 @@ module Shpadoinkle.JSFFI
   , getProp
   , getPropMaybe
   , setProp
+  , deleteProp
 
   , JSKey
   , makeJSKey
@@ -65,6 +66,7 @@ module Shpadoinkle.JSFFI
   , mkFun
   , mkFun'
   , (#)
+  , (#-)
   , setTimeout
   , clearTimeout
 
@@ -556,6 +558,21 @@ setProp = ghcjsOnly
 #endif
 
 
+deleteProp :: (MonadJSM m, Make m JSKey key, obj <: JSObject) => key -> obj -> m ()
+#ifdef ghcjs_HOST_OS
+deleteProp k o = do
+  k' <- pure . upcast . unJSKey =<< makeJSKey k
+  let o' = unJSObject $ upcast o
+  liftJSM $ deleteProp_js o' k'
+
+foreign import javascript unsafe
+  "delete $1[$2]"
+  deleteProp_js :: JSVal -> JSVal -> JSM ()
+#else
+deleteProp = ghcjsOnly
+#endif
+
+
 --------------------------------------------------------------------------------
 -- Object keys
 --------------------------------------------------------------------------------
@@ -792,13 +809,20 @@ instance (Monad m, Make m JSArg a1, Make m JSArg a2, Make m JSArg a3) => Make m 
 
 
 -- | Call a JS method
-(#) :: (MonadJSM m, this <: JSObject, Make m JSKey prop, Make m JSArgs args) => this -> prop -> args -> m JSVal
+(#) ::
+  ( MonadJSM m
+  , this <: JSObject
+  , Make m JSKey prop
+  , Make m JSArgs args
+  , res <: JSVal
+  , Typeable res
+  ) => this -> prop -> args -> m res
 #ifdef ghcjs_HOST_OS
 (#) this prop args = do
   this' <- (upcast :: JSObject -> JSVal) . upcast <$> pure this
   prop' <- unJSKey <$> makeJSKey prop
   args' <- upcast . unJSArgs <$> makeJSArgs args
-  liftJSM $ unsafeCall_js this' prop' args'
+  liftJSM $ downcastJSM =<< unsafeCall_js this' prop' args'
 
 foreign import javascript unsafe
   "$r = (function (it) { return it[$2].apply(it, $3); })($1)"
@@ -807,6 +831,23 @@ foreign import javascript unsafe
 (#) = ghcjsOnly
 #endif
 infixr 2 #
+
+
+-- |
+--
+-- Like '#' but returns '()'
+--
+-- Using '#' and 'void' won't work well due to '#' being parametric over its return type
+(#-) ::
+  ( MonadJSM m
+  , this <: JSObject
+  , Make m JSKey prop
+  , Make m JSArgs args
+  ) => this -> prop -> args -> m ()
+(#-) this prop args = do
+  r :: JSVal <- this # prop $ args
+  pure ()
+infixr 2 #-
 
 
 --------------------------------------------------------------------------------
@@ -1104,8 +1145,7 @@ consoleLog :: (MonadJSM m, Make m JSArgs a) => a -> m ()
 consoleLog a = do
   args <- makeJSArgs a
   console :: JSObject <- getProp "console" global
-  console # "log" $ args
-  pure ()
+  console #- "log" $ args
 
 
 eval :: forall s m. (MonadJSM m, s <: JSString) => s -> m JSVal
@@ -1156,13 +1196,13 @@ onWindowPopstateWithoutEvent :: JSM () -> JSM ()
 #ifdef ghcjs_HOST_OS
 onWindowPopstateWithoutEvent cb = do
   cb' <- mkFun' (\_ -> cb)
-  void $ window # "addEventListener" $ ("popstate", cb')
+  window #- "addEventListener" $ ("popstate", cb')
 #else
 onWindowPopstateWithoutEvent = ghcjsOnly
 #endif
 
 scrollTo :: MonadJSM m => Double -> Double -> m ()
-scrollTo x y = void $ window # "scrollTo" $ (x, y)
+scrollTo x y = window #- "scrollTo" $ (x, y)
 
 historyPushState
   :: (MonadJSM m, data_ <: JSVal, title <: JSVal, url <: JSVal)
@@ -1170,4 +1210,4 @@ historyPushState
 historyPushState data_ title mUrl = do
   history :: JSObject <- liftJSM $ getProp "history" window
   args <- makeJSArgs (data_, title, mUrl)
-  void . liftJSM $ history # "pushState" $ args
+  liftJSM $ history #- "pushState" $ args

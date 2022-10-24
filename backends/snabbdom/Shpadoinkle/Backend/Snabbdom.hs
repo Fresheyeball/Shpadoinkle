@@ -60,7 +60,7 @@ import           Shpadoinkle.JSFFI           (JSObject, JSVal, appendChild,
                                               downcastUnsafe, eval, getProp,
                                               global, jsAs, jsTrue,
                                               mkEmptyObject, mkFun', setId,
-                                              setInnerHTML, setProp, (#))
+                                              setInnerHTML, setProp, (#), (#-))
 #ifdef ghcjs_HOST_OS
 import           Shpadoinkle.JSFFI           (jsAs, upcast)
 #endif
@@ -149,7 +149,7 @@ insertHook :: Text -- ^ @k@
            -> JSObject -- ^ @o@
            -> JSM ()
 #ifndef ghcjs_HOST_OS
-insertHook t f' hooksObj = void $ global # "insertHook" $ (t, f', hooksObj)
+insertHook t f' hooksObj = global #- "insertHook" $ (t, f', hooksObj)
 #else
 insertHook t f' hooksObj = join $ insertHook' <$> pure (upcast t) <*> pure f' <*> pure (upcast hooksObj)
 foreign import javascript unsafe "window['insertHook']($1,$2,$3)" insertHook' :: JSVal -> JSVal -> JSVal -> JSM ()
@@ -250,7 +250,7 @@ foreign import javascript unsafe "window['vnode']('div',$1)" vnodePotato :: JSOb
 -- | Call-site for Snabbdom's @patch()@ function
 patchh :: JSObject -> SnabVNode -> JSM ()
 #ifndef ghcjs_HOST_OS
-patchh previousNode (SnabVNode newNode) = void $ ( global # "patchh" $ (previousNode, newNode) )
+patchh previousNode (SnabVNode newNode) = global #- "patchh" $ (previousNode, newNode)
 #else
 patchh p (SnabVNode n) = patchh' (upcast p) n
 foreign import javascript unsafe "window['patchh']($1,$2)" patchh' :: JSVal -> JSVal -> JSM ()
@@ -274,7 +274,7 @@ instance (MonadJSM m, NFData a) => Backend (SnabbdomT a) m a where
         ins <- mkFun' (\case
           [n] -> do
             elm' :: JSObject <- getProp "elm" =<< downcastJSM @JSObject n
-            void $ elm' # "appendChild" $ rn
+            elm' #- "appendChild" $ rn
           _   -> return ())
         hook <- mkEmptyObject
         setProp "insert" ins hook
@@ -306,7 +306,7 @@ startApp :: JSM () -> JSM ()
 #ifndef ghcjs_HOST_OS
 startApp cb = do
   f <- mkFun' $ const cb
-  void $ global # "startApp" $ f
+  global #- "startApp" $ f
 #else
 startApp cb = startApp' =<< pure . upcast =<< mkFun' (const cb)
 foreign import javascript unsafe "window['startApp']($1)" startApp' :: JSVal -> JSM ()

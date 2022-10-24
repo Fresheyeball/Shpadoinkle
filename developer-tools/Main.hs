@@ -28,7 +28,7 @@ import           Shpadoinkle.JSFFI           (JSKey, JSM, JSObject, JSVal,
                                               MonadJSM, downcastJSM, getProp,
                                               getPropMaybe, global, jsAs,
                                               liftJSM, mkEmptyObject, mkFun',
-                                              setProp, type (<:), (#), (===))
+                                              setProp, type (<:), (#-), (===))
 import qualified Text.Show.Pretty            as Pretty
 import           UnliftIO                    (TVar, atomically, modifyTVar,
                                               newTVarIO)
@@ -66,7 +66,7 @@ o ! k = getProp (jsAs @JSKey k) =<< o
 listenForOutput :: TVar Model -> JSM ()
 listenForOutput model = do
   onMessage <- pure global ! "chrome" ! "runtime" ! "onMessage"
-  void $ (onMessage # "addListener") =<< mkFun' (\args -> do
+  (onMessage #- "addListener") =<< mkFun' (\args -> do
     x <- downcastJSM @JSObject $ Prelude.head args
     t :: Text <- getProp "type" x
     let isRight = t === "shpadoinkle_output_state"
@@ -105,7 +105,7 @@ sendHistory (History history') = void $ do
   msg & setProp "type" "shpadoinkle_set_state"
   msg & setProp "msg" history'
 
-  void $ (pure global ! "chrome" ! "tabs") >>= (\t -> t # "sendMessage" $ (tabId, msg))
+  (pure global ! "chrome" ! "tabs") >>= (\t -> t #- "sendMessage" $ (tabId, msg))
 
 
 prettyHtml :: Monad m => Int -> Pretty.Value -> Html m a

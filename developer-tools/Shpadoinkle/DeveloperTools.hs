@@ -22,7 +22,7 @@ import           Control.Monad
 import           Control.Monad.STM   (retry)
 import           Shpadoinkle.JSFFI   (JSObject, JSVal, downcastJSM, getProp,
                                       getPropMaybe, global, mkEmptyObject,
-                                      mkFun', setProp, (#), (===))
+                                      mkFun', setProp, (#-), (===))
 import           UnliftIO.Concurrent
 #endif
 
@@ -51,12 +51,12 @@ outputState x = void . (try :: forall b. JSM b -> JSM (Either SomeException b)) 
   o <- mkEmptyObject
   o & setProp "type" "shpadoinkle_output_state"
   o & setProp "msg" (show x)
-  global # "postMessage" $ (o, "*")
+  global #- "postMessage" $ (o, "*")
 
 
 listenForSetState :: forall a. Read a => TVar a -> JSM ()
 listenForSetState model =
-  void $ (global # "addEventListener") . ("message",) =<< (mkFun' $ \args -> do
+  (global #- "addEventListener") . ("message",) =<< (mkFun' $ \args -> do
     e <- downcastJSM @JSObject $ Prelude.head args
     isWindow <- (=== global) <$> getProp @JSVal "source" e
     d :: Maybe JSObject <- getPropMaybe "data" e

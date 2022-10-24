@@ -36,7 +36,6 @@ module Shpadoinkle.Console (
   ) where
 
 
-import           Control.Monad           (void)
 import           Data.Aeson              (ToJSON, encode)
 import           Data.Kind               (Constraint, Type)
 import           Data.String             (IsString)
@@ -46,7 +45,7 @@ import           Data.Text.Lazy.Encoding (decodeUtf8)
 import           Prelude                 hiding (log)
 import           Shpadoinkle.JSFFI       (JSObject, JSVal, MonadJSM, askJSM,
                                           getProp, global, jsAs, liftJSM,
-                                          runJSM, type (<:), (#))
+                                          runJSM, type (<:), (#), (#-))
 import           System.IO.Unsafe        (unsafePerformIO)
 
 
@@ -85,15 +84,15 @@ instance LogJS ToJSON where
   logJS t a = liftJSM $ do
     console :: JSObject <- getProp "console" global
     json :: JSObject    <- getProp "JSON" global
-    parsed  <- json # "parse" $ (toStrict . decodeUtf8 $ encode a)
-    void ( console # t $ parsed )
+    parsed :: JSVal <- json # "parse" $ (toStrict . decodeUtf8 $ encode a)
+    console #- t $ parsed
 
 
 -- | Logs against 'Show' will be converted to a 'String' before being sent to the console.
 instance LogJS Show where
   logJS t a = liftJSM $ do
     console :: JSObject <- getProp "console" global
-    void ( console # t $ pack (show a) )
+    console #- t $ pack (show a)
 
 
 -- | Logs against 'ToJSVal' will be converted to a 'JSVal' before being sent to the console.
@@ -101,7 +100,7 @@ instance LogJS ToJSVal where
   logJS t a = liftJSM $ do
     console :: JSObject <- getProp "console" global
     a' <- pure . jsAs @JSVal $ a
-    void ( console # t $ a' )
+    console #- t $ a'
 
 
 {-|
@@ -139,22 +138,22 @@ instance Assert ToJSON where
   assert b x = liftJSM $ do
     console :: JSObject <- getProp "console" global
     json :: JSObject <- getProp "JSON" global
-    parsed <- json # "parse" $ (toStrict . decodeUtf8 $ encode x)
+    parsed :: JSVal <- json # "parse" $ (toStrict . decodeUtf8 $ encode x)
     b' <- pure . jsAs @JSVal $ b
-    void $ console # "assert" $ (b', parsed)
+    console #- "assert" $ (b', parsed)
 
 instance Assert Show where
   assert b x = liftJSM $ do
     console :: JSObject <- getProp "console" global
     b' <- pure . jsAs @JSVal $ b
-    void $ console # "assert" $ (b', pack $ show x)
+    console #- "assert" $ (b', pack $ show x)
 
 instance Assert ToJSVal where
   assert b x = liftJSM $ do
     console :: JSObject <- getProp "console" global
     b' <- pure . jsAs @JSVal $ b
     x' <- pure . jsAs @JSVal $ x
-    void $ console # "assert" $ (b', x')
+    console #- "assert" $ (b', x')
 
 
 -- | Log a list of JSON objects to the console where it will rendered as a table using <https://developer.mozilla.org/en-US/docs/Web/API/Console/table console.table>
@@ -191,11 +190,11 @@ newtype TimeLabel = TimeLabel { unTimeLabel :: Text }
 time :: MonadJSM m => TimeLabel -> m ()
 time (TimeLabel l) = liftJSM $ do
   console :: JSObject <- getProp "console" global
-  void ( console # "time" $ l )
+  console #- "time" $ l
 
 
 -- | End a timer and print the milliseconds elapsed since it started using <https://developer.mozilla.org/en-US/docs/Web/API/Console/timeEnd console.timeEnd>
 timeEnd :: MonadJSM m => TimeLabel -> m ()
 timeEnd (TimeLabel l) = liftJSM $ do
   console :: JSObject <- getProp "console" global
-  void ( console # "timeEnd" $ l )
+  console #- "timeEnd" $ l

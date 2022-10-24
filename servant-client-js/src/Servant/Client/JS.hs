@@ -62,7 +62,7 @@ import           Shpadoinkle.JSFFI            (JSM (..), JSObject, JSString,
                                                getPropMaybe, ghcjsOnly, global,
                                                jsAs, jsTo, liftJSM,
                                                mkEmptyObject, mkFun, setProp,
-                                               toBoolLax, (#))
+                                               toBoolLax, (#), (#-))
 #ifdef ghcjs_HOST_OS
 import           GHCJS.Prim                   hiding (fromJSString, getProp)
 #endif
@@ -170,8 +170,8 @@ getResponseMeta res = do
             <$> (getPropMaybe ("status" :: Text) res')
   resHeadersObj :: JSObject <- res' ! ("headers" :: Text)
   resHeaderNames <- (resHeadersObj # ("keys" :: Text) $ ([] :: [JSVal]))
-    >>= fix (\go names ->
-      do x <- jsTo @JSObject names >>= (\n -> n # ("next" :: Text) $ ([] :: [JSVal]))
+    >>= fix (\go (names :: JSVal) ->
+      do x :: JSVal <- jsTo @JSObject names >>= (\n -> n # ("next" :: Text) $ ([] :: [JSVal]))
          x' <- jsTo @JSObject x
          isDone <- getPropMaybe ("done" :: Text) x'
          if isDone == Just True || isDone == Nothing
@@ -194,7 +194,7 @@ uint8arrayToByteString :: JSVal -> JSM BS.ByteString
 #ifdef ghcjs_HOST_OS
 uint8arrayToByteString ar = do
   _Array :: JSObject <- getProp "Array" global
-  asArray :: [JSVal] <- pure . jsAs =<< jsTo @JSArray =<< (_Array # "from" $ ar)
+  asArray :: [JSVal] <- (jsAs :: JSArray -> [JSVal]) <$> (_Array # "from" $ ar)
   let asInt8s = asInt8Unchecked <$> asArray
   pure . BL.toStrict . BB.toLazyByteString $ foldMap BB.int8 asInt8s
 
@@ -229,10 +229,10 @@ fetch req = ClientM . ReaderT $ \env -> do
       [res] -> do
         meta <- getResponseMeta res
         stream :: JSObject <- getProp ("body" :: Text) =<< jsTo @JSObject res
-        rdr <- stream # ("getReader" :: Text) $ ([] :: [JSVal])
+        rdr :: JSVal <- stream # ("getReader" :: Text) $ ([] :: [JSVal])
         rdr' <- jsTo @JSObject rdr
         _ <- fix $ \go -> do
-          rdrPromise <- rdr' # ("read" :: Text) $ ([] :: [JSVal])
+          rdrPromise :: JSVal <- rdr' # ("read" :: Text) $ ([] :: [JSVal])
           rdrPromise' <- jsTo @JSObject rdrPromise
           rdrHandler <- mkFun (\_ _ args -> do
             case args of
@@ -245,11 +245,11 @@ fetch req = ClientM . ReaderT $ \env -> do
                     go
               _ -> do
                 error "fetch read promise handler received wrong number of arguments")
-          _ <- rdrPromise' # ("then" :: Text) $ [rdrHandler]
+          rdrPromise' #- ("then" :: Text) $ [rdrHandler]
           return ()
         return ()
       _ -> error "fetch promise handler received wrong number of arguments")
-  liftJSM $ promise' # ("then" :: Text) $ [promiseHandler]
+  liftJSM $ promise' #- ("then" :: Text) $ [promiseHandler]
   ((status, hdrs, ver), body) <- liftIO $ takeMVar result
   return $ Response status hdrs ver (BL.fromStrict body)
 
@@ -262,7 +262,7 @@ withStreamingRequestJSM req handler =
   ClientM . ReaderT $ \env -> do
     self :: JSObject <- liftJSM $ getProp "self" global
     fetchArgs <- liftJSM $ getFetchArgs env req
-    fetchPromise <- liftJSM $ self # "fetch" $ fetchArgs
+    fetchPromise :: JSVal <- liftJSM $ self # "fetch" $ fetchArgs
     fetchPromise' <- jsTo @JSObject fetchPromise
     push <- liftIO newEmptyMVar
     result <- liftIO newEmptyMVar
@@ -273,10 +273,10 @@ withStreamingRequestJSM req handler =
           res' <- jsTo @JSObject res
           stream :: JSVal <- res' ! ("body" :: Text)
           stream' <- jsTo @JSObject stream
-          rdr <- stream' # ("getReader" :: Text) $ ([] :: [JSVal])
+          rdr :: JSVal <- stream' # ("getReader" :: Text) $ ([] :: [JSVal])
           rdr' <- jsTo @JSObject rdr
           _ <- fix $ \go -> do
-            rdrPromise <- rdr' # ("read" :: Text) $ ([] :: [JSVal])
+            rdrPromise :: JSVal <- rdr' # ("read" :: Text) $ ([] :: [JSVal])
             rdrPromise' <- jsTo @JSObject rdrPromise
             rdrHandler <- mkFun (\_ _ args ->
               case args of
@@ -288,7 +288,7 @@ withStreamingRequestJSM req handler =
                       go
                     Nothing -> liftIO $ putMVar push Nothing
                 _ -> error "wrong number of arguments to rdrHandler")
-            _ <- rdrPromise' # ("then" :: Text) $ [rdrHandler]
+            rdrPromise' #- ("then" :: Text) $ [rdrHandler]
             return ()
           let out :: forall b. (S.StepT IO BS.ByteString -> IO b) -> IO b
               out handler' = handler' .  S.Effect . fix $ \go -> do
@@ -298,5 +298,5 @@ withStreamingRequestJSM req handler =
                   Just x -> return $ S.Yield x (S.Effect go)
           liftIO . putMVar result . Response status hdrs ver $ S.SourceT @IO out
         _ -> error "wrong number of arguments to Promise.then() callback")
-    liftJSM $ fetchPromise' # "then" $ [fetchPromiseHandler]
+    liftJSM $ fetchPromise' #- "then" $ [fetchPromiseHandler]
     liftJSM . handler =<< liftIO (takeMVar result)

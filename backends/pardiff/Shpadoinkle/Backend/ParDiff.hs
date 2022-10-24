@@ -71,10 +71,10 @@ import           Data.Monoid                 ((<>))
 import           Data.Once                   (Once, newOnce, runOnce)
 import           Data.Text                   (Text)
 import           Shpadoinkle.JSFFI           (JSHTMLElement, JSObject, JSString,
-                                              downcastJSM, getProp, global,
-                                              jsAs, jsFalse, jsTrue, liftJSM,
-                                              mkFun', setInnerHTML, setProp,
-                                              upcast, (#))
+                                              deleteProp, document, getProp,
+                                              jsAs, jsFalse, jsTo, jsTrue,
+                                              liftJSM, mkFun', setInnerHTML,
+                                              setProp, (#), (#-))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
@@ -176,7 +176,7 @@ props :: Monad m
       -> RawNode -- ^ DOM Node
       -> JSM ()
 props toJSM i (Props ps) (RawNode raw) = do
-  raw' <- downcastJSM raw
+  raw' <- jsTo raw
   traverseWithKey_ (prop toJSM i raw') ps
 
 
@@ -206,7 +206,7 @@ setProptado :: NFData a
             -> JSObject -- ^ DOM Node
             -> JSM ()
 setProptado i f o = do
-  elm <- pure . RawNode $  o
+  let elm = RawNode o
   stm <- f elm
   let go = atomically stm >>= writeUpdate i >> go
   void $ forkIO go
@@ -220,10 +220,10 @@ setListener :: NFData a
             -> JSString -- ^ Event Name
             -> JSM ()
 setListener i m o k = do
-  elm <- pure . RawNode $ o
+  let elm = RawNode o
   f <- mkFun' $ \case
     e:_ -> do
-      e' :: JSObject <- downcastJSM e
+      e' :: JSObject <- jsTo e
       x <- m elm (RawEvent e')
       writeUpdate i x
     _ -> return ()
@@ -250,16 +250,6 @@ makeProp toJSM i = \case
   PPotato p   -> PPotato $ fmap (fmap (hoist (toJSM . runParDiff i))) . p
   PListener m -> PListener $ \x y -> hoist (toJSM . runParDiff i) <$> m x y
   PFlag b     -> PFlag b
-
-
-#ifndef ghcjs_HOST_OS
-deleteProp :: JSString -> JSObject -> JSM ()
-deleteProp _ _ = pure () -- can't delete properties from object in GHC
-#else
-foreign import javascript unsafe
-  "delete $2[$1];"
-  deleteProp :: JSString -> JSObject -> JSM ()
-#endif
 
 
 -- | Modify a DOM node in accordance with new properties, and properties to remove
@@ -295,13 +285,13 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
       toInclude = M.differenceWith willInclude new old
 
       remove k _ = case k of
-        "className" -> void $ obj' # "removeAttribute" $ "class"
-        "href"      -> void $ obj' # "removeAttribute" $ "href"
-        "htmlFor"   -> void $ obj' # "removeAttribute" $ "for"
-        "style"     -> void $ obj' # "removeAttribute" $ "style"
+        "className" -> obj' #- "removeAttribute" $ "class"
+        "href"      -> obj' #- "removeAttribute" $ "href"
+        "htmlFor"   -> obj' #- "removeAttribute" $ "for"
+        "style"     -> obj' #- "removeAttribute" $ "style"
         "checked"   -> setProp k jsFalse obj'
-        "disabled"  -> void $ obj' # "removeAttribute" $ "disabled"
-        _           -> deleteProp (jsAs k) obj'
+        "disabled"  -> obj' #- "removeAttribute" $ "disabled"
+        _           -> deleteProp k obj'
 
   traverseWithKey_ remove toRemove
 
@@ -318,7 +308,7 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
             | b -> setProp k' jsTrue obj'
             | otherwise -> case k of
               "checked"  -> setProp k' jsFalse obj'
-              "disabled" -> void (obj' # "removeAttribute" $ "disabled")
+              "disabled" -> obj' #- "removeAttribute" $ "disabled"
               _          -> deleteProp k' obj'
           -- new listener, set
           PListener h -> setListener i h obj' k'
@@ -335,14 +325,13 @@ patchChildren
 patchChildren (RawNode p) [] new = liftJSM $ do
   forM_ new $ \newChild -> do
     RawNode cRaw <- runOnce (getRaw newChild)
-    downcastJSM @JSObject =<< ( p # "appendChild" $ cRaw )
+    p #- "appendChild" $ cRaw
   pure new
 patchChildren _ old [] = liftJSM $ do
-  doc :: JSObject <- getProp "document" global
-  tmp <- downcastJSM @JSObject =<< (doc # "createElement" $ "div")
+  tmp :: JSObject <- document # "createElement" $ "div"
   old' <- traverse (fmap unRawNode . runOnce . getRaw) old
-  void (downcastJSM @JSObject =<< (tmp # "replaceChildren" $ old'))
-  void (downcastJSM @JSObject =<< (tmp # "remove" $ ()))
+  tmp #- "replaceChildren" $ old'
+  tmp #- "remove" $ ()
   pure []
 patchChildren parent (old:olds) (new:news) =
   (:) <$> patch' parent old new <*> patchChildren parent olds news
@@ -364,8 +353,8 @@ patch' parent old new = do
       -- text node changed
       | otherwise -> liftJSM $ do
         RawNode r <- runOnce raw
-        obj' :: JSObject <- downcastJSM r
-        tNew <- htmlDecode . jsAs $ t
+        obj' :: JSObject <- jsTo r
+        tNew <- htmlDecode (jsAs t)
         setProp "nodeValue" tNew obj'
         return (ParTextNode raw t)
 
@@ -374,7 +363,7 @@ patch' parent old new = do
       | name == name' -> do
         raw' <- liftJSM $ do
           RawNode r <- runOnce raw
-          obj' <- downcastJSM r
+          obj' <- jsTo r
           managePropertyState i obj' ps ps'
           pure (RawNode r)
         cs'' <- patchChildren raw' cs cs'
@@ -382,10 +371,10 @@ patch' parent old new = do
 
     -- node definitely has changed
     _ -> liftJSM $ do
-        p :: JSObject <- downcastJSM (unRawNode parent)
+        let RawNode p = parent
         RawNode r <- runOnce $ getRaw old
         RawNode c <- runOnce $ getRaw new
-        _ <- p # "replaceChild" $ (c, r)
+        p #- "replaceChild" $ (c, r)
         return new
 
 
@@ -404,12 +393,11 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
       i <- askModel
       let ps' = toProps ps
       raw <- liftJSM . newOnce $ do
-        doc :: JSObject <- getProp "document" global
-        raw' :: JSObject <- downcastJSM =<< ( doc # "createElement" $ name )
+        raw' :: JSObject <- document # "createElement" $ name
         props toJSM i ps' (RawNode raw')
         forM_ cs' $ \c -> do
           RawNode cRaw <- runOnce (getRaw c)
-          downcastJSM @JSObject =<< (raw' # "appendChild" $ cRaw)
+          raw' #- "appendChild" $ cRaw
         return (RawNode raw')
 
       let p = Props (makeProp toJSM i <$> getProps ps')
@@ -426,9 +414,8 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
     mkText :: Text -> ParDiffT a m (ParVNode a)
     mkText t = liftJSM $ do
       raw <- newOnce $ do
-        doc :: JSObject <- getProp "document" global
-        t' <- htmlDecode . jsAs $ t
-        fmap RawNode $ downcastJSM =<< (doc # "createTextNode" $ t')
+        t' <- htmlDecode (jsAs  t)
+        RawNode <$> (document # "createTextNode" $ t')
       return $ ParTextNode raw t
 
 
@@ -444,9 +431,9 @@ instance
     -- first patch
     Nothing ->
       liftJSM $ do
-        p :: JSObject <- downcastJSM (unRawNode parent)
+        let RawNode p = parent
         RawNode c <- runOnce (getRaw new)
-        _ <- p # "appendChild" $ c
+        p #- "appendChild" $ c
         return new
     Just old -> patch' parent old new
 
@@ -454,9 +441,7 @@ instance
 -- | Get the @<body>@ DOM node after emptying it.
 stage :: MonadJSM m => ParDiffT a m RawNode
 stage = liftJSM $ do
-  body :: JSHTMLElement <- do
-    document :: JSObject <- getProp "document" global
-    getProp "body" document
+  body :: JSHTMLElement <- getProp "body" document
   setInnerHTML "" body
-  pure . RawNode $ upcast body
+  pure $ RawNode (jsAs body)
 {-# SPECIALIZE stage :: ParDiffT a JSM RawNode #-}
