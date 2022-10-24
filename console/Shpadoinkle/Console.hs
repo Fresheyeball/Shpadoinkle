@@ -43,9 +43,10 @@ import           Data.Text               (Text, pack)
 import           Data.Text.Lazy          (toStrict)
 import           Data.Text.Lazy.Encoding (decodeUtf8)
 import           Prelude                 hiding (log)
-import           Shpadoinkle.JSFFI       (JSObject, JSVal, MonadJSM, askJSM,
-                                          getProp, global, jsAs, liftJSM,
-                                          runJSM, type (<:), (#), (#-))
+import           Shpadoinkle.JSFFI       (JSContextRef, JSObject, JSVal,
+                                          MonadJSM, askJSM, getProp, global,
+                                          jsAs, liftJSM, runJSM, type (<:), (#),
+                                          (#-))
 import           System.IO.Unsafe        (unsafePerformIO)
 
 
@@ -99,8 +100,7 @@ instance LogJS Show where
 instance LogJS ToJSVal where
   logJS t a = liftJSM $ do
     console :: JSObject <- getProp "console" global
-    a' <- pure . jsAs @JSVal $ a
-    console #- t $ a'
+    console #- t $ (jsAs @JSVal a)
 
 
 {-|
@@ -117,7 +117,7 @@ instance LogJS ToJSVal where
   @
 -}
 class LogJS c => Trapper c where
-  trapper :: c a => () -> a -> a
+  trapper :: c a => JSContextRef -> a -> a
   trapper ctx x = unsafePerformIO $ runJSM (x <$ debug @c x) ctx
   {-# NOINLINE trapper #-}
 
@@ -139,21 +139,17 @@ instance Assert ToJSON where
     console :: JSObject <- getProp "console" global
     json :: JSObject <- getProp "JSON" global
     parsed :: JSVal <- json # "parse" $ (toStrict . decodeUtf8 $ encode x)
-    b' <- pure . jsAs @JSVal $ b
-    console #- "assert" $ (b', parsed)
+    console #- "assert" $ (jsAs @JSVal b, parsed)
 
 instance Assert Show where
   assert b x = liftJSM $ do
     console :: JSObject <- getProp "console" global
-    b' <- pure . jsAs @JSVal $ b
-    console #- "assert" $ (b', pack $ show x)
+    console #- "assert" $ (jsAs @JSVal b, pack $ show x)
 
 instance Assert ToJSVal where
   assert b x = liftJSM $ do
     console :: JSObject <- getProp "console" global
-    b' <- pure . jsAs @JSVal $ b
-    x' <- pure . jsAs @JSVal $ x
-    console #- "assert" $ (b', x')
+    console #- "assert" $ (jsAs @JSVal b, jsAs @JSVal x)
 
 
 -- | Log a list of JSON objects to the console where it will rendered as a table using <https://developer.mozilla.org/en-US/docs/Web/API/Console/table console.table>
