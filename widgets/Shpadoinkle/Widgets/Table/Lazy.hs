@@ -44,8 +44,7 @@ import           Data.List                 (sortBy)
 import           Data.Proxy
 import           Data.Text                 hiding (filter, find, take)
 import           GHC.Generics
-import           Shpadoinkle.JSFFI         (JSM, JSObject, downcastJSM, getProp,
-                                            toNumberLax)
+import           Shpadoinkle.JSFFI         (JSM, getProp, toNumberLax)
 
 import           Shpadoinkle
 import           Shpadoinkle.Html          (div)
@@ -304,11 +303,11 @@ lazyLoadingTable paginator rowsLoaded theme tableHeight rowHeight@(AssumedRowHei
       TbodyIsScrollable _ -> id
 
     scrollHandlerContainer (RawNode n) _ =
-      pur . second3 . const . CurrentScrollY . round <$> (toNumberLax =<< getProp ("scrollTop" :: Text) =<< downcastJSM @JSObject n)
+      pur . second3 . const . CurrentScrollY . round <$> (toNumberLax =<< getProp ("scrollTop" :: Text) n)
 
     scrollHandlerTbody :: RawNode -> RawEvent -> JSM (Continuation m (LazyTable a, SortCol (LazyTable a)))
     scrollHandlerTbody (RawNode n) _ = do
-      sy <- CurrentScrollY . round <$> (toNumberLax =<< getProp "scrollTop" =<< downcastJSM @JSObject n)
+      sy <- CurrentScrollY . round <$> (toNumberLax =<< getProp "scrollTop" n)
       let totalRows' = computeRowsToShow tableHeight rowHeight sy
           offset     = Offset $ unRowsLoaded rowsLoaded
           newRows    = Length $ totalRows' - unRowsLoaded rowsLoaded
