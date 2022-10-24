@@ -20,9 +20,9 @@ import           Shpadoinkle       (MonadJSM, RawNode (RawNode))
 import           Shpadoinkle.JSFFI as JSFFI (JSHTMLElement, JSString,
                                              appendChild, body, createElement,
                                              createTextNode, document,
-                                             getElementById, getProp, liftJSM,
-                                             setAttribute, setInnerHTML,
-                                             setTitle, type (<:), upcast)
+                                             getElementById, getProp, jsAs,
+                                             liftJSM, setAttribute,
+                                             setInnerHTML, setTitle, type (<:))
 
 
 default (Text)
@@ -59,7 +59,7 @@ setTitle = JSFFI.setTitle
 getBody :: MonadJSM m => m RawNode
 getBody = do
   body & setInnerHTML ""
-  pure $ RawNode (upcast body)
+  pure $ RawNode (jsAs body)
 
 
 addMeta :: MonadJSM m => [(Text, Text)] -> m ()
@@ -93,7 +93,7 @@ addScriptText js = liftJSM $ do
 
 
 getById :: MonadJSM m => Text -> m (Maybe RawNode)
-getById eid = (fmap . fmap) (RawNode . upcast) (getElementById eid)
+getById eid = (fmap . fmap) (RawNode . jsAs) (getElementById eid)
 
 
 treatEmpty :: Foldable f => Functor f => a -> (f a -> a) -> (b -> a) -> f b -> a

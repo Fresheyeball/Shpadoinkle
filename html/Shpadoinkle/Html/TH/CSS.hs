@@ -29,7 +29,7 @@ import           Language.Haskell.TH.Syntax
 import           Data.Text.Encoding
 import           GHCJS.Marshal.Pure
 import           GHCJS.Types                as T
-import           Shpadoinkle.JSFFI          (JSArray, JSM, downcastJSM, jsAs,
+import           Shpadoinkle.JSFFI          (JSArray, JSM, jsAs, jsTo,
                                              toTextLax, upcast)
 import           System.IO.Unsafe           (unsafePerformIO)
 #else
@@ -52,9 +52,6 @@ extractNamespace fp = do
 foreign import javascript unsafe "Array.from($1.match(new RegExp($2, 'g')))"
   js_match :: T.JSString -> T.JSString -> IO JSVal
 
-match :: T.JSString -> T.JSString -> JSM JSArray
-match a b = downcastJSM @JSArray =<< js_match a b
-
 
 notMempty :: (Eq m, Monoid m) => m -> Maybe m
 notMempty x | x == mempty = Nothing
@@ -63,9 +60,8 @@ notMempty x | x == mempty = Nothing
 
 getAll :: ByteString -> [ByteString]
 getAll css = unsafePerformIO $ do
-  matches <- match (pFromJSVal . pToJSVal $ BS.unpack css) selectors
-  matches' <- traverse toTextLax $ jsAs matches
-  pure $ fmapMaybe (notMempty . BS.fromStrict . encodeUtf8) matches'
+  matches <- traverse toTextLax =<< jsTo @[JSVal] =<< js_match (pFromJSVal . pToJSVal $ BS.unpack css) selectors
+  pure $ fmapMaybe (notMempty . BS.fromStrict . encodeUtf8) matches
 
 #else
 

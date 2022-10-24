@@ -16,9 +16,9 @@ module Shpadoinkle.WebWorker where
 
 import           Control.Monad     (void)
 import           Data.Text
-import           Shpadoinkle.JSFFI (JSM, JSObject, JSVal, MonadJSM, downcastJSM,
-                                    eval, getProp, global, jsAs, liftJSM,
-                                    mkFun', type (<:), (#), (#-))
+import           Shpadoinkle.JSFFI (JSM, JSObject, JSVal, MonadJSM, eval,
+                                    getProp, global, jsAs, jsTo, liftJSM,
+                                    mkFun', type (<:), window, (#), (#-))
 import           Text.RawString.QQ
 
 
@@ -57,8 +57,7 @@ type ToJSVal a = (a <: JSVal)
 createWorker :: MonadJSM m => Text -> m Worker
 createWorker url = liftJSM $ do
   _ <- eval createWorkerJS
-  w :: JSObject <- getProp ("window" :: Text) global
-  pure . Worker =<< (w # ("createWorker" :: Text) $ [jsAs @JSVal url])
+  Worker <$> (window # ("createWorker" :: Text) $ [jsAs @JSVal url])
 
 
 postMessage :: (MonadJSM m, ToJSVal a) => Worker -> a -> m ()
@@ -69,7 +68,7 @@ postMessage (Worker worker) msg = liftJSM $ do
 postMessage' :: (MonadJSM m, ToJSVal a) => a -> m ()
 postMessage' msg = liftJSM $ do
   self :: JSObject <- getProp ("self" :: Text) global
-  self #- ("postMessage" :: Text) $ jsAs @JSVal msg
+  self #- ("postMessage" :: Text) $ [jsAs @JSVal msg]
 
 
 hackWindow :: MonadJSM m => m ()
@@ -80,7 +79,7 @@ onMessage :: (MonadJSM m, mailbox <: JSObject) => mailbox -> (JSVal -> JSM ()) -
 onMessage box f = do
   liftJSM $ do
     fun <- mkFun' $ \case
-      [v] -> f =<< getProp ("data" :: Text) =<< downcastJSM @JSObject v
+      [v] -> f =<< getProp ("data" :: Text) =<< jsTo @JSObject v
       _   -> return ()
-    box #- ("onmessage" :: Text) $ jsAs @JSVal fun
+    box #- ("onmessage" :: Text) $ [jsAs @JSVal fun]
 
