@@ -138,8 +138,8 @@ import           Data.Traversable          (for)
 import           GHCJS.Foreign.Callback    (Callback, OnBlocked (ContinueAsync),
                                             syncCallback2)
 import qualified GHCJS.Marshal.Internal    as Ghcjs
-import           GHCJS.Nullable            (Nullable, maybeToNullable,
-                                            nullableToMaybe)
+import           GHCJS.Marshal.Pure        (PFromJSVal, pFromJSVal)
+import           GHCJS.Nullable            (Nullable (..))
 import           GHCJS.Prim                (JSVal)
 import qualified GHCJS.Prim                as Ghcjs
 import           JavaScript.Array.Internal (SomeJSArray (..), toListIO)
@@ -282,9 +282,6 @@ downcastJSM = ghcjsOnly
 #endif
 
 
--- WANT: double-check that Nullable uses null, not undefined
-
-
 -- | Like 'downcastJSM', but with fewer constraints and worse error reporting
 downcastJSMReticent :: sub <: sup => sup -> JSM sub
 #ifdef ghcjs_HOST_OS
@@ -316,6 +313,17 @@ impossible :: forall a. a -> (forall b. b)
 impossible = unsafeCoerce
 
 
+-- I don't trust GHCJS' impl
+-- Note: this folds errors from 'pFromJSVal' into the result 'Maybe'
+#ifdef ghcjs_HOST_OS
+fromNullable :: PFromJSVal a => Nullable a -> Maybe a
+fromNullable (Nullable jsv) =
+  if jsv === jsNull || jsv === jsUndefined
+  then Nothing
+  else pFromJSVal jsv
+#endif
+
+
 -- | Double is identified with JS numbers
 instance Double <: JSVal where
 #ifdef ghcjs_HOST_OS
@@ -326,7 +334,7 @@ instance Double <: JSVal where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = nullableToMaybe . downcast_Double_js
+  downcast = fromNullable . downcast_Double_js
 
 foreign import javascript unsafe
   "$r = typeof $1 === 'number' ? $1 : null"
@@ -344,7 +352,7 @@ instance Int <: JSVal where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = nullableToMaybe . downcast_Int_js
+  downcast = fromNullable . downcast_Int_js
 
 foreign import javascript unsafe
   "$r = (Number.isFinite($1) && ($1 | 0) === $1) ? $1 : null"
@@ -391,7 +399,7 @@ instance JSString <: JSVal where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap JSString . nullableToMaybe . downcast_JSString_js
+  downcast = fmap JSString . fromNullable . downcast_JSString_js
 
 foreign import javascript unsafe
   "$r = typeof $1 === 'string' ? $1 : null"
@@ -479,7 +487,7 @@ instance JSObject <: JSVal where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap JSObject . nullableToMaybe . downcast_JSObject_js
+  downcast = fmap JSObject . fromNullable . downcast_JSObject_js
 
 foreign import javascript unsafe
   "$r = (typeof $1 === 'object' && $1 !== null) || typeof $1 === 'function' ? $1 : null"
@@ -581,7 +589,7 @@ instance JSKey <: JSVal where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap JSKey . nullableToMaybe . downcast_JSKey_js
+  downcast = fmap JSKey . fromNullable . downcast_JSKey_js
 
 foreign import javascript unsafe
   "$r = typeof $1 === 'string' || typeof $1 === 'symbol' ? $1 : null"
@@ -625,7 +633,7 @@ instance JSArray <: JSVal where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap (JSArray . JSObject) . nullableToMaybe . downcast_JSArray_js . upcast
+  downcast = fmap (JSArray . JSObject) . fromNullable . downcast_JSArray_js . upcast
 
 foreign import javascript unsafe
   "$r = Array.isArray($1) ? $1 : null"
@@ -674,7 +682,7 @@ instance JSFunction <: JSVal where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap JSFunction . nullableToMaybe . downcast_JSFunction_js
+  downcast = fmap JSFunction . fromNullable . downcast_JSFunction_js
 
 foreign import javascript unsafe
   "$r = $1 instanceof Function ? $1 : null"
@@ -854,7 +862,7 @@ instance JSHTMLElement <: JSObject where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap (JSHTMLElement . JSObject) . nullableToMaybe . downcast_JSHTMLElement_js . unJSObject
+  downcast = fmap (JSHTMLElement . JSObject) . fromNullable . downcast_JSHTMLElement_js . unJSObject
 
 foreign import javascript unsafe
   "$r = $1 instanceof HTMLElement ? $1 : null"
@@ -929,7 +937,7 @@ getElementById :: MonadJSM m => Text -> m (Maybe JSHTMLElement)
 #ifdef ghcjs_HOST_OS
 getElementById eid = do
   el <- liftJSM $ getElementById_js (upcast eid)
-  pure $ JSHTMLElement . JSObject <$> nullableToMaybe el
+  pure $ JSHTMLElement . JSObject <$> fromNullable el
 
 foreign import javascript unsafe
   "$r = document.getElementById($1)"
@@ -951,7 +959,7 @@ instance JSBool <: JSVal where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap JSBool . nullableToMaybe . downcast_JSBool_js
+  downcast = fmap JSBool . fromNullable . downcast_JSBool_js
 
 foreign import javascript unsafe
   "$r = typeof $1 === 'boolean' ? $1 : null"
@@ -1029,7 +1037,7 @@ instance JSStorage <: JSObject where
 #ifndef ghcjs_HOST_OS
   downcast = ghcjsOnly
 #else
-  downcast = fmap (JSStorage . JSObject) . nullableToMaybe . downcast_JSStorage_js . upcast
+  downcast = fmap (JSStorage . JSObject) . fromNullable . downcast_JSStorage_js . upcast
 
 foreign import javascript unsafe
   "$r = $1 instanceof Storage ? $1 : null"
@@ -1063,7 +1071,7 @@ getItem :: (MonadJSM m, key <: JSString) => key -> JSStorage -> m (Maybe JSStrin
 #ifdef ghcjs_HOST_OS
 getItem key store = do
   let key' = (upcast :: JSString -> JSVal) . upcast $ key
-  mStr <- liftJSM $ nullableToMaybe <$> getItem_js (upcast store) key'
+  mStr <- liftJSM $ fromNullable <$> getItem_js (upcast store) key'
   pure $ JSString <$> mStr
 
 foreign import javascript unsafe
