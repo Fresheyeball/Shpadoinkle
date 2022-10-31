@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                       #-}
 {-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExplicitForAll            #-}
 {-# LANGUAGE ExtendedDefaultRules      #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE FlexibleInstances         #-}
@@ -62,12 +63,10 @@ import qualified Data.Text                  as T
 import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy.Encoding    as LTE
 import           GHC.TypeLits               (KnownSymbol, Symbol, symbolVal)
-import           Shpadoinkle.JSFFI          (JSM, MonadJSM, getLocationHref,
-                                             getLocationPathname,
-                                             getLocationSearch, getPropMaybe,
-                                             global, historyPushState,
-                                             onWindowPopstateWithoutEvent,
-                                             scrollTo)
+import           Shpadoinkle.JSFFI          (JSM, JSObject, JSVal, MonadJSM,
+                                             getProp, getPropMaybe, global,
+                                             liftJSM, makeJSArgs, mkFun',
+                                             toTextLax, type (<:), window, (#-))
 #ifndef ghcjs_HOST_OS
 import           Servant.API                (Accept (contentTypes), Capture,
                                              FromHttpApiData, HasLink (..),
@@ -171,6 +170,17 @@ navigate r = do
   historyPushState () "" . Just . T.pack $
     "/" ++ uriPath uri ++ uriQuery uri ++ uriFragment uri
   liftIO $ putMVar syncRoute ()
+
+  where
+
+  historyPushState
+    :: forall n data_ title url
+     . (MonadJSM n, data_ <: JSVal, title <: JSVal, url <: JSVal)
+    => data_ -> title -> Maybe url -> n ()
+  historyPushState data_ title mUrl = do
+    history :: JSObject <- liftJSM $ getProp "history" window
+    args <- makeJSArgs (data_, title, mUrl)
+    liftJSM $ history #- "pushState" $ args
 
 
 -- | Get the cannonical URI for a given route
@@ -305,6 +315,15 @@ parseSegments :: Text -> [Text]
 parseSegments = C.filter (/= "") .  T.splitOn "/"
 
 
+getLocation :: JSM JSObject
+getLocation = getProp "location" window
+
+getLocationHref, getLocationPathname, getLocationSearch :: JSM Text
+getLocationHref     = toTextLax =<< getProp prop =<< getLocation where prop = "href"
+getLocationPathname = toTextLax =<< getProp prop =<< getLocation where prop = "pathname"
+getLocationSearch   = toTextLax =<< getProp prop =<< getLocation where prop = "search"
+
+
 getRoute
   :: Router r -> (Maybe r -> JSM a) -> JSM a
 getRoute router handle = do
@@ -320,7 +339,7 @@ listenStateChange
 listenStateChange router handle = do
   (path,_) <- fmap (T.breakOn "#") $ getLocationHref
   pathVar <- newTVarIO path
-  _ <- onWindowPopstateWithoutEvent $ do
+  _ <- onWindowPopstate $ do
     oldPath <- readTVarIO pathVar
     (newPath,_) <- fmap (T.breakOn "#") $ getLocationHref
     when (oldPath /= newPath) $ do
@@ -332,6 +351,16 @@ listenStateChange router handle = do
     -- syncPoint
     scrollTo 0 0
   return ()
+
+  where
+
+  scrollTo :: MonadJSM m => Double -> Double -> m ()
+  scrollTo x y = window #- "scrollTo" $ (x, y)
+
+  onWindowPopstate :: JSM () -> JSM ()
+  onWindowPopstate cb = do
+    cb' <- mkFun' (\_ -> cb)
+    window #- "addEventListener" $ ("popstate", cb')
 
 
 -- | Get an @r@ from a route and url context

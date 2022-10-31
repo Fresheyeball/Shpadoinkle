@@ -31,7 +31,8 @@ import           Servant.Client.JS   (BaseUrl (..), ClientEnv (..),
                                       StreamingResponse, client, parseBaseUrl,
                                       runClientM, showBaseUrl,
                                       withStreamingRequestJSM)
-import           Shpadoinkle.JSFFI   (JSM, JSObject, getLocation, getPropMaybe)
+import           Shpadoinkle.JSFFI   (JSM, JSObject, getProp, getPropMaybe,
+                                      window)
 import           Text.Read           (readMaybe)
 import           UnliftIO            (MonadIO (liftIO))
 
@@ -41,7 +42,7 @@ default (Text)
 
 getClientEnv :: JSM ClientEnv
 getClientEnv = do
-  loc :: JSObject <- getLocation
+  loc :: JSObject <- getProp ("location" :: Text) window
   protocol <- mapProtocol <$> (getPropMaybe ("protocol" :: Text) loc)
   hostname <- fromMaybe "localhost" <$> (getPropMaybe ("hostname" :: Text) loc)
   port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) <$> (getPropMaybe ("port" :: Text) loc)

@@ -22,7 +22,7 @@ import           Shpadoinkle.JSFFI as JSFFI (JSHTMLElement, JSString,
                                              createTextNode, document,
                                              getElementById, getProp, jsAs,
                                              liftJSM, setAttribute,
-                                             setInnerHTML, setTitle, type (<:))
+                                             setInnerHTML, setProp, type (<:))
 
 
 default (Text)
@@ -53,7 +53,8 @@ addInlineStyle bs = do
 
 
 setTitle :: MonadJSM m => Text -> m ()
-setTitle = JSFFI.setTitle
+setTitle title =
+  setProp "title" title document
 
 
 getBody :: MonadJSM m => m RawNode

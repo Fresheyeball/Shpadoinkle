@@ -70,9 +70,14 @@ module Shpadoinkle.JSFFI
   , setTimeout
   , clearTimeout
 
+  , JSArg
+  , JSArgs
+  , makeJSArgs
+
   , JSHTMLElement
   , setInnerHTML
   , createElement
+  , createTextNode
   , appendChild
   , setId
   , setAttribute
@@ -95,7 +100,7 @@ module Shpadoinkle.JSFFI
   , window
   , document
   , body
-  , setTitle
+  , console
 
   , toStringLax
   , toTextLax
@@ -103,22 +108,10 @@ module Shpadoinkle.JSFFI
   , toIntLax
   , toBoolLax
 
-  , consoleLog
-
   , eval
-  , createTextNode
 
   , requestAnimationFrame
   , requestAnimationFrame_
-
-  , getLocation
-  , getLocationHref
-  , getLocationPathname
-  , getLocationSearch
-
-  , onWindowPopstateWithoutEvent
-  , scrollTo
-  , historyPushState
   ) where
 
 
@@ -185,6 +178,7 @@ runJSM act _ = liftIO act
 runJSM = ghcjsOnly
 #endif
 
+
 --------------------------------------------------------------------------------
 -- Refinement hierarchy
 --------------------------------------------------------------------------------
@@ -226,13 +220,13 @@ foreign import javascript unsafe
 (===) = ghcjsOnly
 #endif
 
--- | @<:@ is reflexive
+-- | reflexivity on @<:@
 rxUp :: a -> a
 rxUp = id
 rxDn :: a -> Maybe a
 rxDn = Just
 
--- | @<:@ is transitive
+-- | transitivity on @<:@
 trUp :: forall a b c. (a <: b, b <: c) => a -> c
 trUp = (upcast :: a -> b) >>> (upcast :: b -> c)
 trDn :: forall a b c. (a <: b, b <: c) => c -> Maybe a
@@ -240,7 +234,6 @@ trDn = (downcast :: c -> Maybe b) >=> (downcast :: b -> Maybe a)
 
 -- This is the reflexive+transitive closure of the (<:) relation.
 -- WANT: This is generated code and ought to be done with TemplateHaskell
--- WANT: a similar thing for Make (at least reflexive)
 instance JSString <: JSString where { upcast = rxUp; downcast = rxDn; }
 instance Text <: Text where { upcast = rxUp; downcast = rxDn; }
 instance String <: String where { upcast = rxUp; downcast = rxDn; }
@@ -601,9 +594,6 @@ instance Text <: JSKey where
 makeJSKey :: Make m JSKey a => a -> m JSKey
 makeJSKey = make
 
-instance Applicative m => Make m JSVal JSKey where
-  make = pure . unJSKey
-
 instance Applicative m => Make m JSKey JSKey where
   make = pure
 
@@ -763,7 +753,7 @@ mkArgJSVal :: forall a m. (Functor m, Make m JSArg a) => a -> m JSVal
 mkArgJSVal = fmap unJSArg . make
 
 -- nb
--- These incoherent instances are only acceptable because there is no
+-- These incoherent instances are non-problematic because there is no
 -- instance 'Maybe X <: JSVal' for any X. This means that these instances
 -- will never actually overlap (but GHC doesn't know that)
 
@@ -887,6 +877,17 @@ foreign import javascript unsafe
   createElement_js :: JSVal -> JSM JSVal
 #else
 createElement = ghcjsOnly
+#endif
+
+createTextNode :: MonadJSM m => Text -> m JSVal
+#ifdef ghcjs_HOST_OS
+createTextNode = liftJSM . createTextNode_js
+
+foreign import javascript unsafe
+  "$r = document.createTextNode($1)"
+  createTextNode_js :: Text -> JSM JSVal
+#else
+createTextNode = ghcjsOnly
 #endif
 
 -- |
@@ -1072,33 +1073,8 @@ getItem = ghcjsOnly
 
 
 --------------------------------------------------------------------------------
--- Misc
+-- Lax conversions
 --------------------------------------------------------------------------------
-
-
-global :: JSObject
-#ifdef ghcjs_HOST_OS
-global = unsafePerformIO $ downcastJSM =<< global_js
-foreign import javascript unsafe
-  "$r = globalThis"
-  global_js :: JSM JSVal
-#else
-global = ghcjsOnly
-#endif
-
-window :: JSObject
-window = unsafePerformIO $ getProp "window" global
-
-document :: JSObject
-document = unsafePerformIO $ getProp "document" global
-
-body :: JSHTMLElement
-body = unsafePerformIO $ getProp "body" document
-
-
-setTitle :: forall m s. (MonadJSM m, s <: JSString) => s -> m ()
-setTitle title = setProp "title" ((upcast :: JSString -> JSVal) . upcast $ title) document
-
 
 -- | Convert to string by calling '.toString()'
 toTextLax :: MonadJSM m => JSVal -> m Text
@@ -1141,12 +1117,36 @@ toBoolLax = ghcjsOnly
 #endif
 
 
-consoleLog :: (MonadJSM m, Make m JSArgs a) => a -> m ()
-consoleLog a = do
-  args <- makeJSArgs a
-  console :: JSObject <- getProp "console" global
-  console #- "log" $ args
+--------------------------------------------------------------------------------
+-- Global references
+--------------------------------------------------------------------------------
 
+global :: JSObject
+#ifdef ghcjs_HOST_OS
+global = unsafePerformIO $ downcastJSM =<< global_js
+foreign import javascript unsafe
+  "$r = globalThis"
+  global_js :: JSM JSVal
+#else
+global = ghcjsOnly
+#endif
+
+window :: JSObject
+window = unsafePerformIO $ getProp "window" global
+
+document :: JSObject
+document = unsafePerformIO $ getProp "document" global
+
+body :: JSHTMLElement
+body = unsafePerformIO $ getProp "body" document
+
+console :: JSObject
+console = unsafePerformIO $ getProp "console" global
+
+
+--------------------------------------------------------------------------------
+-- Misc
+--------------------------------------------------------------------------------
 
 eval :: forall s m. (MonadJSM m, s <: JSString) => s -> m JSVal
 #ifdef ghcjs_HOST_OS
@@ -1156,18 +1156,6 @@ foreign import javascript unsafe
   eval_js :: JSString -> IO JSVal
 #else
 eval = ghcjsOnly
-#endif
-
-
-createTextNode :: MonadJSM m => Text -> m JSVal
-#ifdef ghcjs_HOST_OS
-createTextNode = liftJSM . createTextNode_js
-
-foreign import javascript unsafe
-  "$r = document.createTextNode($1)"
-  createTextNode_js :: Text -> JSM JSVal
-#else
-createTextNode = ghcjsOnly
 #endif
 
 
@@ -1182,32 +1170,3 @@ requestAnimationFrame cb = do
 requestAnimationFrame_ :: (Double -> JSM ()) -> JSM ()
 requestAnimationFrame_ = void . requestAnimationFrame
 
-
-getLocation :: JSM JSObject
-getLocation = getProp "location" window
-
-getLocationHref, getLocationPathname, getLocationSearch :: JSM Text
-getLocationHref     = toTextLax =<< getProp prop =<< getLocation where prop = "href"
-getLocationPathname = toTextLax =<< getProp prop =<< getLocation where prop = "pathname"
-getLocationSearch   = toTextLax =<< getProp prop =<< getLocation where prop = "search"
-
--- yeah i write generic code
-onWindowPopstateWithoutEvent :: JSM () -> JSM ()
-#ifdef ghcjs_HOST_OS
-onWindowPopstateWithoutEvent cb = do
-  cb' <- mkFun' (\_ -> cb)
-  window #- "addEventListener" $ ("popstate", cb')
-#else
-onWindowPopstateWithoutEvent = ghcjsOnly
-#endif
-
-scrollTo :: MonadJSM m => Double -> Double -> m ()
-scrollTo x y = window #- "scrollTo" $ (x, y)
-
-historyPushState
-  :: (MonadJSM m, data_ <: JSVal, title <: JSVal, url <: JSVal)
-  => data_ -> title -> Maybe url -> m ()
-historyPushState data_ title mUrl = do
-  history :: JSObject <- liftJSM $ getProp "history" window
-  args <- makeJSArgs (data_, title, mUrl)
-  liftJSM $ history #- "pushState" $ args
