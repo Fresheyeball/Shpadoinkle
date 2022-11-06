@@ -2,7 +2,6 @@
 {-# LANGUAGE CPP                       #-}
 {-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE ExplicitForAll            #-}
 {-# LANGUAGE ExtendedDefaultRules      #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE FlexibleInstances         #-}
@@ -337,11 +336,11 @@ getRoute router handle = do
 listenStateChange
   :: Router r -> (r -> JSM ()) -> JSM ()
 listenStateChange router handle = do
-  (path,_) <- fmap (T.breakOn "#") $ getLocationHref
+  (path,_) <- fmap (T.breakOn "#") getLocationHref
   pathVar <- newTVarIO path
   _ <- onWindowPopstate $ do
     oldPath <- readTVarIO pathVar
-    (newPath,_) <- fmap (T.breakOn "#") $ getLocationHref
+    (newPath,_) <- fmap (T.breakOn "#") getLocationHref
     when (oldPath /= newPath) $ do
       atomically $ writeTVar pathVar newPath
       putMVar syncRoute ()

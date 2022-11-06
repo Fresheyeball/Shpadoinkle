@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveAnyClass       #-}
 {-# LANGUAGE DeriveGeneric        #-}
-{-# LANGUAGE ExplicitNamespaces   #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE LambdaCase           #-}
@@ -73,7 +72,7 @@ listenForOutput model = do
     when isRight $ do
       msg :: Maybe Text <- getPropMaybe "msg" x
       now <- liftIO getCurrentTime
-      let history' = maybe (error "how could this not be a string") History $ msg
+      let history' = maybe (error "how could this not be a string") History msg
       atomically . modifyTVar model $ heard now history')
 
 

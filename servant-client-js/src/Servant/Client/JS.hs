@@ -5,9 +5,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE PackageImports             #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -46,7 +44,7 @@ import qualified Data.ByteString.Lazy         as BL
 import           Data.CaseInsensitive
 import           Data.Function                ((&))
 import           Data.Functor.Alt
-import           Data.Maybe                   (fromMaybe)
+import           Data.Maybe                   (fromMaybe, isNothing)
 import           Data.Proxy
 import qualified Data.Sequence                as Seq
 import           Data.Text
@@ -126,8 +124,8 @@ getFetchArgs (ClientEnv (BaseUrl urlScheme host port basePath))
                     Https -> "https://"
   url <- text2jsval $ schemeStr <> pack host <> ":" <> pack (show port) <> pack basePath
                              <> decodeUtf8 (BL.toStrict (toLazyByteString reqPath))
-                             <> (if Prelude.null reqQs then "" else "?" ) <> (intercalate "&"
-                                        $ (\(k,v) -> decodeUtf8 k <> "="
+                             <> (if Prelude.null reqQs then "" else "?" ) <> intercalate "&"
+                                        ((\(k,v) -> decodeUtf8 k <> "="
                                                            <> maybe "" decodeUtf8 v)
                                          <$> Prelude.foldr (:) [] reqQs)
   init <- mkEmptyObject
@@ -167,14 +165,14 @@ getResponseMeta :: JSVal -> JSM (Status, Seq.Seq Header, HttpVersion)
 getResponseMeta res = do
   res' <- jsTo @JSObject res
   status <- toEnum . fromMaybe 200
-            <$> (getPropMaybe ("status" :: Text) res')
+            <$> getPropMaybe ("status" :: Text) res'
   resHeadersObj :: JSObject <- res' ! ("headers" :: Text)
   resHeaderNames <- (resHeadersObj # ("keys" :: Text) $ ([] :: [JSVal]))
     >>= fix (\go (names :: JSVal) ->
       do x :: JSVal <- jsTo @JSObject names >>= (\n -> n # ("next" :: Text) $ ([] :: [JSVal]))
          x' <- jsTo @JSObject x
          isDone <- getPropMaybe ("done" :: Text) x'
-         if isDone == Just True || isDone == Nothing
+         if isDone == Just True || isNothing isDone
            then return []
            else do
              rest <- go names
@@ -184,8 +182,9 @@ getResponseMeta res = do
                Nothing -> return rest)
   resHeaders <- fmap (Prelude.foldr (Seq.:<|) Seq.Empty)
              .  forM resHeaderNames $ \headerName -> do
-    headerValue <- fmap (fromMaybe "" . (downcast :: JSVal -> Maybe Text))
-                   $ (resHeadersObj # ("get" :: Text) $ [headerName])
+    headerValue <- fmap
+                     (fromMaybe "" . (downcast :: JSVal -> Maybe Text))
+                     (resHeadersObj # ("get" :: Text) $ [headerName])
     return (mk (encodeUtf8 (unJSString headerName)), encodeUtf8 headerValue)
   return (status, resHeaders, http11) -- http11 is made up
 
@@ -211,9 +210,10 @@ parseChunk chunk = do
   chunk' <- jsTo @JSObject chunk
   isDone <- toBoolLax
               =<< getProp ("done" :: Text) chunk'
-  case isDone of
-    True -> return Nothing
-    False -> pure . Just =<< uint8arrayToByteString =<< getProp ("value" :: Text) chunk'
+  if isDone then
+    return Nothing
+  else
+    pure . Just =<< uint8arrayToByteString =<< getProp ("value" :: Text) chunk'
 
 
 fetch :: Request -> ClientM Response

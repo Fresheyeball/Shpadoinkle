@@ -97,11 +97,11 @@ $(mkEventVariantsAfforded "check" ''Bool)
 
 
 preventDefault :: RawEvent -> JSM ()
-preventDefault e = (unRawEvent e) #- ("preventDefault" :: String) $ ([] :: [()])
+preventDefault e = unRawEvent e #- ("preventDefault" :: String) $ ([] :: [()])
 
 
 stopPropagation :: RawEvent -> JSM ()
-stopPropagation e = (unRawEvent e) #- ("stopPropagation" :: String) $ ([] :: [()])
+stopPropagation e = unRawEvent e #- ("stopPropagation" :: String) $ ([] :: [()])
 
 
 onSubmitC :: Continuation m a -> (Text, Prop m a)
@@ -134,7 +134,7 @@ onClickAwayC c =
      (notify, stream) <- mkGlobalMailbox c
 
      (global #- ("addEventListener" :: Text)) . ("click" :: Text,) =<<
-        (mkFun' $ \case
+        mkFun' (\case
           evt:_ -> void . forkIO $ do
 
             target :: JSVal <- jsTo @JSObject evt >>= getProp ("target" :: Text)
@@ -158,7 +158,7 @@ mkGlobalKey evtName c =
      (notify, stream) <- mkGlobalMailboxAfforded c
 
      (global #- ("addEventListener" :: Text)) . (evtName,) =<<
-        (mkFun' $ \case
+        mkFun' (\case
            e:_ -> notify =<< toKeyCodeLax =<< getProp ("keyCode" :: Text) =<< jsTo @JSObject e
            []  -> return ())
 
@@ -174,7 +174,7 @@ mkGlobalKeyNoRepeat evtName c =
      (notify, stream) <- mkGlobalMailboxAfforded c
 
      (global #- ("addEventListener" :: Text)) . (evtName,) =<<
-        (mkFun' $ \case
+        mkFun' (\case
            e:_ -> do
              eObj <- jsTo @JSObject e
              isRepeat <- toBoolLax =<< getProp ("repeat" :: Text) eObj

@@ -1,11 +1,9 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ExplicitForAll       #-}
-{-# LANGUAGE ExplicitNamespaces   #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE MonoLocalBinds       #-}
 {-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -66,7 +64,7 @@ getBody = do
 addMeta :: MonadJSM m => [(Text, Text)] -> m ()
 addMeta ps = liftJSM $ do
   tag <- createElement ("meta" :: Text)
-  forM_ ps $ (\(k, v) -> setAttribute k v tag)
+  forM_ ps (\(k, v) -> setAttribute k v tag)
   getHead >>= appendChild tag
 
 

@@ -162,6 +162,6 @@ mirror cc = baked $ do
         let raw :: Maybe Text = downcast jsv
         maybe (pure ()) (notify . Code . encodeUtf8 . TL.fromStrict) raw
   cmo #- "on" $ ("change", onChange)
-  _ <- setTimeout 33 =<< (mkFun' $ \_ -> cmo #- "refresh" $ ())
+  _ <- setTimeout 33 =<< mkFun' (\_ -> cmo #- "refresh" $ ())
   container'' <- jsTo container'
   return (RawNode container'', stream)

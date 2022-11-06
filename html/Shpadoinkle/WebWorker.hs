@@ -1,5 +1,4 @@
 {-# LANGUAGE ConstraintKinds            #-}
-{-# LANGUAGE ExplicitNamespaces         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}

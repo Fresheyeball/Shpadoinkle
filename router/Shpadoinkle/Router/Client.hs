@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications    #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 {-# OPTIONS_GHC -Wno-type-defaults              #-}
 
@@ -43,9 +42,9 @@ default (Text)
 getClientEnv :: JSM ClientEnv
 getClientEnv = do
   loc :: JSObject <- getProp ("location" :: Text) window
-  protocol <- mapProtocol <$> (getPropMaybe ("protocol" :: Text) loc)
-  hostname <- fromMaybe "localhost" <$> (getPropMaybe ("hostname" :: Text) loc)
-  port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) <$> (getPropMaybe ("port" :: Text) loc)
+  protocol <- mapProtocol <$> getPropMaybe ("protocol" :: Text) loc
+  hostname <- fromMaybe "localhost" <$> getPropMaybe ("hostname" :: Text) loc
+  port <- fromMaybe (defaultPort protocol) . (readMaybe =<<) <$> getPropMaybe ("port" :: Text) loc
   return $ ClientEnv $ BaseUrl protocol hostname port ""
 
   where mapProtocol :: Maybe String -> Scheme

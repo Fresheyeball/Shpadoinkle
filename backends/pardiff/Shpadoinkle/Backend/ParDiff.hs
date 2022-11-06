@@ -11,16 +11,10 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
-
-#ifndef ghcjs_HOST_OS
-{-# LANGUAGE StandaloneDeriving         #-}
-#endif
 
 
 {-|

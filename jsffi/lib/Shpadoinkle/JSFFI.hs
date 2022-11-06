@@ -1,21 +1,20 @@
-{-# LANGUAGE AllowAmbiguousTypes    #-}
-{-# LANGUAGE CPP                    #-}
-{-# LANGUAGE ConstraintKinds        #-}
-{-# LANGUAGE ExplicitForAll         #-}
-{-# LANGUAGE ExplicitNamespaces     #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE JavaScriptFFI          #-}
-{-# LANGUAGE LambdaCase             #-}
-{-# LANGUAGE MonoLocalBinds         #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
-{-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
-{-# LANGUAGE ViewPatterns           #-}
+{-# LANGUAGE AllowAmbiguousTypes   #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE JavaScriptFFI         #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MonoLocalBinds        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
+#ifdef ghcjs_HOST_OS
+{-# LANGUAGE ViewPatterns          #-}
+#endif
 
 module Shpadoinkle.JSFFI
   ( JSM

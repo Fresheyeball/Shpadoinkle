@@ -1,6 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE ConstraintKinds            #-}
-{-# LANGUAGE ExplicitNamespaces         #-}
 {-# LANGUAGE ExtendedDefaultRules       #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -11,7 +10,6 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
@@ -97,7 +95,7 @@ instance LogJS Show where
 -- | Logs against 'ToJSVal' will be converted to a 'JSVal' before being sent to the console.
 instance LogJS ToJSVal where
   logJS t a = liftJSM $ do
-    console #- t $ (jsAs @JSVal a)
+    console #- t $ jsAs @JSVal a
 
 
 {-|
