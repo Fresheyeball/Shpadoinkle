@@ -20,9 +20,11 @@ import           UnliftIO
 import           Control.Lens        hiding ((#))
 import           Control.Monad
 import           Control.Monad.STM   (retry)
+import           Data.Maybe          (maybe)
+import           Data.Text           (Text)
 import           Shpadoinkle.JSFFI   (JSObject, JSVal, getProp, getPropMaybe,
-                                      global, jsTo, mkEmptyObject, mkFun',
-                                      setProp, (#-), (===))
+                                      jsAs, jsTo, mkEmptyObject, mkFun',
+                                      setProp, window, (#-), (===))
 import           UnliftIO.Concurrent
 #endif
 
@@ -51,14 +53,14 @@ outputState x = void . (try :: forall b. JSM b -> JSM (Either SomeException b)) 
   o <- mkEmptyObject
   o & setProp "type" "shpadoinkle_output_state"
   o & setProp "msg" (show x)
-  global #- "postMessage" $ (o, "*")
+  window #- "postMessage" $ (o, "*")
 
 
 listenForSetState :: forall a. Read a => TVar a -> JSM ()
 listenForSetState model =
-  (global #- "addEventListener") . ("message",) =<< (mkFun' $ \args -> do
+  (window #- "addEventListener") . ("message",) =<< (mkFun' $ \args -> do
     e <- jsTo @JSObject $ Prelude.head args
-    isWindow <- (=== global) <$> getProp @JSVal "source" e
+    isWindow <- (=== window) <$> getProp @JSVal "source" e
     d :: Maybe JSObject <- getPropMaybe "data" e
     case d of
       Nothing -> pure ()
@@ -66,7 +68,7 @@ listenForSetState model =
         isRightType <- (=== "shpadoinkle_set_state") <$> getProp @JSVal "type" d'
         msg <- getPropMaybe "msg" d'
         case msg of
-          Just msg' | isWindow && isRightType ->
+          Just msg' | isWindow && isRightType -> do
             atomically . writeTVar model $ read msg'
           _ -> return ())
 

@@ -1130,6 +1130,7 @@ toBoolLax = ghcjsOnly
 -- Global references
 --------------------------------------------------------------------------------
 
+-- | Reference to 'globalThis'
 global :: JSObject
 #ifdef ghcjs_HOST_OS
 global = unsafePerformIO $ downcastJSM =<< global_js
@@ -1140,15 +1141,25 @@ foreign import javascript unsafe
 global = ghcjsOnly
 #endif
 
+-- | Global reference to 'window'
 window :: JSObject
 window = unsafePerformIO $ getProp "window" global
 
+-- | Global reference to 'document'
 document :: JSObject
 document = unsafePerformIO $ getProp "document" global
 
+-- |
+--
+-- Global reference to 'body'
+--
+-- **Warning**: if this is evaluated before 'globalThis.body' exists,
+-- it will not return the correct value. You can use '<script defer' to
+-- ensure this doesn't happen.
 body :: JSHTMLElement
 body = unsafePerformIO $ getProp "body" document
 
+-- | Global reference to 'console'
 console :: JSObject
 console = unsafePerformIO $ getProp "console" global
 

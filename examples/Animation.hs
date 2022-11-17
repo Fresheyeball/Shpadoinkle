@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE MultiWayIf           #-}
 {-# LANGUAGE OverloadedStrings    #-}
@@ -63,7 +64,14 @@ animation t = requestAnimationFrame_ go where
 app :: JSM ()
 app = do
   t <- newTVarIO 0
+
   withDeveloperTools t
+#ifdef DEVELOPMENT
+  putStrLn "DEVELOPMENT is set; developer tools should be functional"
+#else
+  putStrLn "DEVELOPMENT is unset; developer tools will not be functional"
+#endif
+
   _ <- forkIO $ threadDelay wait >> animation t
   shpadoinkle id runSnabbdom t view stage
 

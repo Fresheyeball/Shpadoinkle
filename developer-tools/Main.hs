@@ -35,7 +35,8 @@ import           UnliftIO                    (TVar, atomically, modifyTVar,
 import           Shpadoinkle                 (Html, NFData, flagProp,
                                               shpadoinkle, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
-import           Shpadoinkle.Html            hiding (onMessage)
+import qualified Shpadoinkle.Html            as H
+import           Shpadoinkle.JSFFI           (body)
 import           Shpadoinkle.Run             (run)
 
 
@@ -85,13 +86,13 @@ heard now history' m = m & history %~ insert now history' &
 
 
 row :: MonadJSM m => Maybe UTCTime -> UTCTime -> History -> Html m Model
-row sel k history' = div "record"
-  [ div [ className "time"
-        , class' [("active", sel == Just k)]
-        ]
-     [ span_ [ text . pack $ formatTime defaultTimeLocale "%X%Q" k ]
-     , button [ onClick $ (sync .~ False) . (active ?~ k) ] [ "Inspect" ]
-     , button [ onClickM_ . liftJSM $ sendHistory history' ] [ "Send" ]
+row sel k history' = H.div "record"
+  [ H.div [ H.className "time"
+          , H.class' [("active", sel == Just k)]
+          ]
+     [ H.span_ [ H.text . pack $ formatTime defaultTimeLocale "%X%Q" k ]
+     , H.button [ H.onClick $ (sync .~ False) . (active ?~ k) ] [ "Inspect" ]
+     , H.button [ H.onClickM_ . liftJSM $ sendHistory history' ] [ "Send" ]
      ]
   ]
 
@@ -109,31 +110,31 @@ sendHistory (History history') = void $ do
 
 prettyHtml :: Monad m => Int -> Pretty.Value -> Html m a
 prettyHtml depth = \case
-  Pretty.Con con [] -> div "con-uniary" $ string con
-  Pretty.Con con slots -> details [ className "con-wrap", ("open", flagProp $ depth < 3) ]
-    [ summary "con" $ string con
-    , div (withDepth "con-children") $ prettyHtml (depth + 1) <$> slots
+  Pretty.Con con [] -> H.div "con-uniary" $ string con
+  Pretty.Con con slots -> H.details [ H.className "con-wrap", ("open", flagProp $ depth < 3) ]
+    [ H.summary "con" $ string con
+    , H.div (withDepth "con-children") $ prettyHtml (depth + 1) <$> slots
     ]
   Pretty.Rec rec fields ->
-    details (withDepth "rec-wrap")
-    [ summary "rec" $ string rec
-    , dl "rec" $ (\(n, v)->
-        [ dt_ $ string $ n <> " = "
-        , dd_ [ prettyHtml (depth + 1) v ]
+    H.details (withDepth "rec-wrap")
+    [ H.summary "rec" $ string rec
+    , H.dl "rec" $ (\(n, v)->
+        [ H.dt_ $ string $ n <> " = "
+        , H.dd_ [ prettyHtml (depth + 1) v ]
         ]) =<< fields
     ]
-  Pretty.InfixCons _ _ -> text "Infix Constructors are not currently supported"
-  Pretty.Neg x     -> div "neg" [ "¬", prettyHtml depth x ]
-  Pretty.Ratio n d -> div "ratio" [ prettyHtml depth n, "/", prettyHtml depth d ]
+  Pretty.InfixCons _ _ -> H.text "Infix Constructors are not currently supported"
+  Pretty.Neg x     -> H.div "neg" [ "¬", prettyHtml depth x ]
+  Pretty.Ratio n d -> H.div "ratio" [ prettyHtml depth n, "/", prettyHtml depth d ]
   Pretty.Tuple xs  -> prettyHtml depth $ Pretty.Con "(,)" xs
   Pretty.List []   -> prettyHtml depth $ Pretty.Con "[]" []
-  Pretty.List xs   -> ul "list" $ li_.pure.prettyHtml (depth +1) <$> xs
-  Pretty.String ss -> div "string" $ string ss
-  Pretty.Float n   -> div "float" $ string n
-  Pretty.Integer n -> div "integer" $ string n
-  Pretty.Char c    -> div "char" $ string c
+  Pretty.List xs   -> H.ul "list" $ H.li_.pure.prettyHtml (depth +1) <$> xs
+  Pretty.String ss -> H.div "string" $ string ss
+  Pretty.Float n   -> H.div "float" $ string n
+  Pretty.Integer n -> H.div "integer" $ string n
+  Pretty.Char c    -> H.div "char" $ string c
   where string = pure . text . pack
-        withDepth x = [ class' [ x, "depth-" <> pack (show depth) ] ]
+        withDepth x = [ H.class' [ x, "depth-" <> pack (show depth) ] ]
 
 
 syncState :: Model -> Model
@@ -144,25 +145,25 @@ syncState m =
 
 
 panel :: MonadJSM m => Model -> Html m Model
-panel m = div "wrapper"
-  [ div "current-state" $ case _active m >>= flip Map.lookup (_history m) of
-      Just history' -> [ maybe (text "failed to parse value") (prettyHtml 0) . Pretty.parseValue . unpack $ unHistory history' ]
+panel m = H.div "wrapper"
+  [ H.div "current-state" $ case _active m >>= flip Map.lookup (_history m) of
+      Just history' -> [ maybe (H.text "failed to parse value") (prettyHtml 0) . Pretty.parseValue . unpack $ unHistory history' ]
       _             -> [ "No State" ]
-  , div "history" $ button
-    [ onClick syncState
-    , className "sync-button"
-    , class' [ ("sync", m ^. sync) ]
+  , H.div "history" $ H.button
+    [ H.onClick syncState
+    , H.className "sync-button"
+    , H.class' [ ("sync", m ^. sync) ]
     ] [ "Sync State" ] : (book <> [clear])
   ]
   where book = uncurry (m ^. active . to row) <$> Map.toDescList (m ^. history)
-        clear = a [ className "clear", onClick $ const emptyModel ] [ "Clear History" ]
+        clear = H.a [ H.className "clear", H.onClick $ const emptyModel ] [ "Clear History" ]
 
 
 app :: JSM ()
 app = do
   model <- liftIO $ newTVarIO emptyModel
   listenForOutput model
-  shpadoinkle id runParDiff model panel getBody
+  shpadoinkle id runParDiff model panel H.getBody
 
 
 main :: IO ()

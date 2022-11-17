@@ -467,3 +467,22 @@ executable stress
     , Shpadoinkle-backend-pardiff
 
   default-language: Haskell2010
+
+
+executable various-tests
+  import: ghc-options, ghcjs-options
+
+  main-is: VariousTests.hs
+
+  hs-source-dirs: ./.
+
+  build-depends:
+      Shpadoinkle
+    , Shpadoinkle-backend-pardiff
+    , Shpadoinkle-console
+    , Shpadoinkle-html
+    , Shpadoinkle-lens
+    , base >=4.12.0 && <4.16
+    , text
+
+  default-language: Haskell2010

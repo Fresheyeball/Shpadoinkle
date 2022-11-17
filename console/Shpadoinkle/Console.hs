@@ -10,6 +10,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 
@@ -75,6 +76,7 @@ class LogJS (c :: Type -> Constraint) where
 
 
 class a <: JSVal => ToJSVal a
+instance a <: JSVal => ToJSVal a
 
 
 -- | Logs against 'ToJSON' will be encoded via 'Aeson' then parsed using
