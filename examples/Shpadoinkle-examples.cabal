@@ -479,6 +479,7 @@ executable various-tests
   build-depends:
       Shpadoinkle
     , Shpadoinkle-backend-pardiff
+    , Shpadoinkle-jsffi
     , Shpadoinkle-console
     , Shpadoinkle-html
     , Shpadoinkle-lens
