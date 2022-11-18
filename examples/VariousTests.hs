@@ -13,26 +13,29 @@
 
 module Main where
 
-import Data.Function ((&))
-import           Data.Text                   (Text, pack)
-import           Data.Text.Encoding          (decodeUtf8)
-import           GHC.Generics                (Generic)
-import           Shpadoinkle                 (Html, JSM, NFData, liftC)
-import           Shpadoinkle.Backend.ParDiff (runParDiff)
-import           Shpadoinkle.Console         (ToJSON, ToJSVal, askJSM, logJS,
-                                              trapper)
-import           Shpadoinkle.Html            as H
-import Data.Semigroup (stimes)
-import Shpadoinkle.Html.Event (onKeydown, onClickAway, onGlobalKeyDown, onGlobalKeyDownNoRepeat, onEscape)
-import Shpadoinkle.JSFFI (console, (#-), liftJSM, MonadJSM)
-import           Shpadoinkle.Run             (run, simple)
+import           Data.Function                 ((&))
+import           Data.Maybe                    (fromMaybe)
+import           Data.Semigroup                (stimes)
+import           Data.Text                     (Text, pack)
+import qualified Data.Text                     as T
+import           Data.Text.Encoding            (decodeUtf8)
+import           GHC.Generics                  (Generic)
+import           Shpadoinkle                   (Html, JSM, NFData, liftC)
+import           Shpadoinkle.Backend.ParDiff   (runParDiff)
+import           Shpadoinkle.Console           (ToJSON, ToJSVal, askJSM, logJS,
+                                                trapper)
+import qualified Shpadoinkle.Html              as H
+import           Shpadoinkle.Html.LocalStorage (getStorage, setStorage)
+import           Shpadoinkle.JSFFI             (MonadJSM, console, liftJSM,
+                                                (#-))
+import           Shpadoinkle.Run               (run, simple)
 
 
-data Model = Model
+data Model = Model { val :: Int }
   deriving (Show, Generic, NFData, Eq)
 
 initial :: Model
-initial = Model
+initial = Model { val = 0 }
 
 
 view :: MonadJSM m => Model -> Html m Model
@@ -41,16 +44,29 @@ view m = H.div "calculator"
   , H.div []
     ([ H.input
       [ H.type' "text"
-      , onClickAwayM             (        logIt "[input] click away")
-      , onKeydownM               (const $ logIt "[input] key down")
-      , onGlobalKeyDownM         (const $ logIt "[input] global key down")
-      -- , onGlobalKeyDownNoRepeatM (const $ logIt "[input] global key down (no repeat)")
+      , H.onClickAwayM             (        logIt "[input] click away")
+      , H.onKeydownM               (const $ logIt "[input] key down")
+      , H.onGlobalKeyDownM         (const $ logIt "[input] global key down")
+      -- , H.onGlobalKeyDownNoRepeatM (const $ logIt "[input] global key down (no repeat)")
       -- nb. Both onGlobalKeyDown and onGlobalKeyDownNoRepeat seem to work, but not together
-      , onEscapeM                (        logIt "[input] escape")
+      , H.onEscapeM                (        logIt "[input] escape")
       ]
       []
     , H.text " "
     ] & stimes 2)
+  , H.div []
+    [ H.button
+      [ H.onClickM $ do
+            mx <- getStorage "val"
+            let x = fromMaybe 0 mx
+            let x' = x + 1
+            setStorage "val" x'
+            pure (\m -> m { val = x' })
+      ]
+      [ H.text "inc" ]
+    , H.text " "
+    , H.text . T.pack . show $ val m
+    ]
   ]
 
   where
@@ -60,7 +76,7 @@ view m = H.div "calculator"
 
 app :: JSM ()
 app = do
-  setTitle "Calculator"
+  H.setTitle "Calculator"
   ctx <- askJSM
 
   logJS @Show "info" ["hello", "there"]
@@ -70,7 +86,7 @@ app = do
   logJS @ToJSVal "info" ("hello / there" :: Text)
   logJS @ToJSVal "warn" ("hello / here" :: Text)
 
-  simple runParDiff initial (view . trapper @Show ctx) getBody
+  simple runParDiff initial (view . trapper @Show ctx) H.getBody
 
 
 main :: IO ()
