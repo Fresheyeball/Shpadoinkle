@@ -8,6 +8,7 @@
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE TypeApplications       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults       #-}
 
@@ -25,6 +26,7 @@ import           Shpadoinkle.Backend.ParDiff   (runParDiff)
 import           Shpadoinkle.Console           (ToJSON, ToJSVal, askJSM, logJS,
                                                 trapper)
 import qualified Shpadoinkle.Html              as H
+import Shpadoinkle.Router.Client (getClientEnv, ClientEnv (..))
 import           Shpadoinkle.Html.LocalStorage (getStorage, setStorage)
 import           Shpadoinkle.JSFFI             (MonadJSM, console, liftJSM,
                                                 (#-))
@@ -85,6 +87,9 @@ app = do
   logJS @ToJSON "warn" ["hello", "here"]
   logJS @ToJSVal "info" ("hello / there" :: Text)
   logJS @ToJSVal "warn" ("hello / here" :: Text)
+
+  ClientEnv { baseUrl } <- getClientEnv
+  console #- "log" $ [ show baseUrl ]
 
   simple runParDiff initial (view . trapper @Show ctx) H.getBody
 
