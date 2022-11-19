@@ -6,9 +6,9 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE NamedFieldPuns         #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TemplateHaskell        #-}
-{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE TypeApplications       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults       #-}
 
@@ -17,19 +17,18 @@ module Main where
 import           Data.Function                 ((&))
 import           Data.Maybe                    (fromMaybe)
 import           Data.Semigroup                (stimes)
-import           Data.Text                     (Text, pack)
+import           Data.Text                     (Text)
 import qualified Data.Text                     as T
-import           Data.Text.Encoding            (decodeUtf8)
 import           GHC.Generics                  (Generic)
-import           Shpadoinkle                   (Html, JSM, NFData, liftC)
+import           Shpadoinkle                   (Html, JSM, NFData)
 import           Shpadoinkle.Backend.ParDiff   (runParDiff)
 import           Shpadoinkle.Console           (ToJSON, ToJSVal, askJSM, logJS,
                                                 trapper)
 import qualified Shpadoinkle.Html              as H
-import Shpadoinkle.Router.Client (getClientEnv, ClientEnv (..))
 import           Shpadoinkle.Html.LocalStorage (getStorage, setStorage)
 import           Shpadoinkle.JSFFI             (MonadJSM, console, liftJSM,
                                                 (#-))
+import           Shpadoinkle.Router.Client     (ClientEnv (..), getClientEnv)
 import           Shpadoinkle.Run               (run, simple)
 
 
@@ -63,7 +62,7 @@ view m = H.div "calculator"
             let x = fromMaybe 0 mx
             let x' = x + 1
             setStorage "val" x'
-            pure (\m -> m { val = x' })
+            pure (\m' -> m' { val = x' })
       ]
       [ H.text "inc" ]
     , H.text " "

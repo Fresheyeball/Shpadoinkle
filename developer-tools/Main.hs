@@ -36,7 +36,6 @@ import           Shpadoinkle                 (Html, NFData, flagProp,
                                               shpadoinkle, text)
 import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import qualified Shpadoinkle.Html            as H
-import           Shpadoinkle.JSFFI           (body)
 import           Shpadoinkle.Run             (run)
 
 

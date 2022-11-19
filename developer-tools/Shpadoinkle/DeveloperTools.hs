@@ -20,11 +20,9 @@ import           UnliftIO
 import           Control.Lens        hiding ((#))
 import           Control.Monad
 import           Control.Monad.STM   (retry)
-import           Data.Maybe          (maybe)
-import           Data.Text           (Text)
 import           Shpadoinkle.JSFFI   (JSObject, JSVal, getProp, getPropMaybe,
-                                      jsAs, jsTo, mkEmptyObject, mkFun',
-                                      setProp, window, (#-), (===))
+                                      jsTo, mkEmptyObject, mkFun', setProp,
+                                      window, (#-), (===))
 import           UnliftIO.Concurrent
 #endif
 
