@@ -20,6 +20,12 @@ import           Data.Semigroup                (stimes)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
 import           GHC.Generics                  (Generic)
+import           Network.HTTP.Types.Version    (http20)
+import           Servant.Client.Core.Request   (RequestF (..))
+import           Servant.Client.Core.Response  (ResponseF (..))
+import           Servant.Client.JS             (runClientM,
+                                                withStreamingRequestJSM)
+import           Servant.Types.SourceT         (foreach)
 import           Shpadoinkle                   (Html, JSM, NFData)
 import           Shpadoinkle.Backend.ParDiff   (runParDiff)
 import           Shpadoinkle.Console           (ToJSON, ToJSVal, askJSM, logJS,
@@ -28,7 +34,8 @@ import qualified Shpadoinkle.Html              as H
 import           Shpadoinkle.Html.LocalStorage (getStorage, setStorage)
 import           Shpadoinkle.JSFFI             (MonadJSM, console, liftJSM,
                                                 (#-))
-import           Shpadoinkle.Router.Client     (ClientEnv (..), getClientEnv)
+import           Shpadoinkle.Router.Client     (BaseUrl (..), ClientEnv (..),
+                                                Scheme (Http), getClientEnv)
 import           Shpadoinkle.Run               (run, simple)
 
 
@@ -87,8 +94,29 @@ app = do
   logJS @ToJSVal "info" ("hello / there" :: Text)
   logJS @ToJSVal "warn" ("hello / here" :: Text)
 
-  ClientEnv { baseUrl } <- getClientEnv
+  clientEnv@(ClientEnv { baseUrl }) <- getClientEnv
   console #- "log" $ [ show baseUrl ]
+
+  do
+    -- Test withStreamingRequestJSM
+    let fakeEnv = clientEnv { baseUrl = BaseUrl Http "google.com" 80 "" }
+    (>>= (\e -> console #- "log" $ [either (\_ -> "<err>") (\() -> "<ok>") e])) $
+      flip runClientM fakeEnv $
+        withStreamingRequestJSM
+          (Request
+              { requestPath = mempty
+              , requestQueryString = mempty
+              , requestBody = Nothing
+              , requestAccept = mempty
+              , requestHeaders = mempty
+              , requestHttpVersion = http20
+              , requestMethod = "GET"
+              })
+          (\(Response _ _ _ body) ->
+              body & foreach
+                        (\err -> console #- "log" $ [err])
+                        (\byteStr -> console #- "log" $ [show byteStr])
+          )
 
   simple runParDiff initial (view . trapper @Show ctx) H.getBody
 
