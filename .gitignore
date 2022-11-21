@@ -1,10 +1,10 @@
 *dist*
 *.ghc*
 *result*
+server*
+client*
 *project.local
 *project.local~
-server
-client
 roster.db
 .vscode
 *.tar.gz

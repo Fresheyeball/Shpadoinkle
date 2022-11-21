@@ -51,13 +51,16 @@ executable animation
 
   hs-source-dirs: ./.
 
+  ghc-options: -DDEVELOPMENT
+
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , Shpadoinkle-backend-snabbdom
+    , Shpadoinkle-developer-tools
     , Shpadoinkle-html
     , base >=4.12.0 && <4.16
     , ease
-    , ghcjs-dom
     , stm
     , text
     , unliftio
@@ -140,12 +143,12 @@ executable lazy-loading-table-client
 
   build-depends:
       base >=4.12.0 && <4.16
+    , Shpadoinkle-jsffi
     , bytestring
     , aeson
     , containers
     , country-codes
     , deepseq
-    , jsaddle
     , QuickCheck
     , servant
     , servant-client-core
@@ -178,12 +181,12 @@ executable lazy-loading-table-server
 
   build-depends:
       base >=4.12.0 && <4.16
+    , Shpadoinkle-jsffi
     , aeson
     , bytestring
     , containers
     , country-codes
     , deepseq
-    , jsaddle
     , text
     , QuickCheck
     , servant
@@ -244,7 +247,6 @@ executable servant-crud-client
     , containers
     , exceptions
     , generic-lens
-    , jsaddle
     , lens
     , mtl
     , servant
@@ -297,7 +299,6 @@ executable servant-crud-dev
     , file-embed
     , generic-lens
     , generic-monoid
-    , jsaddle
     , lens
     , mtl
     , optparse-applicative
@@ -464,5 +465,30 @@ executable stress
     , Shpadoinkle-lens
     , Shpadoinkle-backend-snabbdom
     , Shpadoinkle-backend-pardiff
+
+  default-language: Haskell2010
+
+
+executable various-tests
+  import: ghc-options, ghcjs-options
+
+  main-is: VariousTests.hs
+
+  hs-source-dirs: ./.
+
+  build-depends:
+      Shpadoinkle
+    , Shpadoinkle-backend-pardiff
+    , Shpadoinkle-jsffi
+    , Shpadoinkle-console
+    , Shpadoinkle-html
+    , Shpadoinkle-lens
+    , Shpadoinkle-router
+    , servant
+    , servant-client-js
+    , servant-client-core
+    , http-types
+    , base >=4.12.0 && <4.16
+    , text
 
   default-language: Haskell2010

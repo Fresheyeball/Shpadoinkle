@@ -18,12 +18,9 @@ import           Control.Monad.Reader
 import           Data.Proxy                                  (Proxy (..))
 import           Data.Text                                   (Text)
 import           Servant.API                                 (type (:<|>) ((:<|>)))
-#ifndef ghcjs_HOST_OS
-import           Servant.Server                              as Servant (serve)
-#endif
 
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle                                 (JSM, MonadJSM,
+import           Shpadoinkle                                 (JSM,
                                                               MonadUnliftIO (..),
                                                               TVar, constUpdate,
                                                               liftJSM,
@@ -51,12 +48,7 @@ import           Shpadoinkle.Router.Client                   (BaseUrl (..),
                                                               runXHRe)
 import           Shpadoinkle.Widgets.Types                   (Search (..))
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Router.Server                   (serveUI)
-import           Shpadoinkle.Run                             (Env (Dev),
-                                                              liveWithBackend,
-                                                              runJSorWarp)
-#else
-import           Shpadoinkle.Run                             (runJSorWarp)
+import qualified Shpadoinkle.Run                             as Run (run)
 #endif
 
 -- import           Shpadoinkle.DeveloperTools
@@ -68,21 +60,12 @@ import           Shpadoinkle.Website.Types.Hoogle.API        as Hoogle
 import           Shpadoinkle.Website.Types.Hoogle.Target     (Target)
 import           Shpadoinkle.Website.Types.Route             (Route (RFourOhFour))
 import           Shpadoinkle.Website.Types.SPA               (SPA, routes)
-#ifndef ghcjs_HOST_OS
-import           Shpadoinkle.Website.Partials.Template       (template)
 import           Shpadoinkle.Website.View                    (start, startJS,
                                                               view)
-#else
-import           Shpadoinkle.Website.View                    (start, startJS,
-                                                              view)
-#endif
 
 
 newtype App a = App { runApp :: ReaderT (Examples (TVar (Maybe Code))) JSM a }
   deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadReader (Examples (TVar (Maybe Code))))
-#ifndef ghcjs_HOST_OS
-  deriving (MonadJSM)
-#endif
 
 
 instance MonadUnliftIO App where
@@ -136,15 +119,8 @@ app = do
 
 
 main :: IO ()
-main = runJSorWarp 8080 app
-
-
 #ifndef ghcjs_HOST_OS
-
-dev :: IO ()
-dev = liveWithBackend 8080 app . pure $ Servant.serve (Proxy @ (SPA IO)) $ serveUI @(SPA IO) "." (\r -> do
-  vm <- start r
-  cy <- getCurrentYear
-  return $ template @App Dev vm (view cy vm)) routes
-
+main = Run.run app
+#else
+main = pure ()
 #endif

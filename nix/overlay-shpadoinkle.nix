@@ -49,14 +49,6 @@
     };
 
 
-  servant-client-js-src = super.fetchFromGitHub
-    { owner = "morganthomas";
-      repo = "servant-client-js";
-      rev = "56cf74cd71f7164e0c45d6caab4e53535932ad7d";
-      sha256 = "06i0dmfqq3c2wdxqb1p3vqkiw8094k1q930g7hrfggv2ps36jhf1";
-    };
-
-
   servant-jsaddle-src = super.fetchFromGitHub
     { owner  = "haskell-servant";
       repo   = "servant-jsaddle";
@@ -224,6 +216,9 @@ in {
           Shpadoinkle-template         = call "Shpadoinkle-template"                 ../template;
           Shpadoinkle-examples         = call "Shpadoinkle-examples"                 ../examples;
           Shpadoinkle-isreal           = call "Shpadoinkle-isreal"                   ../isreal;
+          Shpadoinkle-jsffi            = call "Shpadoinkle-jsffi"                    ../jsffi;
+
+          servant-client-js            = call "servant-client-js"                    ../servant-client-js;
 
           ease                    = hself.callCabal2nix "ease" ease {};
           ghcjs-base-stub         = hself.callCabal2nix "ghcjs-base-stub" ghcjs-base-stub-src {};
@@ -234,7 +229,6 @@ in {
           servant-rawm            = dontJS    (patchLicense (hself.callCabal2nix "servant-rawm"        "${servant-rawm-src}/servant-rawm"        {}));
           servant-rawm-server     = dontCheck (patchLicense (hself.callCabal2nix "servant-rawm-server" "${servant-rawm-src}/servant-rawm-server" {}));
           servant-rawm-client     = dontCheck (patchLicense (hself.callCabal2nix "servant-rawm-client" "${servant-rawm-src}/servant-rawm-client" {}));
-          servant-client-js       = hself.callCabal2nix "servant-client-js" servant-client-js-src {};
           servant-jsaddle         = dontCheck (hself.callCabal2nix "servant-jsaddle" "${servant-jsaddle-src}"        {});
           snabbdom                = hself.callCabal2nix "snabbdom" snabbdom-src {};
           jsaddle-warp            = dontCheck (hself.callCabal2nix "jsaddle-warp"    "${jsaddle-src}/jsaddle-warp"   {});

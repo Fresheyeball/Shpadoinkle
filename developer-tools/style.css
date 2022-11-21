@@ -8,6 +8,7 @@ body {
   color: rgb(244, 244, 244);
   font-size: 12px;
   font-family: Consolas, Lucida Console, Courier New, monospace;
+  background-color: black;
 }
 
 .con-children {

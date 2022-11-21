@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -11,38 +12,30 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TupleSections              #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults              #-}
 
 
 module Shpadoinkle.Website.Page.FourOhFour where
 
 
-import           Control.Concurrent.STM                  (TVar, atomically,
-                                                          modifyTVar, retry)
-import           Control.Monad.IO.Class                  (liftIO)
-import           Data.Text                               (Text)
-import           GHC.Generics                            (Generic)
-import           GHCJS.DOM                               (currentDocumentUnchecked,
-                                                          currentWindowUnchecked)
-import           GHCJS.DOM.Document                      (createElement)
-import           GHCJS.DOM.Element                       (setId)
-import           GHCJS.DOM.NonElementParentNode          (getElementById)
-import           GHCJS.DOM.RequestAnimationFrameCallback (RequestAnimationFrameCallback,
-                                                          newRequestAnimationFrameCallback)
-import           GHCJS.DOM.Window                        (Window,
-                                                          requestAnimationFrame)
-import           Language.Javascript.JSaddle             (toJSVal)
-import           Shpadoinkle                             (JSM, NFData,
-                                                          RawNode (..),
-                                                          newTVarIO,
-                                                          shpadoinkle)
-import           Shpadoinkle.Backend.Snabbdom            (runSnabbdom)
-import           Shpadoinkle.Html                        as H
-import           Shpadoinkle.Html.TH.AssetLink           (assetLink)
-import           Shpadoinkle.Keyboard                    (pattern Ctrl,
-                                                          pattern LeftArrow,
-                                                          pattern RightArrow)
-import           UnliftIO.Concurrent                     (forkIO, threadDelay)
+import           Control.Concurrent.STM        (TVar, atomically, modifyTVar,
+                                                retry)
+import           Control.Monad                 (void)
+import           Control.Monad.IO.Class        (liftIO)
+import           Data.Text                     (Text)
+import           GHC.Generics                  (Generic)
+import           Shpadoinkle                   (JSM, NFData, RawNode (..),
+                                                newTVarIO, shpadoinkle)
+import           Shpadoinkle.Backend.Snabbdom  (runSnabbdom)
+import           Shpadoinkle.Html              as H
+import           Shpadoinkle.Html.TH.AssetLink (assetLink)
+import           Shpadoinkle.JSFFI             (JSObject, createElement,
+                                                getElementById, jsAs,
+                                                requestAnimationFrame, setId)
+import           Shpadoinkle.Keyboard          (pattern Ctrl, pattern LeftArrow,
+                                                pattern RightArrow)
+import           UnliftIO.Concurrent           (forkIO, threadDelay)
 
 
 default (Text)
@@ -146,26 +139,25 @@ tick d g = g
   }
 
 
-animate :: Window -> TVar Game -> JSM RequestAnimationFrameCallback
-animate win model = newRequestAnimationFrameCallback $ \d -> () <$ do
-  liftIO . atomically . modifyTVar model . tick $ Clock d
-  requestAnimationFrame win =<< animate win model
+animate :: TVar Game -> JSM ()
+animate model = void $ do
+  requestAnimationFrame $ \d -> void $ do
+    liftIO . atomically . modifyTVar model . tick $ Clock d
+    animate model
 
 
 play :: JSM RawNode
 play = do
   let gameId = "game"
-  doc <- currentDocumentUnchecked
-  isSubsequent <- traverse toJSVal =<< getElementById doc gameId
+  isSubsequent <- getElementById gameId
   case isSubsequent of
-    Just raw -> return $ RawNode raw
+    Just raw -> pure . RawNode . jsAs @JSObject $ raw
     Nothing -> do
-      win <- currentWindowUnchecked
-      elm <- createElement doc "div"
-      setId elm gameId
+      elm <- createElement "div"
+      setId gameId elm
       model <- newTVarIO $ Game 24 0 Idle FaceRight
-      _ <- requestAnimationFrame win =<< animate win model
-      raw <- RawNode <$> toJSVal elm
+      animate model
+      let raw = RawNode (jsAs @JSObject elm)
       _ <- forkIO $ threadDelay 1
         >> shpadoinkle id runSnabbdom model game (pure raw)
       return raw

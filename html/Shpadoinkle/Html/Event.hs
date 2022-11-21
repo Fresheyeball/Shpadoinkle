@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE TypeApplications    #-}
 
 
@@ -36,12 +37,13 @@ module Shpadoinkle.Html.Event
 
 
 import           Control.Concurrent.STM       (retry)
-import           Control.Lens                 ((^.))
 import           Control.Monad                (unless, void)
 import           Control.Monad.IO.Class       (liftIO)
 import           Data.Text
-import           GHCJS.DOM.Types              hiding (Text)
-import           Language.Javascript.JSaddle  hiding (JSM, liftJSM, toJSString)
+import           Shpadoinkle.JSFFI            (JSObject, JSString, JSVal,
+                                               getProp, global, jsTo, mkFun',
+                                               toBoolLax, toIntLax, toTextLax,
+                                               (#), (#-))
 import           UnliftIO.Concurrent          (forkIO)
 import           UnliftIO.STM
 
@@ -51,29 +53,33 @@ import           Shpadoinkle.Html.TH
 import           Shpadoinkle.Keyboard
 
 
+toKeyCodeLax :: JSVal -> JSM KeyCode
+toKeyCodeLax = fmap fromIntegral . toIntLax
+
+
 mkWithFormVal ::  (JSVal -> JSM v) -> Text -> JSString -> (v -> Continuation m a) -> (Text, Prop m a)
 mkWithFormVal valTo evt from f = listenRaw evt $ \(RawNode n) _ ->
-  f <$> liftJSM (valTo =<< unsafeGetProp from =<< valToObject n)
+  f <$> liftJSM (valTo =<< getProp from n)
 
 
 onInputC ::  (Text -> Continuation m a) -> (Text, Prop m a)
-onInputC = mkWithFormVal valToText "input" "value"
+onInputC = mkWithFormVal toTextLax "input" "value"
 $(mkEventVariantsAfforded "input" ''Text)
 
 
 onBeforeinputC ::  (Text -> Continuation m a) -> (Text, Prop m a)
-onBeforeinputC = mkWithFormVal valToText "beforeinput" "value"
+onBeforeinputC = mkWithFormVal toTextLax "beforeinput" "value"
 $(mkEventVariantsAfforded "beforeinput" ''Text)
 
 
 onOptionC ::  (Text -> Continuation m a) -> (Text, Prop m a)
-onOptionC = mkWithFormVal valToText "change" "value"
+onOptionC = mkWithFormVal toTextLax "change" "value"
 $(mkEventVariantsAfforded "option" ''Text)
 
 
 mkOnKey ::  Text -> (KeyCode -> Continuation m a) -> (Text, Prop m a)
 mkOnKey t f = listenRaw t $ \_ (RawEvent e) ->
-  f <$> liftJSM (fmap round $ valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e)
+  f <$> liftJSM (toKeyCodeLax =<< getProp ("keyCode" :: Text) e)
 
 
 onKeyupC, onKeydownC, onKeypressC :: (KeyCode -> Continuation m a) -> (Text, Prop m a)
@@ -86,16 +92,16 @@ $(mkEventVariantsAfforded "keypress" ''KeyCode)
 
 
 onCheckC ::  (Bool -> Continuation m a) -> (Text, Prop m a)
-onCheckC = mkWithFormVal valToBool "change" "checked"
+onCheckC = mkWithFormVal toBoolLax "change" "checked"
 $(mkEventVariantsAfforded "check" ''Bool)
 
 
 preventDefault :: RawEvent -> JSM ()
-preventDefault e = void $ valToObject e # ("preventDefault" :: String) $ ([] :: [()])
+preventDefault e = unRawEvent e #- ("preventDefault" :: String) $ ([] :: [()])
 
 
 stopPropagation :: RawEvent -> JSM ()
-stopPropagation e = void $ valToObject e # ("stopPropagation" :: String) $ ([] :: [()])
+stopPropagation e = unRawEvent e #- ("stopPropagation" :: String) $ ([] :: [()])
 
 
 onSubmitC :: Continuation m a -> (Text, Prop m a)
@@ -127,15 +133,15 @@ onClickAwayC c =
 
      (notify, stream) <- mkGlobalMailbox c
 
-     void $ jsg ("document" :: Text) ^. js2 ("addEventListener" :: Text) ("click" :: Text)
-        (fun $ \_ _ -> \case
+     (global #- ("addEventListener" :: Text)) . ("click" :: Text,) =<<
+        mkFun' (\case
           evt:_ -> void . forkIO $ do
 
-            target   <- evt ^. js ("target" :: Text)
-            onTarget <- fromJSVal =<< elm ^. js1 ("contains" :: Text) target
-            case onTarget of
-              Just False -> notify
-              _          -> return ()
+            target :: JSVal <- jsTo @JSObject evt >>= getProp ("target" :: Text)
+            onTarget <- elm # ("contains" :: Text) $ target
+            toBoolLax onTarget >>= \case
+              False -> notify
+              _     -> return ()
 
           [] -> pure ())
 
@@ -151,9 +157,9 @@ mkGlobalKey evtName c =
 
      (notify, stream) <- mkGlobalMailboxAfforded c
 
-     void $ jsg ("window" :: Text) ^. js2 ("addEventListener" :: Text) evtName
-        (fun $ \_ _ -> \case
-           e:_ -> notify . round =<< valToNumber =<< unsafeGetProp "keyCode" =<< valToObject e
+     (global #- ("addEventListener" :: Text)) . (evtName,) =<<
+        mkFun' (\case
+           e:_ -> notify =<< toKeyCodeLax =<< getProp ("keyCode" :: Text) =<< jsTo @JSObject e
            []  -> return ())
 
      return stream
@@ -167,13 +173,13 @@ mkGlobalKeyNoRepeat evtName c =
 
      (notify, stream) <- mkGlobalMailboxAfforded c
 
-     void $ jsg ("window" :: Text) ^. js2 ("addEventListener" :: Text) evtName
-        (fun $ \_ _ -> \case
+     (global #- ("addEventListener" :: Text)) . (evtName,) =<<
+        mkFun' (\case
            e:_ -> do
-             eObj <- valToObject e
-             isRepeat <- valToBool =<< unsafeGetProp "repeat" eObj
+             eObj <- jsTo @JSObject e
+             isRepeat <- toBoolLax =<< getProp ("repeat" :: Text) eObj
              unless isRepeat $
-               notify . round =<< valToNumber =<< unsafeGetProp "keyCode" eObj
+               notify =<< toKeyCodeLax =<< getProp ("keyCode" :: Text) eObj
            []  -> return ())
 
      return stream
@@ -201,7 +207,6 @@ $(mkEventVariants "escape")
 
 onEnterC :: (Text -> Continuation m a) -> (Text, Prop m a)
 onEnterC f = listenRaw "keyup" $ \(RawNode n) _ -> liftJSM $
-  f <$> (valToText =<< unsafeGetProp "value"
-                   =<< valToObject n)
+  f <$> (toTextLax =<< getProp ("value" :: Text) =<< jsTo @JSObject n)
 $(mkEventVariantsAfforded "enter" ''Text)
 

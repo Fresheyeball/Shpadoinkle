@@ -78,6 +78,7 @@ executable disembodied
 
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , Shpadoinkle-backend-snabbdom
     , Shpadoinkle-console
     , Shpadoinkle-disembodied
@@ -94,8 +95,6 @@ executable disembodied
     , file-embed
     , generic-lens
     , generic-monoid
-    , ghcjs-dom
-    , jsaddle
     , lens
     , mtl
     , random
@@ -155,6 +154,7 @@ executable run
 
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , Shpadoinkle-backend-snabbdom
     , Shpadoinkle-console
     , Shpadoinkle-developer-tools
@@ -171,8 +171,6 @@ executable run
     , file-embed
     , generic-lens
     , generic-monoid
-    , ghcjs-dom
-    , jsaddle
     , lens
     , mtl
     , network-uri
@@ -239,6 +237,7 @@ test-suite unit
 
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , Shpadoinkle-backend-snabbdom
     , Shpadoinkle-console
     , Shpadoinkle-developer-tools
@@ -255,8 +254,6 @@ test-suite unit
     , file-embed
     , generic-lens
     , generic-monoid
-    , ghcjs-dom
-    , jsaddle
     , lens
     , mtl
     , network-uri

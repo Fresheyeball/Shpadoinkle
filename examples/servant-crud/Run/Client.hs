@@ -2,8 +2,8 @@ module Main where
 
 
 import qualified Client
-import           Shpadoinkle.Run (runJSorWarp)
+import           Shpadoinkle.Run (run)
 
 
 main :: IO ()
-main = runJSorWarp 8080 Client.app
+main = run Client.app

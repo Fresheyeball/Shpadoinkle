@@ -15,7 +15,7 @@ import           Shpadoinkle.Backend.ParDiff (ParDiffT, runParDiff)
 import           Shpadoinkle.Html            (Debounce (..), Throttle (..),
                                               button, debounce, div_, getBody,
                                               input, onClick, onInput, throttle)
-import           Shpadoinkle.Run             (runJSorWarp, live)
+import           Shpadoinkle.Run             (run)
 
 
 type Model = (Int, Text)
@@ -50,13 +50,7 @@ app control = do
   where initial = (0, "")
 
 
-dev :: IO ()
-dev = do
-  control <- Control <$> debounce 1 <*> debounce 2 <*> throttle 1 <*> throttle 2
-  live 8080 (app control)
-
-
 main :: IO ()
 main = do
   control <- Control <$> debounce 1 <*> debounce 2 <*> throttle 1 <*> throttle 2
-  runJSorWarp 8080 (app control)
+  run (app control)

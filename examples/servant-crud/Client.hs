@@ -13,7 +13,7 @@ import           Control.Monad.Catch         (MonadThrow)
 import           Control.Monad.Reader        (MonadIO)
 import           Data.Proxy                  (Proxy (..))
 #ifndef ghcjs_HOST_OS
-import           Shpadoinkle                 (JSM, MonadJSM, MonadUnliftIO (..),
+import           Shpadoinkle                 (JSM, MonadUnliftIO (..),
                                               UnliftIO (..), askJSM, runJSM)
 #else
 import           Shpadoinkle                 (JSM, MonadUnliftIO (..),
@@ -32,9 +32,6 @@ import           View                        (start, view)
 
 newtype App a = App { runApp :: JSM a }
   deriving (Functor, Applicative, Monad, MonadIO, MonadThrow)
-#ifndef ghcjs_HOST_OS
-  deriving (MonadJSM)
-#endif
 
 
 instance MonadUnliftIO App where

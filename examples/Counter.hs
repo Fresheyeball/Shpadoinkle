@@ -12,7 +12,7 @@ import           Shpadoinkle.Backend.ParDiff (runParDiff)
 import           Shpadoinkle.Html            (br'_, button, div_, h2_, id',
                                               onClick, span)
 import           Shpadoinkle.Html.Utils
-import           Shpadoinkle.Run             (runJSorWarp, simple, live)
+import           Shpadoinkle.Run             (run, simple)
 
 
 view :: Int -> Html m Int
@@ -30,10 +30,5 @@ app :: JSM ()
 app = simple runParDiff 0 view getBody
 
 
-dev :: IO ()
-dev = live 8080 app
-
-
 main :: IO ()
-main = runJSorWarp 8080 app
-
+main = run app

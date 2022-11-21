@@ -39,7 +39,6 @@ import           Servant.API
 import           Servant.Server            (Server, hoistServer, serve)
 
 import           Shpadoinkle               (JSM, type (~>))
-import           Shpadoinkle.Router        (MonadJSM)
 import           Shpadoinkle.Router.Server (serveUI)
 import           Shpadoinkle.Run           (Env (Prod))
 
@@ -78,7 +77,7 @@ runSql x = do conn <- ask; liftIO $ runBeamSqlite conn x
 
 
 newtype Noop a = Noop (JSM a)
-  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadJSM)
+  deriving newtype (Functor, Applicative, Monad, MonadIO)
   deriving anyclass CRUDSpaceCraft
 
 

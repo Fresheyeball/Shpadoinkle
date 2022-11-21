@@ -52,37 +52,30 @@ module Shpadoinkle.Core (
   ) where
 
 
-import           Control.Applicative           (liftA2)
-import           Control.Category              ((.))
-import           Data.Kind                     (Type)
-import           Data.Map                      as M (Map, foldl', insert,
-                                                     mapEither, singleton,
-                                                     toList, unionWithKey)
-import           Data.String                   (IsString (..))
-import           Data.Text                     (Text, pack)
-import           Data.Text.Lazy                (toStrict)
-import           Data.Text.Lazy.Builder        (toLazyText)
-import           GHCJS.DOM.Types               (JSM, MonadJSM, liftJSM)
-#ifndef ghcjs_HOST_OS
-import           Language.Javascript.JSaddle   (FromJSVal (..), JSVal,
-                                                ToJSVal (..), JSString, askJSM, runJSM, fromJSString, toJSString)
-#else
-import           Language.Javascript.JSaddle   (FromJSVal (..), JSVal,
-                                                ToJSVal (..), JSString, askJSM, runJSM)
-#endif
-import           Prelude                       hiding ((.))
-import           UnliftIO                      (MonadUnliftIO (..),
-                                                UnliftIO (..))
-import           UnliftIO.STM                  (STM, TVar, atomically,
-                                                modifyTVar, newTVarIO, readTVar,
-                                                readTVarIO, retrySTM, writeTVar)
+import           Control.Applicative      (liftA2)
+import           Control.Category         ((.))
+import           Data.Kind                (Type)
+import           Data.Map                 as M (Map, foldl', insert, mapEither,
+                                                singleton, toList, unionWithKey)
+import           Data.String              (IsString (..))
+import           Data.Text                (Text, pack)
+import           Data.Text.Lazy           (toStrict)
+import           Data.Text.Lazy.Builder   (toLazyText)
+import           Prelude                  hiding ((.))
+import           Shpadoinkle.JSFFI        (JSHTMLElement, JSM, JSObject,
+                                           JSString, JSVal, MonadJSM, askJSM,
+                                           ghcjsOnly, liftJSM, runJSM)
+import           UnliftIO                 (MonadUnliftIO (..), UnliftIO (..))
+import           UnliftIO.STM             (STM, TVar, atomically, modifyTVar,
+                                           newTVarIO, readTVar, readTVarIO,
+                                           retrySTM, writeTVar)
 
 
-import           Shpadoinkle.Continuation      (Continuation, Continuous (..),
-                                                causes, eitherC, hoist, impur,
-                                                pur, shouldUpdate)
+import           Shpadoinkle.Continuation (Continuation, Continuous (..),
+                                           causes, eitherC, hoist, impur, pur,
+                                           shouldUpdate)
 #ifndef ghcjs_HOST_OS
-import           HTMLEntities.Decoder        (htmlEncodedText)
+import           HTMLEntities.Decoder     (htmlEncodedText)
 #endif
 
 
@@ -319,15 +312,14 @@ type m ~> n = forall a. m a -> n a
 
 -- | A DOM node reference.
 -- Useful for building baked potatoes and binding a Backend view to the page
-newtype RawNode  = RawNode  { unRawNode  :: JSVal }
-instance ToJSVal   RawNode where toJSVal   = return . unRawNode
-instance FromJSVal RawNode where fromJSVal = return . Just . RawNode
+-- Not necessarily an element; may be for instance a text node
+newtype RawNode  = RawNode  { unRawNode  :: JSObject }
+-- WANT: strengthen to some kind of Node type
 
 
 -- | A raw event object reference
-newtype RawEvent = RawEvent { unRawEvent :: JSVal }
-instance ToJSVal   RawEvent where toJSVal   = return . unRawEvent
-instance FromJSVal RawEvent where fromJSVal = return . Just . RawEvent
+newtype RawEvent = RawEvent { unRawEvent :: JSObject }
+-- WANT: strengthen to some kind of event type
 
 
 -- | Strings are overloaded as the class property:
@@ -377,7 +369,7 @@ injectProps ps = mapProps (<> ps)
 
 #ifndef ghcjs_HOST_OS
 htmlDecode :: JSString -> JSM JSString
-htmlDecode = pure . toJSString . toStrict . toLazyText . htmlEncodedText . fromJSString
+htmlDecode = ghcjsOnly
 #else
 foreign import javascript unsafe
   "{var ta = document.createElement('textarea'); ta.innerHTML = $1; $r = ta.childNodes.length == 0 ? '' : ta.childNodes[0].nodeValue;}"

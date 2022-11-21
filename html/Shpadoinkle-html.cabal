@@ -59,13 +59,12 @@ library
 
   build-depends:
       Shpadoinkle
+    , Shpadoinkle-jsffi
     , base >=4.12.0 && <4.16
     , bytestring
     , compactable
     , containers >=0.6.0 && <0.7
     , directory
-    , ghcjs-dom
-    , jsaddle >=0.9.7 && <0.20
     , lens
     , process
     , raw-strings-qq

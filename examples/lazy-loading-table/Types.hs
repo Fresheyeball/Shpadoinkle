@@ -14,38 +14,30 @@
 module Types where
 
 
-import Control.DeepSeq (NFData)
-import Data.Aeson
-import qualified Data.ByteString.Lazy as BSL
-import Data.CountryCodes
-import Data.Set (Set)
-import qualified Data.Set as Set
-import Data.Text
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import GHC.Generics
-import Language.Javascript.JSaddle hiding (val)
-import Servant.API
-import Shpadoinkle.Html (text)
-import Shpadoinkle.Widgets.Table
-import Shpadoinkle.Widgets.Table.Lazy
-import Shpadoinkle.Widgets.Types (Humanize (..))
-import Test.QuickCheck
+import           Control.DeepSeq                (NFData)
+import           Data.Aeson
+import qualified Data.ByteString.Lazy           as BSL
+import           Data.CountryCodes
+import           Data.Set                       (Set)
+import qualified Data.Set                       as Set
+import           Data.Text
+import           Data.Text.Encoding             (decodeUtf8, encodeUtf8)
+import           GHC.Generics
+import           Servant.API
+import           Shpadoinkle.Html               (text)
+import           Shpadoinkle.JSFFI              (MonadJSM)
+import           Shpadoinkle.Widgets.Table
+import           Shpadoinkle.Widgets.Table.Lazy
+import           Shpadoinkle.Widgets.Types      (Humanize (..))
+import           Test.QuickCheck
 
-import StockName
+import           StockName
 
-
-instance ToJSVal CountryCode where
-  toJSVal = toJSVal . toText
-
-instance FromJSVal CountryCode where
-  fromJSVal val = (fromMText =<<) <$> fromJSVal val
 
 
 data Sex = Male | Female
   deriving (Eq, Ord, Show, Generic)
 
-instance ToJSVal Sex
-instance FromJSVal Sex
 instance NFData Sex
 
 instance ToJSON Sex where
@@ -65,8 +57,6 @@ data Person = Person
             , origin :: CountryCode }
   deriving (Eq, Show, Generic)
 
-instance ToJSVal Person
-instance FromJSVal Person
 instance NFData Person
 
 instance ToJSON Person where

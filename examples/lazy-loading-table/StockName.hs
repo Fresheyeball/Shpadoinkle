@@ -2,12 +2,12 @@
 
 module StockName ( StockName (..) ) where
 
-import Prelude hiding (last)
+import           Prelude         hiding (last)
 
-import Data.Text hiding (last)
-import Test.QuickCheck
+import           Data.Text       hiding (last)
+import           Test.QuickCheck
 
--- Name sources: 
+-- Name sources:
 -- https://github.com/dominictarr/randomname
 -- https://github.com/arineng/arincli/blob/master/lib/lastnames.txt
 

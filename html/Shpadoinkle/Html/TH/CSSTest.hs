@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# OPTIONS_GHC -ddump-splices #-}
 
 
 module Shpadoinkle.Html.TH.CSSTest

@@ -13,13 +13,12 @@ module Shpadoinkle.Widgets.Types.Pagination
 
 
 import           Data.Aeson
-import qualified Data.Attoparsec.Text        as A
-import           Data.Either.Combinators     (mapLeft)
-import           Data.Text                   (pack)
+import qualified Data.Attoparsec.Text    as A
+import           Data.Either.Combinators (mapLeft)
+import           Data.Text               (pack)
 import           GHC.Generics
-import           Language.Javascript.JSaddle hiding (JSM, MonadJSM)
-import           Servant.API                 (FromHttpApiData (..),
-                                              ToHttpApiData (..))
+import           Servant.API             (FromHttpApiData (..),
+                                          ToHttpApiData (..))
 import           Shpadoinkle
 
 
@@ -32,8 +31,6 @@ newtype Length = Length Int
 
 instance ToJSON    Length
 instance FromJSON  Length
-instance ToJSVal   Length
-instance FromJSVal Length
 instance NFData    Length
 
 
@@ -42,8 +39,6 @@ newtype Offset = Offset Int
 
 instance ToJSON    Offset
 instance FromJSON  Offset
-instance ToJSVal   Offset
-instance FromJSVal Offset
 instance NFData    Offset
 
 
@@ -52,8 +47,6 @@ data Page = Page { pageOffset :: Offset, pageLength :: Length }
 
 instance ToJSON    Page
 instance FromJSON  Page
-instance ToJSVal   Page
-instance FromJSVal Page
 instance NFData    Page
 
 instance ToHttpApiData Page where

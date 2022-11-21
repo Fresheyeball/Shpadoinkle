@@ -16,10 +16,6 @@
 {-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-#ifndef ghcjs_HOST_OS
-{-# LANGUAGE StandaloneDeriving         #-}
-#endif
-
 
 {-|
    This backend is to serve as a canonical representation of a well-behaved
@@ -68,15 +64,11 @@ import           Data.Maybe                  (isJust)
 import           Data.Monoid                 ((<>))
 import           Data.Once                   (Once, newOnce, runOnce)
 import           Data.Text                   (Text)
-import           GHCJS.DOM                   (currentDocumentUnchecked)
-import           GHCJS.DOM.Document          (getBodyUnsafe)
-import           GHCJS.DOM.Element           (setInnerHTML)
-import           Language.Javascript.JSaddle (JSString, MakeObject (makeObject),
-                                              Object, ToJSString (toJSString),
-                                              ToJSVal (toJSVal), fun, jsFalse,
-                                              jsTrue, jsg, liftJSM, toJSString,
-                                              unsafeSetProp, valMakeString,
-                                              valMakeText, (#))
+import           Shpadoinkle.JSFFI           (JSHTMLElement, JSObject, JSString,
+                                              deleteProp, document, getProp,
+                                              jsAs, jsFalse, jsTo, jsTrue,
+                                              liftJSM, mkFun', setInnerHTML,
+                                              setProp, (#), (#-))
 import           UnliftIO                    (MonadUnliftIO (..), TVar,
                                               UnliftIO (UnliftIO, unliftIO),
                                               withUnliftIO)
@@ -120,9 +112,6 @@ instance MonadRWS r w s m => MonadRWS r w s (ParDiffT model m)
 askModel :: Monad m => ParDiffT model m (TVar model)
 askModel = ParDiffT ask
 
-#ifndef ghcjs_HOST_OS
-deriving instance MonadJSM m => MonadJSM (ParDiffT model m)
-#endif
 
 
 instance MonadBase n m => MonadBase n (ParDiffT model m) where
@@ -181,7 +170,7 @@ props :: Monad m
       -> RawNode -- ^ DOM Node
       -> JSM ()
 props toJSM i (Props ps) (RawNode raw) = do
-  raw' <- makeObject raw
+  raw' <- jsTo raw
   traverseWithKey_ (prop toJSM i raw') ps
 
 
@@ -190,31 +179,28 @@ prop :: Monad m
      => NFData a
      => (m ~> JSM)
      -> TVar a -- ^ Model
-     -> Object -- ^ DOM Node
+     -> JSObject -- ^ DOM Node
      -> Text -- ^ Property Key
      -> Prop (ParDiffT a m) a -- ^ Uninterpreted Property
      -> JSM ()
 prop toJSM i raw k = \case
-  PData d     -> unsafeSetProp k' d raw
+  PData d     -> setProp k d raw
   PText t     -> do
-    t' <- valMakeText t
-    unsafeSetProp k' t' raw
+    setProp k t raw
   PPotato p   -> setProptado i (fmap (fmap (hoist (toJSM . runParDiff i))) . p) raw
-  PListener f -> setListener i (\x y -> hoist (toJSM . runParDiff i) <$> f x y) raw k'
-  PFlag True  -> unsafeSetProp k' jsTrue raw
+  PListener f -> setListener i (\x y -> hoist (toJSM . runParDiff i) <$> f x y) raw (jsAs k)
+  PFlag True  -> setProp k jsTrue raw
   PFlag False -> return ()
-  where
-    k' = toJSString k
 
 
 -- | Evaluates the proptato and loops the 'STM' continuation in a separate thread
 setProptado :: NFData a
             => TVar a -- ^ Model
             -> (RawNode -> JSM (STM (Continuation JSM a))) -- ^ Proptato
-            -> Object -- ^ DOM Node
+            -> JSObject -- ^ DOM Node
             -> JSM ()
 setProptado i f o = do
-  elm <- RawNode <$> toJSVal o
+  let elm = RawNode o
   stm <- f elm
   let go = atomically stm >>= writeUpdate i >> go
   void $ forkIO go
@@ -224,17 +210,18 @@ setProptado i f o = do
 setListener :: NFData a
             => TVar a -- ^ Model
             -> (RawNode -> RawEvent -> JSM (Continuation JSM a)) -- ^ Event Handler
-            -> Object -- ^ DOM Node
+            -> JSObject -- ^ DOM Node
             -> JSString -- ^ Event Name
             -> JSM ()
 setListener i m o k = do
-  elm <- RawNode <$> toJSVal o
-  f <- toJSVal . fun $ \_ _ -> \case
+  let elm = RawNode o
+  f <- mkFun' $ \case
     e:_ -> do
-      x <- m elm (RawEvent e)
+      e' :: JSObject <- jsTo e
+      x <- m elm (RawEvent e')
       writeUpdate i x
     _ -> return ()
-  unsafeSetProp ("on" <> k) f o
+  setProp ("on" <> k) f o
 
 
 -- | Gets the 'RawNode' from a virtual node, whether evaluated or not
@@ -259,20 +246,10 @@ makeProp toJSM i = \case
   PFlag b     -> PFlag b
 
 
-#ifndef ghcjs_HOST_OS
-deleteProp :: JSString -> Object -> JSM ()
-deleteProp _ _ = pure () -- can't delete properties from object in GHC
-#else
-foreign import javascript unsafe
-  "delete $2[$1];"
-  deleteProp :: JSString -> Object -> JSM ()
-#endif
-
-
 -- | Modify a DOM node in accordance with new properties, and properties to remove
 managePropertyState :: NFData a
                     => TVar a -- ^ Model
-                    -> Object -- ^ DOM Node
+                    -> JSObject -- ^ DOM Node
                     -> ParVProps a -- ^ Old Props
                     -> ParVProps a -- ^ New Props
                     -> JSM ()
@@ -293,7 +270,7 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
   let isFalseFlag (PFlag f) = not f
       isFalseFlag _         = False
   when (isJust (M.lookup "checked" new >>= guard . isFalseFlag))
-    (unsafeSetProp "checked" jsFalse obj')
+    (setProp "checked" jsFalse obj')
 
   let toRemove = M.difference old new
       willInclude new' old'
@@ -302,31 +279,30 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
       toInclude = M.differenceWith willInclude new old
 
       remove k _ = case k of
-        "className" -> void $ obj' # "removeAttribute" $ "class"
-        "href"      -> void $ obj' # "removeAttribute" $ "href"
-        "htmlFor"   -> void $ obj' # "removeAttribute" $ "for"
-        "style"     -> void $ obj' # "removeAttribute" $ "style"
-        "checked"   -> unsafeSetProp (toJSString k) jsFalse obj'
-        "disabled"  -> void $ obj' # "removeAttribute" $ "disabled"
-        _           -> deleteProp (toJSString k) obj'
+        "className" -> obj' #- "removeAttribute" $ "class"
+        "href"      -> obj' #- "removeAttribute" $ "href"
+        "htmlFor"   -> obj' #- "removeAttribute" $ "for"
+        "style"     -> obj' #- "removeAttribute" $ "style"
+        "checked"   -> setProp k jsFalse obj'
+        "disabled"  -> obj' #- "removeAttribute" $ "disabled"
+        _           -> deleteProp k obj'
 
   traverseWithKey_ remove toRemove
 
   let include k v =
-        let k' = toJSString k
-        in  case v of
-          PPotato p -> void . p . RawNode =<< toJSVal obj' -- FIXME why throw away continuation...???
-          PData j -> unsafeSetProp k' j obj'
+        let k' = jsAs k
+        in case v of
+          PPotato p -> void . p . RawNode =<< pure obj' -- FIXME why throw away continuation...???
+          PData j -> setProp k' j obj'
           -- new text prop, set
           PText t -> do
-            t' <- valMakeText t
-            unsafeSetProp k' t' obj'
+            setProp k' t obj'
           -- new flag prop, set
           PFlag b
-            | b -> unsafeSetProp k' jsTrue obj'
+            | b -> setProp k' jsTrue obj'
             | otherwise -> case k of
-              "checked"  -> unsafeSetProp k' jsFalse obj'
-              "disabled" -> void (obj' # "removeAttribute" $ "disabled")
+              "checked"  -> setProp k' jsFalse obj'
+              "disabled" -> obj' #- "removeAttribute" $ "disabled"
               _          -> deleteProp k' obj'
           -- new listener, set
           PListener h -> setListener i h obj' k'
@@ -337,23 +313,19 @@ managePropertyState i obj' (Props !old) (Props !new) = void $ do
 -- | Patch sets of virtual nodes (children) together
 patchChildren
   :: MonadUnliftIO m
-#ifndef ghcjs_HOST_OS
-  => MonadJSM m
-#endif
   => Show a
   => NFData a
   => RawNode -> [ParVNode a] -> [ParVNode a] -> ParDiffT a m [ParVNode a]
 patchChildren (RawNode p) [] new = liftJSM $ do
   forM_ new $ \newChild -> do
     RawNode cRaw <- runOnce (getRaw newChild)
-    p # "appendChild" $ cRaw
+    p #- "appendChild" $ cRaw
   pure new
 patchChildren _ old [] = liftJSM $ do
-  doc <- jsg "document"
-  tmp <- doc # "createElement" $ "div"
+  tmp :: JSObject <- document # "createElement" $ "div"
   old' <- traverse (fmap unRawNode . runOnce . getRaw) old
-  void (tmp # "replaceChildren" $ old')
-  void (tmp # "remove" $ ())
+  tmp #- "replaceChildren" $ old'
+  tmp #- "remove" $ ()
   pure []
 patchChildren parent (old:olds) (new:news) =
   (:) <$> patch' parent old new <*> patchChildren parent olds news
@@ -362,9 +334,6 @@ patchChildren parent (old:olds) (new:news) =
 -- | Patch a single node together, recursing through their potential children
 patch'
   :: MonadUnliftIO m
-#ifndef ghcjs_HOST_OS
-  => MonadJSM m
-#endif
   => Show a
   => NFData a
   => RawNode -> ParVNode a -> ParVNode a -> ParDiffT a m (ParVNode a)
@@ -378,9 +347,9 @@ patch' parent old new = do
       -- text node changed
       | otherwise -> liftJSM $ do
         RawNode r <- runOnce raw
-        obj' <- makeObject r
-        tNew <- valMakeString =<< htmlDecode (toJSString t)
-        unsafeSetProp "nodeValue" tNew obj'
+        obj' :: JSObject <- jsTo r
+        tNew <- htmlDecode (jsAs t)
+        setProp "nodeValue" tNew obj'
         return (ParTextNode raw t)
 
     -- node may have changed
@@ -388,7 +357,7 @@ patch' parent old new = do
       | name == name' -> do
         raw' <- liftJSM $ do
           RawNode r <- runOnce raw
-          obj' <- makeObject r
+          obj' <- jsTo r
           managePropertyState i obj' ps ps'
           pure (RawNode r)
         cs'' <- patchChildren raw' cs cs'
@@ -399,7 +368,7 @@ patch' parent old new = do
         let RawNode p = parent
         RawNode r <- runOnce $ getRaw old
         RawNode c <- runOnce $ getRaw new
-        _ <- p # "replaceChild" $ (c, r)
+        p #- "replaceChild" $ (c, r)
         return new
 
 
@@ -418,12 +387,11 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
       i <- askModel
       let ps' = toProps ps
       raw <- liftJSM . newOnce $ do
-        doc <- jsg "document"
-        raw' <- doc # "createElement" $ name
+        raw' :: JSObject <- document # "createElement" $ name
         props toJSM i ps' (RawNode raw')
         forM_ cs' $ \c -> do
           RawNode cRaw <- runOnce (getRaw c)
-          raw' # "appendChild" $ cRaw
+          raw' #- "appendChild" $ cRaw
         return (RawNode raw')
 
       let p = Props (makeProp toJSM i <$> getProps ps')
@@ -440,9 +408,8 @@ interpret' toJSM (Html h') = h' mkNode mkPotato mkText
     mkText :: Text -> ParDiffT a m (ParVNode a)
     mkText t = liftJSM $ do
       raw <- newOnce $ do
-        doc <- jsg "document"
-        t' <- valMakeString =<< htmlDecode (toJSString t)
-        RawNode <$> (doc # "createTextNode" $ t')
+        t' <- htmlDecode (jsAs  t)
+        RawNode <$> (document # "createTextNode" $ t')
       return $ ParTextNode raw t
 
 
@@ -460,7 +427,7 @@ instance
       liftJSM $ do
         let RawNode p = parent
         RawNode c <- runOnce (getRaw new)
-        _ <- p # "appendChild" $ c
+        p #- "appendChild" $ c
         return new
     Just old -> patch' parent old new
 
@@ -468,7 +435,7 @@ instance
 -- | Get the @<body>@ DOM node after emptying it.
 stage :: MonadJSM m => ParDiffT a m RawNode
 stage = liftJSM $ do
-  b <- getBodyUnsafe =<< currentDocumentUnchecked
-  setInnerHTML b ""
-  RawNode <$> toJSVal b
+  body :: JSHTMLElement <- getProp "body" document
+  setInnerHTML "" body
+  pure $ RawNode (jsAs body)
 {-# SPECIALIZE stage :: ParDiffT a JSM RawNode #-}

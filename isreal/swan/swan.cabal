@@ -27,9 +27,7 @@ executable swan
                      , mtl
                      , stm
                      , unliftio
-                     , jsaddle
                      , ghcjs-base
-                     , ghcjs-dom
                      , time
                      , stm
                      , unliftio

@@ -129,6 +129,12 @@ selectControl l msg errs ef = formGroup
     , _header  = pure . H.button
       [ H.class' ([ "btn", "btn-secondary", "dropdown-toggle" ] :: [Text])
       , H.type' "button"
+      , H.styleProp [("pointer-events", "none")]
+            -- ^ Workaround for what appears to be a bug in S11?
+            --   Seems like both the button and the surrounding <div> are picking
+            --   up on click events, meaning that any single click is registering
+            --   twice, opening and then immediately closing the popup.
+            --   Workaround: disable pointer-events on the <button>.
       ] . present
     , _list    = H.div
       [ H.class' [ ("dropdown-menu", True)
@@ -261,7 +267,7 @@ template ev fe stage = H.html_
       ]
     , H.meta [ H.charset "ISO-8859-1" ] []
     , toHydration fe
-    , H.script [ H.src $ entrypoint ev ] []
+    , H.script [ H.src $ entrypoint ev, H.flagProperty "defer" True ] []
     ]
   , H.body_
     [ stage

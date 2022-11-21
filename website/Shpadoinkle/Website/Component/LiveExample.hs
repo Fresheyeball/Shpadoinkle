@@ -11,7 +11,8 @@
 module Shpadoinkle.Website.Component.LiveExample where
 
 
-import           Control.Lens                              ((%~), (.~), (^.))
+import           Control.Lens                              ((%~), (&), (.~),
+                                                            (^.))
 import           Control.Monad.Reader                      (asks)
 import           Data.ByteString.Lazy                      as BS (fromStrict)
 import           Data.FileEmbed                            (embedFile)
@@ -23,14 +24,6 @@ import           Data.Text.Lazy                            as TL (fromStrict,
                                                                   toStrict)
 import           Data.Text.Lazy.Encoding                   (decodeUtf8,
                                                             encodeUtf8)
-import           GHCJS.DOM                                 (currentDocumentUnchecked,
-                                                            currentWindowUnchecked)
-import           GHCJS.DOM.Document                        (createElement)
-import           GHCJS.DOM.WindowOrWorkerGlobalScope       (setTimeout)
-import           Language.Javascript.JSaddle               (JSM, MonadJSM,
-                                                            Object, fromJSVal,
-                                                            fun, js0, js2, jsg2,
-                                                            obj, toJSVal, (<#))
 import           Prelude                                   hiding (div)
 import           Servant.API                               (toUrlPiece)
 import           Shpadoinkle                               (Continuation, Html,
@@ -45,6 +38,13 @@ import           Shpadoinkle.Html                          (br'_, class', div,
                                                             mkGlobalMailboxAfforded,
                                                             onInput, src)
 import           Shpadoinkle.Isreal.Types                  as Swan
+import           Shpadoinkle.JSFFI                         (JSM, JSObject,
+                                                            JSVal, MonadJSM,
+                                                            downcast, global,
+                                                            jsTo, mkEmptyObject,
+                                                            mkFun', setProp,
+                                                            setTimeout, (#),
+                                                            (#-))
 import           Shpadoinkle.Lens                          (onRecord)
 import           Shpadoinkle.Website.Style
 import           Shpadoinkle.Website.Types.Effects.Example (ExampleEffects,
@@ -138,30 +138,30 @@ errorMessages = div "errors" . fmap singleError . breakError . replace bunkWarni
   bunkWarning = "Warning: don't know how to find change monitoring files for the installed\npackage databases for ghcjs\n"
 
 
-mirrorCfg :: Code -> JSM Object
+mirrorCfg :: Code -> JSM JSObject
 mirrorCfg (Code cc) = do
-  cfg <- obj
-  (cfg <# "mode") "haskell"
-  (cfg <# "theme") "darcula"
-  (cfg <# "value") $ toStrict $ decodeUtf8 cc
-  (cfg <# "indentUnit") (4 :: Int)
-  (cfg <# "matchBrackets") True
-  (cfg <# "lineNumbers") True
+  cfg <- mkEmptyObject
+  cfg & setProp "mode" "haskell"
+  cfg & setProp "theme" "darcula"
+  cfg & setProp "value" (toStrict $ decodeUtf8 cc)
+  cfg & setProp "indentUnit" (4 :: Int)
+  cfg & setProp "matchBrackets" True
+  cfg & setProp "lineNumbers" True
   return cfg
 
 
 mirror :: Code -> Html m Code
 mirror cc = baked $ do
   (notify, stream) <- mkGlobalMailboxAfforded constUpdate
-  doc' <- currentDocumentUnchecked
-  container' <- toJSVal =<< createElement doc' "div"
+  container' :: JSVal <- global # "createElement" $ "div"
   cfg <- mirrorCfg cc
-  cm  <- jsg2 "CodeMirror" container' cfg
-  _ <- cm ^. js2 "on" "change" (fun $ \_ _ _ -> do
-        jsv <- cm ^. js0 "getValue"
-        raw :: Maybe Text <- fromJSVal jsv
+  cm :: JSVal  <- global # "CodeMirror" $ (container', cfg)
+  cmo :: JSObject <- jsTo cm
+  onChange <- mkFun' $ \_ -> do
+        jsv :: JSVal <- cmo # "getValue" $ ()
+        let raw :: Maybe Text = downcast jsv
         maybe (pure ()) (notify . Code . encodeUtf8 . TL.fromStrict) raw
-      )
-  window <- currentWindowUnchecked
-  _ <- setTimeout window (fun $ \_ _ _ -> () <$ cm ^. js0 "refresh") (Just 33)
-  return (RawNode container', stream)
+  cmo #- "on" $ ("change", onChange)
+  _ <- setTimeout 33 =<< mkFun' (\_ -> cmo #- "refresh" $ ())
+  container'' <- jsTo container'
+  return (RawNode container'', stream)

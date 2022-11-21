@@ -22,7 +22,7 @@ import           Shpadoinkle.Html            (button, div_, for', getBody, id',
                                               input', label, onClick, onInput,
                                               value)
 import           Shpadoinkle.Lens            (onRecord, onSum)
-import           Shpadoinkle.Run             (runJSorWarp, simple)
+import           Shpadoinkle.Run             (run, simple)
 
 
 data Form = Form
@@ -84,5 +84,4 @@ app = simple runParDiff (MCounter 0) view getBody
 
 
 main :: IO ()
-main = runJSorWarp 8080 app
-
+main = run app

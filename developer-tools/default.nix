@@ -33,5 +33,10 @@ in pkgs.runCommand "Shpadoinkle-developer-tools.zip" {}
     cp ${./style.css}     ./style.css
     ${patch-manifest}
     cp ${util.doCannibalize dev.Shpadoinkle-developer-tools}/bin/devtools.jsexe/all.js ./all.js
-    ${pkgs.zip}/bin/zip -r $out *
+
+    mkdir $out
+    ${pkgs.zip}/bin/zip -r $out/packed.zip *
+    mkdir $out/unpacked
+    cp -r * $out/unpacked
   ''
+

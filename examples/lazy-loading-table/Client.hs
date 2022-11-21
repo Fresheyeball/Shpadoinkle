@@ -9,22 +9,24 @@
 module Main where
 
 
-import Prelude hiding (div, init, span)
+import           Prelude                        hiding (div, init, span)
 
-import Control.Arrow (first)
-import Data.CountryCodes
-import Data.Proxy
-import qualified Data.Set as Set
-import Data.Text hiding (init, reverse, span)
-import Shpadoinkle
-import Shpadoinkle.Backend.ParDiff
-import Shpadoinkle.Html hiding (a, b, head, max)
-import Shpadoinkle.Router.Client (ClientM, ClientEnv (..), client, runXHR', BaseUrl (..), Scheme (Http))
-import Shpadoinkle.Run (runJSorWarp)
-import Shpadoinkle.Widgets.Table
-import Shpadoinkle.Widgets.Table.Lazy
+import           Control.Arrow                  (first)
+import           Data.CountryCodes
+import           Data.Proxy
+import qualified Data.Set                       as Set
+import           Data.Text                      hiding (init, reverse, span)
+import           Shpadoinkle
+import           Shpadoinkle.Backend.ParDiff
+import           Shpadoinkle.Html               hiding (a, b, head, max)
+import           Shpadoinkle.Router.Client      (BaseUrl (..), ClientEnv (..),
+                                                 ClientM, Scheme (Http), client,
+                                                 runXHR')
+import           Shpadoinkle.Run                (run)
+import           Shpadoinkle.Widgets.Table
+import           Shpadoinkle.Widgets.Table.Lazy
 
-import Types
+import           Types
 
 default (Text)
 
@@ -91,7 +93,7 @@ getPersonsM = client (Proxy :: Proxy Api)
 
 getPersons :: MonadJSM m => Page -> SortCol FilteredTable -> TableFilters -> m [Person]
 getPersons pg sc fs =
-  liftJSM $ 
+  liftJSM $
   runXHR'
   (getPersonsM pg sc fs)
   (ClientEnv (BaseUrl Http "localhost" 8081 ""))
@@ -131,6 +133,6 @@ main = do
   ds <- debounceRaw 0.25
   let init = ((FilteredTable [] (TableFilters Nothing Set.empty), SortCol Name ASC), CurrentScrollY 0, RowsLoaded 0)
   model <- newTVarIO init
-  runJSorWarp 8080 $ do
+  run $ do
     atomically . modifyTVar model . first3 =<< runContinuation resetData (fst3 init)
     shpadoinkle id runParDiff model (mainView ds) getBody
