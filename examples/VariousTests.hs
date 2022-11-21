@@ -4,11 +4,8 @@
 {-# LANGUAGE ExtendedDefaultRules   #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE NamedFieldPuns         #-}
 {-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeApplications       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults       #-}
 
@@ -39,7 +36,7 @@ import           Shpadoinkle.Router.Client     (BaseUrl (..), ClientEnv (..),
 import           Shpadoinkle.Run               (run, simple)
 
 
-data Model = Model { val :: Int }
+newtype Model = Model { val :: Int }
   deriving (Show, Generic, NFData, Eq)
 
 initial :: Model
@@ -94,7 +91,7 @@ app = do
   logJS @ToJSVal "info" ("hello / there" :: Text)
   logJS @ToJSVal "warn" ("hello / here" :: Text)
 
-  clientEnv@(ClientEnv { baseUrl }) <- getClientEnv
+  clientEnv@ClientEnv { baseUrl } <- getClientEnv
   console #- "log" $ [ show baseUrl ]
 
   do
